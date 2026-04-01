@@ -124,6 +124,44 @@ cd frontend
 npm run dev
 ```
 
+## GitHub Hardening + Deployment
+
+### 1) Branch protection (recommended on `main`)
+
+Enable in GitHub:
+- `Settings` -> `Branches` -> `Add branch protection rule`
+- Branch pattern: `main`
+- Require pull request before merging
+- Require approvals: at least 1
+- Require status checks before merging
+  - Required check: `build-and-smoke`
+- Block force pushes
+- Block deletions
+
+### 2) Repository secrets for CI/CD
+
+Add these secrets in:
+- `Settings` -> `Secrets and variables` -> `Actions`
+
+Required for deployment webhook automation:
+- `BACKEND_DEPLOY_WEBHOOK_URL`
+- `FRONTEND_DEPLOY_WEBHOOK_URL`
+
+Optional (if your deploy endpoint requires auth):
+- `BACKEND_DEPLOY_WEBHOOK_TOKEN`
+- `FRONTEND_DEPLOY_WEBHOOK_TOKEN`
+
+### 3) Deployment workflow
+
+This repo includes:
+- `.github/workflows/deploy-production.yml`
+
+Behavior:
+- Auto-runs after `CI` succeeds on `main`
+- Supports manual run via `workflow_dispatch`
+- Triggers backend/frontend deploy webhooks
+- Skips missing targets safely with warnings
+
 ## API Route Summary
 
 ### Auth

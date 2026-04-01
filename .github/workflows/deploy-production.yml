@@ -1,0 +1,113 @@
+name: Deploy Production
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production-main
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    outputs:
+      backend_ready: ${{ steps.flags.outputs.backend_ready }}
+      frontend_ready: ${{ steps.flags.outputs.frontend_ready }}
+      run_reason: ${{ steps.flags.outputs.run_reason }}
+    steps:
+      - name: Compute deployment flags
+        id: flags
+        env:
+          BACKEND_DEPLOY_WEBHOOK_URL: ${{ secrets.BACKEND_DEPLOY_WEBHOOK_URL }}
+          FRONTEND_DEPLOY_WEBHOOK_URL: ${{ secrets.FRONTEND_DEPLOY_WEBHOOK_URL }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run_reason=manual_dispatch" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_reason=ci_success" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ -n "$BACKEND_DEPLOY_WEBHOOK_URL" ]; then
+            echo "backend_ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "backend_ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::BACKEND_DEPLOY_WEBHOOK_URL is not configured. Backend deployment will be skipped."
+          fi
+
+          if [ -n "$FRONTEND_DEPLOY_WEBHOOK_URL" ]; then
+            echo "frontend_ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "frontend_ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::FRONTEND_DEPLOY_WEBHOOK_URL is not configured. Frontend deployment will be skipped."
+          fi
+
+  deploy_backend:
+    runs-on: ubuntu-latest
+    needs:
+      - preflight
+    if: needs.preflight.outputs.backend_ready == 'true'
+    environment:
+      name: production
+    steps:
+      - name: Trigger backend deployment webhook
+        env:
+          DEPLOY_URL: ${{ secrets.BACKEND_DEPLOY_WEBHOOK_URL }}
+          DEPLOY_TOKEN: ${{ secrets.BACKEND_DEPLOY_WEBHOOK_TOKEN }}
+        run: |
+          if [ -n "$DEPLOY_TOKEN" ]; then
+            curl --fail --show-error --silent \
+              -X POST \
+              -H "Authorization: Bearer $DEPLOY_TOKEN" \
+              "$DEPLOY_URL"
+          else
+            curl --fail --show-error --silent -X POST "$DEPLOY_URL"
+          fi
+
+  deploy_frontend:
+    runs-on: ubuntu-latest
+    needs:
+      - preflight
+    if: needs.preflight.outputs.frontend_ready == 'true'
+    environment:
+      name: production
+    steps:
+      - name: Trigger frontend deployment webhook
+        env:
+          DEPLOY_URL: ${{ secrets.FRONTEND_DEPLOY_WEBHOOK_URL }}
+          DEPLOY_TOKEN: ${{ secrets.FRONTEND_DEPLOY_WEBHOOK_TOKEN }}
+        run: |
+          if [ -n "$DEPLOY_TOKEN" ]; then
+            curl --fail --show-error --silent \
+              -X POST \
+              -H "Authorization: Bearer $DEPLOY_TOKEN" \
+              "$DEPLOY_URL"
+          else
+            curl --fail --show-error --silent -X POST "$DEPLOY_URL"
+          fi
+
+  deployment_summary:
+    runs-on: ubuntu-latest
+    needs:
+      - preflight
+      - deploy_backend
+      - deploy_frontend
+    if: always() && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "Deployment trigger: ${{ needs.preflight.outputs.run_reason }}"
+          echo "Backend webhook configured: ${{ needs.preflight.outputs.backend_ready }}"
+          echo "Frontend webhook configured: ${{ needs.preflight.outputs.frontend_ready }}"
+          echo "Backend deploy result: ${{ needs.deploy_backend.result }}"
+          echo "Frontend deploy result: ${{ needs.deploy_frontend.result }}"
