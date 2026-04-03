@@ -20,6 +20,14 @@ app.use(requestId);
 app.use(helmet());
 const productionFrontendOrigin = "https://bokun-zanzibar-booking.vercel.app";
 const normalizeOriginValue = (value = "") => String(value || "").trim().replace(/\/+$/, "");
+const isTrustedVercelProjectOrigin = (origin = "") => {
+  try {
+    const hostname = new URL(origin).hostname.toLowerCase();
+    return hostname.endsWith(".vercel.app") && hostname.includes("bokun-zanzibar-booking");
+  } catch (_error) {
+    return false;
+  }
+};
 const configuredFrontendOrigins = String(env.FRONTEND_URL || "")
   .split(",")
   .map((value) => normalizeOriginValue(value))
@@ -45,11 +53,24 @@ app.use(
         return callback(null, true);
       }
 
+      // Allow Vercel preview deployments for this project.
+      if (isTrustedVercelProjectOrigin(normalizedOrigin)) {
+        return callback(null, true);
+      }
+
       if (env.NODE_ENV !== "production" && devOriginPattern.test(origin)) {
         return callback(null, true);
       }
 
-      return callback(new Error("CORS_ORIGIN_NOT_ALLOWED"));
+      const corsError = new Error("CORS_ORIGIN_NOT_ALLOWED");
+      corsError.statusCode = 403;
+      corsError.code = "CORS_ORIGIN_NOT_ALLOWED";
+      corsError.isOperational = true;
+      corsError.details = {
+        origin: normalizedOrigin,
+        allowedOrigins
+      };
+      return callback(corsError);
     },
     credentials: true
   })
