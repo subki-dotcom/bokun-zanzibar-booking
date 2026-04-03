@@ -80,6 +80,9 @@ Required backend vars:
 - `DEFAULT_CURRENCY`
 - `FRONTEND_URL`
 
+Required frontend vars:
+- `VITE_API_BASE_URL` (example: `https://bokun-zanzibar-booking.onrender.com`)
+
 Development fallback:
 - `BOKUN_MOCK_MODE=true` enables mock Bokun layer for frontend and local development.
 - `PESAPAL_MOCK_MODE=true` lets checkout run locally without hitting live Pesapal.
@@ -163,6 +166,10 @@ Behavior:
 - Skips missing targets safely with warnings
 
 ## API Route Summary
+
+### Platform Health
+- `GET /`
+- `GET /api/health`
 
 ### Auth
 - `POST /api/auth/login`

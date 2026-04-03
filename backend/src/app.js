@@ -18,22 +18,30 @@ const app = express();
 morgan.token("request-id", (req) => req.requestId || "-");
 app.use(requestId);
 app.use(helmet());
-const allowedOrigins = [
-  env.FRONTEND_URL,
-  "http://127.0.0.1:5173",
-  "http://localhost:5173"
-].filter(Boolean);
+const productionFrontendOrigin = "https://bokun-zanzibar-booking.vercel.app";
+const normalizeOriginValue = (value = "") => String(value || "").trim().replace(/\/+$/, "");
+const configuredFrontendOrigins = String(env.FRONTEND_URL || "")
+  .split(",")
+  .map((value) => normalizeOriginValue(value))
+  .filter(Boolean);
+const allowedOrigins = Array.from(
+  new Set([
+    ...configuredFrontendOrigins,
+    normalizeOriginValue(productionFrontendOrigin)
+  ])
+);
 const devOriginPattern = /^https?:\/\/(127\.0\.0\.1|localhost):\d+$/i;
 
 app.use(
   cors({
     origin(origin, callback) {
+      const normalizedOrigin = normalizeOriginValue(origin);
       // Allow server-to-server and health checks without origin header
       if (!origin) {
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins.includes(normalizedOrigin)) {
         return callback(null, true);
       }
 
@@ -60,13 +68,36 @@ app.use(
   })
 );
 
+const buildHealthPayload = () => ({
+  status: "ok",
+  timestamp: new Date().toISOString(),
+  environment: env.NODE_ENV,
+  uptimeSeconds: Number(process.uptime().toFixed(2))
+});
+
+app.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    message: "Zanzibar Bokun backend is running",
+    data: buildHealthPayload(),
+    meta: {}
+  });
+});
+
 app.get("/health", (_req, res) => {
   res.json({
     success: true,
     message: "API healthy",
-    data: {
-      uptimeSeconds: process.uptime()
-    },
+    data: buildHealthPayload(),
+    meta: {}
+  });
+});
+
+app.get("/api/health", (_req, res) => {
+  res.json({
+    success: true,
+    message: "API healthy",
+    data: buildHealthPayload(),
     meta: {}
   });
 });

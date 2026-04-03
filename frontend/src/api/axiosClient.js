@@ -1,7 +1,8 @@
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
+  baseURL: API_BASE_URL,
   timeout: 30000
 });
 
@@ -20,15 +21,36 @@ axiosClient.interceptors.response.use(
   (error) => {
     const isTimeout = error.code === "ECONNABORTED";
     const isNetwork = !error.response;
+    const responseCode = error.response?.data?.error?.code || "CLIENT_ERROR";
+    const responseMessage = error.response?.data?.message || "";
+    const responseDetails = error.response?.data?.error?.details;
+    const responseDetailsText =
+      typeof responseDetails === "string"
+        ? responseDetails
+        : JSON.stringify(responseDetails || {});
+    const isBokunTimeout =
+      responseCode === "BOKUN_TIMEOUT" ||
+      (responseCode === "BOKUN_REQUEST_FAILED" && /timeout|timed out|econnaborted/i.test(responseDetailsText));
+    const isBokunUpstreamUnavailable =
+      responseCode === "BOKUN_UPSTREAM_UNREACHABLE" ||
+      (responseCode === "BOKUN_REQUEST_FAILED" && /enotfound|econnreset|socket hang up|network/i.test(responseDetailsText));
+
     const normalizedError = {
       status: error.response?.status || 500,
-      code: error.response?.data?.error?.code || "CLIENT_ERROR",
-      message: isTimeout
-        ? "Live Bokun response timed out. Please try again."
+      code: responseCode,
+      requestId: error.response?.data?.meta?.requestId || "",
+      message: isBokunTimeout
+        ? "Live availability from Bokun is taking longer than expected. Please try again."
+        : isBokunUpstreamUnavailable
+          ? "Live supplier service is temporarily unreachable. Please retry in a moment."
+        : isTimeout
+          ? "The server took too long to respond. Please try again."
         : isNetwork
-          ? "Network Error: backend is unreachable. Please confirm API server is running."
-          : error.response?.data?.message || error.message || "Request failed",
-      details: error.response?.data?.error?.details || null
+          ? "Unable to reach the server. Please check your connection and try again."
+          : error.response?.status >= 500
+            ? "Server is temporarily unavailable. Please try again shortly."
+            : responseMessage || error.message || "Request failed",
+      details: responseDetails || null
     };
 
     return Promise.reject(normalizedError);

@@ -90,8 +90,37 @@ bokunAxios.interceptors.response.use(
     return response;
   },
   (error) => {
-    const statusCode = error.response?.status || 502;
-    const details = error.response?.data || { message: error.message };
+    const upstreamResponse = error.response?.data;
+    const upstreamMessage =
+      typeof upstreamResponse === "string"
+        ? upstreamResponse
+        : upstreamResponse?.message || error.message || "Unknown Bokun error";
+    const isTimeout =
+      error.code === "ECONNABORTED" ||
+      /timeout|timed out/i.test(String(error.message || ""));
+    const hasUpstreamResponse = Boolean(error.response);
+    const statusCode = hasUpstreamResponse
+      ? Number(error.response.status || 502)
+      : isTimeout
+        ? 504
+        : 502;
+    const details = {
+      message: upstreamMessage,
+      upstreamStatus: hasUpstreamResponse ? Number(error.response.status || 0) : null,
+      url: error.config?.url || "",
+      requestId: error.config?.headers?.["x-request-id"] || "",
+      timeoutMs: Number(env.BOKUN_TIMEOUT_MS || 0) || null
+    };
+    const errorCode = hasUpstreamResponse
+      ? "BOKUN_REQUEST_FAILED"
+      : isTimeout
+        ? "BOKUN_TIMEOUT"
+        : "BOKUN_UPSTREAM_UNREACHABLE";
+    const appMessage = isTimeout
+      ? "Bokun supplier request timed out"
+      : hasUpstreamResponse
+        ? "Bokun API request failed"
+        : "Unable to reach Bokun supplier";
 
     logger.error("Bokun API error", {
       statusCode,
@@ -99,7 +128,7 @@ bokunAxios.interceptors.response.use(
       url: error.config?.url
     });
 
-    throw new AppError("Bokun API request failed", statusCode, "BOKUN_REQUEST_FAILED", details);
+    throw new AppError(appMessage, statusCode, errorCode, details);
   }
 );
 
