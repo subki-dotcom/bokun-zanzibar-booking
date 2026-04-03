@@ -232,7 +232,7 @@ const PaxExtrasStep = ({
                           max={maxQuantity}
                           value={selected.quantity || 1}
                           onChange={(event) => updateExtraQuantity(code, event.target.value, maxQuantity)}
-                          style={{ width: "90px" }}
+                          className="extra-qty-input"
                         />
                       </div>
                     ) : null}
@@ -243,7 +243,7 @@ const PaxExtrasStep = ({
           </>
         ) : null}
 
-        <div className="d-flex justify-content-between mt-4">
+        <div className="checkout-action-row mt-4">
           <Button variant="outline-secondary" onClick={onBack} disabled={loading}>
             Back
           </Button>

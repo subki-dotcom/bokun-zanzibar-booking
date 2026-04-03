@@ -56,7 +56,7 @@ const PrintableInvoice = ({ invoice }) => {
       </Table>
 
       <div className="d-flex justify-content-end">
-        <div style={{ width: 320 }}>
+        <div className="invoice-totals-wrap">
           <div className="d-flex justify-content-between mb-1">
             <span>Subtotal</span>
             <span>{formatCurrency(invoice.subtotal, "USD")}</span>

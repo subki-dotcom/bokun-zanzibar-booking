@@ -18,7 +18,7 @@ const DashboardLayout = ({ portal = "admin" }) => {
         ];
 
   return (
-    <>
+    <div className="app-shell">
       <Navbar className="hero-band dashboard-nav py-3" expand="lg">
         <Container>
           <Navbar.Brand as={Link} to="/" className="text-white portal-brand">
@@ -43,10 +43,12 @@ const DashboardLayout = ({ portal = "admin" }) => {
         </Container>
       </Navbar>
 
-      <Container className="py-4">
-        <Outlet />
-      </Container>
-    </>
+      <main className="app-main-content dashboard-main-content">
+        <Container className="py-4 portal-content-container">
+          <Outlet />
+        </Container>
+      </main>
+    </div>
   );
 };
 

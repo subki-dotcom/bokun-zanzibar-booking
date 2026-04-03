@@ -35,9 +35,7 @@ const BookingSummarySidebar = ({
   const paxRows = (priceCategoryParticipants || []).filter((row) => Number(row.quantity || 0) > 0);
   const paxSummary = paxRows.length
     ? paxRows.map((row) => `${row.title || "Passenger"} x${row.quantity}`).join(", ")
-    : `Adults ${toSafeNumber(pax?.adults)} • Children ${toSafeNumber(pax?.children)} • Infants ${toSafeNumber(
-        pax?.infants
-      )}`;
+    : `Adults ${toSafeNumber(pax?.adults)} | Children ${toSafeNumber(pax?.children)} | Infants ${toSafeNumber(pax?.infants)}`;
 
   const extrasRows = (extras || []).filter((item) => Number(item.quantity || 0) > 0);
   const extrasTotal = extrasRows.reduce(

@@ -21,7 +21,7 @@ const buildPassengerSummary = (rows = [], pax = {}) => {
   const adults = Number(pax.adults || 0);
   const children = Number(pax.children || 0);
   const infants = Number(pax.infants || 0);
-  return `Adults ${adults} • Children ${children} • Infants ${infants}`;
+  return `Adults ${adults} | Children ${children} | Infants ${infants}`;
 };
 
 const CompletedTripDetailsCard = ({

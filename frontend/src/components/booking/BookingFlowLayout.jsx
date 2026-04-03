@@ -17,13 +17,16 @@ const BookingFlowLayout = ({
 
       {stepper}
 
-      <Row className="g-4">
-        <Col lg={8}>{left}</Col>
-        <Col lg={4}>{right}</Col>
+      <Row className="g-4 booking-flow-grid">
+        <Col lg={8} className="booking-flow-main">
+          {left}
+        </Col>
+        <Col lg={4} className="booking-flow-side">
+          {right}
+        </Col>
       </Row>
     </Container>
   </section>
 );
 
 export default BookingFlowLayout;
-

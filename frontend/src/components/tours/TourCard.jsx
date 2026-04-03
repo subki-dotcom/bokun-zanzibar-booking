@@ -11,7 +11,7 @@ const TourCard = ({ tour }) => {
 
   return (
     <Card className="surface-card h-100 overflow-hidden">
-      <Card.Img src={image} alt={tour.title} style={{ height: 220, objectFit: "cover" }} />
+      <Card.Img src={image} alt={tour.title} className="legacy-tour-card-image" />
       <Card.Body>
         <div className="d-flex justify-content-between align-items-start mb-2">
           <h5 className="mb-0 tour-card-title">{tour.title}</h5>

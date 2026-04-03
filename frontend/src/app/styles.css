@@ -25,9 +25,15 @@
   --tour-accent: #e66937;
   --tour-accent-dark: #c94f28;
   --tour-accent-soft: #fff4ef;
+  --ui-radius-md: 14px;
+  --ui-radius-lg: 20px;
+  --ui-section-gap: clamp(1.2rem, 2.2vw, 2rem);
+  --ui-touch-target: 44px;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -35,6 +41,12 @@ html,
 body,
 #root {
   min-height: 100%;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -47,6 +59,46 @@ body {
     radial-gradient(circle at 8% 12%, rgba(242, 180, 79, 0.24), transparent 40%),
     radial-gradient(circle at 94% 4%, rgba(23, 120, 136, 0.2), transparent 42%),
     linear-gradient(180deg, #f4f9fb 0%, #fdf8ed 100%);
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  overflow-x: clip;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-main-content {
+  background: var(--tour-bg);
+  border-top: 1px solid var(--tour-border);
+}
+
+.portal-content-container {
+  max-width: 1240px;
+}
+
+.container,
+.container-fluid {
+  padding-left: clamp(0.9rem, 2.6vw, 1.3rem);
+  padding-right: clamp(0.9rem, 2.6vw, 1.3rem);
 }
 
 ::selection {
@@ -121,6 +173,10 @@ a {
   border-color: transparent;
   background: linear-gradient(135deg, var(--sea-700), var(--sea-600));
   box-shadow: 0 10px 20px rgba(15, 93, 107, 0.3);
+}
+
+.public-nav-links {
+  align-items: center;
 }
 
 .dashboard-nav {
@@ -198,6 +254,14 @@ a {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(242, 180, 79, 0.22), transparent 68%);
   pointer-events: none;
+}
+
+.hero-band .lead {
+  max-width: 58ch;
+}
+
+.hero-band .btn {
+  min-height: 46px;
 }
 
 .surface-card {
@@ -1835,18 +1899,91 @@ a {
   box-shadow: 0 24px 34px rgba(17, 157, 88, 0.5);
 }
 
+.btn {
+  min-height: var(--ui-touch-target);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-sm {
+  min-height: 36px;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #344054;
+  margin-bottom: 0.38rem;
+}
+
 .form-control,
 .form-select {
-  border-radius: 12px;
+  border-radius: var(--ui-radius-md);
   border: 1px solid var(--line-300);
   padding: 0.62rem 0.78rem;
   color: var(--ink-900);
+  min-height: 44px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .form-control:focus,
 .form-select:focus {
   border-color: rgba(23, 120, 136, 0.65);
   box-shadow: 0 0 0 0.24rem rgba(23, 120, 136, 0.15);
+}
+
+textarea.form-control {
+  min-height: 108px;
+  resize: vertical;
+}
+
+.checkout-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.checkout-action-row .btn {
+  min-width: 136px;
+}
+
+.extra-qty-input {
+  width: 90px;
+}
+
+.sales-chart-placeholder {
+  height: 220px;
+  border-radius: 14px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(15, 93, 107, 0.08),
+      rgba(15, 93, 107, 0.08) 28px,
+      transparent 28px,
+      transparent 56px
+    );
+}
+
+.invoice-totals-wrap {
+  width: min(320px, 100%);
+}
+
+.legacy-tour-card-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.tour-gallery-side-image {
+  height: 50%;
+  object-fit: cover;
+}
+
+.tour-gallery-side-image-full {
+  height: 100%;
+  object-fit: cover;
 }
 
 .btn-info {
@@ -1898,6 +2035,19 @@ a {
 
 .table tbody tr:hover {
   background: rgba(23, 120, 136, 0.06);
+}
+
+.table-responsive {
+  border: 1px solid var(--line-200);
+  border-radius: 14px;
+  background: #fff;
+  overflow: auto hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive .table {
+  margin-bottom: 0;
+  min-width: 680px;
 }
 
 .badge {
@@ -1963,6 +2113,15 @@ a {
 .smart-checkout-page {
   background: var(--tour-bg);
   border-top: 1px solid var(--tour-border);
+}
+
+.booking-flow-grid {
+  align-items: flex-start;
+}
+
+.booking-flow-main,
+.booking-flow-side {
+  min-width: 0;
 }
 
 .smart-checkout-head h2 {
@@ -2368,6 +2527,12 @@ a {
   color: #1f2937;
 }
 
+@media (min-width: 992px) {
+  .booking-flow-side .booking-sticky {
+    top: 1.2rem;
+  }
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;
@@ -2380,6 +2545,34 @@ a {
 }
 
 @media (max-width: 991px) {
+  .public-nav .navbar-collapse,
+  .dashboard-nav .navbar-collapse {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 16px;
+    border: 1px solid rgba(199, 214, 222, 0.72);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 12px 24px rgba(16, 24, 40, 0.08);
+  }
+
+  .dashboard-nav .navbar-collapse {
+    background: rgba(18, 63, 82, 0.92);
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+
+  .public-nav-links,
+  .dashboard-nav-links {
+    width: 100%;
+    gap: 0.35rem !important;
+  }
+
+  .public-nav-links .nav-pill-link,
+  .dashboard-nav-links .portal-nav-link {
+    width: 100%;
+    text-align: left;
+    justify-content: flex-start;
+  }
+
   .booking-sticky {
     position: static;
   }
@@ -2387,6 +2580,7 @@ a {
   .portal-user {
     margin-top: 0.8rem;
     justify-content: space-between;
+    width: 100%;
   }
 
   .tour-gallery img {
@@ -2411,6 +2605,10 @@ a {
     padding-bottom: 0.35rem;
   }
 
+  .table-responsive .table {
+    min-width: 620px;
+  }
+
   .listing-filter-controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2421,6 +2619,12 @@ a {
 }
 
 @media (max-width: 767px) {
+  .container,
+  .container-fluid {
+    padding-left: 0.92rem;
+    padding-right: 0.92rem;
+  }
+
   body {
     background:
       radial-gradient(circle at 10% 14%, rgba(242, 180, 79, 0.2), transparent 36%),
@@ -2434,6 +2638,13 @@ a {
 
   .public-nav {
     backdrop-filter: blur(8px);
+  }
+
+  .brand-mark {
+    font-size: 1.06rem !important;
+    max-width: 76vw;
+    line-height: 1.22;
+    white-space: normal;
   }
 
   .booking-step-label {
@@ -2487,12 +2698,16 @@ a {
     grid-template-columns: repeat(2, minmax(150px, 1fr));
   }
 
+  .checkout-action-row,
   .review-action-row {
     flex-direction: column-reverse;
+    align-items: stretch;
   }
 
+  .checkout-action-row .btn,
   .review-action-row .btn {
     width: 100%;
+    min-width: 0;
   }
 
   .payment-result-grid {
@@ -2509,6 +2724,16 @@ a {
   }
 
   .summary-value {
+    text-align: left;
+  }
+
+  .summary-line-item {
+    flex-direction: column;
+    gap: 0.28rem;
+  }
+
+  .summary-line-item strong {
+    max-width: 100%;
     text-align: left;
   }
 
@@ -2544,6 +2769,10 @@ a {
 
   .tour-meta-label {
     white-space: normal;
+  }
+
+  .table-responsive .table {
+    min-width: 560px;
   }
 
   .premium-footer {
@@ -2582,7 +2811,88 @@ a {
     width: 2.9rem;
     height: 2.9rem;
     right: 0.78rem;
-    bottom: 0.78rem;
+    bottom: calc(0.78rem + env(safe-area-inset-bottom));
     font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .hero-band {
+    padding-top: 1.9rem !important;
+    padding-bottom: 1.9rem !important;
+  }
+
+  .hero-band .display-5 {
+    font-size: 1.56rem;
+    line-height: 1.24;
+  }
+
+  .hero-band .lead {
+    font-size: 0.96rem;
+  }
+
+  .hero-band .d-flex.gap-2 {
+    width: 100%;
+  }
+
+  .hero-band .d-flex.gap-2 .btn {
+    width: 100%;
+  }
+
+  .single-booking-starting-value {
+    font-size: 1.5rem;
+  }
+
+  .single-booking-select-wrap .form-select,
+  .single-booking-select-wrap .form-control {
+    font-size: 0.95rem;
+  }
+
+  .completed-trip-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .payment-result-card .d-flex.flex-wrap.gap-2 .btn {
+    width: 100%;
+  }
+
+  .listing-tour-title,
+  .listing-tour-description {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 425px) {
+  .single-tour-gallery-main {
+    height: 210px;
+  }
+
+  .single-tour-gallery-thumbs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .single-tour-header-meta span {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .option-time-chip,
+  .start-time-chip {
+    font-size: 0.82rem;
+    padding: 0.36rem 0.5rem;
+  }
+
+  .listing-hero h1 {
+    font-size: 1.54rem;
+  }
+
+  .smart-stepper-track {
+    grid-template-columns: 1fr;
+  }
+
+  .premium-footer-payment-pill {
+    font-size: 0.76rem;
+    padding: 0.3rem 0.58rem;
   }
 }

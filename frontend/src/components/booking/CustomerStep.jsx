@@ -44,7 +44,7 @@ const CustomerStep = ({ customer, setCustomer, onBack, onNext }) => {
           </div>
         </div>
 
-        <div className="d-flex justify-content-between mt-4">
+        <div className="checkout-action-row mt-4">
           <Button variant="outline-secondary" onClick={onBack}>
             Back
           </Button>

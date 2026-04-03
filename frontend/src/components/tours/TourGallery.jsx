@@ -18,11 +18,11 @@ const TourGallery = ({ images = [] }) => {
                 key={image + idx}
                 src={image}
                 alt={`Tour visual ${idx + 2}`}
-                style={{ height: "50%", objectFit: "cover" }}
+                className="tour-gallery-side-image"
               />
             ))}
             {rest.length === 0 ? (
-              <img src={primary} alt="Tour visual alt" style={{ height: "100%", objectFit: "cover" }} />
+              <img src={primary} alt="Tour visual alt" className="tour-gallery-side-image-full" />
             ) : null}
           </div>
         </Col>

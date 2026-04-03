@@ -20,7 +20,7 @@ const ExtrasStep = ({
           <p className="text-muted mb-3">
             This trip has no optional extras. Continue to the next step.
           </p>
-          <div className="d-flex justify-content-between">
+          <div className="checkout-action-row">
             <Button variant="outline-secondary" onClick={onBack} disabled={loading}>
               Back
             </Button>
@@ -90,7 +90,7 @@ const ExtrasStep = ({
           })}
         </div>
 
-        <div className="d-flex justify-content-between mt-4">
+        <div className="checkout-action-row mt-4">
           <Button variant="outline-secondary" onClick={onBack} disabled={loading}>
             Back
           </Button>
@@ -104,4 +104,3 @@ const ExtrasStep = ({
 };
 
 export default ExtrasStep;
-

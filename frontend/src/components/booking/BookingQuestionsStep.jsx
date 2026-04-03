@@ -19,7 +19,7 @@ const BookingQuestionsStep = ({
           <p className="text-muted mb-3">
             This product has no required booking questions for the selected setup.
           </p>
-          <div className="d-flex justify-content-between">
+          <div className="checkout-action-row">
             <Button variant="outline-secondary" onClick={onBack}>
               Back
             </Button>
@@ -46,4 +46,3 @@ const BookingQuestionsStep = ({
 };
 
 export default BookingQuestionsStep;
-
