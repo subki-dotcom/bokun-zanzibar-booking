@@ -6,6 +6,9 @@ const mongoose = require("mongoose");
 const logger = require("../../config/logger");
 
 const LIVE_DETAIL_CONCURRENCY = 3;
+const PUBLIC_SNAPSHOT_AUTO_SYNC_COOLDOWN_MS = 2 * 60 * 1000;
+let publicSnapshotAutoSyncInFlight = null;
+let lastPublicSnapshotAutoSyncAt = 0;
 
 const isFallbackOption = (option = {}, productId = "") => {
   const optionId = String(option.bokunOptionId || "");
@@ -218,7 +221,52 @@ const hydrateTourOptionsIfNeeded = async (tour, requestId) => {
   return ProductSnapshot.findOne({ bokunProductId: tour.bokunProductId }).lean();
 };
 
-const listTours = async ({ page = 1, limit = 9 } = {}) => {
+const ensurePublicSnapshotCache = async (requestId = "") => {
+  const activeCount = await ProductSnapshot.countDocuments({ status: "active" });
+  if (activeCount > 0) {
+    return activeCount;
+  }
+
+  if (publicSnapshotAutoSyncInFlight) {
+    await publicSnapshotAutoSyncInFlight;
+    return ProductSnapshot.countDocuments({ status: "active" });
+  }
+
+  const now = Date.now();
+  if (now - lastPublicSnapshotAutoSyncAt < PUBLIC_SNAPSHOT_AUTO_SYNC_COOLDOWN_MS) {
+    return activeCount;
+  }
+
+  lastPublicSnapshotAutoSyncAt = now;
+  publicSnapshotAutoSyncInFlight = syncProducts(requestId, {
+    id: null,
+    role: "system_auto_public_snapshot"
+  })
+    .then((result) => {
+      logger.info("Public snapshot auto-sync completed", {
+        requestId,
+        syncedCount: Number(result?.syncedCount || 0)
+      });
+      return result;
+    })
+    .catch((error) => {
+      logger.warn("Public snapshot auto-sync failed", {
+        requestId,
+        error: error.message
+      });
+      return null;
+    })
+    .finally(() => {
+      publicSnapshotAutoSyncInFlight = null;
+    });
+
+  await publicSnapshotAutoSyncInFlight;
+  return ProductSnapshot.countDocuments({ status: "active" });
+};
+
+const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
+  await ensurePublicSnapshotCache(requestId);
+
   const safePage = Math.max(1, Number(page || 1));
   const safeLimit = Math.min(60, Math.max(1, Number(limit || 9)));
   const skip = (safePage - 1) * safeLimit;
@@ -248,7 +296,9 @@ const listTours = async ({ page = 1, limit = 9 } = {}) => {
   };
 };
 
-const listTourCategories = async () => {
+const listTourCategories = async (requestId = "") => {
+  await ensurePublicSnapshotCache(requestId);
+
   const rows = await ProductSnapshot.find({ status: "active" })
     .select("categories")
     .lean();
@@ -279,7 +329,12 @@ const listTourCategories = async () => {
 };
 
 const getTourBySlug = async (slug, requestId) => {
-  const tour = await ProductSnapshot.findOne({ slug }).lean();
+  let tour = await ProductSnapshot.findOne({ slug }).lean();
+
+  if (!tour) {
+    await ensurePublicSnapshotCache(requestId);
+    tour = await ProductSnapshot.findOne({ slug }).lean();
+  }
 
   if (!tour) {
     throw new AppError("Tour not found", 404, "TOUR_NOT_FOUND");
@@ -289,6 +344,8 @@ const getTourBySlug = async (slug, requestId) => {
 };
 
 const getTourOptions = async (id, requestId) => {
+  await ensurePublicSnapshotCache(requestId);
+
   let tour = null;
 
   if (mongoose.Types.ObjectId.isValid(id)) {

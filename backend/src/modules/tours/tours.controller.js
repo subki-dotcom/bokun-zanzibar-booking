@@ -13,7 +13,7 @@ const parsePositiveInt = (value, fallback) => {
 const listTours = asyncHandler(async (req, res) => {
   const page = parsePositiveInt(req.query.page, 1);
   const limit = parsePositiveInt(req.query.limit, 9);
-  const result = await toursService.listTours({ page, limit });
+  const result = await toursService.listTours({ page, limit, requestId: req.requestId });
 
   return successResponse(res, {
     message: "Tours fetched",
@@ -22,8 +22,8 @@ const listTours = asyncHandler(async (req, res) => {
   });
 });
 
-const listCategories = asyncHandler(async (_req, res) => {
-  const categories = await toursService.listTourCategories();
+const listCategories = asyncHandler(async (req, res) => {
+  const categories = await toursService.listTourCategories(req.requestId);
 
   return successResponse(res, {
     message: "Tour categories fetched",
