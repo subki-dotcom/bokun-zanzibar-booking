@@ -88,6 +88,7 @@ const OptionCard = ({
 
     return availableSlots[0]?.time || liveStartTime || "";
   })();
+  const displayAvailabilityTime = effectiveSelectedTime || liveStartTime || "Time pending from Bokun";
   const selectedPassengerTotal = (Array.isArray(passengers) ? passengers : []).reduce(
     (sum, row) => sum + Math.max(0, Number(row?.quantity || 0)),
     0
@@ -164,7 +165,7 @@ const OptionCard = ({
                 Availability time
               </span>
               <span className="option-live-value">
-                {isLiveAvailable ? liveStartTime || "Time pending from Bokun" : "Not available"}
+                {isLiveAvailable ? displayAvailabilityTime : "Not available"}
               </span>
             </div>
             <div className="option-live-row">
@@ -194,7 +195,10 @@ const OptionCard = ({
                       key={slot.time}
                       type="button"
                       className={`option-time-chip ${isActive ? "is-active" : ""}`.trim()}
-                      onClick={() => onChangeStartTime?.(option?.bokunOptionId || "", slot.time)}
+                      onClick={() => {
+                        onChangeStartTime?.(option?.bokunOptionId || "", slot.time);
+                        onSelect?.(option);
+                      }}
                     >
                       {slot.time}
                       {leftCount > 0 && leftCount < 1000 ? ` (${leftCount} left)` : ""}

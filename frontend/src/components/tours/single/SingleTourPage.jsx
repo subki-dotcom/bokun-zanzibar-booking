@@ -164,6 +164,10 @@ const SingleTourPage = ({ tour = {} }) => {
       ...prev,
       [normalizedOptionId]: String(startTime || "")
     }));
+
+    if (normalizedOptionId) {
+      setSelectedOptionId(normalizedOptionId);
+    }
   };
 
   const handleLiveAvailabilityChecked = async ({
