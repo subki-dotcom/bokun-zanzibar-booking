@@ -2,7 +2,6 @@ import { useMemo, useRef } from "react";
 import { Button, Card, Form } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import {
-  BsCalendar3,
   BsCheckCircle,
   BsChevronDown,
   BsPeople,
@@ -208,7 +207,6 @@ const StickyBookingCard = ({
           </div>
 
           <div className="single-booking-select-wrap single-booking-date-wrap">
-            <BsCalendar3 className="single-booking-input-icon" />
             <Form.Control
               ref={dateInputRef}
               type="date"
@@ -218,14 +216,6 @@ const StickyBookingCard = ({
               onFocus={() => openDatePicker()}
               aria-label="Select date"
             />
-            <button
-              type="button"
-              className="single-booking-date-btn"
-              onClick={openDatePicker}
-              aria-label="Open calendar"
-            >
-              <BsCalendar3 />
-            </button>
           </div>
 
           <Button

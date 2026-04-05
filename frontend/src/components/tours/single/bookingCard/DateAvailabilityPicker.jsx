@@ -1,6 +1,5 @@
 import { useMemo, useRef } from "react";
 import Form from "react-bootstrap/Form";
-import { BsCalendar3 } from "react-icons/bs";
 
 const formatLocalDate = (date = new Date()) => {
   const year = date.getFullYear();
@@ -30,7 +29,6 @@ const DateAvailabilityPicker = ({ value = "", disabled = false, onChange }) => {
     <div>
       <div className="single-booking-inline-label">Travel date</div>
       <div className="single-booking-select-wrap single-booking-date-wrap">
-        <BsCalendar3 className="single-booking-input-icon" />
         <Form.Control
           ref={dateInputRef}
           type="date"
@@ -41,14 +39,6 @@ const DateAvailabilityPicker = ({ value = "", disabled = false, onChange }) => {
           onFocus={openDatePicker}
           aria-label="Select date"
         />
-        <button
-          type="button"
-          className="single-booking-date-btn"
-          onClick={openDatePicker}
-          aria-label="Open calendar"
-        >
-          <BsCalendar3 />
-        </button>
       </div>
     </div>
   );
