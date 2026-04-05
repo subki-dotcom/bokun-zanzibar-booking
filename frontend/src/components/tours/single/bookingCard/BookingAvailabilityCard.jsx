@@ -75,6 +75,8 @@ const BookingAvailabilityCard = ({
   const initialAppliedRef = useRef(false);
   const onLiveAvailabilityCheckedRef = useRef(onLiveAvailabilityChecked);
   const quoteRequestSeqRef = useRef(0);
+  const quoteLoadingRef = useRef(false);
+  const lastAutoQuoteKeyRef = useRef("");
   const lastQuoteRequestKeyRef = useRef("");
   const lastQuoteRequestAtRef = useRef(0);
   const [configLoading, setConfigLoading] = useState(false);
@@ -96,6 +98,17 @@ const BookingAvailabilityCard = ({
   const seededStartTime = String(initialSelection?.startTime || "").trim();
   const resolvedSelectedStartTime = String(selectedStartTime || seededStartTime || "").trim();
   const passengersKey = useMemo(() => JSON.stringify(passengers), [passengers]);
+  const autoQuoteKey = useMemo(
+    () =>
+      JSON.stringify({
+        productId,
+        selectedRateId,
+        travelDate,
+        bookingCurrency,
+        passengers
+      }),
+    [productId, selectedRateId, travelDate, bookingCurrency, passengers]
+  );
   const totalPassengers = useMemo(() => quantityFromPassengerRows(passengers), [passengers]);
   const paxSummary = useMemo(
     () => derivePaxFromPassengers(passengers, pricingCategories),
@@ -105,6 +118,10 @@ const BookingAvailabilityCard = ({
   useEffect(() => {
     onLiveAvailabilityCheckedRef.current = onLiveAvailabilityChecked;
   }, [onLiveAvailabilityChecked]);
+
+  useEffect(() => {
+    quoteLoadingRef.current = quoteLoading;
+  }, [quoteLoading]);
 
   const loadBookingConfig = useCallback(
     async (preferredRateId = "", { keepTravelDate = true } = {}) => {
@@ -200,7 +217,7 @@ const BookingAvailabilityCard = ({
 
   const requestLiveQuote = useCallback(
     async ({ silent = false } = {}) => {
-      if (!canRequestQuote || quoteLoading) {
+      if (!canRequestQuote || quoteLoadingRef.current) {
         return null;
       }
 
@@ -270,7 +287,6 @@ const BookingAvailabilityCard = ({
     },
     [
       canRequestQuote,
-      quoteLoading,
       productId,
       selectedRateId,
       travelDate,
@@ -285,12 +301,22 @@ const BookingAvailabilityCard = ({
       return;
     }
 
+    if (lastAutoQuoteKeyRef.current === autoQuoteKey && quoteStatus === "success") {
+      return;
+    }
+
+    if (lastAutoQuoteKeyRef.current === autoQuoteKey && quoteLoadingRef.current) {
+      return;
+    }
+
+    lastAutoQuoteKeyRef.current = autoQuoteKey;
+
     const timer = setTimeout(() => {
       requestLiveQuote({ silent: true });
-    }, 900);
+    }, 700);
 
     return () => clearTimeout(timer);
-  }, [quoteInitialized, canRequestQuote, requestLiveQuote, passengersKey, selectedRateId, travelDate]);
+  }, [quoteInitialized, canRequestQuote, requestLiveQuote, autoQuoteKey, quoteStatus]);
 
   const handleRateChange = async (nextRateId) => {
     if (!nextRateId || String(nextRateId) === String(selectedRateId)) {
@@ -298,12 +324,14 @@ const BookingAvailabilityCard = ({
     }
 
     quoteRequestSeqRef.current += 1;
+    lastAutoQuoteKeyRef.current = "";
     setQuoteLoading(false);
     await loadBookingConfig(nextRateId, { keepTravelDate: true });
   };
 
   const handlePassengerChange = (pricingCategoryId, quantity) => {
     quoteRequestSeqRef.current += 1;
+    lastAutoQuoteKeyRef.current = "";
     setQuoteLoading(false);
     setPassengers((prev) => {
       const next = prev.map((row) =>
@@ -321,6 +349,7 @@ const BookingAvailabilityCard = ({
 
   const handleDateChange = (nextDate) => {
     quoteRequestSeqRef.current += 1;
+    lastAutoQuoteKeyRef.current = "";
     setQuoteLoading(false);
     setTravelDate(nextDate);
     setQuote((prev) => resetQuoteOnSelectionChange(prev).quote);
