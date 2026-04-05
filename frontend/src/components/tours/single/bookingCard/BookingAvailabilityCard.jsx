@@ -92,7 +92,6 @@ const BookingAvailabilityCard = ({
   const [quoteStatus, setQuoteStatus] = useState("idle");
   const [quoteError, setQuoteError] = useState("");
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [quoteInitialized, setQuoteInitialized] = useState(false);
 
   const productId = String(tour.bokunProductId || "");
   const seededStartTime = String(initialSelection?.startTime || "").trim();
@@ -158,7 +157,6 @@ const BookingAvailabilityCard = ({
         );
         setQuoteStatus("idle");
         setQuoteError("");
-        setQuoteInitialized(false);
         if (!keepTravelDate) {
           setTravelDate("");
         }
@@ -177,7 +175,6 @@ const BookingAvailabilityCard = ({
     setQuote(null);
     setQuoteStatus("idle");
     setQuoteError("");
-    setQuoteInitialized(false);
     loadBookingConfig(String(initialSelection?.rateId || ""), { keepTravelDate: false });
   }, [loadBookingConfig, initialSelection?.rateId]);
 
@@ -260,7 +257,6 @@ const BookingAvailabilityCard = ({
         setQuote(response);
         setQuoteStatus("success");
         setQuoteError("");
-        setQuoteInitialized(true);
 
         onLiveAvailabilityCheckedRef.current?.({
           travelDate,
@@ -279,7 +275,6 @@ const BookingAvailabilityCard = ({
         setQuote(null);
         setQuoteStatus("error");
         setQuoteError(error.message || "Could not fetch live pricing");
-        setQuoteInitialized(true);
         return null;
       } finally {
         setQuoteLoading(false);
@@ -297,15 +292,11 @@ const BookingAvailabilityCard = ({
   );
 
   useEffect(() => {
-    if (!quoteInitialized || !canRequestQuote) {
+    if (!canRequestQuote || quoteStatus !== "idle") {
       return;
     }
 
-    if (lastAutoQuoteKeyRef.current === autoQuoteKey && quoteStatus === "success") {
-      return;
-    }
-
-    if (lastAutoQuoteKeyRef.current === autoQuoteKey && quoteLoadingRef.current) {
+    if (lastAutoQuoteKeyRef.current === autoQuoteKey) {
       return;
     }
 
@@ -316,7 +307,7 @@ const BookingAvailabilityCard = ({
     }, 700);
 
     return () => clearTimeout(timer);
-  }, [quoteInitialized, canRequestQuote, requestLiveQuote, autoQuoteKey, quoteStatus]);
+  }, [canRequestQuote, requestLiveQuote, autoQuoteKey, quoteStatus]);
 
   const handleRateChange = async (nextRateId) => {
     if (!nextRateId || String(nextRateId) === String(selectedRateId)) {
