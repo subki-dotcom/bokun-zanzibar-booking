@@ -1,5 +1,4 @@
 import { Button, Card } from "react-bootstrap";
-import { Link } from "react-router-dom";
 import { BsArrowRight, BsCheckCircleFill, BsClockHistory, BsCurrencyDollar } from "react-icons/bs";
 import PriceDisplay from "./PriceDisplay";
 import OptionMetaRow from "./OptionMetaRow";
@@ -27,18 +26,26 @@ const OptionCard = ({
   option = {},
   tour = {},
   liveAvailability = null,
-  liveComparedAdults = 1,
   selectedStartTime = "",
   travelDate = "",
-  adults = 1,
+  pax = { adults: 1, children: 0, infants: 0 },
+  passengers = [],
   onChangeStartTime,
   selectedPriceCatalogId = "",
   hasDateFilter = false,
   isSelected = false,
-  onSelect
+  onSelect,
+  onBookOption
 }) => {
   const optionDescription = toPlainText(option.description || "");
-  const liveTotalPrice = resolveLivePriceAmount(liveAvailability?.lowestPriceForTwo);
+  const liveTotalPrice = resolveLivePriceAmount(
+    liveAvailability?.totalPrice ??
+      liveAvailability?.liveTotalPrice ??
+      liveAvailability?.lowestPriceForTwo
+  );
+  const optionStartingPrice = resolveLivePriceAmount(
+    option?.fromPrice ?? option?.startingFromPrice ?? option?.minPrice ?? 0
+  );
   const liveCurrency = liveAvailability?.currency || tour.currency || "USD";
   const liveStartTime =
     liveAvailability?.firstAvailableStartTime ||
@@ -81,27 +88,43 @@ const OptionCard = ({
 
     return availableSlots[0]?.time || liveStartTime || "";
   })();
-  const bookingQuery = new URLSearchParams({
-    option: String(option.bokunOptionId || "")
-  });
+  const selectedPassengerTotal = (Array.isArray(passengers) ? passengers : []).reduce(
+    (sum, row) => sum + Math.max(0, Number(row?.quantity || 0)),
+    0
+  );
+  const passengerSummary = [
+    Number(pax?.adults || 0) > 0 ? `${Number(pax?.adults || 0)} adult${Number(pax?.adults || 0) > 1 ? "s" : ""}` : "",
+    Number(pax?.children || 0) > 0 ? `${Number(pax?.children || 0)} child${Number(pax?.children || 0) > 1 ? "ren" : ""}` : "",
+    Number(pax?.infants || 0) > 0 ? `${Number(pax?.infants || 0)} infant${Number(pax?.infants || 0) > 1 ? "s" : ""}` : ""
+  ]
+    .filter(Boolean)
+    .join(", ");
 
-  if (travelDate) {
-    bookingQuery.set("date", travelDate);
-  }
+  const displayAmount = hasDateFilter && isLiveAvailable && liveTotalPrice > 0 ? liveTotalPrice : optionStartingPrice;
+  const displaySummary =
+    hasDateFilter && isLiveAvailable && liveTotalPrice > 0
+      ? `Live total${passengerSummary ? ` (${passengerSummary})` : ""}`
+      : option.pricingSummary;
 
-  if (effectiveSelectedTime) {
-    bookingQuery.set("time", effectiveSelectedTime);
-  }
+  const canBookFromCard = Boolean(
+    hasDateFilter &&
+      travelDate &&
+      isLiveAvailable &&
+      typeof onBookOption === "function"
+  );
 
-  if (Number(adults || 0) > 0) {
-    bookingQuery.set("adults", String(adults));
-  }
-  if (selectedPriceCatalogId) {
-    bookingQuery.set("catalog", String(selectedPriceCatalogId));
-  }
+  const handleBookOption = () => {
+    if (!canBookFromCard || typeof onBookOption !== "function") {
+      return;
+    }
 
-  const bookingPath = `/booking/${tour.slug}?${bookingQuery.toString()}`;
-  const canBookFromCard = Boolean(hasDateFilter && travelDate && isLiveAvailable);
+    onBookOption(option, {
+      travelDate,
+      startTime: effectiveSelectedTime,
+      rateId: selectedPriceCatalogId,
+      passengerCount: selectedPassengerTotal
+    });
+  };
 
   return (
     <Card className={`single-option-card ${isSelected ? "is-selected" : ""}`.trim()}>
@@ -124,9 +147,10 @@ const OptionCard = ({
         </p>
 
         <PriceDisplay
-          amount={tour.fromPrice}
-          currency={tour.currency}
-          summary={option.pricingSummary}
+          amount={displayAmount}
+          currency={liveCurrency}
+          summary={displaySummary}
+          mode={hasDateFilter && isLiveAvailable && liveTotalPrice > 0 ? "live_total" : ""}
           compact
         />
 
@@ -150,7 +174,7 @@ const OptionCard = ({
               </span>
               <span className="option-live-value">
                 {isLiveAvailable && liveTotalPrice > 0
-                  ? `${formatCurrency(liveTotalPrice, liveCurrency)} (Adult x ${liveComparedAdults})`
+                  ? `${formatCurrency(liveTotalPrice, liveCurrency)}${passengerSummary ? ` (${passengerSummary})` : ""}`
                   : "No live total"}
               </span>
             </div>
@@ -194,7 +218,7 @@ const OptionCard = ({
             {isSelected ? "Option selected" : "Select option"}
           </Button>
           {canBookFromCard ? (
-            <Button as={Link} to={bookingPath} className="premium-btn text-white">
+            <Button className="premium-btn text-white" onClick={handleBookOption}>
               Book this option <BsArrowRight className="ms-1" />
             </Button>
           ) : (

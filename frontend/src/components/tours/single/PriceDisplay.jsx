@@ -3,6 +3,10 @@ import { formatCurrency } from "../../../utils/formatters";
 const resolveModeLabel = ({ mode = "", summary = "" }) => {
   const token = `${mode} ${summary}`.toLowerCase();
 
+  if (token.includes("live_total") || token.includes("live total")) {
+    return "Live total";
+  }
+
   if (token.includes("group")) {
     return "Per group";
   }

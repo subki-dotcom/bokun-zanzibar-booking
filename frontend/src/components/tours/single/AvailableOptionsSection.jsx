@@ -6,17 +6,18 @@ const AvailableOptionsSection = ({
   options = [],
   selectedOptionId = "",
   onSelectOption,
-  adults = 1,
+  pax = { adults: 1, children: 0, infants: 0 },
+  passengers = [],
   availabilityResult = null,
   onClearAvailabilityFilter,
   travelDate = "",
   onOptionStartTimeChange,
-  selectedPriceCatalogId = ""
+  selectedPriceCatalogId = "",
+  onBookOption
 }) => {
   const hasDateFilter = Boolean(availabilityResult);
   const availableCount = Number(availabilityResult?.availableCount || 0);
   const totalOptions = Number(availabilityResult?.totalOptions || 0);
-  const liveComparedAdults = Number(availabilityResult?.comparedAdults || adults || 1);
   const resolvedTravelDate = availabilityResult?.travelDate || "selected date";
 
   return (
@@ -48,15 +49,16 @@ const AvailableOptionsSection = ({
               option={option}
               tour={tour}
               hasDateFilter={hasDateFilter}
-              liveComparedAdults={liveComparedAdults}
               liveAvailability={option.liveAvailability || null}
               selectedStartTime={option.selectedStartTime || ""}
               travelDate={travelDate}
-              adults={liveComparedAdults}
+              pax={pax}
+              passengers={passengers}
               onChangeStartTime={onOptionStartTimeChange}
               selectedPriceCatalogId={selectedPriceCatalogId}
               isSelected={String(selectedOptionId) === String(option.bokunOptionId)}
               onSelect={onSelectOption}
+              onBookOption={onBookOption}
             />
           ))}
         </div>

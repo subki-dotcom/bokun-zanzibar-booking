@@ -73,6 +73,7 @@ const BookingAvailabilityCard = ({
 }) => {
   const navigate = useNavigate();
   const initialAppliedRef = useRef(false);
+  const quoteRequestSeqRef = useRef(0);
   const [configLoading, setConfigLoading] = useState(false);
   const [configError, setConfigError] = useState("");
   const [rateOptions, setRateOptions] = useState([]);
@@ -89,6 +90,8 @@ const BookingAvailabilityCard = ({
   const [quoteInitialized, setQuoteInitialized] = useState(false);
 
   const productId = String(tour.bokunProductId || "");
+  const seededStartTime = String(initialSelection?.startTime || "").trim();
+  const resolvedSelectedStartTime = String(selectedStartTime || seededStartTime || "").trim();
   const passengersKey = useMemo(() => JSON.stringify(passengers), [passengers]);
   const totalPassengers = useMemo(() => quantityFromPassengerRows(passengers), [passengers]);
   const paxSummary = useMemo(
@@ -102,6 +105,7 @@ const BookingAvailabilityCard = ({
         return;
       }
 
+      quoteRequestSeqRef.current += 1;
       setConfigLoading(true);
       setConfigError("");
       setQuoteLoading(false);
@@ -193,6 +197,8 @@ const BookingAvailabilityCard = ({
         return null;
       }
 
+      const requestSeq = quoteRequestSeqRef.current + 1;
+      quoteRequestSeqRef.current = requestSeq;
       setQuoteLoading(true);
       if (!silent) {
         setQuoteError("");
@@ -205,6 +211,9 @@ const BookingAvailabilityCard = ({
           passengers,
           currency: bookingCurrency
         });
+        if (requestSeq !== quoteRequestSeqRef.current) {
+          return null;
+        }
 
         setQuote(response);
         setQuoteStatus("success");
@@ -221,13 +230,19 @@ const BookingAvailabilityCard = ({
 
         return response;
       } catch (error) {
+        if (requestSeq !== quoteRequestSeqRef.current) {
+          return null;
+        }
+
         setQuote(null);
         setQuoteStatus("error");
         setQuoteError(error.message || "Could not fetch live pricing");
         setQuoteInitialized(true);
         return null;
       } finally {
-        setQuoteLoading(false);
+        if (requestSeq === quoteRequestSeqRef.current) {
+          setQuoteLoading(false);
+        }
       }
     },
     [
@@ -260,10 +275,12 @@ const BookingAvailabilityCard = ({
       return;
     }
 
+    quoteRequestSeqRef.current += 1;
     await loadBookingConfig(nextRateId, { keepTravelDate: true });
   };
 
   const handlePassengerChange = (pricingCategoryId, quantity) => {
+    quoteRequestSeqRef.current += 1;
     setPassengers((prev) => {
       const next = prev.map((row) =>
         String(row.pricingCategoryId) === String(pricingCategoryId)
@@ -279,6 +296,7 @@ const BookingAvailabilityCard = ({
   };
 
   const handleDateChange = (nextDate) => {
+    quoteRequestSeqRef.current += 1;
     setTravelDate(nextDate);
     setQuote((prev) => resetQuoteOnSelectionChange(prev).quote);
     setQuoteStatus("idle");
@@ -321,8 +339,8 @@ const BookingAvailabilityCard = ({
     if (travelDate) {
       query.set("date", travelDate);
     }
-    if (selectedStartTime) {
-      query.set("time", selectedStartTime);
+    if (resolvedSelectedStartTime) {
+      query.set("time", resolvedSelectedStartTime);
     }
     if (selectedRateId) {
       query.set("catalog", selectedRateId);
@@ -331,11 +349,11 @@ const BookingAvailabilityCard = ({
       query.set("adults", String(paxSummary.adults));
     }
     if (passengers.length > 0) {
-      query.set("passengers", encodeURIComponent(JSON.stringify(passengers)));
+      query.set("passengers", JSON.stringify(passengers));
     }
 
     return query.toString();
-  }, [selectedOption?.bokunOptionId, travelDate, selectedStartTime, selectedRateId, paxSummary.adults, passengers]);
+  }, [selectedOption?.bokunOptionId, travelDate, resolvedSelectedStartTime, selectedRateId, paxSummary.adults, passengers]);
 
   const continuePath = `/booking/${tour.slug}${continueQuery ? `?${continueQuery}` : ""}`;
 
@@ -358,7 +376,7 @@ const BookingAvailabilityCard = ({
         rateId: selectedRateId,
         rateTitle: selectedCatalog?.label || "",
         travelDate,
-        startTime: selectedStartTime || "",
+        startTime: resolvedSelectedStartTime,
         passengers,
         pax: paxSummary
       },

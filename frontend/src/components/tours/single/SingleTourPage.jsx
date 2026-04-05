@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ProductGallery from "./ProductGallery";
 import ProductHeader from "./ProductHeader";
 import QuickFactCards from "./QuickFactCards";
@@ -14,8 +14,10 @@ import ImportantInfoCard from "./ImportantInfoCard";
 import AvailableOptionsSection from "./AvailableOptionsSection";
 import { buildItinerary } from "./singleTour.helpers";
 import { checkTourOptionsAvailability } from "../../../api/toursApi";
+import { saveBookingSession } from "../../../utils/bookingSession";
 
 const SingleTourPage = ({ tour = {} }) => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preferredOptionId = String(searchParams.get("option") || "").trim();
   const preferredCatalogId = String(searchParams.get("catalog") || "").trim();
@@ -42,13 +44,15 @@ const SingleTourPage = ({ tour = {} }) => {
     [tour.options]
   );
   const [selectedOptionId, setSelectedOptionId] = useState("");
-  const [adults, setAdults] = useState(1);
   const [travelDate, setTravelDate] = useState("");
   const [selectedPriceCatalogId, setSelectedPriceCatalogId] = useState("");
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [availabilityError, setAvailabilityError] = useState("");
   const [availabilityResult, setAvailabilityResult] = useState(null);
   const [selectedStartTimesByOption, setSelectedStartTimesByOption] = useState({});
+  const [selectedPassengers, setSelectedPassengers] = useState([]);
+  const [selectedPax, setSelectedPax] = useState({ adults: 1, children: 0, infants: 0 });
+  const [latestQuote, setLatestQuote] = useState(null);
 
   useEffect(() => {
     const firstOptionId = activeOptions[0]?.bokunOptionId || "";
@@ -58,6 +62,28 @@ const SingleTourPage = ({ tour = {} }) => {
     const nextOptionId = preferredExists ? preferredOptionId : firstOptionId;
     setSelectedOptionId(nextOptionId);
   }, [activeOptions, preferredOptionId]);
+
+  useEffect(() => {
+    if (!preferredStartTime) {
+      return;
+    }
+
+    const targetOptionId = String(preferredOptionId || selectedOptionId || "").trim();
+    if (!targetOptionId) {
+      return;
+    }
+
+    setSelectedStartTimesByOption((prev) => {
+      if (prev[targetOptionId]) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [targetOptionId]: preferredStartTime
+      };
+    });
+  }, [preferredStartTime, preferredOptionId, selectedOptionId]);
 
   const selectedOption =
     activeOptions.find((option) => String(option.bokunOptionId) === String(selectedOptionId)) || null;
@@ -130,7 +156,9 @@ const SingleTourPage = ({ tour = {} }) => {
   const handleLiveAvailabilityChecked = async ({
     travelDate: nextTravelDate = "",
     rateId = "",
-    pax = { adults: 1, children: 0, infants: 0 }
+    pax = { adults: 1, children: 0, infants: 0 },
+    passengers = [],
+    quote = null
   } = {}) => {
     if (!nextTravelDate || checkingAvailability) {
       return;
@@ -141,14 +169,18 @@ const SingleTourPage = ({ tour = {} }) => {
       children: Math.max(0, Number(pax?.children || 0)),
       infants: Math.max(0, Number(pax?.infants || 0))
     };
-    const effectiveAdults = Math.max(
-      1,
-      Number(normalizedPax.adults || normalizedPax.children || normalizedPax.infants || 1)
-    );
+    const normalizedPassengers = (Array.isArray(passengers) ? passengers : [])
+      .map((row = {}) => ({
+        pricingCategoryId: String(row.pricingCategoryId || row.categoryId || "").trim(),
+        quantity: Math.max(0, Number(row.quantity || 0))
+      }))
+      .filter((row) => row.pricingCategoryId);
 
     setTravelDate(nextTravelDate);
     setSelectedPriceCatalogId(String(rateId || ""));
-    setAdults(effectiveAdults);
+    setSelectedPax(normalizedPax);
+    setSelectedPassengers(normalizedPassengers);
+    setLatestQuote(quote || null);
     setCheckingAvailability(true);
     setAvailabilityError("");
 
@@ -198,9 +230,76 @@ const SingleTourPage = ({ tour = {} }) => {
       }
     } catch (error) {
       setAvailabilityError(error.message || "Could not check live availability right now");
+      setLatestQuote(null);
     } finally {
       setCheckingAvailability(false);
     }
+  };
+
+  const handleBookOption = (option, { startTime = "", travelDate: nextDate = "", rateId = "" } = {}) => {
+    const optionId = String(option?.bokunOptionId || "").trim();
+    const resolvedDate = String(nextDate || travelDate || "").trim();
+    const resolvedRateId = String(rateId || selectedPriceCatalogId || "").trim();
+    const resolvedStartTime = String(
+      startTime || selectedStartTimesByOption[String(optionId || "").trim()] || preferredStartTime || ""
+    ).trim();
+    const normalizedPassengers = (selectedPassengers || [])
+      .map((row = {}) => ({
+        pricingCategoryId: String(row.pricingCategoryId || "").trim(),
+        quantity: Math.max(0, Number(row.quantity || 0))
+      }))
+      .filter((row) => row.pricingCategoryId && row.quantity > 0);
+
+    if (!optionId || !resolvedDate || !resolvedRateId || !normalizedPassengers.length) {
+      return;
+    }
+
+    const selectedCatalog =
+      (tour.priceCatalogs || []).find((catalog = {}) => {
+        const catalogId = String(
+          catalog.activityPriceCatalogId || catalog.catalogId || catalog.id || ""
+        ).trim();
+        return catalogId === resolvedRateId;
+      }) || null;
+
+    saveBookingSession({
+      source: "single_product_page",
+      product: {
+        productId: String(tour.bokunProductId || ""),
+        slug: tour.slug,
+        title: tour.title
+      },
+      tripDetails: {
+        optionId,
+        optionTitle: option?.name || "",
+        rateId: resolvedRateId,
+        rateTitle: selectedCatalog?.title || selectedCatalog?.label || "",
+        travelDate: resolvedDate,
+        startTime: resolvedStartTime,
+        passengers: normalizedPassengers,
+        pax: selectedPax
+      },
+      availabilityQuote: latestQuote || null,
+      currency: latestQuote?.currency || tour.currency || "USD",
+      tripDetailsCompleted: true,
+      availabilityChecked: true
+    });
+
+    const query = new URLSearchParams();
+    query.set("option", optionId);
+    query.set("date", resolvedDate);
+    query.set("catalog", resolvedRateId);
+    query.set("passengers", JSON.stringify(normalizedPassengers));
+
+    if (resolvedStartTime) {
+      query.set("time", resolvedStartTime);
+    }
+
+    if (Number(selectedPax?.adults || 0) > 0) {
+      query.set("adults", String(selectedPax.adults));
+    }
+
+    navigate(`/booking/${tour.slug}?${query.toString()}`);
   };
 
   return (
@@ -223,12 +322,14 @@ const SingleTourPage = ({ tour = {} }) => {
                 options={optionsToRender}
                 selectedOptionId={selectedOptionId}
                 onSelectOption={handleSelectOption}
-                adults={adults}
+                pax={selectedPax}
+                passengers={selectedPassengers}
                 availabilityResult={availabilityResult}
                 onClearAvailabilityFilter={clearAvailabilityFilter}
                 travelDate={travelDate}
                 onOptionStartTimeChange={handleOptionStartTimeChange}
                 selectedPriceCatalogId={selectedPriceCatalogId}
+                onBookOption={handleBookOption}
               />
               {availabilityError ? (
                 <div className="single-booking-inline-error mt-2">{availabilityError}</div>
