@@ -22,6 +22,20 @@ const resolveLivePriceAmount = (value) => {
   return 0;
 };
 
+const normalizeTimeToken = (value = "") => {
+  const token = String(value || "").trim();
+  if (!token) {
+    return "";
+  }
+
+  const match = token.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) {
+    return token;
+  }
+
+  return `${match[1].padStart(2, "0")}:${match[2].padStart(2, "0")}`;
+};
+
 const OptionCard = ({
   option = {},
   tour = {},
@@ -48,10 +62,12 @@ const OptionCard = ({
   );
   const liveCurrency = liveAvailability?.currency || tour.currency || "USD";
   const liveStartTime =
-    liveAvailability?.firstAvailableStartTime ||
-    liveAvailability?.cheapestStartTime ||
-    liveAvailability?.slots?.find((slot) => slot?.status === "available" || slot?.status === "limited")?.time ||
-    liveAvailability?.slots?.[0]?.time ||
+    normalizeTimeToken(liveAvailability?.firstAvailableStartTime) ||
+    normalizeTimeToken(liveAvailability?.cheapestStartTime) ||
+    normalizeTimeToken(
+      liveAvailability?.slots?.find((slot) => slot?.status === "available" || slot?.status === "limited")?.time
+    ) ||
+    normalizeTimeToken(liveAvailability?.slots?.[0]?.time) ||
     "";
   const isLiveAvailable = Boolean(liveAvailability?.available);
   const availableSlots = (() => {
@@ -60,7 +76,7 @@ const OptionCard = ({
     (liveAvailability?.slots || [])
       .filter((slot) => slot?.status === "available" || slot?.status === "limited")
       .forEach((slot) => {
-        const time = String(slot?.time || "");
+        const time = normalizeTimeToken(slot?.time);
         if (!time) {
           return;
         }
@@ -82,8 +98,9 @@ const OptionCard = ({
     );
   })();
   const effectiveSelectedTime = (() => {
-    if (selectedStartTime && availableSlots.some((slot) => slot.time === selectedStartTime)) {
-      return selectedStartTime;
+    const normalizedSelectedTime = normalizeTimeToken(selectedStartTime);
+    if (normalizedSelectedTime && availableSlots.some((slot) => slot.time === normalizedSelectedTime)) {
+      return normalizedSelectedTime;
     }
 
     return availableSlots[0]?.time || liveStartTime || "";

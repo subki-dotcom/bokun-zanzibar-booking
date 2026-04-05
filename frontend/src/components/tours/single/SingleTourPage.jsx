@@ -93,7 +93,7 @@ const SingleTourPage = ({ tour = {} }) => {
 
       return {
         ...prev,
-        [targetOptionId]: preferredStartTime
+        [targetOptionId]: normalizeTimeToken(preferredStartTime)
       };
     });
   }, [preferredStartTime, preferredOptionId, selectedOptionId]);
@@ -103,6 +103,19 @@ const SingleTourPage = ({ tour = {} }) => {
 
   const itinerary = useMemo(() => buildItinerary(tour), [tour]);
   const normalizeOptionId = (value) => String(value || "").trim();
+  const normalizeTimeToken = (value = "") => {
+    const token = String(value || "").trim();
+    if (!token) {
+      return "";
+    }
+
+    const match = token.match(/^(\d{1,2}):(\d{2})/);
+    if (!match) {
+      return token;
+    }
+
+    return `${match[1].padStart(2, "0")}:${match[2].padStart(2, "0")}`;
+  };
   const getFirstAvailableTime = (optionAvailability = {}) => {
     const openSlot =
       (optionAvailability?.slots || []).find(
@@ -110,9 +123,9 @@ const SingleTourPage = ({ tour = {} }) => {
       ) || null;
 
     return (
-      openSlot?.time ||
-      optionAvailability?.firstAvailableStartTime ||
-      optionAvailability?.cheapestStartTime ||
+      normalizeTimeToken(openSlot?.time) ||
+      normalizeTimeToken(optionAvailability?.firstAvailableStartTime) ||
+      normalizeTimeToken(optionAvailability?.cheapestStartTime) ||
       ""
     );
   };
@@ -162,7 +175,7 @@ const SingleTourPage = ({ tour = {} }) => {
     const normalizedOptionId = normalizeOptionId(optionId);
     setSelectedStartTimesByOption((prev) => ({
       ...prev,
-      [normalizedOptionId]: String(startTime || "")
+      [normalizedOptionId]: normalizeTimeToken(startTime)
     }));
 
     if (normalizedOptionId) {
@@ -231,8 +244,9 @@ const SingleTourPage = ({ tour = {} }) => {
 
           const openTimes = (optionAvailability?.slots || [])
             .filter((slot) => slot?.status === "available" || slot?.status === "limited")
-            .map((slot) => String(slot.time || ""));
-          const previousTime = String(prev[optionId] || "");
+            .map((slot) => normalizeTimeToken(slot.time))
+            .filter(Boolean);
+          const previousTime = normalizeTimeToken(prev[optionId]);
           const defaultTime = getFirstAvailableTime(optionAvailability);
 
           if (previousTime && openTimes.includes(previousTime)) {
@@ -268,9 +282,9 @@ const SingleTourPage = ({ tour = {} }) => {
     const optionId = String(option?.bokunOptionId || "").trim();
     const resolvedDate = String(nextDate || travelDate || "").trim();
     const resolvedRateId = String(rateId || selectedPriceCatalogId || "").trim();
-    const resolvedStartTime = String(
+    const resolvedStartTime = normalizeTimeToken(
       startTime || selectedStartTimesByOption[String(optionId || "").trim()] || preferredStartTime || ""
-    ).trim();
+    );
     const normalizedPassengers = (selectedPassengers || [])
       .map((row = {}) => ({
         pricingCategoryId: String(row.pricingCategoryId || "").trim(),
