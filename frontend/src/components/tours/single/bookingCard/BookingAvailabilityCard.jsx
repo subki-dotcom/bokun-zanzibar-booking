@@ -73,6 +73,7 @@ const BookingAvailabilityCard = ({
 }) => {
   const navigate = useNavigate();
   const initialAppliedRef = useRef(false);
+  const onLiveAvailabilityCheckedRef = useRef(onLiveAvailabilityChecked);
   const quoteRequestSeqRef = useRef(0);
   const [configLoading, setConfigLoading] = useState(false);
   const [configError, setConfigError] = useState("");
@@ -98,6 +99,10 @@ const BookingAvailabilityCard = ({
     () => derivePaxFromPassengers(passengers, pricingCategories),
     [passengers, pricingCategories]
   );
+
+  useEffect(() => {
+    onLiveAvailabilityCheckedRef.current = onLiveAvailabilityChecked;
+  }, [onLiveAvailabilityChecked]);
 
   const loadBookingConfig = useCallback(
     async (preferredRateId = "", { keepTravelDate = true } = {}) => {
@@ -220,7 +225,7 @@ const BookingAvailabilityCard = ({
         setQuoteError("");
         setQuoteInitialized(true);
 
-        onLiveAvailabilityChecked?.({
+        onLiveAvailabilityCheckedRef.current?.({
           travelDate,
           rateId: selectedRateId,
           passengers,
@@ -240,9 +245,7 @@ const BookingAvailabilityCard = ({
         setQuoteInitialized(true);
         return null;
       } finally {
-        if (requestSeq === quoteRequestSeqRef.current) {
-          setQuoteLoading(false);
-        }
+        setQuoteLoading(false);
       }
     },
     [
@@ -253,8 +256,7 @@ const BookingAvailabilityCard = ({
       travelDate,
       passengers,
       bookingCurrency,
-      paxSummary,
-      onLiveAvailabilityChecked
+      paxSummary
     ]
   );
 
@@ -276,11 +278,13 @@ const BookingAvailabilityCard = ({
     }
 
     quoteRequestSeqRef.current += 1;
+    setQuoteLoading(false);
     await loadBookingConfig(nextRateId, { keepTravelDate: true });
   };
 
   const handlePassengerChange = (pricingCategoryId, quantity) => {
     quoteRequestSeqRef.current += 1;
+    setQuoteLoading(false);
     setPassengers((prev) => {
       const next = prev.map((row) =>
         String(row.pricingCategoryId) === String(pricingCategoryId)
@@ -297,6 +301,7 @@ const BookingAvailabilityCard = ({
 
   const handleDateChange = (nextDate) => {
     quoteRequestSeqRef.current += 1;
+    setQuoteLoading(false);
     setTravelDate(nextDate);
     setQuote((prev) => resetQuoteOnSelectionChange(prev).quote);
     setQuoteStatus("idle");
