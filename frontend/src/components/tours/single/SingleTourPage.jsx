@@ -16,6 +16,18 @@ import { buildItinerary } from "./singleTour.helpers";
 import { checkTourOptionsAvailability } from "../../../api/toursApi";
 import { saveBookingSession } from "../../../utils/bookingSession";
 
+const CollapsibleInfoBlock = ({ title = "", subtitle = "", defaultOpen = false, children = null }) => (
+  <details className="single-tour-collapse-block" open={defaultOpen}>
+    <summary className="single-tour-collapse-summary">
+      <div>
+        <div className="single-tour-collapse-title">{title}</div>
+        {subtitle ? <div className="single-tour-collapse-subtitle">{subtitle}</div> : null}
+      </div>
+    </summary>
+    <div className="single-tour-collapse-content">{children}</div>
+  </details>
+);
+
 const SingleTourPage = ({ tour = {} }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -311,12 +323,52 @@ const SingleTourPage = ({ tour = {} }) => {
               <ProductGallery images={tour.images} title={tour.title} />
               <ProductHeader tour={tour} />
               <QuickFactCards tour={tour} />
-              <AboutTourSection description={tour.description} />
-              <ExperienceDetailsGrid tour={tour} />
-              <ItineraryTimeline itinerary={itinerary} />
-              <MeetingPickupCards meetingInfo={tour.meetingInfo} pickupInfo={tour.pickupInfo} />
-              <IncludedExcludedCards included={tour.included} excluded={tour.excluded} />
-              <ImportantInfoCard importantInformation={tour.importantInformation} />
+
+              <section className="single-tour-collapsible-stack">
+                <CollapsibleInfoBlock
+                  title="About this tour"
+                  subtitle="Overview and key experience context"
+                  defaultOpen
+                >
+                  <AboutTourSection description={tour.description} />
+                </CollapsibleInfoBlock>
+
+                <CollapsibleInfoBlock
+                  title="Experience details"
+                  subtitle="Type, duration, categories, guide, difficulty"
+                >
+                  <ExperienceDetailsGrid tour={tour} />
+                </CollapsibleInfoBlock>
+
+                <CollapsibleInfoBlock
+                  title="Itinerary"
+                  subtitle="Stops, route, and day flow"
+                >
+                  <ItineraryTimeline itinerary={itinerary} />
+                </CollapsibleInfoBlock>
+
+                <CollapsibleInfoBlock
+                  title="Meeting and pickup"
+                  subtitle="Pickup/meeting setup from Bokun"
+                >
+                  <MeetingPickupCards meetingInfo={tour.meetingInfo} pickupInfo={tour.pickupInfo} />
+                </CollapsibleInfoBlock>
+
+                <CollapsibleInfoBlock
+                  title="Included and excluded"
+                  subtitle="What is covered and what is not"
+                >
+                  <IncludedExcludedCards included={tour.included} excluded={tour.excluded} />
+                </CollapsibleInfoBlock>
+
+                <CollapsibleInfoBlock
+                  title="Important information"
+                  subtitle="Policies and practical notes"
+                >
+                  <ImportantInfoCard importantInformation={tour.importantInformation} />
+                </CollapsibleInfoBlock>
+              </section>
+
               <AvailableOptionsSection
                 tour={tour}
                 options={optionsToRender}

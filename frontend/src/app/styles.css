@@ -545,6 +545,79 @@ a {
   padding: 1.35rem 1.35rem;
 }
 
+.single-tour-collapsible-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.78rem;
+}
+
+.single-tour-collapse-block {
+  background: var(--tour-white);
+  border: 1px solid var(--tour-border);
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.06);
+  overflow: hidden;
+}
+
+.single-tour-collapse-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.92rem 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.single-tour-collapse-summary::-webkit-details-marker {
+  display: none;
+}
+
+.single-tour-collapse-summary::after {
+  content: "+";
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid #dce4ef;
+  background: #f8fbff;
+  color: #35506f;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.single-tour-collapse-block[open] .single-tour-collapse-summary::after {
+  content: "-";
+}
+
+.single-tour-collapse-title {
+  color: var(--tour-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.single-tour-collapse-subtitle {
+  color: var(--tour-muted);
+  font-size: 0.82rem;
+  margin-top: 0.14rem;
+}
+
+.single-tour-collapse-content {
+  padding: 0 0.82rem 0.82rem;
+}
+
+.single-tour-collapse-content .single-tour-section {
+  border: 1px dashed #dbe4ef;
+  border-radius: 14px;
+  box-shadow: none;
+  padding: 0.92rem 0.92rem;
+}
+
 .single-tour-section-head {
   margin-bottom: 0.9rem;
 }
@@ -2672,6 +2745,22 @@ textarea.form-control {
   .single-booking-card {
     border-radius: 16px;
     padding: 1rem;
+  }
+
+  .single-tour-collapse-block {
+    border-radius: 14px;
+  }
+
+  .single-tour-collapse-summary {
+    padding: 0.8rem 0.85rem;
+  }
+
+  .single-tour-collapse-content {
+    padding: 0 0.7rem 0.7rem;
+  }
+
+  .single-tour-collapse-content .single-tour-section {
+    padding: 0.82rem 0.82rem;
   }
 
   .single-tour-quick-strip,
