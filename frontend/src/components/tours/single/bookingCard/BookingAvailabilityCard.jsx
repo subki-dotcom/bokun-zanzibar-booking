@@ -75,6 +75,8 @@ const BookingAvailabilityCard = ({
   const initialAppliedRef = useRef(false);
   const onLiveAvailabilityCheckedRef = useRef(onLiveAvailabilityChecked);
   const quoteRequestSeqRef = useRef(0);
+  const lastQuoteRequestKeyRef = useRef("");
+  const lastQuoteRequestAtRef = useRef(0);
   const [configLoading, setConfigLoading] = useState(false);
   const [configError, setConfigError] = useState("");
   const [rateOptions, setRateOptions] = useState([]);
@@ -202,6 +204,24 @@ const BookingAvailabilityCard = ({
         return null;
       }
 
+      const payloadKey = JSON.stringify({
+        productId,
+        selectedRateId,
+        travelDate,
+        bookingCurrency,
+        passengers
+      });
+
+      if (payloadKey === lastQuoteRequestKeyRef.current) {
+        const elapsedMs = Date.now() - Number(lastQuoteRequestAtRef.current || 0);
+        if (elapsedMs < 1200) {
+          return quote || null;
+        }
+      }
+
+      lastQuoteRequestKeyRef.current = payloadKey;
+      lastQuoteRequestAtRef.current = Date.now();
+
       const requestSeq = quoteRequestSeqRef.current + 1;
       quoteRequestSeqRef.current = requestSeq;
       setQuoteLoading(true);
@@ -267,7 +287,7 @@ const BookingAvailabilityCard = ({
 
     const timer = setTimeout(() => {
       requestLiveQuote({ silent: true });
-    }, 450);
+    }, 900);
 
     return () => clearTimeout(timer);
   }, [quoteInitialized, canRequestQuote, requestLiveQuote, passengersKey, selectedRateId, travelDate]);

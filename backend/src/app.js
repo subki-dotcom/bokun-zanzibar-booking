@@ -14,6 +14,7 @@ const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
+app.set("trust proxy", 1);
 
 morgan.token("request-id", (req) => req.requestId || "-");
 app.use(requestId);

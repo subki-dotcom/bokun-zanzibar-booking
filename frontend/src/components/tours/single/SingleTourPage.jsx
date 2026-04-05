@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProductGallery from "./ProductGallery";
@@ -65,6 +65,7 @@ const SingleTourPage = ({ tour = {} }) => {
   const [selectedPassengers, setSelectedPassengers] = useState([]);
   const [selectedPax, setSelectedPax] = useState({ adults: 1, children: 0, infants: 0 });
   const [latestQuote, setLatestQuote] = useState(null);
+  const lastAvailabilityCheckKeyRef = useRef("");
 
   useEffect(() => {
     const firstOptionId = activeOptions[0]?.bokunOptionId || "";
@@ -187,12 +188,22 @@ const SingleTourPage = ({ tour = {} }) => {
         quantity: Math.max(0, Number(row.quantity || 0))
       }))
       .filter((row) => row.pricingCategoryId);
+    const availabilityRequestKey = JSON.stringify({
+      travelDate: nextTravelDate,
+      rateId: String(rateId || ""),
+      passengers: normalizedPassengers
+    });
 
     setTravelDate(nextTravelDate);
     setSelectedPriceCatalogId(String(rateId || ""));
     setSelectedPax(normalizedPax);
     setSelectedPassengers(normalizedPassengers);
     setLatestQuote(quote || null);
+
+    if (lastAvailabilityCheckKeyRef.current === availabilityRequestKey && availabilityResult) {
+      return;
+    }
+
     setCheckingAvailability(true);
     setAvailabilityError("");
 
@@ -204,6 +215,7 @@ const SingleTourPage = ({ tour = {} }) => {
       });
 
       setAvailabilityResult(result);
+      lastAvailabilityCheckKeyRef.current = availabilityRequestKey;
       setSelectedStartTimesByOption((prev) => {
         const next = {};
 

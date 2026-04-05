@@ -7,6 +7,8 @@ const env = cleanEnv(process.env, {
   JWT_SECRET: str(),
   JWT_EXPIRES_IN: str({ default: "7d" }),
   FRONTEND_URL: str({ default: "https://bokun-zanzibar-booking.vercel.app" }),
+  RATE_LIMIT_WINDOW_MS: num({ default: 15 * 60 * 1000 }),
+  RATE_LIMIT_MAX: num({ default: 1200 }),
   DEFAULT_CURRENCY: str({ default: "USD" }),
   BOKUN_BASE_URL: str({ default: "https://api.bokun.io" }),
   BOKUN_ACCESS_KEY: str({ default: "" }),
