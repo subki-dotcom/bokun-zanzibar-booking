@@ -344,6 +344,22 @@ const SingleTourPage = ({ tour = {} }) => {
     navigate(`/booking/${tour.slug}?${query.toString()}`);
   };
 
+  const selectedOptionStartTime =
+    selectedStartTimesByOption[normalizeOptionId(selectedOption?.bokunOptionId)] || "";
+
+  const availabilityCardProps = {
+    tour,
+    selectedOption,
+    selectedStartTime: selectedOptionStartTime,
+    initialSelection: {
+      rateId: preferredCatalogId,
+      travelDate: preferredTravelDate,
+      startTime: preferredStartTime,
+      passengers: preferredPassengers
+    },
+    onLiveAvailabilityChecked: handleLiveAvailabilityChecked
+  };
+
   return (
     <section className="single-tour-page py-4 py-lg-5">
       <Container>
@@ -399,6 +415,10 @@ const SingleTourPage = ({ tour = {} }) => {
                 </CollapsibleInfoBlock>
               </section>
 
+              <div className="d-lg-none mb-3">
+                <StickyAvailabilityCard {...availabilityCardProps} />
+              </div>
+
               <AvailableOptionsSection
                 tour={tour}
                 options={optionsToRender}
@@ -419,19 +439,8 @@ const SingleTourPage = ({ tour = {} }) => {
             </div>
           </Col>
 
-          <Col lg={4}>
-            <StickyAvailabilityCard
-              tour={tour}
-              selectedOption={selectedOption}
-              selectedStartTime={selectedStartTimesByOption[normalizeOptionId(selectedOption?.bokunOptionId)] || ""}
-              initialSelection={{
-                rateId: preferredCatalogId,
-                travelDate: preferredTravelDate,
-                startTime: preferredStartTime,
-                passengers: preferredPassengers
-              }}
-              onLiveAvailabilityChecked={handleLiveAvailabilityChecked}
-            />
+          <Col lg={4} className="d-none d-lg-block">
+            <StickyAvailabilityCard {...availabilityCardProps} />
           </Col>
         </Row>
       </Container>
