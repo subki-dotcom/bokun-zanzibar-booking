@@ -1288,6 +1288,33 @@ a {
   line-height: 1.12;
 }
 
+.listing-title-accent {
+  position: relative;
+  display: inline-block;
+  color: #c94f28;
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .listing-title-accent {
+    background: linear-gradient(135deg, #e66937 0%, #c94f28 72%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+.listing-title-accent::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.18rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(230, 105, 55, 0.32), rgba(201, 79, 40, 0.18));
+  pointer-events: none;
+}
+
 .listing-hero p {
   margin: 0;
   color: #667085;
@@ -2789,6 +2816,11 @@ textarea.form-control {
 
   .single-option-actions .btn {
     width: 100%;
+  }
+
+  .listing-title-accent::after {
+    bottom: -0.14rem;
+    height: 0.22rem;
   }
 
   .single-tour-mobile-priority-booking .single-booking-card {

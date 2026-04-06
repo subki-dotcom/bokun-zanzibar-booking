@@ -2,7 +2,9 @@ const ListingHeader = ({ totalItems = 0, filteredCount = 0 }) => (
   <section className="listing-hero">
     <div className="listing-hero-copy">
       <div className="listing-eyebrow">Zanzibar Experiences</div>
-      <h1>Tours & Activities</h1>
+      <h1>
+        Tours & <span className="listing-title-accent">Activities</span>
+      </h1>
       <p>Discover bookable Zanzibar experiences with live pricing and availability.</p>
     </div>
     <div className="listing-hero-stats">
