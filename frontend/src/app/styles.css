@@ -329,6 +329,10 @@ a {
   gap: 1.15rem;
 }
 
+.single-tour-mobile-priority-booking {
+  margin-top: 0.15rem;
+}
+
 .single-tour-gallery {
   background: var(--tour-white);
   border-radius: 20px;
@@ -2785,6 +2789,11 @@ textarea.form-control {
 
   .single-option-actions .btn {
     width: 100%;
+  }
+
+  .single-tour-mobile-priority-booking .single-booking-card {
+    border-radius: 18px;
+    box-shadow: 0 18px 34px rgba(29, 41, 57, 0.12);
   }
 
   .summary-row {

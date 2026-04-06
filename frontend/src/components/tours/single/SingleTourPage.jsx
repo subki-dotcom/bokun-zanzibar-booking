@@ -31,6 +31,13 @@ const CollapsibleInfoBlock = ({ title = "", subtitle = "", defaultOpen = false, 
 const SingleTourPage = ({ tour = {} }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+
+    return window.matchMedia("(min-width: 992px)").matches;
+  });
   const preferredOptionId = String(searchParams.get("option") || "").trim();
   const preferredCatalogId = String(searchParams.get("catalog") || "").trim();
   const preferredTravelDate = String(searchParams.get("date") || "").trim();
@@ -66,6 +73,26 @@ const SingleTourPage = ({ tour = {} }) => {
   const [selectedPax, setSelectedPax] = useState({ adults: 1, children: 0, infants: 0 });
   const [latestQuote, setLatestQuote] = useState(null);
   const lastAvailabilityCheckKeyRef = useRef("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(min-width: 992px)");
+    const handleBreakpointChange = (event) => {
+      setIsDesktop(event.matches);
+    };
+
+    setIsDesktop(mediaQuery.matches);
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleBreakpointChange);
+      return () => mediaQuery.removeEventListener("change", handleBreakpointChange);
+    }
+
+    mediaQuery.addListener(handleBreakpointChange);
+    return () => mediaQuery.removeListener(handleBreakpointChange);
+  }, []);
 
   useEffect(() => {
     const firstOptionId = activeOptions[0]?.bokunOptionId || "";
@@ -366,9 +393,22 @@ const SingleTourPage = ({ tour = {} }) => {
         <Row className="g-4 g-xl-5">
           <Col lg={8}>
             <div className="single-tour-left-column">
-              <ProductGallery images={tour.images} title={tour.title} />
-              <ProductHeader tour={tour} />
-              <QuickFactCards tour={tour} />
+              {isDesktop ? (
+                <>
+                  <ProductGallery images={tour.images} title={tour.title} />
+                  <ProductHeader tour={tour} />
+                  <QuickFactCards tour={tour} />
+                </>
+              ) : (
+                <>
+                  <ProductHeader tour={tour} />
+                  <QuickFactCards tour={tour} />
+                  <div className="single-tour-mobile-priority-booking">
+                    <StickyAvailabilityCard {...availabilityCardProps} />
+                  </div>
+                  <ProductGallery images={tour.images} title={tour.title} />
+                </>
+              )}
 
               <section className="single-tour-collapsible-stack">
                 <CollapsibleInfoBlock
@@ -415,10 +455,6 @@ const SingleTourPage = ({ tour = {} }) => {
                 </CollapsibleInfoBlock>
               </section>
 
-              <div className="d-lg-none mb-3">
-                <StickyAvailabilityCard {...availabilityCardProps} />
-              </div>
-
               <AvailableOptionsSection
                 tour={tour}
                 options={optionsToRender}
@@ -439,9 +475,11 @@ const SingleTourPage = ({ tour = {} }) => {
             </div>
           </Col>
 
-          <Col lg={4} className="d-none d-lg-block">
-            <StickyAvailabilityCard {...availabilityCardProps} />
-          </Col>
+          {isDesktop ? (
+            <Col lg={4}>
+              <StickyAvailabilityCard {...availabilityCardProps} />
+            </Col>
+          ) : null}
         </Row>
       </Container>
     </section>
