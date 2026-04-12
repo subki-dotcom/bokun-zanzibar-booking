@@ -8,6 +8,39 @@ const parseFirstNumber = (value = "") => {
   return match ? Number(match[1]) : 0;
 };
 
+const parseFirstFiniteNumber = (...candidates) => {
+  for (const candidate of candidates) {
+    if (candidate === null || candidate === undefined || candidate === "") {
+      continue;
+    }
+
+    const normalized = typeof candidate === "string" ? candidate.replace(/,/g, "").trim() : candidate;
+    const parsed = Number(normalized);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+
+    if (typeof normalized === "string") {
+      const token = parseFirstNumber(normalized);
+      if (Number.isFinite(token) && token > 0) {
+        return token;
+      }
+    }
+  }
+
+  return 0;
+};
+
+export const resolveSafeText = (value, fallback = "") => {
+  const token = String(value || "").trim();
+  return token || fallback;
+};
+
+export const formatListingDuration = (value = "") => {
+  const token = resolveSafeText(value, "Flexible duration");
+  return token;
+};
+
 const normalizePricingType = (tour = {}) => {
   const explicit = String(tour.pricingType || "").toLowerCase();
   if (explicit === "per_person" || explicit === "per_group") {
@@ -26,57 +59,98 @@ const normalizePricingType = (tour = {}) => {
 };
 
 const resolveBadge = (tour = {}) => {
+  if (tour.bestseller || tour.bestSeller) {
+    return "Best Seller";
+  }
+
+  if (tour.featured) {
+    return "Featured";
+  }
+
+  if (tour.likelyToSellOut) {
+    return "Likely to sell out";
+  }
+
+  if (tour.instantConfirmation) {
+    return "Instant confirmation";
+  }
+
   if (tour.badge) {
     return String(tour.badge);
   }
 
-  const title = String(tour.title || "").toLowerCase();
+  const title = String(tour.title || tour.name || "").toLowerCase();
   const categories = (tour.categories || []).map((item) => String(item || "").toLowerCase());
 
   if (categories.some((item) => item.includes("best")) || title.includes("best")) return "Best Seller";
   if (categories.some((item) => item.includes("new")) || title.includes("new")) return "New";
   if (categories.some((item) => item.includes("private")) || title.includes("private")) return "Private";
 
-  return "Live Pricing";
+  return "";
+};
+
+export const formatListingPrice = ({
+  fromPrice = 0,
+  currency = "USD",
+  pricingType = "per_person"
+} = {}) => {
+  const safePrice = Number(fromPrice || 0);
+  if (!Number.isFinite(safePrice) || safePrice <= 0) {
+    return {
+      heading: "View details for pricing",
+      subtext: "",
+      hasPrice: false
+    };
+  }
+
+  const suffix = pricingType === "per_group" ? "/ group" : "/ person";
+  return {
+    heading: `From ${formatCurrency(safePrice, currency)}`,
+    subtext: suffix,
+    hasPrice: true
+  };
 };
 
 export const mapBokunTourForListing = (tour = {}) => {
+  const imageValue = Array.isArray(tour.images) ? tour.images[0] : "";
+  const imageUrl =
+    typeof imageValue === "string"
+      ? imageValue
+      : imageValue?.url || imageValue?.thumbnailUrl || imageValue?.src || "";
+  const resolvedPrice = parseFirstFiniteNumber(
+    tour.fromPrice,
+    tour.priceFrom,
+    tour.lowestPrice,
+    tour.price?.amount
+  );
+  const rating = parseFirstFiniteNumber(tour.rating, tour.reviewRating, tour.averageRating);
+  const reviewCount = Math.max(
+    0,
+    Number(tour.reviewCount || tour.totalReviews || tour.reviewsCount || 0)
+  );
   const description = truncateText(
-    toPlainText(tour.shortDescription || tour.description || ""),
-    170
+    toPlainText(tour.shortDescription || tour.excerpt || tour.description || ""),
+    150
   );
 
   return {
     id: String(tour.bokunProductId || tour.id || tour.slug || ""),
-    slug: tour.slug || "",
-    title: tour.title || "Untitled experience",
-    shortDescription: description,
-    durationText: tour.duration || "Flexible duration",
-    locationText: tour.destination || "Zanzibar",
-    fromPrice: Number(tour.fromPrice || 0),
+    slug: resolveSafeText(tour.slug, String(tour.bokunProductId || tour.id || "")),
+    title: resolveSafeText(tour.title || tour.name, "Untitled experience"),
+    shortDescription: resolveSafeText(description, "Discover this Zanzibar experience."),
+    durationText: formatListingDuration(tour.duration || tour.durationText),
+    locationText: resolveSafeText(tour.destination || tour.location || tour.locationText, "Zanzibar"),
+    fromPrice: resolvedPrice,
     pricingType: normalizePricingType(tour),
-    currency: tour.currency || "USD",
-    badge: resolveBadge(tour),
-    image:
-      tour.images?.[0] ||
-      "https://images.unsplash.com/photo-1518544866330-95a67b1b5f39?auto=format&fit=crop&w=1200&q=80",
-    categories: Array.isArray(tour.categories) ? tour.categories.filter(Boolean) : []
-  };
-};
-
-export const formatPriceLabel = ({ fromPrice = 0, currency = "USD", pricingType = "per_person" } = {}) => {
-  const safePrice = Number(fromPrice || 0);
-  if (!Number.isFinite(safePrice) || safePrice <= 0) {
-    return {
-      heading: "Check live pricing",
-      subtext: "Live pricing and availability"
-    };
-  }
-
-  const suffix = pricingType === "per_group" ? "per group" : "per person";
-  return {
-    heading: `From ${formatCurrency(safePrice, currency)}`,
-    subtext: suffix
+    currency: resolveSafeText(tour.currency, "USD"),
+    badge: resolveBadge(tour) || "",
+    image: resolveSafeText(
+      imageUrl,
+      "https://images.unsplash.com/photo-1518544866330-95a67b1b5f39?auto=format&fit=crop&w=1200&q=80"
+    ),
+    categories: Array.isArray(tour.categories) ? tour.categories.filter(Boolean) : [],
+    rating,
+    reviewCount
   };
 };
 
