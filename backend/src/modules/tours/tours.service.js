@@ -266,8 +266,8 @@ const ensurePublicSnapshotCache = async (requestId = "") => {
   return ProductSnapshot.countDocuments({ status: "active" });
 };
 
-const hasMissingListingSignals = (tour = {}) =>
-  Number(tour?.fromPrice || 0) <= 0 || Number(tour?.rating || 0) <= 0;
+const hasMissingListingPrice = (tour = {}) =>
+  Number(tour?.fromPrice || 0) <= 0;
 
 const resolveListingOptionIds = (tour = {}) =>
   (Array.isArray(tour?.options) ? tour.options : [])
@@ -309,8 +309,8 @@ const resolveFromPriceUsingStartingPreview = async (tour = {}, requestId = "") =
 
 const hydrateMissingListingSignals = async (items = [], requestId = "") => {
   const candidates = (items || [])
-    .filter((tour) => tour?.bokunProductId && hasMissingListingSignals(tour))
-    .slice(0, 3);
+    .filter((tour) => tour?.bokunProductId && hasMissingListingPrice(tour))
+    .slice(0, Math.min((items || []).length, 9));
 
   if (!candidates.length) {
     return items;
@@ -327,18 +327,43 @@ const hydrateMissingListingSignals = async (items = [], requestId = "") => {
         }
 
         const patch = pickLiveSyncFields(liveProduct);
-        if (Number(patch?.fromPrice || 0) <= 0) {
-          const fallbackFromPreview = await resolveFromPriceUsingStartingPreview(
+        let resolvedFromPrice = Number(patch?.fromPrice || 0);
+
+        if (!Number.isFinite(resolvedFromPrice) || resolvedFromPrice <= 0) {
+          try {
+            const bookingConfig = await bokunService.fetchProductBookingConfig(
+              liveProduct.bokunProductId,
+              {
+                prefetchedProduct: liveProduct
+              },
+              requestId
+            );
+
+            const amountForTwoAdults = Number(bookingConfig?.startingFromPrice || 0);
+            if (Number.isFinite(amountForTwoAdults) && amountForTwoAdults > 0) {
+              resolvedFromPrice = Number((amountForTwoAdults / 2).toFixed(2));
+            }
+          } catch (error) {
+            logger.warn("Listing booking-config price fallback skipped", {
+              productId: tour.bokunProductId,
+              requestId,
+              error: error.message
+            });
+          }
+        }
+
+        if (!Number.isFinite(resolvedFromPrice) || resolvedFromPrice <= 0) {
+          resolvedFromPrice = await resolveFromPriceUsingStartingPreview(
             {
               ...tour,
               ...liveProduct
             },
             requestId
           );
+        }
 
-          if (fallbackFromPreview > 0) {
-            patch.fromPrice = fallbackFromPreview;
-          }
+        if (Number.isFinite(resolvedFromPrice) && resolvedFromPrice > 0) {
+          patch.fromPrice = resolvedFromPrice;
         }
 
         await ProductSnapshot.updateOne(
