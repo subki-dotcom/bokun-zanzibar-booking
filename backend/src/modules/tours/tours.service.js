@@ -313,6 +313,19 @@ const hydrateMissingListingSignals = async (items = [], requestId = "") => {
   );
 };
 
+const normalizeListingSignalValues = (tour = {}) => {
+  const fromPrice = Number(tour?.fromPrice);
+  const rating = Number(tour?.rating);
+  const reviewCount = Number(tour?.reviewCount);
+
+  return {
+    ...tour,
+    fromPrice: Number.isFinite(fromPrice) && fromPrice > 0 ? fromPrice : 0,
+    rating: Number.isFinite(rating) && rating > 0 ? Number(rating.toFixed(1)) : 0,
+    reviewCount: Number.isFinite(reviewCount) && reviewCount > 0 ? Math.round(reviewCount) : 0
+  };
+};
+
 const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
   await ensurePublicSnapshotCache(requestId);
 
@@ -330,11 +343,12 @@ const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
     ProductSnapshot.countDocuments({ status: "active" })
   ]);
   const hydratedItems = await hydrateMissingListingSignals(items, requestId);
+  const normalizedItems = hydratedItems.map((tour) => normalizeListingSignalValues(tour));
 
   const totalPages = Math.max(1, Math.ceil(totalItems / safeLimit));
 
   return {
-    items: hydratedItems,
+    items: normalizedItems,
     pagination: {
       page: safePage,
       limit: safeLimit,
