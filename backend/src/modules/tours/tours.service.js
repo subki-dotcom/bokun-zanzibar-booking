@@ -269,6 +269,44 @@ const ensurePublicSnapshotCache = async (requestId = "") => {
 const hasMissingListingSignals = (tour = {}) =>
   Number(tour?.fromPrice || 0) <= 0 || Number(tour?.rating || 0) <= 0;
 
+const resolveListingOptionIds = (tour = {}) =>
+  (Array.isArray(tour?.options) ? tour.options : [])
+    .filter((option) => option?.active !== false)
+    .map((option) => String(option?.bokunOptionId || "").trim())
+    .filter(Boolean);
+
+const resolveFromPriceUsingStartingPreview = async (tour = {}, requestId = "") => {
+  const productId = String(tour?.bokunProductId || "").trim();
+  if (!productId) {
+    return 0;
+  }
+
+  try {
+    const preview = await bokunService.fetchStartingPricePreview(
+      {
+        productId,
+        optionIds: resolveListingOptionIds(tour),
+        comparedAdults: 2
+      },
+      requestId
+    );
+
+    const amountForTwo = Number(preview?.lowestPriceForTwo?.amount || 0);
+    if (!Number.isFinite(amountForTwo) || amountForTwo <= 0) {
+      return 0;
+    }
+
+    return Number((amountForTwo / 2).toFixed(2));
+  } catch (error) {
+    logger.warn("Listing starting price preview skipped", {
+      productId,
+      requestId,
+      error: error.message
+    });
+    return 0;
+  }
+};
+
 const hydrateMissingListingSignals = async (items = [], requestId = "") => {
   const candidates = (items || [])
     .filter((tour) => tour?.bokunProductId && hasMissingListingSignals(tour))
@@ -289,6 +327,20 @@ const hydrateMissingListingSignals = async (items = [], requestId = "") => {
         }
 
         const patch = pickLiveSyncFields(liveProduct);
+        if (Number(patch?.fromPrice || 0) <= 0) {
+          const fallbackFromPreview = await resolveFromPriceUsingStartingPreview(
+            {
+              ...tour,
+              ...liveProduct
+            },
+            requestId
+          );
+
+          if (fallbackFromPreview > 0) {
+            patch.fromPrice = fallbackFromPreview;
+          }
+        }
+
         await ProductSnapshot.updateOne(
           { bokunProductId: tour.bokunProductId },
           { $set: patch }
