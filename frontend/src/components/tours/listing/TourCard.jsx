@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Badge, Button, Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { BsClock, BsGeoAlt, BsStarFill } from "react-icons/bs";
+import { BsClock, BsGeoAlt, BsStar, BsStarFill } from "react-icons/bs";
 import TourMetaRow from "./TourMetaRow";
 import {
   formatListingDuration,
@@ -60,24 +60,37 @@ const TourCard = ({ tour = {} }) => {
           <TourMetaRow icon={<BsGeoAlt />} label={safeLocation} />
         </div>
 
-        {hasRating ? (
-          <div className="listing-tour-rating">
-            <BsStarFill />
-            <span className="listing-tour-rating-value">{Number(tour.rating).toFixed(1)}</span>
-            {hasReviewCount ? (
-              <span className="listing-tour-rating-count">
-                ({Number(tour.reviewCount).toLocaleString()} reviews)
-              </span>
+        <div className="listing-tour-signal-row" aria-label="Tour rating">
+          <span className="listing-tour-signal-label">Rating</span>
+          {hasRating ? (
+            <div className="listing-tour-rating">
+              <BsStarFill />
+              <span className="listing-tour-rating-value">{Number(tour.rating).toFixed(1)}</span>
+              {hasReviewCount ? (
+                <span className="listing-tour-rating-count">
+                  ({Number(tour.reviewCount).toLocaleString()} reviews)
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <div className="listing-tour-rating is-empty">
+              <BsStar />
+              <span className="listing-tour-rating-count">Not rated yet</span>
+            </div>
+          )}
+        </div>
+
+        <div className="listing-tour-price-row" aria-label="Tour price">
+          <span className="listing-tour-price-label">Starting price</span>
+          <div className="listing-tour-price-value-wrap">
+            <span className="listing-tour-price-main">
+              {price.hasPrice ? price.heading : "Price on request"}
+            </span>
+            {price.hasPrice && price.subtext ? (
+              <span className="listing-tour-price-note">{price.subtext}</span>
             ) : null}
           </div>
-        ) : null}
-
-        {price.hasPrice ? (
-          <div className="listing-tour-price-row" aria-label="Tour price">
-            <span className="listing-tour-price-main">{price.heading}</span>
-            {price.subtext ? <span className="listing-tour-price-note">{price.subtext}</span> : null}
-          </div>
-        ) : null}
+        </div>
 
         <Button as={Link} to={detailPath} className="listing-tour-cta text-white w-100">
           View Details

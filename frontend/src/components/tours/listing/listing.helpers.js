@@ -31,6 +31,23 @@ const parseFirstFiniteNumber = (...candidates) => {
   return 0;
 };
 
+const resolveLowestOptionPrice = (options = []) => {
+  const rows = Array.isArray(options) ? options : [];
+  const amounts = rows
+    .map((option = {}) =>
+      parseFirstFiniteNumber(
+        option.fromPrice,
+        option.priceFrom,
+        option.lowestPrice,
+        option.price?.amount,
+        option.pricingSummary
+      )
+    )
+    .filter((amount) => Number.isFinite(amount) && amount > 0);
+
+  return amounts.length ? Math.min(...amounts) : 0;
+};
+
 export const resolveSafeText = (value, fallback = "") => {
   const token = String(value || "").trim();
   return token || fallback;
@@ -121,12 +138,29 @@ export const mapBokunTourForListing = (tour = {}) => {
     tour.fromPrice,
     tour.priceFrom,
     tour.lowestPrice,
-    tour.price?.amount
+    tour.price?.amount,
+    tour.pricingSummary,
+    resolveLowestOptionPrice(tour.options)
   );
-  const rating = parseFirstFiniteNumber(tour.rating, tour.reviewRating, tour.averageRating);
+  const rating = parseFirstFiniteNumber(
+    tour.rating,
+    tour.ratingAverage,
+    tour.reviewRating,
+    tour.averageRating,
+    tour.ratingData?.average,
+    tour.reviewStats?.ratingAverage,
+    tour.reviews?.average
+  );
   const reviewCount = Math.max(
     0,
-    Number(tour.reviewCount || tour.totalReviews || tour.reviewsCount || 0)
+    Number(
+      tour.reviewCount ||
+        tour.totalReviews ||
+        tour.reviewsCount ||
+        tour.reviewStats?.count ||
+        tour.reviews?.count ||
+        0
+    )
   );
   const description = truncateText(
     toPlainText(tour.shortDescription || tour.excerpt || tour.description || ""),

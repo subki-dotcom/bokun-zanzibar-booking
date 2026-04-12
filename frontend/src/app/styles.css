@@ -1525,18 +1525,36 @@ a {
   white-space: nowrap;
 }
 
+.listing-tour-signal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+}
+
+.listing-tour-signal-label {
+  color: #667085;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
 .listing-tour-rating {
   display: inline-flex;
   align-items: center;
   gap: 0.32rem;
   color: #475467;
   font-size: 0.82rem;
-  min-height: 1.15rem;
 }
 
 .listing-tour-rating svg {
   color: #f59e0b;
   flex-shrink: 0;
+}
+
+.listing-tour-rating.is-empty svg {
+  color: #98a2b3;
 }
 
 .listing-tour-rating-value {
@@ -1550,19 +1568,35 @@ a {
 
 .listing-tour-price-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   border-top: 1px solid #edf2f7;
-  padding-top: 0.68rem;
+  padding-top: 0.72rem;
+  padding-bottom: 0.08rem;
   min-height: 2rem;
+}
+
+.listing-tour-price-label {
+  color: #667085;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+.listing-tour-price-value-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
 }
 
 .listing-tour-price-main {
   color: #1f2937;
-  font-size: 1.02rem;
+  font-size: 1rem;
   font-weight: 800;
   line-height: 1.2;
+  text-align: right;
 }
 
 .listing-tour-price-note {
@@ -2903,6 +2937,16 @@ textarea.form-control {
 
   .tour-meta-label {
     white-space: normal;
+  }
+
+  .listing-tour-price-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.22rem;
+  }
+
+  .listing-tour-price-main {
+    text-align: left;
   }
 
   .table-responsive .table {
