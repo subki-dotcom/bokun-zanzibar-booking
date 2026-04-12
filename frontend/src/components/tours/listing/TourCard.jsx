@@ -72,10 +72,12 @@ const TourCard = ({ tour = {} }) => {
           </div>
         ) : null}
 
-        <div className="listing-tour-price-row" aria-label="Tour price">
-          <span className="listing-tour-price-main">{price.heading}</span>
-          {price.subtext ? <span className="listing-tour-price-note">{price.subtext}</span> : null}
-        </div>
+        {price.hasPrice ? (
+          <div className="listing-tour-price-row" aria-label="Tour price">
+            <span className="listing-tour-price-main">{price.heading}</span>
+            {price.subtext ? <span className="listing-tour-price-note">{price.subtext}</span> : null}
+          </div>
+        ) : null}
 
         <Button as={Link} to={detailPath} className="listing-tour-cta text-white w-100">
           View Details

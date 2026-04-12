@@ -97,7 +97,7 @@ export const formatListingPrice = ({
   const safePrice = Number(fromPrice || 0);
   if (!Number.isFinite(safePrice) || safePrice <= 0) {
     return {
-      heading: "View details for pricing",
+      heading: "",
       subtext: "",
       hasPrice: false
     };
