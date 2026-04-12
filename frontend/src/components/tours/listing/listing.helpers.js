@@ -153,13 +153,14 @@ export const mapBokunTourForListing = (tour = {}) => {
   );
   const reviewCount = Math.max(
     0,
-    Number(
-      tour.reviewCount ||
-        tour.totalReviews ||
-        tour.reviewsCount ||
-        tour.reviewStats?.count ||
-        tour.reviews?.count ||
-        0
+    Math.round(
+      parseFirstFiniteNumber(
+        tour.reviewCount,
+        tour.totalReviews,
+        tour.reviewsCount,
+        tour.reviewStats?.count,
+        tour.reviews?.count
+      )
     )
   );
   const description = truncateText(

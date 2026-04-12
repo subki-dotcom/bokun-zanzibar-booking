@@ -266,8 +266,8 @@ const ensurePublicSnapshotCache = async (requestId = "") => {
   return ProductSnapshot.countDocuments({ status: "active" });
 };
 
-const hasMissingListingPrice = (tour = {}) =>
-  Number(tour?.fromPrice || 0) <= 0;
+const hasMissingListingSignals = (tour = {}) =>
+  Number(tour?.fromPrice || 0) <= 0 || Number(tour?.rating || 0) <= 0;
 
 const resolveListingOptionIds = (tour = {}) =>
   (Array.isArray(tour?.options) ? tour.options : [])
@@ -309,7 +309,7 @@ const resolveFromPriceUsingStartingPreview = async (tour = {}, requestId = "") =
 
 const hydrateMissingListingSignals = async (items = [], requestId = "") => {
   const candidates = (items || [])
-    .filter((tour) => tour?.bokunProductId && hasMissingListingPrice(tour))
+    .filter((tour) => tour?.bokunProductId && hasMissingListingSignals(tour))
     .slice(0, Math.min((items || []).length, 9));
 
   if (!candidates.length) {

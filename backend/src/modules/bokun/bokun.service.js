@@ -92,9 +92,7 @@ const fetchProducts = async (requestId) => {
     requestId
   });
 
-  const products = normalizeProductSearchResponse(response).map((row) =>
-    mapper.mapProduct(row.activity || row.product || row)
-  );
+  const products = normalizeProductSearchResponse(response).map((row) => mapper.mapProduct(row));
 
   return products.filter((row) => row.bokunProductId);
 };
@@ -120,7 +118,7 @@ const fetchProductDetails = async (productId, requestId, options = {}) => {
     requestId
   });
 
-  const mapped = response ? mapper.mapProduct(response.activity || response.product || response) : null;
+  const mapped = response ? mapper.mapProduct(response) : null;
   if (mapped?.bokunProductId) {
     setCacheEntry(productDetailsCache, cacheKey, mapped);
   }

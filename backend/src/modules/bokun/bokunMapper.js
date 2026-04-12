@@ -58,6 +58,115 @@ const pickNumericPreferPositive = (...values) => {
 
 const pickPrice = (...values) => pickNumericPreferPositive(...values);
 
+const extractNumericFromUnknown = (value) => {
+  const direct = toNumber(value);
+  if (direct !== null) {
+    return direct;
+  }
+
+  if (typeof value === "string") {
+    const token = String(value).replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+    if (token) {
+      const parsed = Number(token[0]);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+  }
+
+  return null;
+};
+
+const findNumericByKeyPattern = (
+  input,
+  {
+    includes = [],
+    excludes = [],
+    maxDepth = 5
+  } = {}
+) => {
+  const includeTokens = ensureArray(includes).map((token) => String(token || "").toLowerCase()).filter(Boolean);
+  const excludeTokens = ensureArray(excludes).map((token) => String(token || "").toLowerCase()).filter(Boolean);
+  const visited = new WeakSet();
+
+  const shouldMatchKey = (key = "") => {
+    const normalizedKey = String(key || "").toLowerCase();
+    if (!normalizedKey) {
+      return false;
+    }
+
+    if (excludeTokens.some((token) => normalizedKey.includes(token))) {
+      return false;
+    }
+
+    return includeTokens.every((token) => normalizedKey.includes(token));
+  };
+
+  const walk = (value, depth = 0) => {
+    if (depth > maxDepth || value === null || value === undefined) {
+      return null;
+    }
+
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        const found = walk(entry, depth + 1);
+        if (found !== null) {
+          return found;
+        }
+      }
+      return null;
+    }
+
+    if (typeof value !== "object") {
+      return null;
+    }
+
+    if (visited.has(value)) {
+      return null;
+    }
+    visited.add(value);
+
+    for (const [key, entry] of Object.entries(value)) {
+      if (shouldMatchKey(key)) {
+        const numeric = extractNumericFromUnknown(entry);
+        if (numeric !== null && numeric > 0) {
+          return numeric;
+        }
+      }
+    }
+
+    for (const entry of Object.values(value)) {
+      const found = walk(entry, depth + 1);
+      if (found !== null) {
+        return found;
+      }
+    }
+
+    return null;
+  };
+
+  return walk(input, 0);
+};
+
+const normalizeRatingScale = (value = 0) => {
+  const rating = Number(value || 0);
+  if (!Number.isFinite(rating) || rating <= 0) {
+    return 0;
+  }
+
+  if (rating <= 5) {
+    return Number(rating.toFixed(1));
+  }
+
+  if (rating <= 10) {
+    return Number((rating / 2).toFixed(1));
+  }
+
+  if (rating <= 100) {
+    return Number((rating / 20).toFixed(1));
+  }
+
+  return 0;
+};
+
 const decodeEntities = (value = "") =>
   value
     .replace(/&nbsp;/gi, " ")
@@ -671,7 +780,7 @@ const resolveMinimumOptionPrice = (options = []) => {
 };
 
 const resolveProductRating = (root = {}) => {
-  const rating = pickNumericPreferPositive(
+  let rating = pickNumericPreferPositive(
     root.rating,
     root.ratingAverage,
     root.averageRating,
@@ -686,14 +795,27 @@ const resolveProductRating = (root = {}) => {
   );
 
   if (!Number.isFinite(rating) || rating <= 0) {
-    return 0;
+    rating =
+      findNumericByKeyPattern(root, {
+        includes: ["rating"],
+        excludes: ["count", "number", "review", "reviews"]
+      }) ||
+      findNumericByKeyPattern(root, {
+        includes: ["review", "score"],
+        excludes: ["count", "number", "reviews"]
+      }) ||
+      findNumericByKeyPattern(root, {
+        includes: ["score"],
+        excludes: ["count", "number", "reviews"]
+      }) ||
+      0;
   }
 
-  return Number(rating.toFixed(1));
+  return normalizeRatingScale(rating);
 };
 
 const resolveProductReviewCount = (root = {}) => {
-  const count = pickNumericPreferPositive(
+  let count = pickNumericPreferPositive(
     root.reviewCount,
     root.totalReviews,
     root.reviewsCount,
@@ -708,14 +830,40 @@ const resolveProductReviewCount = (root = {}) => {
   );
 
   if (!Number.isFinite(count) || count <= 0) {
-    return 0;
+    count =
+      findNumericByKeyPattern(root, {
+        includes: ["review", "count"]
+      }) ||
+      findNumericByKeyPattern(root, {
+        includes: ["reviews", "total"]
+      }) ||
+      findNumericByKeyPattern(root, {
+        includes: ["rating", "count"]
+      }) ||
+      findNumericByKeyPattern(root, {
+        includes: ["number", "review"]
+      }) ||
+      0;
   }
 
-  return Math.round(count);
+  return Number.isFinite(count) && count > 0 ? Math.round(count) : 0;
 };
 
 const mapProduct = (rawProduct = {}) => {
-  const root = rawProduct.activity || rawProduct;
+  const embeddedActivity = rawProduct?.activity && typeof rawProduct.activity === "object"
+    ? rawProduct.activity
+    : null;
+  const embeddedProduct = rawProduct?.product && typeof rawProduct.product === "object"
+    ? rawProduct.product
+    : null;
+
+  // Keep supplier wrapper fields (sometimes includes rating/review stats),
+  // while letting nested activity/product fields override overlapping values.
+  const root = {
+    ...(rawProduct && typeof rawProduct === "object" ? rawProduct : {}),
+    ...(embeddedProduct || {}),
+    ...(embeddedActivity || {})
+  };
   const productId = String(root.id || root.productId || "");
   const title = root.title || root.name || root.activityName || "Untitled Tour";
 
