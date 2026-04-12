@@ -27,6 +27,8 @@ const mockProducts = [
     status: "active",
     currency: "USD",
     fromPrice: 85,
+    rating: 4.8,
+    reviewCount: 124,
     activityPriceCatalogs: [
       {
         id: "mock_apc_default",
@@ -88,6 +90,8 @@ const mockProducts = [
     status: "active",
     currency: "USD",
     fromPrice: 55,
+    rating: 4.7,
+    reviewCount: 89,
     activityPriceCatalogs: [
       {
         id: "mock_apc_default",

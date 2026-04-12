@@ -159,6 +159,8 @@ const pickLiveSyncFields = (liveProduct = {}) => ({
   status: liveProduct.status,
   currency: liveProduct.currency,
   fromPrice: liveProduct.fromPrice,
+  rating: liveProduct.rating,
+  reviewCount: liveProduct.reviewCount,
   options: liveProduct.options,
   priceCatalogs: liveProduct.priceCatalogs,
   rawBokunProduct: liveProduct.rawBokunProduct,
@@ -264,6 +266,53 @@ const ensurePublicSnapshotCache = async (requestId = "") => {
   return ProductSnapshot.countDocuments({ status: "active" });
 };
 
+const hasMissingListingSignals = (tour = {}) =>
+  Number(tour?.fromPrice || 0) <= 0 || Number(tour?.rating || 0) <= 0;
+
+const hydrateMissingListingSignals = async (items = [], requestId = "") => {
+  const candidates = (items || [])
+    .filter((tour) => tour?.bokunProductId && hasMissingListingSignals(tour))
+    .slice(0, 3);
+
+  if (!candidates.length) {
+    return items;
+  }
+
+  const refreshedByProductId = new Map();
+  await mapWithConcurrency(
+    candidates,
+    async (tour) => {
+      try {
+        const liveProduct = await bokunService.fetchProductDetails(tour.bokunProductId, requestId);
+        if (!liveProduct?.bokunProductId) {
+          return;
+        }
+
+        const patch = pickLiveSyncFields(liveProduct);
+        await ProductSnapshot.updateOne(
+          { bokunProductId: tour.bokunProductId },
+          { $set: patch }
+        );
+        refreshedByProductId.set(String(tour.bokunProductId), {
+          ...tour,
+          ...patch
+        });
+      } catch (error) {
+        logger.warn("Listing signal hydration skipped", {
+          productId: tour.bokunProductId,
+          requestId,
+          error: error.message
+        });
+      }
+    },
+    2
+  );
+
+  return (items || []).map(
+    (tour) => refreshedByProductId.get(String(tour?.bokunProductId || "")) || tour
+  );
+};
+
 const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
   await ensurePublicSnapshotCache(requestId);
 
@@ -273,18 +322,19 @@ const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
 
   const [items, totalItems] = await Promise.all([
     ProductSnapshot.find({ status: "active" })
-      .select("title slug shortDescription duration images fromPrice currency destination highlights categories lastSyncedAt")
+      .select("bokunProductId title slug shortDescription duration images fromPrice rating reviewCount currency destination highlights categories lastSyncedAt")
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(safeLimit)
       .lean(),
     ProductSnapshot.countDocuments({ status: "active" })
   ]);
+  const hydratedItems = await hydrateMissingListingSignals(items, requestId);
 
   const totalPages = Math.max(1, Math.ceil(totalItems / safeLimit));
 
   return {
-    items,
+    items: hydratedItems,
     pagination: {
       page: safePage,
       limit: safeLimit,

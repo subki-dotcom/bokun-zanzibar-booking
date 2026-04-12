@@ -8,28 +8,55 @@ const toNumber = (value) => {
   }
 
   if (value && typeof value === "object" && value.amount !== undefined && value.amount !== null) {
-    const parsedObjectAmount = Number(value.amount);
-    return Number.isFinite(parsedObjectAmount) ? parsedObjectAmount : null;
+    return toNumber(value.amount);
   }
 
   if (typeof value === "string") {
-    const parsed = Number(value);
+    const normalized = value.replace(/,/g, "").trim();
+    const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : null;
   }
 
   return null;
 };
 
-const pickPrice = (...values) => {
+const pickNumericPreferPositive = (...values) => {
+  let fallback = null;
+
   for (const value of values) {
     const numeric = toNumber(value);
-    if (numeric !== null) {
+    if (numeric === null) {
+      if (typeof value === "string") {
+        const token = String(value).replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+        if (token) {
+          const parsedToken = Number(token[0]);
+          if (Number.isFinite(parsedToken)) {
+            if (fallback === null) {
+              fallback = parsedToken;
+            }
+
+            if (parsedToken > 0) {
+              return parsedToken;
+            }
+          }
+        }
+      }
+      continue;
+    }
+
+    if (fallback === null) {
+      fallback = numeric;
+    }
+
+    if (numeric > 0) {
       return numeric;
     }
   }
 
-  return 0;
+  return fallback === null ? 0 : fallback;
 };
+
+const pickPrice = (...values) => pickNumericPreferPositive(...values);
 
 const decodeEntities = (value = "") =>
   value
@@ -623,6 +650,70 @@ const mapBokunPricingCategories = (priceList = null, selectedRateId = "") => {
   });
 };
 
+const resolveMinimumOptionPrice = (options = []) => {
+  const amounts = ensureArray(options)
+    .map((option = {}) =>
+      pickPrice(
+        option.fromPrice,
+        option.priceFrom,
+        option.lowestPrice,
+        option.startingPrice,
+        option.price,
+        option.price?.amount,
+        option.startingPrice?.amount,
+        option.pricingSummary,
+        option.priceSummary
+      )
+    )
+    .filter((amount) => Number.isFinite(amount) && amount > 0);
+
+  return amounts.length ? Math.min(...amounts) : 0;
+};
+
+const resolveProductRating = (root = {}) => {
+  const rating = pickNumericPreferPositive(
+    root.rating,
+    root.ratingAverage,
+    root.averageRating,
+    root.reviewRating,
+    root.reviewsAverage,
+    root.ratingData?.average,
+    root.reviewStats?.ratingAverage,
+    root.reviewSummary?.rating,
+    root.reviewSummary?.averageRating,
+    root.tripAdvisorRating,
+    root.tripadvisorRating
+  );
+
+  if (!Number.isFinite(rating) || rating <= 0) {
+    return 0;
+  }
+
+  return Number(rating.toFixed(1));
+};
+
+const resolveProductReviewCount = (root = {}) => {
+  const count = pickNumericPreferPositive(
+    root.reviewCount,
+    root.totalReviews,
+    root.reviewsCount,
+    root.numberOfReviews,
+    root.ratingData?.count,
+    root.reviewStats?.count,
+    root.reviewSummary?.count,
+    root.reviewSummary?.reviewCount,
+    root.reviewSummary?.totalReviews,
+    root.tripAdvisorReviewCount,
+    root.tripadvisorReviewCount
+  );
+
+  if (!Number.isFinite(count) || count <= 0) {
+    return 0;
+  }
+
+  return Math.round(count);
+};
+
 const mapProduct = (rawProduct = {}) => {
   const root = rawProduct.activity || rawProduct;
   const productId = String(root.id || root.productId || "");
@@ -637,15 +728,23 @@ const mapProduct = (rawProduct = {}) => {
     : ensureArray(root.photos).map((photo) => photo?.originalUrl || photo?.url).filter(Boolean);
 
   const categories = mapCategories(root);
+  const optionFromPrice = resolveMinimumOptionPrice(optionsSource);
 
   const currency = root.currency || root.paymentCurrency || "USD";
   const fromPrice = pickPrice(
     root.fromPrice,
+    root.priceFrom,
+    root.lowestPrice,
     root.startingPrice,
     root.price,
     root.price?.amount,
-    root.startingPrice?.amount
+    root.startingPrice?.amount,
+    root.retailPrice,
+    root.advertisedPrice,
+    optionFromPrice
   );
+  const rating = resolveProductRating(root);
+  const reviewCount = resolveProductReviewCount(root);
 
   const mappedOptions = optionsSource.map(mapOption).filter((option) => option.bokunOptionId);
   const mappedPriceCatalogs = ensureArray(root.activityPriceCatalogs)
@@ -700,6 +799,8 @@ const mapProduct = (rawProduct = {}) => {
     status: root.status || (root.active === false ? "inactive" : "active"),
     currency,
     fromPrice,
+    rating,
+    reviewCount,
     options: mappedOptions,
     priceCatalogs: mappedPriceCatalogs,
     lastSyncedAt: new Date(),

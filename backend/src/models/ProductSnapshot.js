@@ -63,6 +63,8 @@ const productSnapshotSchema = new mongoose.Schema(
     status: { type: String, default: "active" },
     currency: { type: String, default: "USD" },
     fromPrice: { type: Number, default: 0 },
+    rating: { type: Number, default: 0 },
+    reviewCount: { type: Number, default: 0 },
     options: [optionSnapshotSchema],
     priceCatalogs: [priceCatalogSnapshotSchema],
     lastSyncedAt: { type: Date, default: Date.now },
