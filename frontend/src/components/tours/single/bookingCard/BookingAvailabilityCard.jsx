@@ -69,14 +69,14 @@ const BookingAvailabilityCard = ({
   selectedOption = null,
   selectedStartTime = "",
   initialSelection = null,
-  onLiveAvailabilityChecked
+  onLiveAvailabilityChecked,
+  hideContinueButton = false
 }) => {
   const navigate = useNavigate();
   const initialAppliedRef = useRef(false);
   const onLiveAvailabilityCheckedRef = useRef(onLiveAvailabilityChecked);
   const quoteRequestSeqRef = useRef(0);
   const quoteLoadingRef = useRef(false);
-  const lastAutoQuoteKeyRef = useRef("");
   const lastQuoteRequestKeyRef = useRef("");
   const lastQuoteRequestAtRef = useRef(0);
   const [configLoading, setConfigLoading] = useState(false);
@@ -96,18 +96,6 @@ const BookingAvailabilityCard = ({
   const productId = String(tour.bokunProductId || "");
   const seededStartTime = String(initialSelection?.startTime || "").trim();
   const resolvedSelectedStartTime = String(selectedStartTime || seededStartTime || "").trim();
-  const passengersKey = useMemo(() => JSON.stringify(passengers), [passengers]);
-  const autoQuoteKey = useMemo(
-    () =>
-      JSON.stringify({
-        productId,
-        selectedRateId,
-        travelDate,
-        bookingCurrency,
-        passengers
-      }),
-    [productId, selectedRateId, travelDate, bookingCurrency, passengers]
-  );
   const totalPassengers = useMemo(() => quantityFromPassengerRows(passengers), [passengers]);
   const paxSummary = useMemo(
     () => derivePaxFromPassengers(passengers, pricingCategories),
@@ -258,12 +246,18 @@ const BookingAvailabilityCard = ({
         setQuoteStatus("success");
         setQuoteError("");
 
+        const selectedCatalog = rateOptions.find(
+          (catalog) => String(catalog?.id || "") === String(selectedRateId || "")
+        );
+
         onLiveAvailabilityCheckedRef.current?.({
           travelDate,
           rateId: selectedRateId,
+          rateLabel: selectedCatalog?.label || "",
           passengers,
           pax: paxSummary,
-          quote: response
+          quote: response,
+          triggerSource: silent ? "auto" : "manual"
         });
 
         return response;
@@ -287,27 +281,10 @@ const BookingAvailabilityCard = ({
       travelDate,
       passengers,
       bookingCurrency,
-      paxSummary
+      paxSummary,
+      rateOptions
     ]
   );
-
-  useEffect(() => {
-    if (!canRequestQuote || quoteStatus !== "idle") {
-      return;
-    }
-
-    if (lastAutoQuoteKeyRef.current === autoQuoteKey) {
-      return;
-    }
-
-    lastAutoQuoteKeyRef.current = autoQuoteKey;
-
-    const timer = setTimeout(() => {
-      requestLiveQuote({ silent: true });
-    }, 700);
-
-    return () => clearTimeout(timer);
-  }, [canRequestQuote, requestLiveQuote, autoQuoteKey, quoteStatus]);
 
   const handleRateChange = async (nextRateId) => {
     if (!nextRateId || String(nextRateId) === String(selectedRateId)) {
@@ -315,14 +292,12 @@ const BookingAvailabilityCard = ({
     }
 
     quoteRequestSeqRef.current += 1;
-    lastAutoQuoteKeyRef.current = "";
     setQuoteLoading(false);
     await loadBookingConfig(nextRateId, { keepTravelDate: true });
   };
 
   const handlePassengerChange = (pricingCategoryId, quantity) => {
     quoteRequestSeqRef.current += 1;
-    lastAutoQuoteKeyRef.current = "";
     setQuoteLoading(false);
     setPassengers((prev) => {
       const next = prev.map((row) =>
@@ -340,7 +315,6 @@ const BookingAvailabilityCard = ({
 
   const handleDateChange = (nextDate) => {
     quoteRequestSeqRef.current += 1;
-    lastAutoQuoteKeyRef.current = "";
     setQuoteLoading(false);
     setTravelDate(nextDate);
     setQuote((prev) => resetQuoteOnSelectionChange(prev).quote);
@@ -511,10 +485,12 @@ const BookingAvailabilityCard = ({
           </div>
         </div>
 
-        <Button className="premium-btn text-white w-100 mt-3" disabled={!canContinue} onClick={handleContinueToBooking}>
-          Continue to booking
-          <BsArrowRight className="ms-2" />
-        </Button>
+        {!hideContinueButton ? (
+          <Button className="premium-btn text-white w-100 mt-3" disabled={!canContinue} onClick={handleContinueToBooking}>
+            Continue to booking
+            <BsArrowRight className="ms-2" />
+          </Button>
+        ) : null}
 
         <BookingTrustNotes />
       </Card.Body>

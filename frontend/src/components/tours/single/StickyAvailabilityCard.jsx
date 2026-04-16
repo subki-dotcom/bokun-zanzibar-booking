@@ -5,7 +5,8 @@ const StickyAvailabilityCard = ({
   selectedOption = null,
   selectedStartTime = "",
   initialSelection = null,
-  onLiveAvailabilityChecked
+  onLiveAvailabilityChecked,
+  hideContinueButton = false
 }) => (
   <BookingAvailabilityCard
     tour={tour}
@@ -13,6 +14,7 @@ const StickyAvailabilityCard = ({
     selectedStartTime={selectedStartTime}
     initialSelection={initialSelection}
     onLiveAvailabilityChecked={onLiveAvailabilityChecked}
+    hideContinueButton={hideContinueButton}
   />
 );
 

@@ -11,7 +11,7 @@ import ItineraryTimeline from "./ItineraryTimeline";
 import MeetingPickupCards from "./MeetingPickupCards";
 import IncludedExcludedCards from "./IncludedExcludedCards";
 import ImportantInfoCard from "./ImportantInfoCard";
-import AvailableOptionsSection from "./AvailableOptionsSection";
+import AvailabilityOptionModal from "./availabilityPicker/AvailabilityOptionModal";
 import { buildItinerary } from "./singleTour.helpers";
 import { checkTourOptionsAvailability } from "../../../api/toursApi";
 import { saveBookingSession } from "../../../utils/bookingSession";
@@ -71,6 +71,8 @@ const SingleTourPage = ({ tour = {} }) => {
   const [selectedStartTimesByOption, setSelectedStartTimesByOption] = useState({});
   const [selectedPassengers, setSelectedPassengers] = useState([]);
   const [selectedPax, setSelectedPax] = useState({ adults: 1, children: 0, infants: 0 });
+  const [selectedRateLabel, setSelectedRateLabel] = useState("");
+  const [showAvailabilityPicker, setShowAvailabilityPicker] = useState(false);
   const [latestQuote, setLatestQuote] = useState(null);
   const lastAvailabilityCheckKeyRef = useRef("");
 
@@ -187,12 +189,6 @@ const SingleTourPage = ({ tour = {} }) => {
       }));
   }, [activeOptions, availabilityResult, availableOptionIdSet, liveByOptionId, selectedStartTimesByOption]);
 
-  const clearAvailabilityFilter = () => {
-    setAvailabilityResult(null);
-    setAvailabilityError("");
-    setSelectedStartTimesByOption({});
-  };
-
   const handleSelectOption = (option) => {
     const nextOptionId = option?.bokunOptionId || "";
     setSelectedOptionId(nextOptionId);
@@ -213,9 +209,11 @@ const SingleTourPage = ({ tour = {} }) => {
   const handleLiveAvailabilityChecked = async ({
     travelDate: nextTravelDate = "",
     rateId = "",
+    rateLabel = "",
     pax = { adults: 1, children: 0, infants: 0 },
     passengers = [],
-    quote = null
+    quote = null,
+    triggerSource = "manual"
   } = {}) => {
     if (!nextTravelDate || checkingAvailability) {
       return;
@@ -240,13 +238,21 @@ const SingleTourPage = ({ tour = {} }) => {
 
     setTravelDate(nextTravelDate);
     setSelectedPriceCatalogId(String(rateId || ""));
+    setSelectedRateLabel(String(rateLabel || ""));
     setSelectedPax(normalizedPax);
     setSelectedPassengers(normalizedPassengers);
     setLatestQuote(quote || null);
+    if (triggerSource === "manual") {
+      setShowAvailabilityPicker(true);
+    }
 
     if (lastAvailabilityCheckKeyRef.current === availabilityRequestKey && availabilityResult) {
+      setAvailabilityError("");
       return;
     }
+
+    setAvailabilityResult(null);
+    setAvailabilityError("");
 
     setCheckingAvailability(true);
     setAvailabilityError("");
@@ -384,7 +390,28 @@ const SingleTourPage = ({ tour = {} }) => {
       startTime: preferredStartTime,
       passengers: preferredPassengers
     },
-    onLiveAvailabilityChecked: handleLiveAvailabilityChecked
+    onLiveAvailabilityChecked: handleLiveAvailabilityChecked,
+    hideContinueButton: true
+  };
+
+  const handleContinueWithOption = (option, startTime = "") => {
+    handleSelectOption(option);
+    handleBookOption(option, {
+      startTime,
+      travelDate,
+      rateId: selectedPriceCatalogId
+    });
+  };
+
+  const handleEditSearch = () => {
+    setShowAvailabilityPicker(false);
+
+    if (typeof window !== "undefined") {
+      const card = window.document.querySelector(".single-booking-card");
+      if (card?.scrollIntoView) {
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
   };
 
   return (
@@ -455,20 +482,6 @@ const SingleTourPage = ({ tour = {} }) => {
                 </CollapsibleInfoBlock>
               </section>
 
-              <AvailableOptionsSection
-                tour={tour}
-                options={optionsToRender}
-                selectedOptionId={selectedOptionId}
-                onSelectOption={handleSelectOption}
-                pax={selectedPax}
-                passengers={selectedPassengers}
-                availabilityResult={availabilityResult}
-                onClearAvailabilityFilter={clearAvailabilityFilter}
-                travelDate={travelDate}
-                onOptionStartTimeChange={handleOptionStartTimeChange}
-                selectedPriceCatalogId={selectedPriceCatalogId}
-                onBookOption={handleBookOption}
-              />
               {availabilityError ? (
                 <div className="single-booking-inline-error mt-2">{availabilityError}</div>
               ) : null}
@@ -482,6 +495,24 @@ const SingleTourPage = ({ tour = {} }) => {
           ) : null}
         </Row>
       </Container>
+
+      <AvailabilityOptionModal
+        show={showAvailabilityPicker}
+        isDesktop={isDesktop}
+        loading={checkingAvailability}
+        error={availabilityError}
+        options={optionsToRender}
+        selectedOptionId={selectedOptionId}
+        travelDate={travelDate}
+        pax={selectedPax}
+        selectedRateLabel={selectedRateLabel}
+        selectedStartTimesByOption={selectedStartTimesByOption}
+        onClose={() => setShowAvailabilityPicker(false)}
+        onEditSearch={handleEditSearch}
+        onSelectOption={handleSelectOption}
+        onChangeStartTime={handleOptionStartTimeChange}
+        onContinue={handleContinueWithOption}
+      />
     </section>
   );
 };
