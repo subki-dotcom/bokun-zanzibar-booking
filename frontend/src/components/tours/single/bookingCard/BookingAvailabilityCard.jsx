@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { BsArrowRight, BsSignpostSplit } from "react-icons/bs";
+import { BsArrowRight } from "react-icons/bs";
 import { fetchProductBookingConfig, fetchProductLiveQuote } from "../../../../api/bokunApi";
 import { saveBookingSession } from "../../../../utils/bookingSession";
 import PriceCatalogSelect from "./PriceCatalogSelect";
 import PassengerCategorySelector from "./PassengerCategorySelector";
 import DateAvailabilityPicker from "./DateAvailabilityPicker";
 import StartingPriceBox from "./StartingPriceBox";
-import BookingTrustNotes from "./BookingTrustNotes";
 import {
   buildDefaultPassengerState,
   formatPriceLabel,
@@ -460,7 +459,7 @@ const BookingAvailabilityCard = ({
           {configError ? <div className="single-booking-inline-error">{configError}</div> : null}
           {quoteError ? <div className="single-booking-inline-error">{quoteError}</div> : null}
 
-          {quoteStatus === "success" ? (
+          {!hideContinueButton && quoteStatus === "success" ? (
             <div className="single-booking-check-result">
               Status: {quote?.availabilityStatus || "UNKNOWN"}
               {Number(quote?.remainingCapacity || 0) > 0 ? (
@@ -475,24 +474,12 @@ const BookingAvailabilityCard = ({
           ) : null}
         </div>
 
-        <div className="single-booking-summary-list mt-3">
-          <div className="summary-row">
-            <span className="summary-label">
-              <BsSignpostSplit className="me-2" />
-              Selected option
-            </span>
-            <span className="summary-value">{selectedOption?.name || "Choose an option below"}</span>
-          </div>
-        </div>
-
         {!hideContinueButton ? (
           <Button className="premium-btn text-white w-100 mt-3" disabled={!canContinue} onClick={handleContinueToBooking}>
             Continue to booking
             <BsArrowRight className="ms-2" />
           </Button>
         ) : null}
-
-        <BookingTrustNotes />
       </Card.Body>
     </Card>
   );
