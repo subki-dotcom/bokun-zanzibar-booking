@@ -1,10 +1,12 @@
 const dayjs = require("dayjs");
+const { v4: uuidv4 } = require("uuid");
 const Booking = require("../../models/Booking");
 const Customer = require("../../models/Customer");
 const ProductSnapshot = require("../../models/ProductSnapshot");
 const AuditLog = require("../../models/AuditLog");
 const CommissionRecord = require("../../models/CommissionRecord");
 const logger = require("../../config/logger");
+const { env } = require("../../config/env");
 const AppError = require("../../utils/AppError");
 const { signQuoteToken, verifyQuoteToken } = require("../../utils/quoteToken");
 const bokunService = require("../../integrations/bokun");
@@ -70,6 +72,218 @@ const RETRYABLE_BOKUN_PAYLOAD_TOKENS = [
   "passenger",
   "extra"
 ];
+
+const FINALIZATION_STATUS = {
+  IDLE: "idle",
+  PROCESSING: "processing",
+  CONFIRMED: "confirmed",
+  FAILED: "failed",
+  PENDING_RETRY: "pending_retry"
+};
+
+const FINALIZATION_LOCK_STALE_AFTER_SECONDS = 15 * 60;
+
+const toIsoNow = () => new Date().toISOString();
+
+const resolveFinalizationIdempotencyKey = (booking = {}) => {
+  const existing = String(booking?.pendingCheckout?.finalization?.idempotencyKey || "").trim();
+  if (existing) {
+    return existing;
+  }
+
+  const token =
+    String(booking.paymentTransactionId || booking.dpoTransactionToken || "").trim() ||
+    String(booking.bookingReference || "").trim() ||
+    String(booking._id || "").trim();
+
+  return `bokun_finalization_${String(booking._id || "unknown")}_${token || "fallback"}`;
+};
+
+const calculateNextFinalizationRetryAt = (attemptCount = 1) => {
+  const baseSeconds = Math.max(30, Number(env.BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS || 180));
+  const multiplier = Math.min(Math.max(1, Number(attemptCount || 1)), 6);
+  const waitSeconds = baseSeconds * multiplier;
+  return new Date(Date.now() + waitSeconds * 1000).toISOString();
+};
+
+const extractFinalizationMetaFromError = (error) => {
+  const summary = extractBokunErrorSummary(error);
+  const attempts = Array.isArray(error?.details?.attempts) ? error.details.attempts : [];
+  const statusCode = Number(summary.statusCode || 0);
+  const code = summary.code || String(error?.code || "UNKNOWN_ERROR");
+  const message = summary.message || String(error?.message || "Bokun booking create failed");
+
+  const isPendingRetry =
+    code === "BOKUN_FINALIZATION_PENDING" ||
+    statusCode >= 500 ||
+    isRetryableBokunNetworkError(summary) ||
+    isRetryableBokunPayloadError(summary);
+
+  return {
+    code,
+    statusCode: Number.isFinite(statusCode) ? statusCode : 0,
+    message,
+    attempts,
+    isPendingRetry
+  };
+};
+
+const acquireFinalizationLock = async ({ bookingId, idempotencyKey, requestId, source = "system", force = false }) => {
+  const lockToken = uuidv4();
+  const nowIso = toIsoNow();
+  const staleBefore = new Date(
+    Date.now() - FINALIZATION_LOCK_STALE_AFTER_SECONDS * 1000
+  ).toISOString();
+
+  const query = {
+    _id: bookingId,
+    $or: [
+      { "pendingCheckout.finalization.lockToken": { $exists: false } },
+      { "pendingCheckout.finalization.lockToken": "" },
+      { "pendingCheckout.finalization.lockedAt": { $exists: false } },
+      { "pendingCheckout.finalization.lockedAt": { $lte: staleBefore } }
+    ]
+  };
+
+  if (force) {
+    delete query.$or;
+  }
+
+  const booking = await Booking.findOneAndUpdate(
+    query,
+    {
+      $set: {
+        "pendingCheckout.finalization.idempotencyKey": idempotencyKey,
+        "pendingCheckout.finalization.status": FINALIZATION_STATUS.PROCESSING,
+        "pendingCheckout.finalization.lockToken": lockToken,
+        "pendingCheckout.finalization.lockedAt": nowIso,
+        "pendingCheckout.finalization.lastAttemptAt": nowIso,
+        "pendingCheckout.finalization.lastAttemptSource": source
+      },
+      $inc: {
+        "pendingCheckout.finalization.attemptCount": 1
+      }
+    },
+    { new: true }
+  );
+
+  if (booking) {
+    return {
+      booking,
+      lockToken
+    };
+  }
+
+  const latest = await Booking.findById(bookingId);
+  if (latest?.paymentStatus === "paid" && latest?.bokunBookingId) {
+    return {
+      booking: latest,
+      lockToken: "",
+      alreadyFinalized: true
+    };
+  }
+
+  logger.warn("Booking finalization lock busy", {
+    requestId,
+    bookingId: String(bookingId || ""),
+    source
+  });
+
+  throw new AppError(
+    "Booking finalization is already processing",
+    409,
+    "BOOKING_FINALIZATION_IN_PROGRESS",
+    {
+      bookingId: String(bookingId || ""),
+      source
+    }
+  );
+};
+
+const releaseFinalizationLock = async ({
+  bookingId,
+  lockToken,
+  status,
+  nextRetryAt = "",
+  errorMeta = null
+}) => {
+  if (!lockToken) {
+    return;
+  }
+
+  const update = {
+    $set: {
+      "pendingCheckout.finalization.status": status,
+      "pendingCheckout.finalization.processingCompletedAt": toIsoNow()
+    },
+    $unset: {
+      "pendingCheckout.finalization.lockToken": "",
+      "pendingCheckout.finalization.lockedAt": ""
+    }
+  };
+
+  if (nextRetryAt) {
+    update.$set["pendingCheckout.finalization.nextRetryAt"] = nextRetryAt;
+  } else {
+    update.$unset["pendingCheckout.finalization.nextRetryAt"] = "";
+  }
+
+  if (errorMeta) {
+    update.$set["pendingCheckout.finalization.lastError"] = {
+      code: errorMeta.code || "UNKNOWN_ERROR",
+      statusCode: Number(errorMeta.statusCode || 0) || null,
+      message: errorMeta.message || "Bokun finalization failed",
+      at: toIsoNow()
+    };
+    update.$set["pendingCheckout.finalization.finalizationPending"] = Boolean(errorMeta.isPendingRetry);
+    if (errorMeta.attempts?.length) {
+      update.$set["pendingCheckout.finalization.finalizationAttempts"] = errorMeta.attempts;
+    }
+  } else {
+    update.$unset["pendingCheckout.finalization.lastError"] = "";
+    update.$set["pendingCheckout.finalization.finalizationPending"] = false;
+  }
+
+  await Booking.findOneAndUpdate(
+    {
+      _id: bookingId,
+      "pendingCheckout.finalization.lockToken": lockToken
+    },
+    update
+  );
+};
+
+const buildPendingFinalizationQuery = ({ nowIso = toIsoNow(), force = false } = {}) => {
+  const query = {
+    paymentStatus: "paid",
+    $or: [{ bokunBookingId: { $exists: false } }, { bokunBookingId: "" }],
+    "pendingCheckout.checkoutPayload": { $exists: true }
+  };
+
+  if (force) {
+    return query;
+  }
+
+  query.$and = [
+    {
+      $or: [
+        { "pendingCheckout.finalization.status": { $exists: false } },
+        { "pendingCheckout.finalization.status": FINALIZATION_STATUS.PENDING_RETRY },
+        { "pendingCheckout.finalization.status": FINALIZATION_STATUS.FAILED },
+        { "pendingCheckout.finalization.status": FINALIZATION_STATUS.IDLE }
+      ]
+    },
+    {
+      $or: [
+        { "pendingCheckout.finalization.nextRetryAt": { $exists: false } },
+        { "pendingCheckout.finalization.nextRetryAt": "" },
+        { "pendingCheckout.finalization.nextRetryAt": { $lte: nowIso } }
+      ]
+    }
+  ];
+
+  return query;
+};
 
 const normalizeErrorMessageText = (value) => {
   if (value === null || value === undefined) {
@@ -1107,6 +1321,11 @@ const preparePendingPaymentBooking = async ({ payload, auth, requestId }) => {
   const pendingCheckout = {
     quoteToken: payload.quoteToken,
     preparedAt: new Date().toISOString(),
+    finalization: {
+      status: FINALIZATION_STATUS.IDLE,
+      attemptCount: 0,
+      finalizationPending: false
+    },
     checkoutPayload: {
       productId: context.payloadWithCatalog.productId,
       optionId: context.payloadWithCatalog.optionId,
@@ -1146,102 +1365,193 @@ const finalizePendingBookingAfterPayment = async ({
   transactionToken = "",
   paymentMethod = "pesapal",
   paymentProvider = "pesapal",
-  requestId
+  requestId,
+  source = "payment_callback",
+  force = false,
+  auditReason = "Payment verified and booking created in Bokun"
 }) => {
-  const booking = await Booking.findById(bookingId);
-  if (!booking) {
+  const initialBooking = await Booking.findById(bookingId);
+  if (!initialBooking) {
     throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
   }
 
-  if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
+  if (initialBooking.paymentStatus === "paid" && initialBooking.bokunBookingId) {
     return {
-      booking,
-      response: toBookingResponsePayload({ bookingDoc: booking })
+      booking: initialBooking,
+      response: toBookingResponsePayload({ bookingDoc: initialBooking })
     };
   }
 
-  const checkoutPayload = booking.pendingCheckout?.checkoutPayload || null;
+  const checkoutPayload = initialBooking.pendingCheckout?.checkoutPayload || null;
   if (!checkoutPayload) {
     throw new AppError("Pending checkout payload is missing", 409, "PENDING_CHECKOUT_NOT_FOUND");
   }
 
-  const { product, option, selectedPriceCatalog } = await getProductAndOption({
-    productId: checkoutPayload.productId,
-    optionId: checkoutPayload.optionId,
-    priceCatalogId: checkoutPayload.priceCatalogId || ""
-  });
-
-  const liveQuote = await getLiveQuote({
-    productId: checkoutPayload.productId,
-    optionId: checkoutPayload.optionId,
-    priceCatalogId: checkoutPayload.priceCatalogId || "",
-    travelDate: checkoutPayload.travelDate,
-    startTime: checkoutPayload.startTime || "",
-    pax: checkoutPayload.pax,
-    priceCategoryParticipants: checkoutPayload.priceCategoryParticipants || [],
-    extras: checkoutPayload.extras || [],
-    promoCode: checkoutPayload.promoCode || "",
-    requestId
-  });
-
-  const bokunCreateResult = await createBookingInBokunWithReliability({
-    checkoutPayload,
-    liveQuote,
+  const idempotencyKey = resolveFinalizationIdempotencyKey(initialBooking);
+  const lockResult = await acquireFinalizationLock({
+    bookingId: initialBooking._id,
+    idempotencyKey,
     requestId,
-    bookingReference: booking.bookingReference
-  });
-  const bokunBooking = bokunCreateResult.bokunBooking;
-
-  const sourceContext = {
-    sourceChannel: booking.sourceChannel || "direct_website",
-    createdByRole: booking.createdByRole || "customer",
-    createdByUser: booking.createdByUser || { id: null, name: "Guest" },
-    agentId: booking.agentId || null
-  };
-
-  const context = {
-    payloadWithCatalog: {
-      ...checkoutPayload,
-      bookingQuestions: checkoutPayload.bookingQuestions || [],
-      commissionManualPercent: booking.pendingCheckout?.commissionManualPercent || null
-    },
-    product,
-    option,
-    selectedPriceCatalog,
-    sourceContext,
-    liveQuote
-  };
-
-  const pendingCheckout = {
-    ...(booking.pendingCheckout || {}),
-    finalizedAt: new Date().toISOString(),
-    transactionToken: String(transactionToken || booking.paymentTransactionId || booking.dpoTransactionToken || ""),
-    finalizationStatus: "confirmed_in_bokun",
-    finalizationAttempts: bokunCreateResult.attempts || []
-  };
-
-  const finalized = await persistBookingRecord({
-    context,
-    bokunBooking,
-    existingBooking: booking,
-    paymentStatus: "paid",
-    paymentMethod: paymentMethod || booking.paymentMethod || "pesapal",
-    bookingStatus: bokunBooking.status === "CONFIRMED" ? "confirmed" : "pending",
-    paymentTransactionId: String(transactionToken || booking.paymentTransactionId || booking.dpoTransactionToken || ""),
-    pendingCheckout,
-    requestId,
-    auditAction: "booking_paid_and_confirmed",
-    auditReason: "Payment verified and booking created in Bokun",
-    createPaymentIntent: false,
-    markAmountPaid: true,
-    createCommission: true,
-    paymentProvider
+    source,
+    force
   });
 
-  return {
-    booking: finalized.bookingDoc,
-    response: finalized.response
-  };
+  if (lockResult.alreadyFinalized) {
+    return {
+      booking: lockResult.booking,
+      response: toBookingResponsePayload({ bookingDoc: lockResult.booking })
+    };
+  }
+
+  const booking = lockResult.booking;
+  const lockToken = lockResult.lockToken;
+
+  try {
+    const { product, option, selectedPriceCatalog } = await getProductAndOption({
+      productId: checkoutPayload.productId,
+      optionId: checkoutPayload.optionId,
+      priceCatalogId: checkoutPayload.priceCatalogId || ""
+    });
+
+    const liveQuote = await getLiveQuote({
+      productId: checkoutPayload.productId,
+      optionId: checkoutPayload.optionId,
+      priceCatalogId: checkoutPayload.priceCatalogId || "",
+      travelDate: checkoutPayload.travelDate,
+      startTime: checkoutPayload.startTime || "",
+      pax: checkoutPayload.pax,
+      priceCategoryParticipants: checkoutPayload.priceCategoryParticipants || [],
+      extras: checkoutPayload.extras || [],
+      promoCode: checkoutPayload.promoCode || "",
+      requestId
+    });
+
+    const bokunCreateResult = await createBookingInBokunWithReliability({
+      checkoutPayload,
+      liveQuote,
+      requestId,
+      bookingReference: booking.bookingReference
+    });
+    const bokunBooking = bokunCreateResult.bokunBooking;
+
+    const sourceContext = {
+      sourceChannel: booking.sourceChannel || "direct_website",
+      createdByRole: booking.createdByRole || "customer",
+      createdByUser: booking.createdByUser || { id: null, name: "Guest" },
+      agentId: booking.agentId || null
+    };
+
+    const context = {
+      payloadWithCatalog: {
+        ...checkoutPayload,
+        bookingQuestions: checkoutPayload.bookingQuestions || [],
+        commissionManualPercent: booking.pendingCheckout?.commissionManualPercent || null
+      },
+      product,
+      option,
+      selectedPriceCatalog,
+      sourceContext,
+      liveQuote
+    };
+
+    const finalizationState = {
+      ...(booking.pendingCheckout?.finalization || {}),
+      idempotencyKey,
+      status: FINALIZATION_STATUS.CONFIRMED,
+      finalizationPending: false,
+      processingCompletedAt: toIsoNow(),
+      finalizationAttempts: bokunCreateResult.attempts || [],
+      nextRetryAt: ""
+    };
+
+    delete finalizationState.lockToken;
+    delete finalizationState.lockedAt;
+    delete finalizationState.lastError;
+
+    const pendingCheckout = {
+      ...(booking.pendingCheckout || {}),
+      finalizedAt: toIsoNow(),
+      transactionToken: String(transactionToken || booking.paymentTransactionId || booking.dpoTransactionToken || ""),
+      finalizationStatus: "confirmed_in_bokun",
+      finalizationAttempts: bokunCreateResult.attempts || [],
+      finalization: finalizationState
+    };
+
+    const finalized = await persistBookingRecord({
+      context,
+      bokunBooking,
+      existingBooking: booking,
+      paymentStatus: "paid",
+      paymentMethod: paymentMethod || booking.paymentMethod || "pesapal",
+      bookingStatus: bokunBooking.status === "CONFIRMED" ? "confirmed" : "pending",
+      paymentTransactionId: String(transactionToken || booking.paymentTransactionId || booking.dpoTransactionToken || ""),
+      pendingCheckout,
+      requestId,
+      auditAction: "booking_paid_and_confirmed",
+      auditReason,
+      createPaymentIntent: false,
+      markAmountPaid: true,
+      createCommission: true,
+      paymentProvider
+    });
+
+    return {
+      booking: finalized.bookingDoc,
+      response: finalized.response
+    };
+  } catch (error) {
+    const errorMeta = extractFinalizationMetaFromError(error);
+    const attemptCount = Number(booking.pendingCheckout?.finalization?.attemptCount || 1);
+    const maxRetries = Math.max(1, Number(env.BOOKING_FINALIZATION_MAX_RETRIES || 8));
+    const allowRetry = errorMeta.isPendingRetry && attemptCount < maxRetries;
+    const status = allowRetry ? FINALIZATION_STATUS.PENDING_RETRY : FINALIZATION_STATUS.FAILED;
+    const nextRetryAt = allowRetry ? calculateNextFinalizationRetryAt(attemptCount) : "";
+
+    await releaseFinalizationLock({
+      bookingId: booking._id,
+      lockToken,
+      status,
+      nextRetryAt,
+      errorMeta
+    });
+
+    if (allowRetry && errorMeta.code !== "BOKUN_FINALIZATION_PENDING") {
+      throw new AppError(
+        "Payment verified but Bokun confirmation is still processing. Please retry shortly.",
+        502,
+        "BOKUN_FINALIZATION_PENDING",
+        {
+          bookingReference: booking.bookingReference,
+          attempts: errorMeta.attempts || [],
+          lastError: {
+            code: errorMeta.code,
+            statusCode: errorMeta.statusCode || null,
+            message: errorMeta.message
+          },
+          nextRetryAt
+        }
+      );
+    }
+
+    if (!allowRetry && errorMeta.code === "BOKUN_FINALIZATION_PENDING") {
+      throw new AppError(
+        "Bokun finalization retries are exhausted for this booking. Review payload and retry from admin recovery tools.",
+        502,
+        "BOKUN_FINALIZATION_RETRIES_EXHAUSTED",
+        {
+          bookingReference: booking.bookingReference,
+          attempts: errorMeta.attempts || [],
+          lastError: {
+            code: errorMeta.code,
+            statusCode: errorMeta.statusCode || null,
+            message: errorMeta.message
+          }
+        }
+      );
+    }
+
+    throw error;
+  }
 };
 
 const markBookingPaymentFailed = async ({
@@ -1475,12 +1785,218 @@ const bookingStats = async () => {
   };
 };
 
+const listPendingFinalizations = async ({ limit = 20, includeProcessing = true, force = false } = {}) => {
+  const safeLimit = Math.max(1, Math.min(100, Number(limit || 20)));
+  const query = includeProcessing
+    ? {
+        paymentStatus: "paid",
+        $or: [{ bokunBookingId: { $exists: false } }, { bokunBookingId: "" }],
+        "pendingCheckout.checkoutPayload": { $exists: true }
+      }
+    : buildPendingFinalizationQuery({
+        force,
+        nowIso: toIsoNow()
+      });
+
+  const bookings = await Booking.find(query)
+    .select(
+      "bookingReference productTitle optionTitle travelDate startTime paymentStatus bookingStatus amount currency paymentTransactionId dpoTransactionToken bokunBookingId pendingCheckout.finalization pendingCheckout.checkoutPayload"
+    )
+    .sort({
+      "pendingCheckout.finalization.nextRetryAt": 1,
+      updatedAt: 1
+    })
+    .limit(safeLimit)
+    .lean();
+
+  return bookings.map((booking) => ({
+    bookingId: booking._id,
+    bookingReference: booking.bookingReference,
+    productTitle: booking.productTitle,
+    optionTitle: booking.optionTitle,
+    travelDate: booking.travelDate,
+    startTime: booking.startTime || "",
+    paymentStatus: booking.paymentStatus,
+    bookingStatus: booking.bookingStatus,
+    amount: Number(booking.amount || 0),
+    currency: booking.currency || "USD",
+    hasPendingCheckout: Boolean(booking.pendingCheckout?.checkoutPayload),
+    hasPaymentToken: Boolean(booking.paymentTransactionId || booking.dpoTransactionToken),
+    finalization: {
+      status: booking.pendingCheckout?.finalization?.status || FINALIZATION_STATUS.IDLE,
+      attemptCount: Number(booking.pendingCheckout?.finalization?.attemptCount || 0),
+      nextRetryAt: booking.pendingCheckout?.finalization?.nextRetryAt || "",
+      lastError: booking.pendingCheckout?.finalization?.lastError || null,
+      finalizationPending: Boolean(booking.pendingCheckout?.finalization?.finalizationPending)
+    }
+  }));
+};
+
+const retryBookingFinalization = async ({ bookingId, auth, requestId, force = false } = {}) => {
+  const booking = await Booking.findById(bookingId);
+  if (!booking) {
+    throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
+  }
+
+  if (booking.bokunBookingId) {
+    return {
+      status: "already_confirmed",
+      booking: toBookingResponsePayload({ bookingDoc: booking })
+    };
+  }
+
+  if (booking.paymentStatus !== "paid") {
+    throw new AppError(
+      "Only paid bookings can be finalized in Bokun",
+      409,
+      "BOOKING_NOT_PAID_FOR_FINALIZATION"
+    );
+  }
+
+  const finalized = await finalizePendingBookingAfterPayment({
+    bookingId: booking._id,
+    transactionToken: String(booking.paymentTransactionId || booking.dpoTransactionToken || ""),
+    paymentMethod: booking.paymentMethod || "pending",
+    paymentProvider: booking.paymentMethod === "dpo" ? "dpo" : "pesapal",
+    requestId,
+    source: "admin_manual_retry",
+    force,
+    auditReason: "Admin manually retried Bokun booking finalization"
+  });
+
+  await AuditLog.create({
+    actorId: auth?.id || null,
+    actorRole: auth?.role || "staff",
+    action: "booking_finalization_retry_triggered",
+    entityType: "Booking",
+    entityId: booking._id.toString(),
+    reason: "Manual admin retry for Bokun finalization",
+    requestId,
+    metadata: {
+      force: Boolean(force),
+      bookingReference: booking.bookingReference
+    }
+  });
+
+  return {
+    status: "confirmed",
+    booking: finalized.response
+  };
+};
+
+const reconcilePendingFinalizations = async ({
+  limit = 20,
+  auth = null,
+  requestId = "",
+  force = false,
+  source = "admin_reconciliation"
+} = {}) => {
+  const safeLimit = Math.max(
+    1,
+    Math.min(200, Number(limit || env.BOOKING_FINALIZATION_RETRY_BATCH_SIZE || 20))
+  );
+  const candidates = await Booking.find(
+    buildPendingFinalizationQuery({
+      force,
+      nowIso: toIsoNow()
+    })
+  )
+    .sort({
+      "pendingCheckout.finalization.nextRetryAt": 1,
+      updatedAt: 1
+    })
+    .limit(safeLimit);
+
+  const summary = {
+    requested: safeLimit,
+    processed: 0,
+    confirmed: 0,
+    pendingRetry: 0,
+    inProgress: 0,
+    failed: 0
+  };
+
+  const results = [];
+
+  for (const booking of candidates) {
+    summary.processed += 1;
+
+    try {
+      const finalized = await finalizePendingBookingAfterPayment({
+        bookingId: booking._id,
+        transactionToken: String(booking.paymentTransactionId || booking.dpoTransactionToken || ""),
+        paymentMethod: booking.paymentMethod || "pending",
+        paymentProvider: booking.paymentMethod === "dpo" ? "dpo" : "pesapal",
+        requestId,
+        source,
+        force,
+        auditReason: "Booking reconciled after delayed Bokun finalization"
+      });
+
+      summary.confirmed += 1;
+      results.push({
+        bookingId: booking._id.toString(),
+        bookingReference: booking.bookingReference,
+        status: "confirmed",
+        bokunBookingId: finalized.response?.bokunBookingId || ""
+      });
+    } catch (error) {
+      const code = String(error?.code || "");
+      const meta = extractFinalizationMetaFromError(error);
+
+      if (code === "BOOKING_FINALIZATION_IN_PROGRESS") {
+        summary.inProgress += 1;
+      } else if (code === "BOKUN_FINALIZATION_PENDING") {
+        summary.pendingRetry += 1;
+      } else {
+        summary.failed += 1;
+      }
+
+      results.push({
+        bookingId: booking._id.toString(),
+        bookingReference: booking.bookingReference,
+        status:
+          code === "BOOKING_FINALIZATION_IN_PROGRESS"
+            ? "in_progress"
+            : code === "BOKUN_FINALIZATION_PENDING"
+              ? "pending_retry"
+              : "failed",
+        errorCode: code || meta.code || "UNKNOWN_ERROR",
+        errorMessage: meta.message || error.message || "Finalization failed"
+      });
+    }
+  }
+
+  await AuditLog.create({
+    actorId: auth?.id || null,
+    actorRole: auth?.role || "system",
+    action: "booking_finalization_reconciliation_run",
+    entityType: "Booking",
+    entityId: "batch",
+    reason: "Booking finalization reconciliation executed",
+    requestId,
+    metadata: {
+      source,
+      force: Boolean(force),
+      summary
+    }
+  });
+
+  return {
+    summary,
+    results
+  };
+};
+
 module.exports = {
   quoteBooking,
   createBooking,
   preparePendingPaymentBooking,
   finalizePendingBookingAfterPayment,
   markBookingPaymentFailed,
+  listPendingFinalizations,
+  retryBookingFinalization,
+  reconcilePendingFinalizations,
   getBookingByReference,
   listRecentBookings,
   cancelBooking,

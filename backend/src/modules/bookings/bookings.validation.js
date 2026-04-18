@@ -134,9 +134,41 @@ const editBookingSchema = z.object({
   query: z.object({}).optional()
 });
 
+const listPendingFinalizationsSchema = z.object({
+  params: z.object({}).optional(),
+  body: z.object({}).optional(),
+  query: z.object({
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+    includeProcessing: z.enum(["true", "false"]).optional(),
+    force: z.enum(["true", "false"]).optional()
+  }).optional()
+});
+
+const retryFinalizationSchema = z.object({
+  params: z.object({
+    id: z.string().min(3)
+  }),
+  body: z.object({
+    force: z.boolean().optional()
+  }).optional(),
+  query: z.object({}).optional()
+});
+
+const reconcileFinalizationsSchema = z.object({
+  params: z.object({}).optional(),
+  body: z.object({
+    limit: z.number().int().min(1).max(200).optional(),
+    force: z.boolean().optional()
+  }).optional(),
+  query: z.object({}).optional()
+});
+
 module.exports = {
   quoteSchema,
   createBookingSchema,
   cancelBookingSchema,
-  editBookingSchema
+  editBookingSchema,
+  listPendingFinalizationsSchema,
+  retryFinalizationSchema,
+  reconcileFinalizationsSchema
 };

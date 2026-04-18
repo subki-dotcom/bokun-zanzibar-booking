@@ -85,6 +85,52 @@ const stats = asyncHandler(async (_req, res) => {
   });
 });
 
+const listPendingFinalizations = asyncHandler(async (req, res) => {
+  const query = req.validated?.query || req.query || {};
+  const data = await bookingService.listPendingFinalizations({
+    limit: Number(query.limit || 20),
+    includeProcessing: query.includeProcessing === undefined ? true : String(query.includeProcessing) !== "false",
+    force: String(query.force || "false") === "true"
+  });
+
+  return successResponse(res, {
+    message: "Pending booking finalizations fetched",
+    data,
+    meta: {
+      count: data.length
+    }
+  });
+});
+
+const retryFinalization = asyncHandler(async (req, res) => {
+  const data = await bookingService.retryBookingFinalization({
+    bookingId: req.params.id,
+    auth: req.auth || null,
+    requestId: req.requestId,
+    force: Boolean(req.validated?.body?.force)
+  });
+
+  return successResponse(res, {
+    message: "Booking finalization retry executed",
+    data
+  });
+});
+
+const reconcileFinalizations = asyncHandler(async (req, res) => {
+  const data = await bookingService.reconcilePendingFinalizations({
+    limit: Number(req.validated?.body?.limit || 20),
+    force: Boolean(req.validated?.body?.force),
+    auth: req.auth || null,
+    requestId: req.requestId,
+    source: "admin_reconciliation"
+  });
+
+  return successResponse(res, {
+    message: "Booking finalization reconciliation executed",
+    data
+  });
+});
+
 module.exports = {
   quote,
   create,
@@ -92,5 +138,8 @@ module.exports = {
   listRecent,
   cancel,
   editRequest,
-  stats
+  stats,
+  listPendingFinalizations,
+  retryFinalization,
+  reconcileFinalizations
 };

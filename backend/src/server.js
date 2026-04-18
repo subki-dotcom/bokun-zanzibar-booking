@@ -5,6 +5,10 @@ const connectDB = require("./config/db");
 const { env, isBokunConfigured, isPesapalConfigured, isDpoConfigured } = require("./config/env");
 const logger = require("./config/logger");
 const { startBookingSyncPoller, stopBookingSyncPoller } = require("./jobs/bookingSync.job");
+const {
+  startBookingFinalizationPoller,
+  stopBookingFinalizationPoller
+} = require("./jobs/bookingFinalization.job");
 
 const bootstrap = async () => {
   await connectDB();
@@ -21,15 +25,18 @@ const bootstrap = async () => {
       }
     });
     startBookingSyncPoller();
+    startBookingFinalizationPoller();
   });
 };
 
 process.on("SIGINT", () => {
   stopBookingSyncPoller();
+  stopBookingFinalizationPoller();
 });
 
 process.on("SIGTERM", () => {
   stopBookingSyncPoller();
+  stopBookingFinalizationPoller();
 });
 
 bootstrap();

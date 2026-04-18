@@ -67,6 +67,10 @@ Required backend vars:
 - `BOKUN_BOOKING_SYNC_ENABLED`
 - `BOKUN_BOOKING_SYNC_INTERVAL_SECONDS`
 - `BOKUN_BOOKING_SYNC_BATCH_SIZE`
+- `BOOKING_FINALIZATION_RETRY_ENABLED`
+- `BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS`
+- `BOOKING_FINALIZATION_RETRY_BATCH_SIZE`
+- `BOOKING_FINALIZATION_MAX_RETRIES`
 - `PESAPAL_BASE_URL`
 - `PESAPAL_AUTH_PATH`
 - `PESAPAL_SUBMIT_ORDER_PATH`
@@ -200,6 +204,9 @@ Behavior:
 - `POST /api/bookings/:id/edit-request`
 - `GET /api/bookings/recent`
 - `GET /api/bookings/stats`
+- `GET /api/bookings/finalization/pending` (admin/staff)
+- `POST /api/bookings/:id/finalization/retry` (admin/staff)
+- `POST /api/bookings/finalization/reconcile` (admin/staff)
 
 ### Admin + Agent + Ops
 - `GET /api/reports/dashboard-summary`
@@ -247,6 +254,16 @@ Behavior:
 - Manual fallback trigger (admin/staff): `POST /api/webhooks/bokun/poll`
 
 The sync updates local booking snapshots (status/date/time/confirmation) from Bokun changes while keeping Bokun as source of truth.
+
+## Booking Finalization Reliability Pack
+
+- Idempotent lock per booking finalization attempt (`pendingCheckout.finalization`).
+- Safe retries with `nextRetryAt` + capped `BOOKING_FINALIZATION_MAX_RETRIES`.
+- Admin recovery APIs for listing stuck paid bookings and retrying safely.
+- Optional background reconciler:
+  - `BOOKING_FINALIZATION_RETRY_ENABLED=true`
+  - `BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS=180`
+  - `BOOKING_FINALIZATION_RETRY_BATCH_SIZE=20`
 
 ## Bokun Integration Files
 

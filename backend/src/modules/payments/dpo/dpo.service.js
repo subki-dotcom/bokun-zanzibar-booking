@@ -100,6 +100,29 @@ const postDpoXml = async (xml, requestId) => {
   }
 };
 
+const extractBokunFinalizationErrorMeta = (error = null) => {
+  const statusCode = Number(error?.statusCode || error?.details?.statusCode || 0);
+  return {
+    code: String(error?.code || "UNKNOWN_ERROR"),
+    statusCode: Number.isFinite(statusCode) ? statusCode : 0,
+    message: String(error?.message || "Bokun finalization error"),
+    attempts: Array.isArray(error?.details?.attempts) ? error.details.attempts : []
+  };
+};
+
+const isBokunFinalizationPendingError = (error = null) => {
+  const details = extractBokunFinalizationErrorMeta(error);
+  if (details.code === "BOKUN_FINALIZATION_PENDING") {
+    return true;
+  }
+
+  if (details.code !== "BOKUN_REQUEST_FAILED") {
+    return false;
+  }
+
+  return details.statusCode >= 500;
+};
+
 const validateAmountAndCurrency = ({ booking, amount, currency }) => {
   if (!booking) {
     throw new AppError("Booking is required", 400, "BOOKING_REQUIRED");
@@ -446,7 +469,8 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
         bookingId: booking._id,
         requestId,
         reason: verification.resultExplanation || "DPO payment was not successful",
-        transactionToken
+        transactionToken,
+        paymentMethod: "dpo"
       });
 
       await updatePaymentLogForVerification({
@@ -472,7 +496,11 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
     const finalized = await bookingsService.finalizePendingBookingAfterPayment({
       bookingId: booking._id,
       transactionToken,
-      requestId
+      requestId,
+      paymentMethod: "dpo",
+      paymentProvider: "dpo",
+      source: "dpo_callback",
+      auditReason: "DPO payment verified and booking created in Bokun"
     });
 
     await updatePaymentLogForVerification({
@@ -488,19 +516,83 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
       booking: finalized.response
     };
   } catch (error) {
+    const finalizationMeta = extractBokunFinalizationErrorMeta(error);
+    const isPendingFinalization = isBokunFinalizationPendingError(error);
     const bookingAfterError = await Booking.findById(booking._id);
-    if (bookingAfterError && bookingAfterError.paymentStatus !== "paid") {
-      bookingAfterError.bookingStatus = "failed";
-      bookingAfterError.paymentStatus = "failed";
+    if (bookingAfterError) {
+      if (isPendingFinalization) {
+        bookingAfterError.bookingStatus = bookingAfterError.bokunBookingId
+          ? bookingAfterError.bookingStatus
+          : "pending";
+        bookingAfterError.paymentStatus = "paid";
+      } else if (bookingAfterError.paymentStatus !== "paid") {
+        bookingAfterError.bookingStatus = "failed";
+        bookingAfterError.paymentStatus = "failed";
+      }
+
       bookingAfterError.pendingCheckout = {
         ...(bookingAfterError.pendingCheckout || {}),
         finalizationErrorAt: new Date().toISOString(),
-        finalizationError: error.message
+        finalizationError: finalizationMeta.message,
+        finalizationErrorCode: finalizationMeta.code,
+        finalizationErrorStatusCode: finalizationMeta.statusCode || null,
+        finalizationPending: isPendingFinalization,
+        finalizationAttempts:
+          finalizationMeta.attempts.length > 0
+            ? finalizationMeta.attempts
+            : bookingAfterError.pendingCheckout?.finalizationAttempts || []
       };
       await bookingAfterError.save();
     }
 
-    throw error;
+    await updatePaymentLogForVerification({
+      bookingReference: booking.bookingReference,
+      isPaid: isPendingFinalization,
+      amount: isPendingFinalization ? Number(booking.amount || 0) : 0,
+      verification: {
+        status: isPendingFinalization ? "PAID_PENDING_BOKUN_FINALIZATION" : "FINALIZATION_ERROR",
+        statusDescription: finalizationMeta.message,
+        raw: {
+          error: finalizationMeta.message,
+          code: finalizationMeta.code,
+          statusCode: finalizationMeta.statusCode,
+          attempts: finalizationMeta.attempts
+        }
+      }
+    });
+
+    if (isPendingFinalization) {
+      logger.warn("DPO payment verified but Bokun finalization is pending", {
+        requestId,
+        bookingId: booking._id.toString(),
+        bookingReference: booking.bookingReference,
+        errorCode: finalizationMeta.code,
+        statusCode: finalizationMeta.statusCode
+      });
+
+      return {
+        status: "paid_pending_finalization",
+        message:
+          "Payment verified. Bokun confirmation is pending due to a temporary sync issue. Please retry shortly.",
+        booking: {
+          bookingId: booking._id,
+          bookingReference: booking.bookingReference,
+          paymentStatus: "paid",
+          bookingStatus: bookingAfterError?.bokunBookingId ? bookingAfterError.bookingStatus : "pending"
+        }
+      };
+    }
+
+    return {
+      status: "failed",
+      message: finalizationMeta.message || "Payment verification failed before Bokun confirmation",
+      booking: {
+        bookingId: booking._id,
+        bookingReference: booking.bookingReference,
+        paymentStatus: "failed",
+        bookingStatus: "failed"
+      }
+    };
   } finally {
     await Booking.findByIdAndUpdate(booking._id, {
       $set: {
@@ -538,7 +630,8 @@ const handlePaymentCancel = async ({ transactionToken = "", bookingId = "", requ
     bookingId: booking._id,
     requestId,
     reason: "Customer cancelled DPO payment",
-    transactionToken
+    transactionToken,
+    paymentMethod: "dpo"
   });
 
   await paymentsService.updatePaymentByBookingReference({

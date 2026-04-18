@@ -7,7 +7,10 @@ const {
   quoteSchema,
   createBookingSchema,
   cancelBookingSchema,
-  editBookingSchema
+  editBookingSchema,
+  listPendingFinalizationsSchema,
+  retryFinalizationSchema,
+  reconcileFinalizationsSchema
 } = require("./bookings.validation");
 
 const router = express.Router();
@@ -33,6 +36,27 @@ router.get(
   authenticate,
   authorize("super_admin", "admin", "staff"),
   bookingController.stats
+);
+router.get(
+  "/finalization/pending",
+  authenticate,
+  authorize("super_admin", "admin", "staff"),
+  validateRequest(listPendingFinalizationsSchema),
+  bookingController.listPendingFinalizations
+);
+router.post(
+  "/finalization/reconcile",
+  authenticate,
+  authorize("super_admin", "admin", "staff"),
+  validateRequest(reconcileFinalizationsSchema),
+  bookingController.reconcileFinalizations
+);
+router.post(
+  "/:id/finalization/retry",
+  authenticate,
+  authorize("super_admin", "admin", "staff"),
+  validateRequest(retryFinalizationSchema),
+  bookingController.retryFinalization
 );
 router.get("/:reference", bookingController.getByReference);
 router.post(
