@@ -6,13 +6,15 @@ const ConfirmActionRow = ({
   confirmLabel = "Confirm & Pay",
   loadingLabel = "Redirecting to payment...",
   onBack,
-  onConfirm
+  onConfirm,
+  confirmIcon = null
 }) => (
   <div className="review-action-row">
     <Button variant="outline-secondary" onClick={onBack} disabled={submitting}>
       Back
     </Button>
     <Button className="premium-btn text-white" onClick={onConfirm} disabled={submitting || disableConfirm}>
+      {!submitting && confirmIcon ? <span className="confirm-action-icon">{confirmIcon}</span> : null}
       {submitting ? loadingLabel : confirmLabel}
     </Button>
   </div>

@@ -68,7 +68,8 @@ const bookingSchema = new mongoose.Schema(
       email: String,
       phone: String,
       country: String,
-      hotelName: String
+      hotelName: String,
+      pickupPlaceId: String
     },
     sourceChannel: { type: String, default: "direct_website" },
     createdByRole: { type: String, default: "customer" },
@@ -126,16 +127,20 @@ const bookingSchema = new mongoose.Schema(
 bookingSchema.index(
   { paymentTransactionId: 1 },
   {
-    sparse: true,
-    unique: true
+    unique: true,
+    partialFilterExpression: {
+      paymentTransactionId: { $type: "string" }
+    }
   }
 );
 
 bookingSchema.index(
   { dpoTransactionToken: 1 },
   {
-    sparse: true,
-    unique: true
+    unique: true,
+    partialFilterExpression: {
+      dpoTransactionToken: { $type: "string" }
+    }
   }
 );
 

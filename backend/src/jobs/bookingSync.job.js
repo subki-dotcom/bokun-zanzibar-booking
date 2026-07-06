@@ -1,6 +1,6 @@
 const { env } = require("../config/env");
 const logger = require("../config/logger");
-const webhooksService = require("../modules/webhooks/webhooks.service");
+const webhooksService = require("../services/webhooks");
 
 let pollTimer = null;
 

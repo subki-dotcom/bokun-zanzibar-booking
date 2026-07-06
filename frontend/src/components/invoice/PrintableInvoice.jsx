@@ -1,89 +1,163 @@
 import Table from "react-bootstrap/Table";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 
+const DetailBlock = ({ title, children }) => (
+  <div className="invoice-detail-block">
+    <small>{title}</small>
+    {children}
+  </div>
+);
+
+const InvoiceMeta = ({ label, value }) => (
+  <div>
+    <span>{label}</span>
+    <strong>{value || "-"}</strong>
+  </div>
+);
+
+const InvoiceStatusBadge = ({ status = "" }) => {
+  const normalized = String(status || "").toLowerCase();
+  const label = normalized === "paid" ? "Paid" : normalized === "failed" ? "Failed" : "Payment Pending";
+  const className = normalized === "paid" ? "is-paid" : normalized === "failed" ? "is-failed" : "is-pending";
+
+  return <span className={`invoice-status-badge ${className}`}>{label}</span>;
+};
+
 const PrintableInvoice = ({ invoice }) => {
   if (!invoice) {
     return null;
   }
 
+  const currency = invoice.currency || "USD";
+  const itemQuantity = Math.max(1, Number(invoice.totalPax || invoice.adults || 1));
+  const itemTotal = Number(invoice.subtotal || invoice.total || 0);
+  const items = [
+    {
+      label: invoice.tourName || "Tour package",
+      description: invoice.bookedOption || "",
+      quantity: itemQuantity,
+      unitPrice: itemQuantity > 0 ? itemTotal / itemQuantity : itemTotal,
+      total: itemTotal
+    }
+  ];
+
   return (
-    <div className="invoice-paper">
-      <div className="d-flex justify-content-between align-items-start mb-4">
-        <div>
-          <h3 className="mb-1">Invoice</h3>
-          <div className="text-muted">{invoice.invoiceNumber}</div>
+    <article className="invoice-paper">
+      <header className="invoice-modern-header">
+        <div className="invoice-brand-block">
+          <div className="invoice-brand-mark">R</div>
+          <div>
+            <h1>Riser Tours & Safaris</h1>
+            <p>Stone Town, Zanzibar</p>
+          </div>
         </div>
-        <div className="text-end">
-          <div className="fw-semibold">Zanzibar Premium Experiences</div>
-          <small className="text-muted">Stone Town, Zanzibar</small>
-        </div>
-      </div>
 
-      <div className="row g-3 mb-4">
-        <div className="col-md-6">
-          <small className="text-muted d-block">Client</small>
-          <div>{invoice.clientName}</div>
-          <div>{invoice.clientEmail}</div>
-          <div>{invoice.clientPhone}</div>
+        <div className="invoice-title-block">
+          <span>Invoice</span>
+          <strong>{invoice.invoiceNumber}</strong>
+          <InvoiceStatusBadge status={invoice.paymentStatus} />
         </div>
-        <div className="col-md-6 text-md-end">
-          <small className="text-muted d-block">Issue Date</small>
-          <div>{formatDate(invoice.issueDate)}</div>
-          <small className="text-muted d-block mt-2">Booking Ref</small>
-          <div>{invoice.bookingReference}</div>
-        </div>
-      </div>
+      </header>
 
-      <Table responsive>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Qty</th>
-            <th className="text-end">Unit</th>
-            <th className="text-end">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(invoice.items || []).map((item, index) => (
-            <tr key={item.label + index}>
-              <td>{item.label}</td>
-              <td>{item.quantity}</td>
-              <td className="text-end">{formatCurrency(item.unitPrice, "USD")}</td>
-              <td className="text-end">{formatCurrency(item.total, "USD")}</td>
+      <section className="invoice-meta-grid">
+        <InvoiceMeta label="Booking Reference" value={invoice.bookingReference} />
+        <InvoiceMeta label="Issue Date" value={formatDate(invoice.issueDate)} />
+        <InvoiceMeta label="Payment Status" value={invoice.paymentStatus} />
+        <InvoiceMeta label="Booking Status" value={invoice.bookingStatus} />
+      </section>
+
+      <section className="invoice-details-grid">
+        <DetailBlock title="Bill To">
+          <strong>{invoice.clientName || "-"}</strong>
+          <span>{invoice.clientEmail || "-"}</span>
+          <span>{invoice.clientPhone || "-"}</span>
+          <span>{invoice.clientCountry || "-"}</span>
+        </DetailBlock>
+
+        <DetailBlock title="Trip">
+          <strong>{invoice.tourName || "-"}</strong>
+          <span>{invoice.bookedOption || "-"}</span>
+          <span>{formatDate(invoice.tourDate)} {invoice.pickupTime ? `at ${invoice.pickupTime}` : ""}</span>
+          <span>{invoice.pickupLocation || invoice.hotelName || "-"}</span>
+        </DetailBlock>
+      </section>
+
+      <section className="invoice-items-section">
+        <div className="invoice-section-title">
+          <h2>Invoice Items</h2>
+          <p>{invoice.totalPax || 0} traveler{Number(invoice.totalPax || 0) === 1 ? "" : "s"}</p>
+        </div>
+
+        <Table responsive className="invoice-modern-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th className="text-end">Unit</th>
+              <th className="text-end">Total</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {items.map((item, index) => (
+              <tr key={`${item.label || "item"}-${index}`}>
+                <td>
+                  <strong>{item.label || "Tour package"}</strong>
+                  {item.description ? <small>{item.description}</small> : null}
+                </td>
+                <td>{item.quantity}</td>
+                <td className="text-end">{formatCurrency(item.unitPrice, currency)}</td>
+                <td className="text-end">{formatCurrency(item.total, currency)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </section>
 
-      <div className="d-flex justify-content-end">
+      <section className="invoice-bottom-grid">
+        <div className="invoice-notes-card">
+          <h2>Notes</h2>
+          <p>{invoice.notes || "Thank you for booking with Riser Tours & Safaris."}</p>
+          <small>
+            {String(invoice.paymentStatus || "").toLowerCase() === "paid"
+              ? "Payment has been confirmed by the payment gateway."
+              : invoice.paymentTerms || "Payment is pending. This invoice is not marked paid until the gateway confirms payment."}
+          </small>
+          <small>{invoice.cancellationPolicy || ""}</small>
+        </div>
+
         <div className="invoice-totals-wrap">
-          <div className="d-flex justify-content-between mb-1">
+          <div>
             <span>Subtotal</span>
-            <span>{formatCurrency(invoice.subtotal, "USD")}</span>
+            <strong>{formatCurrency(invoice.subtotal || 0, currency)}</strong>
           </div>
-          <div className="d-flex justify-content-between mb-1">
+          <div>
             <span>Discount</span>
-            <span>-{formatCurrency(invoice.discount, "USD")}</span>
+            <strong>-{formatCurrency(invoice.discount || 0, currency)}</strong>
           </div>
-          <div className="d-flex justify-content-between mb-1">
+          <div>
             <span>Tax</span>
-            <span>{formatCurrency(invoice.tax, "USD")}</span>
+            <strong>{formatCurrency(invoice.tax || 0, currency)}</strong>
           </div>
-          <div className="d-flex justify-content-between fw-semibold fs-5">
+          <div className="invoice-total-line">
             <span>Total</span>
-            <span>{formatCurrency(invoice.total, "USD")}</span>
+            <strong>{formatCurrency(invoice.total || 0, currency)}</strong>
           </div>
-          <div className="d-flex justify-content-between text-success mt-1">
+          <div className="invoice-paid-line">
             <span>Amount Paid</span>
-            <span>{formatCurrency(invoice.amountPaid, "USD")}</span>
+            <strong>{formatCurrency(invoice.amountPaid || 0, currency)}</strong>
           </div>
-          <div className="d-flex justify-content-between text-danger">
+          <div className="invoice-balance-line">
             <span>Balance Due</span>
-            <span>{formatCurrency(invoice.balanceDue, "USD")}</span>
+            <strong>{formatCurrency(invoice.balanceDue || 0, currency)}</strong>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <footer className="invoice-footer-note">
+        <span>info@risertoursandsafaris.co.tz</span>
+        <span>+255 778 775 044</span>
+      </footer>
+    </article>
   );
 };
 

@@ -1,6 +1,6 @@
 const { env } = require("../config/env");
 const logger = require("../config/logger");
-const bookingsService = require("../modules/bookings/bookings.service");
+const bookingsService = require("../services/bookings");
 
 let finalizationTimer = null;
 

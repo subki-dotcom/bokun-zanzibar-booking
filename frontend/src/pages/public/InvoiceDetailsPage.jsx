@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Container, Button } from "react-bootstrap";
+import { BsPrinter } from "react-icons/bs";
 import { fetchInvoiceByBookingReference } from "../../api/invoicesApi";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
@@ -28,20 +29,26 @@ const InvoiceDetailsPage = () => {
   }, [bookingReference]);
 
   return (
-    <Container className="py-4">
-      {loading ? <Loader message="Loading invoice..." /> : null}
-      <ErrorAlert error={error} />
-      {invoice ? (
-        <>
-          <div className="d-flex justify-content-end mb-3">
-            <Button variant="outline-info" onClick={() => window.print()}>
-              Print Invoice
-            </Button>
-          </div>
-          <PrintableInvoice invoice={invoice} />
-        </>
-      ) : null}
-    </Container>
+    <main className="invoice-page">
+      <Container className="invoice-shell">
+        {loading ? <Loader message="Loading invoice..." /> : null}
+        <ErrorAlert error={error} />
+        {invoice ? (
+          <>
+            <div className="invoice-toolbar">
+              <div>
+                <span>Invoice</span>
+                <strong>{invoice.invoiceNumber}</strong>
+              </div>
+              <Button variant="outline-info" onClick={() => window.print()}>
+                <BsPrinter /> Print Invoice
+              </Button>
+            </div>
+            <PrintableInvoice invoice={invoice} />
+          </>
+        ) : null}
+      </Container>
+    </main>
   );
 };
 

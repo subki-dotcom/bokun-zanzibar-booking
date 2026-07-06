@@ -39,6 +39,18 @@ const liveTourGuideSnapshotSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const pickupPlaceSnapshotSchema = new mongoose.Schema(
+  {
+    id: { type: String, default: "" },
+    title: { type: String, required: true },
+    groupTitle: { type: String, default: "" },
+    address: { type: String, default: "" },
+    latitude: { type: mongoose.Schema.Types.Mixed, default: null },
+    longitude: { type: mongoose.Schema.Types.Mixed, default: null }
+  },
+  { _id: false }
+);
+
 const productSnapshotSchema = new mongoose.Schema(
   {
     bokunProductId: { type: String, required: true, unique: true, index: true },
@@ -54,6 +66,7 @@ const productSnapshotSchema = new mongoose.Schema(
     itinerary: [{ type: String }],
     meetingInfo: { type: String, default: "" },
     pickupInfo: { type: String, default: "" },
+    pickupPlaces: [pickupPlaceSnapshotSchema],
     included: [{ type: String }],
     excluded: [{ type: String }],
     importantInformation: [{ type: String }],
@@ -72,5 +85,8 @@ const productSnapshotSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+productSnapshotSchema.index({ status: 1, updatedAt: -1 });
+productSnapshotSchema.index({ status: 1, categories: 1 });
 
 module.exports = mongoose.model("ProductSnapshot", productSnapshotSchema);

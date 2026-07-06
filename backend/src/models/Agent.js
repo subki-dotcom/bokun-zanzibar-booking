@@ -13,6 +13,13 @@ const agentSchema = new mongoose.Schema(
     role: { type: String, default: ROLES.AGENT, enum: [ROLES.AGENT] },
     phone: { type: String, default: "" },
     country: { type: String, default: "" },
+    address: { type: String, default: "" },
+    agentType: {
+      type: String,
+      enum: ["hotel", "freelancer", "tour_agent", "partner", "other"],
+      default: "partner"
+    },
+    profilePhotoUrl: { type: String, default: "" },
     commissionPercent: { type: Number, default: null },
     productCommissionOverrides: [
       {
@@ -27,6 +34,37 @@ const agentSchema = new mongoose.Schema(
       }
     ],
     payoutTerms: { type: String, default: "monthly" },
+    approvalStatus: {
+      type: String,
+      enum: ["pending", "approved", "suspended"],
+      default: "approved"
+    },
+    termsAcceptedAt: Date,
+    termsVersion: { type: String, default: "" },
+    payoutMethod: {
+      payoutMethod: { type: String, default: "" },
+      accountHolderName: { type: String, default: "" },
+      bankName: { type: String, default: "" },
+      bankAccountNumber: { type: String, default: "" },
+      bankBranch: { type: String, default: "" },
+      mobileMoneyProvider: { type: String, default: "" },
+      mobileMoneyNumber: { type: String, default: "" },
+      paypalEmail: { type: String, default: "" },
+      wiseEmail: { type: String, default: "" },
+      payoutNotes: { type: String, default: "" },
+      updatedAt: Date
+    },
+    settings: {
+      language: { type: String, default: "English" },
+      currency: { type: String, default: "USD" },
+      emailNotifications: { type: Boolean, default: true },
+      whatsappNotifications: { type: Boolean, default: true },
+      bookingNotifications: { type: Boolean, default: true },
+      cancellationNotifications: { type: Boolean, default: true },
+      statementNotifications: { type: Boolean, default: true },
+      statementFrequency: { type: String, default: "monthly" },
+      twoFactorEnabled: { type: Boolean, default: false }
+    },
     isActive: { type: Boolean, default: true },
     notes: { type: String, default: "" }
   },

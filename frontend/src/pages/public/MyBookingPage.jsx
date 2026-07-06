@@ -1,89 +1,193 @@
-import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Form, Button, Badge } from "react-bootstrap";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Badge, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  BsCalendar2Check,
+  BsCashCoin,
+  BsCheckCircle,
+  BsClock,
+  BsEnvelope,
+  BsFileEarmarkText,
+  BsGeoAlt,
+  BsPeople,
+  BsPerson,
+  BsSearch,
+  BsShieldCheck,
+  BsTelephone
+} from "react-icons/bs";
 import { fetchBookingByReference } from "../../api/bookingsApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
 
+const formatDate = (value = "") => {
+  if (!value) return "-";
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "2-digit",
+    year: "numeric"
+  });
+};
+
+const InfoRow = ({ icon, label, value, strong = false }) => (
+  <div className="my-booking-info-row">
+    <span>{icon}</span>
+    <div>
+      <small>{label}</small>
+      <strong className={strong ? "is-strong" : ""}>{value || "-"}</strong>
+    </div>
+  </div>
+);
+
 const BookingDetails = ({ booking }) => {
+  const currency = booking.pricingSnapshot?.currency || booking.currency || "USD";
+  const total = Number(booking.pricingSnapshot?.finalPayable || booking.amount || 0);
+  const amountPaid = Number(booking.invoiceSnapshot?.amountPaid || 0);
+  const balanceDue = Number(booking.invoiceSnapshot?.balanceDue ?? Math.max(0, total - amountPaid));
+  const hasPendingBokun = Boolean(booking.pendingCheckout?.finalizationPending);
+  const travelerName = `${booking.customer?.firstName || ""} ${booking.customer?.lastName || ""}`.trim();
+
+  const statusCopy = hasPendingBokun
+    ? "Payment is verified. Supplier confirmation is still processing and can be retried."
+    : "Your booking details are saved and ready to review.";
+
   return (
-    <Card className="surface-card">
-      <Card.Body>
-        <div className="d-flex flex-wrap gap-2 mb-3">
-          <Badge bg={statusBadgeVariant(booking.bookingStatus)}>{booking.bookingStatus}</Badge>
-          <Badge bg={statusBadgeVariant(booking.paymentStatus)}>{booking.paymentStatus}</Badge>
-        </div>
-
-        <h4 className="mb-2">{booking.productTitle}</h4>
-        <p className="section-subtitle">Option: {booking.optionTitle}</p>
-        <p className="section-subtitle mb-3">Catalog: {booking.priceCatalog?.title || "Default"}</p>
-
-        <div className="row g-3 mb-3">
-          <div className="col-md-6">
-            <small className="text-muted d-block">Reference</small>
-            <div>{booking.bookingReference}</div>
-          </div>
-          <div className="col-md-6">
-            <small className="text-muted d-block">Travel Date</small>
-            <div>
-              {booking.travelDate} {booking.startTime ? `at ${booking.startTime}` : ""}
-            </div>
-          </div>
-          <div className="col-md-6">
-            <small className="text-muted d-block">Client</small>
-            <div>
-              {booking.customer?.firstName} {booking.customer?.lastName}
-            </div>
-            <div>{booking.customer?.email}</div>
-            <div>{booking.customer?.phone}</div>
-          </div>
-          <div className="col-md-6">
-            <small className="text-muted d-block">Pax</small>
-            <div>
-              Adults {booking.paxSummary?.adults} | Children {booking.paxSummary?.children} | Infants {booking.paxSummary?.infants}
-            </div>
+    <div className="my-booking-result">
+      <section className="my-booking-hero">
+        <div>
+          <div className="my-booking-eyebrow">Booking Reference</div>
+          <h1>{booking.bookingReference}</h1>
+          <p>{statusCopy}</p>
+          <div className="my-booking-status-row">
+            <Badge bg={statusBadgeVariant(booking.paymentStatus)}>{booking.paymentStatus || "payment"}</Badge>
+            <Badge bg={statusBadgeVariant(booking.bookingStatus)}>{booking.bookingStatus || "booking"}</Badge>
+            {hasPendingBokun ? <Badge bg="warning" text="dark">Bokun sync pending</Badge> : null}
           </div>
         </div>
-
-        <h6>Extras</h6>
-        {(booking.extras || []).length ? (
-          <ul>
-            {booking.extras.map((extra) => (
-              <li key={extra.code}>
-                {extra.label} x{extra.quantity}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-muted">No extras selected.</p>
-        )}
-
-        <h6>Booking Answers</h6>
-        {(booking.bookingQuestionsSnapshot || []).length ? (
-          <ul>
-            {booking.bookingQuestionsSnapshot.map((answer, index) => (
-              <li key={`${answer.questionId}-${index}`}>
-                {answer.label}: {String(answer.answer)}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-muted">No booking answers captured.</p>
-        )}
-
-        <h6>Payment Summary</h6>
-        <p className="mb-1">Total: {formatCurrency(booking.pricingSnapshot?.finalPayable || 0, "USD")}</p>
-        <p className="mb-1">Amount Paid: {formatCurrency(booking.invoiceSnapshot?.amountPaid || 0, "USD")}</p>
-        <p className="mb-3">Balance Due: {formatCurrency(booking.invoiceSnapshot?.balanceDue || 0, "USD")}</p>
-
-        <div className="d-flex flex-wrap gap-2">
-          <Button as={Link} to={`/invoice/${booking.bookingReference}`} variant="outline-info">
-            View Invoice
-          </Button>
+        <div className="my-booking-total-panel">
+          <small>Total Payable</small>
+          <strong>{formatCurrency(total, currency)}</strong>
+          <span>{booking.paymentMethod || "Payment method pending"}</span>
         </div>
-      </Card.Body>
-    </Card>
+      </section>
+
+      <Row className="g-3 align-items-start">
+        <Col lg={8}>
+          <Card className="my-booking-card">
+            <Card.Body>
+              <div className="my-booking-section-head">
+                <span><BsCalendar2Check /></span>
+                <div>
+                  <h2>Trip Details</h2>
+                  <p>{booking.productTitle}</p>
+                </div>
+              </div>
+
+              <div className="my-booking-info-grid">
+                <InfoRow icon={<BsFileEarmarkText />} label="Selected option" value={booking.optionTitle} strong />
+                <InfoRow icon={<BsCalendar2Check />} label="Travel date" value={formatDate(booking.travelDate)} />
+                <InfoRow icon={<BsClock />} label="Start time" value={booking.startTime || "-"} />
+                <InfoRow
+                  icon={<BsPeople />}
+                  label="Passengers"
+                  value={`Adults ${booking.paxSummary?.adults || 0} | Children ${booking.paxSummary?.children || 0} | Infants ${booking.paxSummary?.infants || 0}`}
+                />
+                <InfoRow icon={<BsGeoAlt />} label="Pickup location" value={booking.customer?.hotelName || booking.invoiceSnapshot?.pickupLocation} strong />
+                <InfoRow icon={<BsShieldCheck />} label="Catalog" value={booking.priceCatalog?.title || "Default"} />
+              </div>
+            </Card.Body>
+          </Card>
+
+          <Card className="my-booking-card">
+            <Card.Body>
+              <div className="my-booking-section-head">
+                <span><BsCashCoin /></span>
+                <div>
+                  <h2>Payment Summary</h2>
+                  <p>Payment and invoice information for this booking</p>
+                </div>
+              </div>
+
+              <div className="my-booking-payment-lines">
+                <div>
+                  <span>Subtotal</span>
+                  <strong>{formatCurrency(booking.invoiceSnapshot?.subtotal || total, currency)}</strong>
+                </div>
+                <div>
+                  <span>Amount Paid</span>
+                  <strong>{formatCurrency(amountPaid, currency)}</strong>
+                </div>
+                <div className="is-total">
+                  <span>Balance Due</span>
+                  <strong>{formatCurrency(balanceDue, currency)}</strong>
+                </div>
+              </div>
+
+              <div className="my-booking-action-row">
+                {booking.paymentStatus !== "paid" ? (
+                  <Button as={Link} to={`/payment/checkout/${booking.bookingReference}`} variant="success">
+                    Pay Now
+                  </Button>
+                ) : null}
+                <Button as={Link} to={`/payment-status/${booking.bookingReference}`} variant="outline-primary">
+                  Track Status
+                </Button>
+                <Button as={Link} to={`/invoice/${booking.bookingReference}`} className="premium-btn text-white">
+                  <BsFileEarmarkText /> View Invoice
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col lg={4}>
+          <div className="my-booking-side-stack">
+            <Card className="my-booking-card">
+              <Card.Body>
+                <div className="my-booking-section-head is-compact">
+                  <span><BsPerson /></span>
+                  <div>
+                    <h2>Customer</h2>
+                    <p>Primary contact</p>
+                  </div>
+                </div>
+
+                <div className="my-booking-contact-list">
+                  <InfoRow icon={<BsPerson />} label="Name" value={travelerName} strong />
+                  <InfoRow icon={<BsEnvelope />} label="Email" value={booking.customer?.email} />
+                  <InfoRow icon={<BsTelephone />} label="Phone" value={booking.customer?.phone} />
+                  <InfoRow icon={<BsGeoAlt />} label="Country" value={booking.customer?.country} />
+                </div>
+              </Card.Body>
+            </Card>
+
+            <Card className="my-booking-help-card">
+              <Card.Body>
+                <h2>Need Help?</h2>
+                <p>Our support team can help with pickup, payment, and supplier confirmation.</p>
+                <div className="my-booking-help-contact">
+                  <span><BsTelephone /></span>
+                  <div>
+                    <small>WhatsApp</small>
+                    <strong>+255 778 775 044</strong>
+                  </div>
+                </div>
+                <div className="my-booking-help-contact">
+                  <span><BsEnvelope /></span>
+                  <div>
+                    <small>Email</small>
+                    <strong>info@risertoursandsafaris.co.tz</strong>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </div>
+        </Col>
+      </Row>
+    </div>
   );
 };
 
@@ -95,6 +199,8 @@ const MyBookingPage = () => {
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(Boolean(referenceParam));
   const [error, setError] = useState("");
+
+  const normalizedReference = useMemo(() => reference.trim().toUpperCase(), [reference]);
 
   const loadBooking = async (bookingReference) => {
     setError("");
@@ -121,38 +227,39 @@ const MyBookingPage = () => {
   }, [referenceParam]);
 
   return (
-    <Container className="py-4">
-      <Row className="justify-content-center mb-4">
-        <Col md={8} lg={6}>
-          <Card className="surface-card">
-            <Card.Body>
-              <h4 className="mb-3">Find My Booking</h4>
-              <Form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!reference.trim()) return;
-                  loadBooking(reference.trim());
-                }}
-              >
-                <Form.Control
-                  className="mb-3"
-                  value={reference}
-                  onChange={(event) => setReference(event.target.value.toUpperCase())}
-                  placeholder="Enter booking reference"
-                />
-                <Button type="submit" className="premium-btn text-white w-100">
-                  Search Booking
-                </Button>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+    <main className="my-booking-page">
+      <Container className="my-booking-shell">
+        <section className="my-booking-search-band">
+          <div>
+            <div className="my-booking-eyebrow">Riser Tours & Safaris</div>
+            <h1>My Booking</h1>
+            <p>Review your trip details, payment status, pickup information, and invoice.</p>
+          </div>
 
-      {loading ? <Loader message="Loading booking..." /> : null}
-      <ErrorAlert error={error} />
-      {booking && !loading ? <BookingDetails booking={booking} /> : null}
-    </Container>
+          <Form
+            className="my-booking-search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!normalizedReference) return;
+              loadBooking(normalizedReference);
+            }}
+          >
+            <Form.Control
+              value={reference}
+              onChange={(event) => setReference(event.target.value.toUpperCase())}
+              placeholder="Enter booking reference"
+            />
+            <Button type="submit" className="premium-btn text-white">
+              <BsSearch /> Search
+            </Button>
+          </Form>
+        </section>
+
+        {loading ? <Loader message="Loading booking..." /> : null}
+        <ErrorAlert error={error} />
+        {booking && !loading ? <BookingDetails booking={booking} /> : null}
+      </Container>
+    </main>
   );
 };
 

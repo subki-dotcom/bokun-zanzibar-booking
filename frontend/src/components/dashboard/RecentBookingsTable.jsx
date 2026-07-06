@@ -1,8 +1,9 @@
 import Table from "react-bootstrap/Table";
 import Badge from "react-bootstrap/Badge";
+import Button from "react-bootstrap/Button";
 import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
 
-const RecentBookingsTable = ({ bookings = [] }) => {
+const RecentBookingsTable = ({ bookings = [], onCancel = null }) => {
   return (
     <Table responsive hover>
       <thead>
@@ -13,6 +14,7 @@ const RecentBookingsTable = ({ bookings = [] }) => {
           <th>Status</th>
           <th>Payment</th>
           <th className="text-end">Total</th>
+          {onCancel ? <th className="text-end">Actions</th> : null}
         </tr>
       </thead>
       <tbody>
@@ -30,6 +32,18 @@ const RecentBookingsTable = ({ bookings = [] }) => {
             <td className="text-end">
               {formatCurrency(booking.pricingSnapshot?.finalPayable || booking.pricingSnapshot?.grossAmount || 0, "USD")}
             </td>
+            {onCancel ? (
+              <td className="text-end">
+                <Button
+                  size="sm"
+                  variant="outline-danger"
+                  disabled={booking.bookingStatus === "cancelled"}
+                  onClick={() => onCancel(booking)}
+                >
+                  Cancel
+                </Button>
+              </td>
+            ) : null}
           </tr>
         ))}
       </tbody>

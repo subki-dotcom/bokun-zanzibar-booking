@@ -28,7 +28,12 @@ const CollapsibleInfoBlock = ({ title = "", subtitle = "", defaultOpen = false, 
   </details>
 );
 
-const SingleTourPage = ({ tour = {} }) => {
+const SingleTourPage = ({
+  tour = {},
+  portal = "public",
+  checkoutPath = "",
+  sessionSource = "single_product_page"
+}) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isDesktop, setIsDesktop] = useState(() => {
@@ -338,7 +343,7 @@ const SingleTourPage = ({ tour = {} }) => {
       }) || null;
 
     saveBookingSession({
-      source: "single_product_page",
+      source: sessionSource,
       product: {
         productId: String(tour.bokunProductId || ""),
         slug: tour.slug,
@@ -374,7 +379,8 @@ const SingleTourPage = ({ tour = {} }) => {
       query.set("adults", String(selectedPax.adults));
     }
 
-    navigate(`/booking/${tour.slug}?${query.toString()}`);
+    const resolvedCheckoutPath = checkoutPath || `/booking/${tour.slug}`;
+    navigate(`${resolvedCheckoutPath}?${query.toString()}`);
   };
 
   const selectedOptionStartTime =
@@ -391,7 +397,9 @@ const SingleTourPage = ({ tour = {} }) => {
       passengers: preferredPassengers
     },
     onLiveAvailabilityChecked: handleLiveAvailabilityChecked,
-    hideContinueButton: true
+    hideContinueButton: true,
+    checkoutPath,
+    sessionSource
   };
 
   const handleContinueWithOption = (option, startTime = "") => {
@@ -415,7 +423,7 @@ const SingleTourPage = ({ tour = {} }) => {
   };
 
   return (
-    <section className="single-tour-page py-4 py-lg-5">
+    <section className={`single-tour-page py-4 py-lg-5 ${portal === "agent" ? "agent-tour-booking-page" : ""}`}>
       <Container>
         <Row className="g-4 g-xl-5">
           <Col lg={8}>

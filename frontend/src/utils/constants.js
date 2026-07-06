@@ -6,10 +6,7 @@ export const ROLES = {
 };
 
 export const BOOKING_STEPS = [
-  "Select Option",
-  "Date & Availability",
-  "Pax & Extras",
-  "Booking Questions",
+  "Trip Details",
   "Customer Details",
   "Review & Confirm",
   "Confirmation"

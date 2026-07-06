@@ -10,6 +10,11 @@ export const registerAdminSeed = async (payload) => {
   return response.data.data;
 };
 
+export const registerAgent = async (payload) => {
+  const response = await axiosClient.post("/auth/register-agent", payload);
+  return response.data.data;
+};
+
 export const fetchCurrentProfile = async () => {
   const response = await axiosClient.get("/auth/me");
   return response.data.data;

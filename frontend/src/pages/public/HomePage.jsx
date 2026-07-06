@@ -67,7 +67,7 @@ const HomePage = () => {
   }, [tourRows]);
 
   const featuredTours = useMemo(() => pickFeaturedTours(mappedTours, 6), [mappedTours]);
-  const bestSellerTours = useMemo(() => pickBestSellerTours(mappedTours, 8), [mappedTours]);
+  const bestSellerTours = useMemo(() => pickBestSellerTours(mappedTours, 10), [mappedTours]);
   const categories = useMemo(() => buildCategoryCards(categoryRows), [categoryRows]);
 
   const handleHeroSearch = (queryString = "") => {

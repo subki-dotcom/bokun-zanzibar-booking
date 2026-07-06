@@ -2,10 +2,10 @@
   "name": "zanzibar-booking-backend",
   "version": "1.0.0",
   "description": "Production-ready Bokun integration backend for Zanzibar tours",
-  "main": "src/server.js",
+  "main": "server.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
+    "dev": "nodemon server.js",
+    "start": "node server.js",
     "seed:admin": "node scripts/seedAdmin.js"
   },
   "dependencies": {
@@ -13,6 +13,7 @@
     "axios-retry": "^4.5.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "country-telephone-data": "^0.6.3",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",

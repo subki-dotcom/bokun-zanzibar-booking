@@ -6,9 +6,9 @@ import useBookingFlow from "../../hooks/useBookingFlow";
 import { fetchTourBySlug } from "../../api/toursApi";
 import {
   fetchAvailability,
-  fetchBookingQuestions,
   createQuote
 } from "../../api/bookingsApi";
+import { fetchBokunCountries, fetchBokunProductDetails } from "../../api/bokunApi";
 import { createPesapalPayment } from "../../api/paymentsApi";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
@@ -17,7 +17,6 @@ import BookingStepper from "../../components/booking/BookingStepper";
 import BookingSummarySidebar from "../../components/booking/BookingSummarySidebar";
 import CompletedTripDetailsCard from "../../components/booking/CompletedTripDetailsCard";
 import ExtrasStep from "../../components/booking/ExtrasStep";
-import BookingQuestionsStep from "../../components/booking/BookingQuestionsStep";
 import CustomerDetailsStep from "../../components/booking/CustomerDetailsStep";
 import ReviewConfirmStep from "../../components/booking/ReviewConfirmStep";
 import ConfirmationStep from "../../components/booking/ConfirmationStep";
@@ -178,14 +177,41 @@ const mapSessionExtrasToAvailability = (selectedExtras = [], availableExtras = [
     .filter(Boolean);
 };
 
-const BookingFlowInner = () => {
+const mergeLivePickupDetails = (tourData = {}, liveProduct = null) => {
+  if (!liveProduct) {
+    return tourData;
+  }
+
+  const livePickupPlaces = Array.isArray(liveProduct.pickupPlaces) ? liveProduct.pickupPlaces : [];
+  const currentPickupPlaces = Array.isArray(tourData.pickupPlaces) ? tourData.pickupPlaces : [];
+
+  return {
+    ...tourData,
+    pickupInfo: liveProduct.pickupInfo || tourData.pickupInfo || "",
+    pickupPlaces: livePickupPlaces.length ? livePickupPlaces : currentPickupPlaces,
+    options: Array.isArray(liveProduct.options) && liveProduct.options.length ? liveProduct.options : tourData.options,
+    priceCatalogs:
+      Array.isArray(liveProduct.priceCatalogs) && liveProduct.priceCatalogs.length
+        ? liveProduct.priceCatalogs
+        : tourData.priceCatalogs
+  };
+};
+
+const BookingFlowInner = ({ portal = "public" }) => {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { state, updateFlow, hydrateFlow } = useBookingFlow();
+  const isAgentPortal = portal === "agent";
+  const sourceChannel = isAgentPortal ? "agent_portal" : "direct_website";
+  const sessionSource = isAgentPortal ? "agent_portal" : "single_product_page";
+  const productSetupPath = isAgentPortal ? `/agent/new-booking/${slug}` : `/tours/${slug}`;
+  const bookingDetailsPath = (reference = "") =>
+    isAgentPortal ? `/agent/bookings/${reference}` : `/my-booking/${reference}`;
 
   const [tour, setTour] = useState(null);
   const [availability, setAvailability] = useState(null);
+  const [countries, setCountries] = useState([]);
   const [currentStepId, setCurrentStepId] = useState(STEP_IDS.CUSTOMER);
   const [completedStepIds, setCompletedStepIds] = useState([STEP_IDS.TRIP_DETAILS]);
   const [initLoading, setInitLoading] = useState(true);
@@ -214,19 +240,17 @@ const BookingFlowInner = () => {
   }, [searchParams]);
 
   const hasExtras = Boolean((availability?.extras || []).length);
-  const hasQuestions = Boolean((state.questions || []).length);
   const hasConfirmation = Boolean(state.bookingResult);
 
   const steps = useMemo(
     () =>
       buildSmartCheckoutSteps({
         hasExtras,
-        hasQuestions,
         hasConfirmation,
         currentStepId,
         completedStepIds
       }),
-    [hasExtras, hasQuestions, hasConfirmation, currentStepId, completedStepIds]
+    [hasExtras, hasConfirmation, currentStepId, completedStepIds]
   );
 
   const markStepCompleted = useCallback((stepId) => {
@@ -269,8 +293,8 @@ const BookingFlowInner = () => {
 
   const handleChangeTripDetails = useCallback(() => {
     const query = buildTripDetailsQuery();
-    navigate(`/tours/${slug}${query ? `?${query}` : ""}`);
-  }, [buildTripDetailsQuery, navigate, slug]);
+    navigate(`${productSetupPath}${query ? `?${query}` : ""}`);
+  }, [buildTripDetailsQuery, navigate, productSetupPath]);
 
   const buildBookingPayload = useCallback(
     (overrides = {}) => {
@@ -314,7 +338,7 @@ const BookingFlowInner = () => {
       try {
         const quote = await createQuote({
           ...payload,
-          sourceChannel: "direct_website"
+          sourceChannel
         });
 
         updateFlow({
@@ -330,7 +354,7 @@ const BookingFlowInner = () => {
         setQuoteLoading(false);
       }
     },
-    [buildBookingPayload, updateFlow]
+    [buildBookingPayload, sourceChannel, updateFlow]
   );
 
   const initializeCheckout = useCallback(async () => {
@@ -338,8 +362,17 @@ const BookingFlowInner = () => {
     setError("");
 
     try {
-      const tourData = await fetchTourBySlug(slug);
-      setTour(tourData);
+      const [tourData, countryList] = await Promise.all([
+        fetchTourBySlug(slug),
+        fetchBokunCountries().catch(() => [])
+      ]);
+      const liveProduct = tourData?.bokunProductId
+        ? await fetchBokunProductDetails(tourData.bokunProductId, { forceRefresh: true }).catch(() => null)
+        : null;
+      const checkoutTour = mergeLivePickupDetails(tourData, liveProduct);
+
+      setTour(checkoutTour);
+      setCountries(countryList || []);
 
       const session = readBookingSession();
       const sessionValid = hasCompleteTripDetails(session, slug);
@@ -359,7 +392,7 @@ const BookingFlowInner = () => {
       }
 
       const selectedOption =
-        (tourData.options || []).find(
+        (checkoutTour.options || []).find(
           (option) => String(option?.bokunOptionId || "") === String(seededTrip.optionId || "")
         ) || null;
 
@@ -367,7 +400,7 @@ const BookingFlowInner = () => {
         throw new Error("Selected option is not available anymore. Please reselect trip details.");
       }
 
-      const defaultCatalog = resolveDefaultCatalog(tourData.priceCatalogs || [], seededTrip.rateId);
+      const defaultCatalog = resolveDefaultCatalog(checkoutTour.priceCatalogs || [], seededTrip.rateId);
       const initialRateId = String(seededTrip.rateId || defaultCatalog.id || "").trim();
       const initialParticipants = normalizeParticipants(seededTrip.participants || []);
       const initialPax = initialParticipants.length
@@ -376,29 +409,30 @@ const BookingFlowInner = () => {
 
       hydrateFlow({
         selectedProduct: {
-          productId: tourData.bokunProductId,
-          slug: tourData.slug,
-          title: tourData.title
+          productId: checkoutTour.bokunProductId,
+          slug: checkoutTour.slug,
+          title: checkoutTour.title
         },
         option: selectedOption,
         priceCatalogId: initialRateId,
-        priceCatalog: resolveCatalogById(tourData.priceCatalogs || [], initialRateId) || defaultCatalog.catalog,
+        priceCatalog: resolveCatalogById(checkoutTour.priceCatalogs || [], initialRateId) || defaultCatalog.catalog,
         travelDate: seededTrip.travelDate,
         startTime: seededTrip.startTime || "",
         pax: initialPax,
         priceCategoryParticipants: initialParticipants,
         extras: [],
+        pickupPlaces: checkoutTour.pickupPlaces || [],
         questions: [],
         answers: [],
         quote: null,
         bookingResult: null,
         tripDetailsCompleted: true,
         availabilityChecked: false,
-        sourceChannel: "direct_website"
+        sourceChannel
       });
 
       const availabilityPayload = {
-        productId: tourData.bokunProductId,
+        productId: checkoutTour.bokunProductId,
         optionId: selectedOption.bokunOptionId,
         travelDate: seededTrip.travelDate,
         startTime: seededTrip.startTime || "",
@@ -424,7 +458,7 @@ const BookingFlowInner = () => {
         String(availabilityResult?.priceCatalog?.catalogId || initialRateId || "").trim();
       const resolvedCatalog =
         availabilityResult?.priceCatalog ||
-        resolveCatalogById(tourData.priceCatalogs || [], resolvedCatalogId) ||
+        resolveCatalogById(checkoutTour.priceCatalogs || [], resolvedCatalogId) ||
         defaultCatalog.catalog;
 
       const seededExtras = mapSessionExtrasToAvailability(
@@ -441,21 +475,15 @@ const BookingFlowInner = () => {
         extras: seededExtras
       };
 
-      const [quoteResult, questionsResult] = await Promise.all([
-        createQuote({
-          ...quotePayload,
-          sourceChannel: "direct_website"
-        }),
-        fetchBookingQuestions({
-          productId: tourData.bokunProductId,
-          optionId: selectedOption.bokunOptionId,
-          travelDate: seededTrip.travelDate
-        }).catch(() => [])
-      ]);
+      const quoteResult = await createQuote({
+        ...quotePayload,
+        sourceChannel
+      });
+      const questionsResult = [];
 
       const firstActionableStep = resolveFirstActionableStepId({
         hasExtras: Boolean((availabilityResult?.extras || []).length),
-        hasQuestions: Boolean((questionsResult || []).length)
+        hasQuestions: false
       });
 
       updateFlow({
@@ -465,6 +493,7 @@ const BookingFlowInner = () => {
         pax: syncedPax,
         priceCategoryParticipants: syncedParticipants,
         extras: quoteResult?.extras || seededExtras,
+        pickupPlaces: checkoutTour.pickupPlaces || [],
         quote: quoteResult,
         questions: questionsResult || [],
         availabilityChecked: true
@@ -474,11 +503,11 @@ const BookingFlowInner = () => {
       setCurrentStepId(firstActionableStep);
 
       saveBookingSession({
-        source: "single_product_page",
+        source: sessionSource,
         product: {
-          productId: tourData.bokunProductId,
-          slug: tourData.slug,
-          title: tourData.title
+          productId: checkoutTour.bokunProductId,
+          slug: checkoutTour.slug,
+          title: checkoutTour.title
         },
         tripDetails: {
           optionId: selectedOption.bokunOptionId,
@@ -501,7 +530,7 @@ const BookingFlowInner = () => {
       setInitLoading(false);
       setAvailabilityLoading(false);
     }
-  }, [slug, querySeed, hydrateFlow, updateFlow]);
+  }, [slug, querySeed, hydrateFlow, updateFlow, sourceChannel, sessionSource]);
 
   const handleToggleExtra = (extra) => {
     const code = String(extra?.code || "");
@@ -556,11 +585,6 @@ const BookingFlowInner = () => {
     handleGoNext();
   };
 
-  const handleQuestionsContinue = () => {
-    markStepCompleted(STEP_IDS.QUESTIONS);
-    handleGoNext();
-  };
-
   const handleCustomerContinue = async () => {
     const quote = await refreshLiveQuote();
     if (!quote) {
@@ -594,6 +618,7 @@ const BookingFlowInner = () => {
         quoteToken: state.quote.quoteToken,
         bookingQuestions: state.answers,
         customer: state.customer,
+        sourceChannel,
         paymentMethod: "pesapal",
         amount: totalAmount,
         currency
@@ -615,7 +640,7 @@ const BookingFlowInner = () => {
       }
 
       if (result.bookingReference) {
-        navigate(`/my-booking/${result.bookingReference}`);
+        navigate(bookingDetailsPath(result.bookingReference));
         clearBookingSession();
       } else {
         throw new Error("Payment redirect URL was not returned.");
@@ -652,23 +677,6 @@ const BookingFlowInner = () => {
       );
     }
 
-    if (currentStepId === STEP_IDS.QUESTIONS) {
-      return (
-        <BookingQuestionsStep
-          questions={state.questions || []}
-          answers={state.answers || []}
-          setAnswers={(next) => {
-            const value = typeof next === "function" ? next(state.answers || []) : next;
-            updateFlow({ answers: value });
-          }}
-          pax={state.pax}
-          priceCategoryParticipants={state.priceCategoryParticipants}
-          onBack={hasExtras ? handleGoPrevious : handleChangeTripDetails}
-          onNext={handleQuestionsContinue}
-        />
-      );
-    }
-
     if (currentStepId === STEP_IDS.CUSTOMER) {
       return (
         <CustomerDetailsStep
@@ -677,7 +685,10 @@ const BookingFlowInner = () => {
             const value = typeof updater === "function" ? updater(state.customer) : updater;
             updateFlow({ customer: value });
           }}
-          onBack={hasQuestions || hasExtras ? handleGoPrevious : handleChangeTripDetails}
+          pickupPlaces={state.pickupPlaces || tour?.pickupPlaces || []}
+          pickupInfo={tour?.pickupInfo || ""}
+          countries={countries}
+          onBack={hasExtras ? handleGoPrevious : handleChangeTripDetails}
           onNext={handleCustomerContinue}
         />
       );
@@ -688,6 +699,10 @@ const BookingFlowInner = () => {
         <ReviewConfirmStep
           flowState={state}
           submitting={submitLoading}
+          onCustomerChange={(customer) => updateFlow({ customer })}
+          pickupPlaces={state.pickupPlaces || tour?.pickupPlaces || []}
+          pickupInfo={tour?.pickupInfo || ""}
+          countries={countries}
           onBack={handleGoPrevious}
           onConfirm={handleCreateBooking}
         />
@@ -736,7 +751,7 @@ const BookingFlowInner = () => {
           <Card className="surface-card smart-step-card">
             <Card.Body>
               <ErrorAlert error={error || "Trip details are missing for this checkout session."} className="mb-3" />
-              <Button type="button" className="premium-btn text-white" onClick={() => navigate(`/tours/${slug}`)}>
+              <Button type="button" className="premium-btn text-white" onClick={() => navigate(productSetupPath)}>
                 Return to product page
               </Button>
             </Card.Body>
@@ -772,6 +787,7 @@ const BookingFlowInner = () => {
       title={tour?.title || "Booking checkout"}
       subtitle="Trip details are already selected. Continue without repeating previous steps."
       stepper={<BookingStepper steps={steps} />}
+      tour={tour}
       left={
         <>
           <CompletedTripDetailsCard
@@ -803,7 +819,7 @@ const BookingFlowInner = () => {
                   type="button"
                   variant="outline-info"
                   className="w-100"
-                  onClick={() => navigate(`/my-booking/${state.bookingResult.bookingReference}`)}
+                  onClick={() => navigate(bookingDetailsPath(state.bookingResult.bookingReference))}
                 >
                   Open booking page
                 </Button>
@@ -816,9 +832,9 @@ const BookingFlowInner = () => {
   );
 };
 
-const BookingFlowPage = () => (
+const BookingFlowPage = ({ portal = "public" }) => (
   <BookingFlowProvider>
-    <BookingFlowInner />
+    <BookingFlowInner portal={portal} />
   </BookingFlowProvider>
 );
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import useAuth from "../../hooks/useAuth";
@@ -79,6 +79,11 @@ const LoginPage = () => {
                 <Button type="submit" className="premium-btn text-white w-100" disabled={loading}>
                   {loading ? "Signing in..." : "Sign In"}
                 </Button>
+                <div className="text-center mt-3">
+                  <Link to="/agent-register" className="text-muted">
+                    Apply for an agent account
+                  </Link>
+                </div>
               </Form>
             </Card.Body>
           </Card>

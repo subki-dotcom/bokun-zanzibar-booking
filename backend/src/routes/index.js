@@ -1,18 +1,18 @@
 const express = require("express");
 
-const authRoutes = require("../modules/auth/auth.routes");
-const usersRoutes = require("../modules/users/users.routes");
-const bokunRoutes = require("../modules/bokun/bokun.routes");
-const toursRoutes = require("../modules/tours/tours.routes");
-const bookingsRoutes = require("../modules/bookings/bookings.routes");
-const customersRoutes = require("../modules/customers/customers.routes");
-const invoicesRoutes = require("../modules/invoices/invoices.routes");
-const agentsRoutes = require("../modules/agents/agents.routes");
-const commissionsRoutes = require("../modules/commissions/commissions.routes");
-const offersRoutes = require("../modules/offers/offers.routes");
-const paymentsRoutes = require("../modules/payments/payments.routes");
-const webhooksRoutes = require("../modules/webhooks/webhooks.routes");
-const reportsRoutes = require("../modules/reports/reports.routes");
+const authRoutes = require("./auth.routes");
+const usersRoutes = require("./users.routes");
+const bokunRoutes = require("./bokun.routes");
+const toursRoutes = require("./tours.routes");
+const bookingsRoutes = require("./bookings.routes");
+const customersRoutes = require("./customers.routes");
+const invoicesRoutes = require("./invoices.routes");
+const agentsRoutes = require("./agents.routes");
+const commissionsRoutes = require("./commissions.routes");
+const offersRoutes = require("./offers.routes");
+const paymentsRoutes = require("./payments.routes");
+const webhooksRoutes = require("./webhooks.routes");
+const reportsRoutes = require("./reports.routes");
 
 const router = express.Router();
 
@@ -23,6 +23,7 @@ router.use("/tours", toursRoutes);
 router.use("/bookings", bookingsRoutes);
 router.use("/customers", customersRoutes);
 router.use("/invoices", invoicesRoutes);
+router.use("/agent", agentsRoutes);
 router.use("/agents", agentsRoutes);
 router.use("/commissions", commissionsRoutes);
 router.use("/offers", offersRoutes);

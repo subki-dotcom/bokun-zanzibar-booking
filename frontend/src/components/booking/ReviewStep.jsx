@@ -3,7 +3,7 @@ import Button from "react-bootstrap/Button";
 import { formatCurrency } from "../../utils/formatters";
 
 const ReviewStep = ({ flowState, submitting, onBack, onConfirm }) => {
-  const { option, travelDate, startTime, pax, priceCategoryParticipants, priceCatalog, extras, customer, answers, quote } = flowState;
+  const { option, travelDate, startTime, pax, priceCategoryParticipants, priceCatalog, extras, customer, quote } = flowState;
   const categoryPaxRows = (priceCategoryParticipants || []).filter((row) => Number(row.quantity || 0) > 0);
 
   return (
@@ -38,7 +38,7 @@ const ReviewStep = ({ flowState, submitting, onBack, onConfirm }) => {
             <p className="mb-1">{customer.email}</p>
             <p className="mb-0">{customer.phone}</p>
           </div>
-          <div className="col-md-6">
+          <div className="col-md-12">
             <h6>Extras</h6>
             {extras.length ? (
               extras.map((extra) => (
@@ -48,18 +48,6 @@ const ReviewStep = ({ flowState, submitting, onBack, onConfirm }) => {
               ))
             ) : (
               <p className="mb-0 text-muted">No extras selected</p>
-            )}
-          </div>
-          <div className="col-md-6">
-            <h6>Booking answers</h6>
-            {answers.length ? (
-              answers.slice(0, 6).map((answer, index) => (
-                <p className="mb-1" key={`${answer.questionId}-${index}`}>
-                  {answer.label}: {String(answer.answer)}
-                </p>
-              ))
-            ) : (
-              <p className="mb-0 text-muted">No answers provided</p>
             )}
           </div>
         </div>

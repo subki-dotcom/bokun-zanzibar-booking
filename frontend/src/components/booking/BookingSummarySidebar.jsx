@@ -1,6 +1,19 @@
 import Card from "react-bootstrap/Card";
 import Badge from "react-bootstrap/Badge";
-import { BsCalendar3, BsCashStack, BsClock, BsInfoCircle, BsPeople, BsSignpostSplit, BsTag } from "react-icons/bs";
+import {
+  BsCalendar3,
+  BsCashStack,
+  BsCheckCircle,
+  BsClock,
+  BsEnvelope,
+  BsPencil,
+  BsPeople,
+  BsShieldCheck,
+  BsSignpostSplit,
+  BsWhatsapp,
+  BsGeoAlt,
+  BsLock
+} from "react-icons/bs";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import ChangeTripDetailsAction from "./ChangeTripDetailsAction";
 
@@ -28,7 +41,6 @@ const BookingSummarySidebar = ({
     priceCatalog,
     quote,
     extras,
-    questions,
     availabilityChecked
   } = flowState;
 
@@ -47,86 +59,107 @@ const BookingSummarySidebar = ({
   const quoteCurrency = quotePricing?.currency || availability?.currency || "USD";
   const liveQuoteReady = Boolean(quote?.quoteToken && quotePricing);
   const liveAvailabilityReady = Boolean(availabilityChecked || availability?.available);
-  const questionCount = Array.isArray(questions) ? questions.length : 0;
 
   const estimatedTotal = liveQuoteReady
     ? toSafeNumber(quotePricing.finalPayable)
     : toSafeNumber(availability?.pricing?.grossAmount) + extrasTotal;
 
   return (
-    <Card className="surface-card booking-sticky smart-summary-card">
-      <Card.Body>
-        <h5 className="mb-3">Booking summary</h5>
+    <div className="booking-sticky checkout-side-stack">
+      <Card className="surface-card smart-summary-card">
+        <Card.Body>
+          <h5 className="mb-3">Booking Summary</h5>
 
-        <div className="d-flex flex-wrap gap-2 mb-3">
-          <Badge bg={liveAvailabilityReady ? "success-subtle" : "secondary"} text={liveAvailabilityReady ? "success" : "light"}>
-            {liveAvailabilityReady ? "Live availability checked" : "Quote pending"}
-          </Badge>
-          <Badge bg={liveQuoteReady ? "info-subtle" : "warning-subtle"} text={liveQuoteReady ? "info" : "dark"}>
-            {liveQuoteReady ? "Live quote ready" : "Waiting live quote"}
-          </Badge>
-        </div>
-
-        <div className="summary-line-item">
-          <span><BsSignpostSplit className="me-2" />Product</span>
-          <strong>{tour?.title || "Tour"}</strong>
-        </div>
-        <div className="summary-line-item">
-          <span><BsSignpostSplit className="me-2" />Selected option</span>
-          <strong>{option?.name || "Not selected"}</strong>
-        </div>
-        <div className="summary-line-item">
-          <span><BsTag className="me-2" />Price catalog</span>
-          <strong>{priceCatalog?.title || "Default"}</strong>
-        </div>
-        <div className="summary-line-item">
-          <span><BsCalendar3 className="me-2" />Date</span>
-          <strong>{formatTravelDate(travelDate)}</strong>
-        </div>
-        <div className="summary-line-item">
-          <span><BsClock className="me-2" />Time</span>
-          <strong>{startTime || "Shown after date selection"}</strong>
-        </div>
-        <div className="summary-line-item">
-          <span><BsPeople className="me-2" />Passengers</span>
-          <strong>{paxSummary}</strong>
-        </div>
-
-        {extrasRows.length ? (
-          <div className="summary-subsection">
-            <div className="summary-subtitle">Extras</div>
-            {extrasRows.map((row) => (
-              <div className="summary-line-item" key={row.code || row.label}>
-                <span>{row.label} x{Math.max(1, toSafeNumber(row.quantity))}</span>
-                <strong>{formatCurrency(toSafeNumber(row.amount) * Math.max(1, toSafeNumber(row.quantity)), quoteCurrency)}</strong>
-              </div>
-            ))}
+          <div className="checkout-status-pills">
+            <Badge bg={liveAvailabilityReady ? "success-subtle" : "secondary"} text={liveAvailabilityReady ? "success" : "light"}>
+              <BsShieldCheck /> Live Availability
+            </Badge>
+            <Badge bg={liveQuoteReady ? "info-subtle" : "warning-subtle"} text={liveQuoteReady ? "info" : "dark"}>
+              <BsCheckCircle /> Instant Confirmation
+            </Badge>
           </div>
-        ) : null}
 
-        <div className="summary-subsection">
           <div className="summary-line-item">
-            <span><BsInfoCircle className="me-2" />Booking questions</span>
-            <strong>{questionCount > 0 ? `${questionCount} required` : "None"}</strong>
+            <span><BsSignpostSplit />Product</span>
+            <strong>{tour?.title || "Tour"}</strong>
           </div>
-        </div>
+          <div className="summary-line-item">
+            <span><BsPencil />Selected Option</span>
+            <strong>{option?.name || "Not selected"}</strong>
+          </div>
+          <div className="summary-line-item">
+            <span><BsCalendar3 />Travel Date</span>
+            <strong>{formatTravelDate(travelDate)}</strong>
+          </div>
+          <div className="summary-line-item">
+            <span><BsClock />Time</span>
+            <strong>{startTime || "Shown after date selection"}</strong>
+          </div>
+          <div className="summary-line-item">
+            <span><BsPeople />Passengers</span>
+            <strong>{paxSummary}</strong>
+          </div>
+          <div className="summary-line-item">
+            <span><BsGeoAlt />Pickup Location</span>
+            <strong>{flowState.customer?.hotelName || "Select in customer details"}</strong>
+          </div>
 
-        <hr />
+          {extrasRows.length ? (
+            <div className="summary-subsection">
+              <div className="summary-subtitle">Extras</div>
+              {extrasRows.map((row) => (
+                <div className="summary-line-item" key={row.code || row.label}>
+                  <span>{row.label} x{Math.max(1, toSafeNumber(row.quantity))}</span>
+                  <strong>{formatCurrency(toSafeNumber(row.amount) * Math.max(1, toSafeNumber(row.quantity)), quoteCurrency)}</strong>
+                </div>
+              ))}
+            </div>
+          ) : null}
 
-        <div className="summary-line-item total-line">
-          <span><BsCashStack className="me-2" />Estimated total</span>
-          <strong>{formatCurrency(estimatedTotal, quoteCurrency)}</strong>
-        </div>
+          <hr />
 
-        {quoteLoading || availabilityLoading ? (
-          <small className="text-muted d-block mt-2">Refreshing live pricing...</small>
-        ) : null}
+          <div className="summary-line-item total-line">
+            <span><BsCashStack />Estimated Total</span>
+            <strong>{formatCurrency(estimatedTotal, quoteCurrency)}</strong>
+          </div>
 
-        <div className="mt-3">
-          <ChangeTripDetailsAction className="w-100" onClick={onChangeTripDetails} />
-        </div>
-      </Card.Body>
-    </Card>
+          {quoteLoading || availabilityLoading ? (
+            <small className="text-muted d-block mt-2">Refreshing live pricing...</small>
+          ) : null}
+
+          <div className="mt-3">
+            <ChangeTripDetailsAction className="w-100" onClick={onChangeTripDetails} icon={<BsPencil />} label="Change Trip Details" />
+          </div>
+        </Card.Body>
+      </Card>
+
+      <Card className="surface-card checkout-trust-card">
+        <Card.Body>
+          <h5>Why book with us?</h5>
+          {[
+            ["Best Price Guarantee", "We offer the best prices for all our tours", <BsShieldCheck />],
+            ["Secure Payments", "Your payment is 100% secure", <BsLock />],
+            ["Local Support", "24/7 support from our local team", <BsPeople />],
+            ["Instant Confirmation", "Get your booking confirmation instantly", <BsCheckCircle />]
+          ].map(([title, copy, icon]) => (
+            <div className="checkout-trust-row" key={title}>
+              <span>{icon}</span>
+              <div>
+                <strong>{title}</strong>
+                <small>{copy}</small>
+              </div>
+            </div>
+          ))}
+
+          <div className="checkout-help-block">
+            <h6>Need help?</h6>
+            <p>Our support team is here to help you</p>
+            <div><BsWhatsapp /> <span>+255 778 775 044</span></div>
+            <div><BsEnvelope /> <span>info@risertoursandsafaris.co.tz</span></div>
+          </div>
+        </Card.Body>
+      </Card>
+    </div>
   );
 };
 

@@ -53,3 +53,20 @@ export const reconcileBookingFinalizations = async ({ limit = 20, force = false 
   const response = await axiosClient.post("/bookings/finalization/reconcile", { limit, force });
   return response.data.data;
 };
+
+export const fetchAdminAgents = async () => {
+  const response = await axiosClient.get("/agents");
+  return response.data.data;
+};
+
+export const updateAdminAgentStatus = async (agentId, payload) => {
+  const response = await axiosClient.post(`/agents/${agentId}/update-status`, payload);
+  return response.data.data;
+};
+
+export const updateAdminAgentCommission = async (agentId, commissionPercent) => {
+  const response = await axiosClient.post(`/agents/${agentId}/update-commission`, {
+    commissionPercent: Number(commissionPercent)
+  });
+  return response.data.data;
+};

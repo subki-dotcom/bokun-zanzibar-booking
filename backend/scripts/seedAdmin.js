@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const connectDB = require("../src/config/db");
 const logger = require("../src/config/logger");
-const authService = require("../src/modules/auth/auth.service");
+const authService = require("../src/services/auth");
 
 const run = async () => {
   await connectDB();

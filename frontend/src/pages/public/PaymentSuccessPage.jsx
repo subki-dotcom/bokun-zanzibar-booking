@@ -58,6 +58,17 @@ const PaymentSuccessPage = () => {
   const isPendingFinalization = paymentResultStatus === "paid_pending_finalization";
   const isPaid = paymentResultStatus === "paid" || isPendingFinalization;
   const booking = result?.booking || null;
+  const isAgentBooking =
+    Boolean(booking?.isAgentBooking) ||
+    String(booking?.sourceChannel || "").toLowerCase() === "agent_portal";
+  const bookingPath = booking?.bookingReference
+    ? isAgentBooking
+      ? `/agent/bookings/${booking.bookingReference}`
+      : `/my-booking/${booking.bookingReference}`
+    : "";
+  const paymentStatusPath = booking?.bookingReference
+    ? `/payment-status/${booking.bookingReference}`
+    : "";
 
   return (
     <Container className="py-4">
@@ -114,12 +125,17 @@ const PaymentSuccessPage = () => {
               </Button>
             ) : null}
             {booking?.bookingReference ? (
-              <Button as={Link} to={`/my-booking/${booking.bookingReference}`} className="premium-btn text-white">
-                View my booking
+              <Button as={Link} to={bookingPath} className="premium-btn text-white">
+                {isAgentBooking ? "Open agent booking" : "View my booking"}
               </Button>
             ) : null}
-            <Button as={Link} to="/tours" variant="outline-secondary">
-              Browse tours
+            {booking?.bookingReference ? (
+              <Button as={Link} to={paymentStatusPath} variant="outline-primary">
+                Track payment status
+              </Button>
+            ) : null}
+            <Button as={Link} to={isAgentBooking ? "/agent/products" : "/tours"} variant="outline-secondary">
+              {isAgentBooking ? "Back to products" : "Browse tours"}
             </Button>
           </div>
         </Card.Body>

@@ -68,6 +68,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const refreshProfile = async () => {
+    const profile = await fetchCurrentProfile();
+    setUser(profile);
+    localStorage.setItem(USER_KEY, JSON.stringify(profile));
+    return profile;
+  };
+
   const value = useMemo(
     () => ({
       token,
@@ -75,7 +82,8 @@ export const AuthProvider = ({ children }) => {
       loading,
       isAuthenticated: Boolean(token),
       login,
-      logout
+      logout,
+      refreshProfile
     }),
     [token, user, loading]
   );

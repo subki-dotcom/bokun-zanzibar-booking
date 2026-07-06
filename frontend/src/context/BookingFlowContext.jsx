@@ -12,6 +12,7 @@ const createDefaultData = () => ({
   pax: { adults: 2, children: 0, infants: 0 },
   priceCategoryParticipants: [],
   extras: [],
+  pickupPlaces: [],
   questions: [],
   answers: [],
   customer: {
@@ -21,6 +22,7 @@ const createDefaultData = () => ({
     phone: "",
     country: "",
     hotelName: "",
+    pickupPlaceId: "",
     notes: ""
   },
   quote: null,

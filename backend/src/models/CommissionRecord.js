@@ -10,7 +10,7 @@ const commissionRecordSchema = new mongoose.Schema(
     netAmount: { type: Number, required: true },
     commissionPercent: { type: Number, required: true },
     commissionAmount: { type: Number, required: true },
-    payoutStatus: { type: String, enum: ["unpaid", "pending", "paid"], default: "unpaid" },
+    payoutStatus: { type: String, enum: ["unpaid", "pending", "approved", "paid", "rejected"], default: "unpaid" },
     payoutMonth: { type: String, required: true },
     notes: { type: String, default: "" },
     sourceOverride: {

@@ -39,7 +39,7 @@ export const normalizeTourCard = (tour = {}) => {
 
 export const pickFeaturedTours = (rows = [], limit = 6) => rows.slice(0, limit).map(normalizeTourCard);
 
-export const pickBestSellerTours = (rows = [], limit = 8) =>
+export const pickBestSellerTours = (rows = [], limit = 10) =>
   [...rows]
     .sort((a, b) => {
       const byRating = Number(b.rating || 0) - Number(a.rating || 0);

@@ -1,7 +1,7 @@
 import Card from "react-bootstrap/Card";
 import CustomerStep from "./CustomerStep";
 
-const CustomerDetailsStep = ({ customer, setCustomer, onBack, onNext }) => (
+const CustomerDetailsStep = ({ customer, setCustomer, pickupPlaces = [], pickupInfo = "", countries = [], onBack, onNext }) => (
   <div>
     <Card className="surface-card smart-step-card mb-3">
       <Card.Body>
@@ -12,9 +12,16 @@ const CustomerDetailsStep = ({ customer, setCustomer, onBack, onNext }) => (
       </Card.Body>
     </Card>
 
-    <CustomerStep customer={customer} setCustomer={setCustomer} onBack={onBack} onNext={onNext} />
+    <CustomerStep
+      customer={customer}
+      setCustomer={setCustomer}
+      pickupPlaces={pickupPlaces}
+      pickupInfo={pickupInfo}
+      countries={countries}
+      onBack={onBack}
+      onNext={onNext}
+    />
   </div>
 );
 
 export default CustomerDetailsStep;
-

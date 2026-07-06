@@ -9,6 +9,7 @@ const customerSchema = new mongoose.Schema(
     phone: { type: String, default: "" },
     country: { type: String, default: "" },
     hotelName: { type: String, default: "" },
+    pickupPlaceId: { type: String, default: "" },
     notes: { type: String, default: "" },
     bookings: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }]
   },

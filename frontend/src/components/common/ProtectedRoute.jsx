@@ -18,6 +18,20 @@ const ProtectedRoute = ({ children, roles = [] }) => {
     return <Navigate to="/" replace />;
   }
 
+  if (user?.role === "agent") {
+    const path = location.pathname;
+    const approvalStatus = String(user?.approvalStatus || "approved");
+    const pendingAllowedPaths = ["/agent/pending", "/agent/support"];
+
+    if (approvalStatus !== "approved" && !pendingAllowedPaths.includes(path)) {
+      return <Navigate to="/agent/pending" replace />;
+    }
+
+    if (approvalStatus === "approved" && !user?.termsAcceptedAt && path !== "/agent/terms") {
+      return <Navigate to="/agent/terms" replace />;
+    }
+  }
+
   return children;
 };
 

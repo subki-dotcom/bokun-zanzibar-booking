@@ -69,7 +69,9 @@ const BookingAvailabilityCard = ({
   selectedStartTime = "",
   initialSelection = null,
   onLiveAvailabilityChecked,
-  hideContinueButton = false
+  hideContinueButton = false,
+  checkoutPath = "",
+  sessionSource = "single_product_page"
 }) => {
   const navigate = useNavigate();
   const initialAppliedRef = useRef(false);
@@ -373,7 +375,8 @@ const BookingAvailabilityCard = ({
     return query.toString();
   }, [selectedOption?.bokunOptionId, travelDate, resolvedSelectedStartTime, selectedRateId, paxSummary.adults, passengers]);
 
-  const continuePath = `/booking/${tour.slug}${continueQuery ? `?${continueQuery}` : ""}`;
+  const resolvedCheckoutPath = checkoutPath || `/booking/${tour.slug}`;
+  const continuePath = `${resolvedCheckoutPath}${continueQuery ? `?${continueQuery}` : ""}`;
 
   const handleContinueToBooking = () => {
     if (!canContinue) {
@@ -382,7 +385,7 @@ const BookingAvailabilityCard = ({
 
     const selectedCatalog = rateOptions.find((item) => String(item.id) === String(selectedRateId));
     saveBookingSession({
-      source: "single_product_page",
+      source: sessionSource,
       product: {
         productId,
         slug: tour.slug,

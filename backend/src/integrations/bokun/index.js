@@ -1,1 +1,1 @@
-module.exports = require("../../modules/bokun/bokun.service");
+module.exports = require("../../services/bokun");

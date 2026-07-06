@@ -1,4 +1,3 @@
-import Card from "react-bootstrap/Card";
 import { BsCheck2 } from "react-icons/bs";
 import { BOOKING_STEPS } from "../../utils/constants";
 
@@ -28,25 +27,21 @@ const BookingStepper = ({ currentStep = 1, steps = null }) => {
       : normalizeLegacySteps(currentStep);
 
   return (
-    <Card className="surface-card smart-stepper-card mb-3">
-      <Card.Body className="py-3">
-        <div className="smart-stepper-track">
-          {normalizedSteps.map((step) => (
-            <div
-              className={`smart-step-item ${step.current ? "is-current" : ""} ${step.completed ? "is-completed" : ""}`.trim()}
-              key={step.id}
-            >
-              <span className="smart-step-dot">
-                {step.completed ? <BsCheck2 /> : step.index}
-              </span>
-              <span className="smart-step-label">{step.label}</span>
-            </div>
-          ))}
+    <div className="smart-stepper-track">
+      {normalizedSteps.map((step, index) => (
+        <div
+          className={`smart-step-item ${step.current ? "is-current" : ""} ${step.completed ? "is-completed" : ""}`.trim()}
+          key={step.id}
+        >
+          <span className="smart-step-dot">
+            {step.completed ? <BsCheck2 /> : step.index}
+          </span>
+          <span className="smart-step-label">{step.label}</span>
+          {index < normalizedSteps.length - 1 ? <span className="smart-step-connector" /> : null}
         </div>
-      </Card.Body>
-    </Card>
+      ))}
+    </div>
   );
 };
 
 export default BookingStepper;
-

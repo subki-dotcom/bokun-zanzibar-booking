@@ -30,6 +30,11 @@ export const cancelBooking = async (id, reason) => {
   return response.data.data;
 };
 
+export const adminCancelBooking = async (id, reason) => {
+  const response = await axiosClient.post(`/bookings/${id}/cancel`, { reason });
+  return response.data.data;
+};
+
 export const requestBookingEdit = async (id, payload) => {
   const response = await axiosClient.post(`/bookings/${id}/edit-request`, payload);
   return response.data.data;

@@ -1,6 +1,5 @@
 import Card from "react-bootstrap/Card";
-import Badge from "react-bootstrap/Badge";
-import { BsCalendar3, BsCheckCircleFill, BsGeoAlt, BsPeople, BsSignpostSplit, BsTag } from "react-icons/bs";
+import { BsCalendar3, BsCheckCircle, BsClock, BsGeoAlt, BsPencil, BsPeople, BsSignpostSplit } from "react-icons/bs";
 import ChangeTripDetailsAction from "./ChangeTripDetailsAction";
 import { formatDate } from "../../utils/formatters";
 
@@ -34,53 +33,38 @@ const CompletedTripDetailsCard = ({
     flowState.priceCategoryParticipants || [],
     flowState.pax || {}
   );
+  const rows = [
+    { icon: <BsSignpostSplit />, label: "Option", value: flowState.option?.name || "Not selected" },
+    { icon: <BsCalendar3 />, label: "Travel Date", value: safeDate(flowState.travelDate) },
+    { icon: <BsClock />, label: "Time", value: flowState.startTime || "Not selected" },
+    { icon: <BsPeople />, label: "Passengers", value: passengerText },
+    { icon: <BsGeoAlt />, label: "Pickup Location", value: flowState.customer?.hotelName || "Select in customer details" },
+    {
+      icon: <BsCheckCircle />,
+      label: "Status",
+      value: flowState.availabilityChecked ? "Live availability checked" : "Pending recheck",
+      success: flowState.availabilityChecked
+    }
+  ];
 
   return (
     <Card className="surface-card completed-trip-card mb-3">
       <Card.Body>
         <div className="completed-trip-head">
           <div>
-            <div className="single-booking-eyebrow">Trip setup completed</div>
-            <h4 className="mb-1">Your travel details are already selected</h4>
-            <p className="text-muted mb-0">
-              Checkout continues from the next step. No need to repeat option/date/passenger setup.
-            </p>
+            <h4 className="mb-1">Trip Details</h4>
+            <p className="text-muted mb-0">Please review your selected tour information</p>
           </div>
-          <Badge bg="success-subtle" text="success" className="completed-badge">
-            <BsCheckCircleFill className="me-1" />
-            Ready
-          </Badge>
+          <ChangeTripDetailsAction onClick={onChangeTripDetails} disabled={loading} icon={<BsPencil />} label="Change" />
         </div>
 
-        <div className="completed-trip-grid mt-3">
-          <div className="completed-trip-item">
-            <span><BsSignpostSplit className="me-2" />Option</span>
-            <strong>{flowState.option?.name || "Not selected"}</strong>
-          </div>
-          <div className="completed-trip-item">
-            <span><BsTag className="me-2" />Price catalog</span>
-            <strong>{flowState.priceCatalog?.title || "Default"}</strong>
-          </div>
-          <div className="completed-trip-item">
-            <span><BsCalendar3 className="me-2" />Travel date</span>
-            <strong>{safeDate(flowState.travelDate)}</strong>
-          </div>
-          <div className="completed-trip-item">
-            <span><BsPeople className="me-2" />Passengers</span>
-            <strong>{passengerText}</strong>
-          </div>
-          <div className="completed-trip-item">
-            <span><BsGeoAlt className="me-2" />Destination</span>
-            <strong>{tour?.destination || "Zanzibar"}</strong>
-          </div>
-          <div className="completed-trip-item">
-            <span>Status</span>
-            <strong>{flowState.availabilityChecked ? "Live availability checked" : "Pending recheck"}</strong>
-          </div>
-        </div>
-
-        <div className="mt-3 d-flex justify-content-end">
-          <ChangeTripDetailsAction onClick={onChangeTripDetails} disabled={loading} />
+        <div className="completed-trip-table mt-3">
+          {rows.map((row) => (
+            <div className="completed-trip-row" key={row.label}>
+              <span className="completed-trip-label">{row.icon}{row.label}</span>
+              <strong className={row.success ? "text-success" : ""}>{row.value}</strong>
+            </div>
+          ))}
         </div>
       </Card.Body>
     </Card>

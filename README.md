@@ -8,6 +8,12 @@ Production-oriented full-stack booking platform for Zanzibar tours and activitie
 - Local MongoDB stores snapshots and business layers only: analytics, invoices, offers, commissions, reports, audit logs, and portal UX acceleration.
 - Every final booking is revalidated live and created in Bokun first.
 
+## Source Of Truth
+
+- Bokun: products, options, availability, live pricing, and pickup places.
+- Customer: name, email, phone, and special request.
+- Backend: validation, data merging, security, payments, and booking creation.
+
 ## Tech Stack
 
 - Frontend: React + React Bootstrap + Vite
@@ -20,17 +26,25 @@ Production-oriented full-stack booking platform for Zanzibar tours and activitie
 
 ```text
 backend/
+  server.js
   src/
+    app.js
     config/
+    controllers/
+    jobs/
+    integrations/
+      bokun/
+      dpo/
+      pesapal/
     middleware/
     models/
-    modules/
-      auth users bokun tours bookings customers invoices agents
-      commissions offers payments webhooks reports
     routes/
+      payments/
+    services/
+      agents/ auth/ bookings/ bokun/ commissions/ customers/
+      invoices/ offers/ payments/ reports/ tours/ users/ webhooks/
     utils/
-    app.js
-    server.js
+    validators/
   scripts/seedAdmin.js
 
 frontend/
@@ -75,8 +89,10 @@ Required backend vars:
 - `PESAPAL_AUTH_PATH`
 - `PESAPAL_SUBMIT_ORDER_PATH`
 - `PESAPAL_STATUS_PATH`
+- `PESAPAL_REGISTER_IPN_PATH`
 - `PESAPAL_CONSUMER_KEY`
 - `PESAPAL_CONSUMER_SECRET`
+- `PESAPAL_IPN_URL` (public backend URL for automatic IPN registration)
 - `PESAPAL_IPN_ID`
 - `PESAPAL_SUCCESS_URL`
 - `PESAPAL_CANCEL_URL`
@@ -190,7 +206,7 @@ Behavior:
 - `GET /api/bokun/products/:productId/booking-config`
 - `POST /api/bokun/products/:productId/live-quote`
 - `POST /api/bokun/availability`
-- `POST /api/bokun/booking-questions`
+- `POST /api/bokun/booking-questions` (legacy compatibility; returns no Bokun questions)
 - `POST /api/bokun/bookings`
 - `GET /api/bokun/bookings/:reference`
 - `POST /api/bokun/bookings/:bookingId/cancel`
@@ -236,7 +252,7 @@ Behavior:
 3. User selects a Bokun price catalog (when multiple catalogs exist for the product).
 4. Frontend requests live availability (`/api/bokun/availability`).
 5. Frontend requests quote (`/api/bookings/quote`) and receives quote token.
-6. Frontend loads booking questions (`/api/bokun/booking-questions`).
+6. Customer enters name, email, phone, and special request in the local customer step.
 7. Customer clicks **Confirm & Pay** and backend creates a local pending booking + Pesapal order (`/api/payments/pesapal/create`).
 8. User is redirected to Pesapal payment page.
 9. Frontend callback verifies payment (`/api/payments/pesapal/success`) before finalizing booking.
@@ -267,11 +283,11 @@ The sync updates local booking snapshots (status/date/time/confirmation) from Bo
 
 ## Bokun Integration Files
 
-- `backend/src/modules/bokun/bokunClient.js`
-- `backend/src/modules/bokun/bokunMapper.js`
-- `backend/src/modules/bokun/bokun.service.js`
-- `backend/src/modules/bokun/bokun.controller.js`
-- `backend/src/modules/bokun/bokun.routes.js`
+- `backend/src/integrations/bokun/bokun.client.js`
+- `backend/src/integrations/bokun/bokun.mapper.js`
+- `backend/src/services/bokun/index.js`
+- `backend/src/controllers/bokun.controller.js`
+- `backend/src/routes/bokun.routes.js`
 
 ## Security + Reliability Implemented
 
@@ -404,15 +420,17 @@ Before using live Pesapal mode (`PESAPAL_MOCK_MODE=false`):
 1. Set active credentials:
    - `PESAPAL_CONSUMER_KEY`
    - `PESAPAL_CONSUMER_SECRET`
-   - `PESAPAL_IPN_ID`
+   - `PESAPAL_IPN_URL` (recommended) or `PESAPAL_IPN_ID`
 2. Set callback URLs:
    - `PESAPAL_SUCCESS_URL=https://<public-domain>/payment-success`
    - `PESAPAL_CANCEL_URL=https://<public-domain>/payment-failure`
-3. Keep callback URLs public unless `PESAPAL_ALLOW_LOCAL_REDIRECTS=true` is intentionally enabled for local tests.
+3. Use a stable backend domain for production IPN, for example:
+   - `PESAPAL_IPN_URL=https://api.risertoursandsafaris.co.tz/api/payments/pesapal/ipn`
+4. Keep callback URLs public unless `PESAPAL_ALLOW_LOCAL_REDIRECTS=true` is intentionally enabled for local tests.
 
 Common API results:
 - `HTTP 401/403`: auth or edge policy issue (confirm keys/IP/domain with Pesapal support).
-- `PESAPAL_IPN_ID_MISSING`: register and configure a valid IPN ID before live checkout.
+- `PESAPAL_IPN_SETUP_MISSING`: set `PESAPAL_IPN_URL` or `PESAPAL_IPN_ID` before live checkout.
 
 ## Notes for Production Hardening
 

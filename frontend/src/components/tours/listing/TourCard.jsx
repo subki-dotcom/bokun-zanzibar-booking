@@ -42,6 +42,9 @@ const TourCard = ({ tour = {} }) => {
           src={imageSrc}
           alt={safeTitle}
           className="listing-tour-image"
+          loading="lazy"
+          decoding="async"
+          sizes="(min-width: 1200px) 33vw, (min-width: 768px) 50vw, 100vw"
           onError={() => {
             if (imageSrc !== FALLBACK_CARD_IMAGE) {
               setImageSrc(FALLBACK_CARD_IMAGE);
