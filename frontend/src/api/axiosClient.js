@@ -9,7 +9,11 @@ const mapProviderErrorMessage = ({ code = "", message = "", details = null }) =>
     return "Payment gateway is not configured yet. Please contact support.";
   }
 
-  if (normalizedCode === "PESAPAL_IPN_ID_MISSING") {
+  if (
+    normalizedCode === "PESAPAL_IPN_ID_MISSING" ||
+    normalizedCode === "PESAPAL_IPN_SETUP_MISSING" ||
+    normalizedCode === "PESAPAL_IPN_URL_MISSING"
+  ) {
     return "Payment callback setup is incomplete. Please contact support.";
   }
 
