@@ -1,8 +1,8 @@
 import { Container, Row, Col } from "react-bootstrap";
-import { BsGeoAlt, BsShieldCheck, BsClock, BsSignpostSplit, BsCarFront, BsWater } from "react-icons/bs";
+import { BsGeoAlt, BsShieldCheck, BsClock, BsSignpostSplit, BsCarFront, BsWater, BsList } from "react-icons/bs";
 import { toPlainText, truncateText } from "../../utils/formatters";
 
-const fallbackImage = "https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=1400&q=80";
+const fallbackImage = "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1400&q=80";
 
 const resolveTourImage = (tour = {}) => {
   const first = Array.isArray(tour.images) ? tour.images[0] : "";
@@ -27,6 +27,9 @@ const CheckoutTopBar = ({ stepper = null }) => (
         <small>Your data is protected</small>
       </span>
     </div>
+    <button type="button" className="checkout-menu-button" aria-label="Open checkout menu">
+      <BsList />
+    </button>
   </div>
 );
 
@@ -53,7 +56,7 @@ const CheckoutHero = ({ tour = null }) => {
           <span><BsClock /> Half Day</span>
           <span><BsWater /> Snorkeling</span>
           <span><BsSignpostSplit /> Boat Trip</span>
-          <span><BsCarFront /> Hotel Pickup</span>
+          <span><BsCarFront /> Shared Tour</span>
         </div>
       </div>
     </div>
@@ -71,7 +74,6 @@ const BookingFlowLayout = ({
   <section className="smart-checkout-page">
     <Container className="checkout-shell">
       <CheckoutTopBar stepper={stepper} />
-      <CheckoutHero tour={tour} />
       {!tour ? (
         <div className="smart-checkout-head mb-3 mb-lg-4">
           <div className="single-booking-eyebrow">Secure checkout</div>
@@ -82,6 +84,7 @@ const BookingFlowLayout = ({
 
       <Row className="g-4 booking-flow-grid">
         <Col lg={8} className="booking-flow-main">
+          <CheckoutHero tour={tour} />
           {left}
         </Col>
         <Col lg={4} className="booking-flow-side">

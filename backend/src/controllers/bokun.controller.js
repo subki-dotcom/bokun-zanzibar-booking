@@ -31,6 +31,18 @@ const productDetails = asyncHandler(async (req, res) => {
   });
 });
 
+const pickupPlaces = asyncHandler(async (req, res) => {
+  const data = await bokunService.fetchPickupPlaceCatalog(req.requestId, {
+    limit: req.query.limit || 900,
+    forceRefresh: req.query.forceRefresh === "true"
+  });
+
+  return successResponse(res, {
+    message: "Bokun pickup places fetched",
+    data
+  });
+});
+
 const productBookingConfig = asyncHandler(async (req, res) => {
   const data = await bokunService.fetchProductBookingConfig(
     req.params.productId,
@@ -114,6 +126,7 @@ module.exports = {
   products,
   countries,
   productDetails,
+  pickupPlaces,
   productBookingConfig,
   productLiveQuote,
   availability,

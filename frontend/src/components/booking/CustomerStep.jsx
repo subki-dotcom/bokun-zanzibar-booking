@@ -1,8 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Card from "react-bootstrap/Card";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import { applyDialCodeToPhone, getDialCodeFromCountries, resolveDefaultCountryCode } from "../../utils/phoneCodes";
+import { BsArrowLeft, BsArrowRight, BsInfoCircle } from "react-icons/bs";
+import {
+  applyDialCodeToPhone,
+  countryCodeToFlagEmoji,
+  getCountryFlagUrl,
+  getDialCodeFromCountries,
+  resolveDefaultCountryCode
+} from "../../utils/phoneCodes";
 
 const formatPickupPlaceLabel = (place = {}) =>
   [place.title, place.address]
@@ -10,16 +17,50 @@ const formatPickupPlaceLabel = (place = {}) =>
     .filter(Boolean)
     .join(", ");
 
-const CustomerStep = ({ customer, setCustomer, pickupPlaces = [], pickupInfo = "", countries = [], onBack, onNext }) => {
+const findCountry = (countryCode = "", countries = []) =>
+  countries.find(
+    (country = {}) => String(country.code || "").toUpperCase() === String(countryCode || "").toUpperCase()
+  );
+
+const CustomerStep = ({
+  customer = {},
+  setCustomer,
+  pickupPlaces = [],
+  pickupInfo = "",
+  countries = [],
+  loading = false,
+  onBack,
+  onNext
+}) => {
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+
   const updateCustomer = (field, value) => {
     setCustomer((prev) => ({ ...prev, [field]: value }));
   };
 
-  const isValid = customer.firstName && customer.lastName && customer.email && customer.phone;
+  const requiredFields = useMemo(
+    () => [
+      ["firstName", "First Name"],
+      ["lastName", "Last Name"],
+      ["email", "Email Address"],
+      ["phone", "Phone Number"],
+      ["country", "Country"]
+    ],
+    []
+  );
+  const missingFields = requiredFields
+    .filter(([field]) => !String(customer[field] || "").trim())
+    .map(([, label]) => label);
+  const isValid = missingFields.length === 0;
   const hasPickupPlaces = Array.isArray(pickupPlaces) && pickupPlaces.length > 0;
   const hasPickupInfo = Boolean(String(pickupInfo || "").trim());
   const hasCountries = Array.isArray(countries) && countries.length > 0;
   const selectedDialCode = getDialCodeFromCountries(customer.country, countries);
+  const selectedCountryCode = String(customer.country || "TZ").toUpperCase();
+  const selectedCountry = findCountry(selectedCountryCode, countries);
+  const selectedFlagUrl = getCountryFlagUrl(selectedCountryCode, 40);
+  const notesValue = String(customer.notes || "");
+  const notesCount = Math.min(250, notesValue.length);
 
   useEffect(() => {
     if (!hasCountries) {
@@ -60,96 +101,154 @@ const CustomerStep = ({ customer, setCustomer, pickupPlaces = [], pickupInfo = "
     setCustomer((prev) => ({
       ...prev,
       hotelName: pickupLabel,
-      pickupPlaceId: selectedPlace?.id ? String(selectedPlace.id) : ""
+      pickupPlaceId: selectedPlace?.productScoped === false ? "" : selectedPlace?.id ? String(selectedPlace.id) : ""
     }));
   };
 
+  const handleContinue = () => {
+    setAttemptedSubmit(true);
+
+    if (!isValid) {
+      return;
+    }
+
+    onNext?.();
+  };
+
   return (
-    <Card className="surface-card">
+    <Card className="surface-card smart-step-card customer-step-card">
       <Card.Body>
-        <h4 className="mb-3">Customer Details</h4>
-        <div className="row g-3">
-          <div className="col-md-6">
-            <Form.Label>First name</Form.Label>
-            <Form.Control value={customer.firstName} onChange={(e) => updateCustomer("firstName", e.target.value)} />
-          </div>
-          <div className="col-md-6">
-            <Form.Label>Last name</Form.Label>
-            <Form.Control value={customer.lastName} onChange={(e) => updateCustomer("lastName", e.target.value)} />
-          </div>
-          <div className="col-md-6">
-            <Form.Label>Email</Form.Label>
-            <Form.Control type="email" value={customer.email} onChange={(e) => updateCustomer("email", e.target.value)} />
-          </div>
-          <div className="col-md-6">
-            <Form.Label>Phone</Form.Label>
+        <div className="customer-step-header">
+          <h4>Customer Details</h4>
+          <p>Enter the primary contact information for this booking</p>
+        </div>
+
+        <div className="customer-step-form-grid">
+          <Form.Group>
+            <Form.Label>First Name <span>*</span></Form.Label>
             <Form.Control
-              value={customer.phone}
-              placeholder={selectedDialCode ? `${selectedDialCode}778000000` : "Phone number"}
-              onChange={(e) => updateCustomer("phone", applyDialCodeToPhone(e.target.value, customer.country, countries))}
+              value={customer.firstName || ""}
+              placeholder="Subki"
+              onChange={(e) => updateCustomer("firstName", e.target.value)}
             />
-          </div>
-          <div className="col-md-6">
-            <Form.Label>Country</Form.Label>
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Label>Last Name <span>*</span></Form.Label>
+            <Form.Control
+              value={customer.lastName || ""}
+              placeholder="Subki"
+              onChange={(e) => updateCustomer("lastName", e.target.value)}
+            />
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Label>Email Address <span>*</span></Form.Label>
+            <Form.Control
+              type="email"
+              value={customer.email || ""}
+              placeholder="info@risertoursandsafaris.co.tz"
+              onChange={(e) => updateCustomer("email", e.target.value)}
+            />
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Label>Phone Number <span>*</span></Form.Label>
+            <div className="checkout-phone-field customer-phone-field">
+              <span className="checkout-phone-country" title={selectedCountry?.title || selectedCountryCode}>
+                {selectedFlagUrl ? (
+                  <img src={selectedFlagUrl} alt={`${selectedCountryCode} flag`} loading="lazy" />
+                ) : (
+                  <span className="checkout-phone-flag-fallback">{selectedCountryCode.slice(0, 2)}</span>
+                )}
+              </span>
+              <Form.Control
+                value={customer.phone || ""}
+                placeholder={selectedDialCode ? `${selectedDialCode} 778 775 044` : "+255 778 775 044"}
+                onChange={(e) => updateCustomer("phone", applyDialCodeToPhone(e.target.value, customer.country, countries))}
+              />
+            </div>
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Label>Country <span>*</span></Form.Label>
             {hasCountries ? (
-              <Form.Select value={customer.country} onChange={(e) => updateCountry(e.target.value)}>
+              <Form.Select value={customer.country || ""} onChange={(e) => updateCountry(e.target.value)}>
                 <option value="">Select country</option>
                 {countries.map((country) => (
                   <option key={country.code || country.title} value={country.code}>
-                    {country.label || `${country.title} (${country.code})`}
+                    {[countryCodeToFlagEmoji(country.code), country.label || `${country.title} (${country.code})`]
+                      .filter(Boolean)
+                      .join(" ")}
                   </option>
                 ))}
               </Form.Select>
             ) : (
-              <Form.Control value={customer.country} onChange={(e) => updateCustomer("country", e.target.value)} />
+              <Form.Control
+                value={customer.country || ""}
+                placeholder="Tanzania (TZ)"
+                onChange={(e) => updateCustomer("country", e.target.value)}
+              />
             )}
-          </div>
-          <div className="col-md-6">
+          </Form.Group>
+
+          <Form.Group>
             <Form.Label>Pickup hotel</Form.Label>
             {hasPickupPlaces ? (
-              <>
-                <Form.Select value={customer.hotelName} onChange={(e) => updatePickupHotel(e.target.value)}>
-                  <option value="">Select pickup hotel from Bokun</option>
-                  {pickupPlaces.map((place) => {
-                    const pickupLabel = formatPickupPlaceLabel(place);
-                    return (
-                      <option key={`${place.id || place.title}-${pickupLabel}`} value={pickupLabel}>
-                        {pickupLabel}
-                      </option>
-                    );
-                  })}
-                </Form.Select>
-                <div className="checkout-pickup-note is-loaded">
-                  Pickup hotels loaded automatically.
-                </div>
-              </>
+              <Form.Select value={customer.hotelName || ""} onChange={(e) => updatePickupHotel(e.target.value)}>
+                <option value="">Select pickup hotel from Bokun</option>
+                {pickupPlaces.map((place) => {
+                  const pickupLabel = formatPickupPlaceLabel(place);
+                  return (
+                    <option key={`${place.id || place.title}-${pickupLabel}`} value={pickupLabel}>
+                      {pickupLabel}
+                    </option>
+                  );
+                })}
+              </Form.Select>
             ) : (
-              <>
-                <Form.Control
-                  value={customer.hotelName}
-                  placeholder="Enter pickup hotel name"
-                  onChange={(e) => updateCustomer("hotelName", e.target.value)}
-                />
-                <div className="checkout-pickup-note">
-                  {hasPickupInfo
-                    ? "Pickup is available. Enter your hotel name and we will confirm pickup details."
-                    : "Enter your hotel name if pickup is needed."}
-                </div>
-              </>
+              <Form.Control
+                value={customer.hotelName || ""}
+                placeholder="Enter pickup hotel name"
+                onChange={(e) => updateCustomer("hotelName", e.target.value)}
+              />
             )}
-          </div>
-          <div className="col-12">
+            {!hasPickupPlaces ? (
+              <div className="checkout-pickup-note customer-pickup-note">
+                <BsInfoCircle />
+                <span>Enter your hotel name if pickup is needed.</span>
+              </div>
+            ) : null}
+          </Form.Group>
+
+          <Form.Group className="customer-step-wide">
             <Form.Label>Special request</Form.Label>
-            <Form.Control as="textarea" rows={2} value={customer.notes} onChange={(e) => updateCustomer("notes", e.target.value)} />
-          </div>
+            <div className="customer-notes-field">
+              <Form.Control
+                as="textarea"
+                rows={3}
+                maxLength={250}
+                value={notesValue}
+                placeholder="Any special requests or additional information..."
+                onChange={(e) => updateCustomer("notes", e.target.value)}
+              />
+              <span>{notesCount}/250</span>
+            </div>
+          </Form.Group>
         </div>
 
-        <div className="checkout-action-row mt-4">
-          <Button variant="outline-secondary" onClick={onBack}>
-            Back
+        {attemptedSubmit && !isValid ? (
+          <div className="customer-step-validation">
+            Please complete: {missingFields.join(", ")}.
+          </div>
+        ) : null}
+
+        <div className="customer-step-actions">
+          <Button variant="outline-secondary" onClick={onBack} disabled={loading}>
+            <BsArrowLeft /> Back
           </Button>
-          <Button className="premium-btn text-white" onClick={onNext} disabled={!isValid}>
-            Continue
+          <Button className="premium-btn text-white" onClick={handleContinue} disabled={loading}>
+            {loading ? "Checking live price..." : "Continue"} {!loading ? <BsArrowRight /> : null}
           </Button>
         </div>
       </Card.Body>

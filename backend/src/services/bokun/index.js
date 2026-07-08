@@ -1,5 +1,6 @@
 const bokunClient = require("../../integrations/bokun/bokun.client");
 const mapper = require("../../integrations/bokun/bokun.mapper");
+const ProductSnapshot = require("../../models/ProductSnapshot");
 const { env } = require("../../config/env");
 const logger = require("../../config/logger");
 const AppError = require("../../utils/AppError");
@@ -13,6 +14,7 @@ const STARTING_PREVIEW_DAYS_WINDOW = 14;
 const productDetailsCache = new Map();
 const bookingConfigCache = new Map();
 const countryCache = new Map();
+const pickupPlaceCatalogCache = new Map();
 const dialCodeByIso = new Map(
   allCountries.map((country) => [
     String(country.iso2 || country[1] || "").toUpperCase(),
@@ -40,6 +42,60 @@ const setCacheEntry = (store, key, value, ttlMs = BOKUN_CACHE_TTL_MS) => {
     expiresAt: Date.now() + Math.max(1000, Number(ttlMs || BOKUN_CACHE_TTL_MS))
   });
   return value;
+};
+
+const normalizePickupPlaceKey = (place = {}) => {
+  const title = String(place.title || place.name || "").trim().toLowerCase();
+  const address = String(place.address || "").trim().toLowerCase();
+  const id = String(place.id || place.pickupPlaceId || "").trim().toLowerCase();
+
+  return [title, address, id].filter(Boolean).join("|");
+};
+
+const normalizePickupPlaceForCatalog = (place = {}, source = {}) => {
+  const title = String(place.title || place.name || "").trim();
+  if (!title) {
+    return null;
+  }
+
+  return {
+    id: String(place.id || place.pickupPlaceId || title).trim(),
+    title,
+    groupTitle: String(place.groupTitle || place.type || "").trim(),
+    address: String(place.address || "").trim(),
+    latitude: place.latitude || null,
+    longitude: place.longitude || null,
+    productScoped: false,
+    sourceProductId: String(source.productId || place.sourceProductId || "").trim(),
+    sourceProductTitle: String(source.productTitle || place.sourceProductTitle || "").trim()
+  };
+};
+
+const dedupePickupPlaces = (places = [], limit = 900) => {
+  const seen = new Set();
+  const output = [];
+
+  ensureArray(places).forEach((place) => {
+    const normalized = normalizePickupPlaceForCatalog(place, {
+      productId: place.sourceProductId,
+      productTitle: place.sourceProductTitle
+    });
+    if (!normalized) {
+      return;
+    }
+
+    const key = normalizePickupPlaceKey(normalized);
+    if (!key || seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    output.push(normalized);
+  });
+
+  return output
+    .sort((a, b) => a.title.localeCompare(b.title))
+    .slice(0, Math.max(1, Number(limit || 900)));
 };
 
 const withTimeout = async (promise, timeoutMs, fallbackValue = null) => {
@@ -161,6 +217,65 @@ const fetchProductPickupPlaces = async (productId, requestId) => {
     });
     return [];
   }
+};
+
+const fetchPickupPlaceCatalog = async (requestId, options = {}) => {
+  const limit = Math.max(1, Math.min(1500, Number(options?.limit || 900)));
+  const forceRefresh = Boolean(options?.forceRefresh);
+  const cacheKey = `pickup-place-catalog:${limit}`;
+
+  if (!forceRefresh) {
+    const cached = getCacheEntry(pickupPlaceCatalogCache, cacheKey);
+    if (cached) {
+      return cached;
+    }
+  }
+
+  const snapshotRows = await ProductSnapshot.find({
+    status: "active",
+    "pickupPlaces.0": { $exists: true }
+  })
+    .select("bokunProductId title pickupPlaces")
+    .lean();
+
+  const snapshotPlaces = snapshotRows.flatMap((product = {}) =>
+    ensureArray(product.pickupPlaces).map((place) => ({
+      ...place,
+      sourceProductId: product.bokunProductId,
+      sourceProductTitle: product.title
+    }))
+  );
+  const fromSnapshots = dedupePickupPlaces(snapshotPlaces, limit);
+
+  if (fromSnapshots.length > 0) {
+    return setCacheEntry(pickupPlaceCatalogCache, cacheKey, fromSnapshots, 10 * 60 * 1000);
+  }
+
+  const products = await fetchProducts(requestId);
+  const livePlaces = [];
+
+  for (const product of products) {
+    if (livePlaces.length >= limit) {
+      break;
+    }
+
+    const productId = String(product.bokunProductId || "").trim();
+    if (!productId) {
+      continue;
+    }
+
+    const places = await fetchProductPickupPlaces(productId, requestId);
+    places.forEach((place) => {
+      livePlaces.push({
+        ...place,
+        sourceProductId: productId,
+        sourceProductTitle: product.title
+      });
+    });
+  }
+
+  const catalog = dedupePickupPlaces(livePlaces, limit);
+  return setCacheEntry(pickupPlaceCatalogCache, cacheKey, catalog, 10 * 60 * 1000);
 };
 
 const fetchProductDetails = async (productId, requestId, options = {}) => {
@@ -1835,6 +1950,7 @@ module.exports = {
   fetchCountries,
   fetchProductDetails,
   fetchProductPickupPlaces,
+  fetchPickupPlaceCatalog,
   fetchProductBookingConfig,
   fetchProductLiveQuote,
   fetchAvailability,

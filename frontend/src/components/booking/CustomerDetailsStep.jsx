@@ -1,23 +1,14 @@
-import Card from "react-bootstrap/Card";
 import CustomerStep from "./CustomerStep";
 
-const CustomerDetailsStep = ({ customer, setCustomer, pickupPlaces = [], pickupInfo = "", countries = [], onBack, onNext }) => (
-  <div>
-    <Card className="surface-card smart-step-card mb-3">
-      <Card.Body>
-        <h4 className="mb-1">Customer details</h4>
-        <p className="text-muted mb-0">
-          Enter lead traveler information used for confirmation and invoice.
-        </p>
-      </Card.Body>
-    </Card>
-
+const CustomerDetailsStep = ({ customer, setCustomer, pickupPlaces = [], pickupInfo = "", countries = [], loading = false, onBack, onNext }) => (
+  <div className="checkout-customer-step-wrap">
     <CustomerStep
       customer={customer}
       setCustomer={setCustomer}
       pickupPlaces={pickupPlaces}
       pickupInfo={pickupInfo}
       countries={countries}
+      loading={loading}
       onBack={onBack}
       onNext={onNext}
     />

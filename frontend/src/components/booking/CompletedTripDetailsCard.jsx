@@ -1,5 +1,5 @@
 import Card from "react-bootstrap/Card";
-import { BsCalendar3, BsCheckCircle, BsClock, BsGeoAlt, BsPencil, BsPeople, BsSignpostSplit } from "react-icons/bs";
+import { BsCalendar3, BsCheckCircle, BsClock, BsLock, BsPencil, BsPeople, BsSignpostSplit } from "react-icons/bs";
 import ChangeTripDetailsAction from "./ChangeTripDetailsAction";
 import { formatDate } from "../../utils/formatters";
 
@@ -20,7 +20,12 @@ const buildPassengerSummary = (rows = [], pax = {}) => {
   const adults = Number(pax.adults || 0);
   const children = Number(pax.children || 0);
   const infants = Number(pax.infants || 0);
-  return `Adults ${adults} | Children ${children} | Infants ${infants}`;
+  const pieces = [];
+  if (adults > 0) pieces.push(`${adults === 1 ? "Adult" : "Adults"} x${adults}`);
+  if (children > 0) pieces.push(`${children === 1 ? "Child" : "Children"} x${children}`);
+  if (infants > 0) pieces.push(`${infants === 1 ? "Infant" : "Infants"} x${infants}`);
+
+  return pieces.length ? pieces.join(", ") : "Adult x1";
 };
 
 const CompletedTripDetailsCard = ({
@@ -34,11 +39,10 @@ const CompletedTripDetailsCard = ({
     flowState.pax || {}
   );
   const rows = [
-    { icon: <BsSignpostSplit />, label: "Option", value: flowState.option?.name || "Not selected" },
+    { icon: <BsSignpostSplit />, label: "Option", value: flowState.option?.name || "Not selected", highlight: true },
     { icon: <BsCalendar3 />, label: "Travel Date", value: safeDate(flowState.travelDate) },
     { icon: <BsClock />, label: "Time", value: flowState.startTime || "Not selected" },
     { icon: <BsPeople />, label: "Passengers", value: passengerText },
-    { icon: <BsGeoAlt />, label: "Pickup Location", value: flowState.customer?.hotelName || "Select in customer details" },
     {
       icon: <BsCheckCircle />,
       label: "Status",
@@ -53,16 +57,21 @@ const CompletedTripDetailsCard = ({
         <div className="completed-trip-head">
           <div>
             <h4 className="mb-1">Trip Details</h4>
-            <p className="text-muted mb-0">Please review your selected tour information</p>
           </div>
-          <ChangeTripDetailsAction onClick={onChangeTripDetails} disabled={loading} icon={<BsPencil />} label="Change" />
+          <div className="completed-trip-head-actions">
+            <span className="checkout-review-mode-pill">
+              <BsLock />
+              Review mode
+            </span>
+            <ChangeTripDetailsAction onClick={onChangeTripDetails} disabled={loading} icon={<BsPencil />} label="Change" />
+          </div>
         </div>
 
         <div className="completed-trip-table mt-3">
           {rows.map((row) => (
-            <div className="completed-trip-row" key={row.label}>
+            <div className={`completed-trip-row ${row.highlight ? "is-highlight" : ""}`.trim()} key={row.label}>
               <span className="completed-trip-label">{row.icon}{row.label}</span>
-              <strong className={row.success ? "text-success" : ""}>{row.value}</strong>
+              <strong className={row.success ? "is-success" : ""}>{row.value}</strong>
             </div>
           ))}
         </div>

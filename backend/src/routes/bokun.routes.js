@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.get("/products", bokunController.products);
 router.get("/countries", bokunController.countries);
+router.get("/pickup-places", bokunController.pickupPlaces);
 router.get("/products/:productId", bokunController.productDetails);
 router.get("/products/:productId/booking-config", bokunController.productBookingConfig);
 router.post("/products/:productId/live-quote", bokunController.productLiveQuote);

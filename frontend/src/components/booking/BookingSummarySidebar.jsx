@@ -2,20 +2,20 @@ import Card from "react-bootstrap/Card";
 import Badge from "react-bootstrap/Badge";
 import {
   BsCalendar3,
-  BsCashStack,
   BsCheckCircle,
   BsClock,
   BsEnvelope,
+  BsLock,
   BsPencil,
   BsPeople,
   BsShieldCheck,
   BsSignpostSplit,
-  BsWhatsapp,
-  BsGeoAlt,
-  BsLock
+  BsWhatsapp
 } from "react-icons/bs";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import ChangeTripDetailsAction from "./ChangeTripDetailsAction";
+import CheckoutPaymentSummaryCard from "./CheckoutPaymentSummaryCard";
+import ConfirmActionRow from "./ConfirmActionRow";
 
 const toSafeNumber = (value) => {
   const parsed = Number(value || 0);
@@ -24,30 +24,75 @@ const toSafeNumber = (value) => {
 
 const formatTravelDate = (value) => (value ? formatDate(value, "ddd, MMM D, YYYY") : "Not selected");
 
+const resolveProductTitle = (tour = {}, compact = false) => {
+  const rawTitle = String(tour.shortTitle || tour.title || "Tour").replace(/\s+/g, " ").trim();
+
+  if (!compact) {
+    return rawTitle || "Tour";
+  }
+
+  const afterColon = rawTitle.includes(":") ? rawTitle.split(":").pop().trim() : rawTitle;
+  const withoutDayPrefix = afterColon.replace(/^(half|full)\s+day\s+/i, "").trim();
+
+  if (/mnemba\s+island\s+tour/i.test(withoutDayPrefix)) {
+    return "Mnemba Island Tour";
+  }
+
+  return withoutDayPrefix || rawTitle || "Tour";
+};
+
+const buildPassengerSummary = (rows = [], pax = {}) => {
+  const selectedRows = (rows || []).filter((row) => Number(row.quantity || 0) > 0);
+
+  if (selectedRows.length) {
+    return selectedRows
+      .map((row) => {
+        const quantity = Number(row.quantity || 0);
+        const rawTitle = String(row.title || "Passenger").trim();
+        const title = quantity === 1 ? rawTitle.replace(/s$/i, "") : rawTitle;
+        return `${title} x${quantity}`;
+      })
+      .join(", ");
+  }
+
+  const adults = toSafeNumber(pax?.adults);
+  const children = toSafeNumber(pax?.children);
+  const infants = toSafeNumber(pax?.infants);
+  const pieces = [];
+
+  if (adults > 0) pieces.push(`${adults === 1 ? "Adult" : "Adults"} x${adults}`);
+  if (children > 0) pieces.push(`${children === 1 ? "Child" : "Children"} x${children}`);
+  if (infants > 0) pieces.push(`${infants === 1 ? "Infant" : "Infants"} x${infants}`);
+
+  return pieces.length ? pieces.join(", ") : "Adult x1";
+};
+
 const BookingSummarySidebar = ({
   flowState,
   tour,
   availability = null,
   quoteLoading = false,
   availabilityLoading = false,
-  onChangeTripDetails
+  onChangeTripDetails,
+  showPaymentSummary = false,
+  showHelp = true,
+  showConfirmAction = false,
+  submitting = false,
+  disableConfirm = false,
+  onBack,
+  onConfirm,
+  className = "",
+  compactProductTitle = false
 }) => {
   const {
-    option,
     travelDate,
     startTime,
     pax,
     priceCategoryParticipants,
-    priceCatalog,
     quote,
     extras,
     availabilityChecked
   } = flowState;
-
-  const paxRows = (priceCategoryParticipants || []).filter((row) => Number(row.quantity || 0) > 0);
-  const paxSummary = paxRows.length
-    ? paxRows.map((row) => `${row.title || "Passenger"} x${row.quantity}`).join(", ")
-    : `Adults ${toSafeNumber(pax?.adults)} | Children ${toSafeNumber(pax?.children)} | Infants ${toSafeNumber(pax?.infants)}`;
 
   const extrasRows = (extras || []).filter((item) => Number(item.quantity || 0) > 0);
   const extrasTotal = extrasRows.reduce(
@@ -59,13 +104,12 @@ const BookingSummarySidebar = ({
   const quoteCurrency = quotePricing?.currency || availability?.currency || "USD";
   const liveQuoteReady = Boolean(quote?.quoteToken && quotePricing);
   const liveAvailabilityReady = Boolean(availabilityChecked || availability?.available);
-
   const estimatedTotal = liveQuoteReady
     ? toSafeNumber(quotePricing.finalPayable)
     : toSafeNumber(availability?.pricing?.grossAmount) + extrasTotal;
 
   return (
-    <div className="booking-sticky checkout-side-stack">
+    <div className={`booking-sticky checkout-side-stack ${className}`.trim()}>
       <Card className="surface-card smart-summary-card">
         <Card.Body>
           <h5 className="mb-3">Booking Summary</h5>
@@ -81,11 +125,7 @@ const BookingSummarySidebar = ({
 
           <div className="summary-line-item">
             <span><BsSignpostSplit />Product</span>
-            <strong>{tour?.title || "Tour"}</strong>
-          </div>
-          <div className="summary-line-item">
-            <span><BsPencil />Selected Option</span>
-            <strong>{option?.name || "Not selected"}</strong>
+            <strong>{resolveProductTitle(tour, compactProductTitle)}</strong>
           </div>
           <div className="summary-line-item">
             <span><BsCalendar3 />Travel Date</span>
@@ -97,11 +137,7 @@ const BookingSummarySidebar = ({
           </div>
           <div className="summary-line-item">
             <span><BsPeople />Passengers</span>
-            <strong>{paxSummary}</strong>
-          </div>
-          <div className="summary-line-item">
-            <span><BsGeoAlt />Pickup Location</span>
-            <strong>{flowState.customer?.hotelName || "Select in customer details"}</strong>
+            <strong>{buildPassengerSummary(priceCategoryParticipants, pax)}</strong>
           </div>
 
           {extrasRows.length ? (
@@ -119,7 +155,7 @@ const BookingSummarySidebar = ({
           <hr />
 
           <div className="summary-line-item total-line">
-            <span><BsCashStack />Estimated Total</span>
+            <span>Estimated Total</span>
             <strong>{formatCurrency(estimatedTotal, quoteCurrency)}</strong>
           </div>
 
@@ -128,40 +164,49 @@ const BookingSummarySidebar = ({
           ) : null}
 
           <div className="mt-3">
-            <ChangeTripDetailsAction className="w-100" onClick={onChangeTripDetails} icon={<BsPencil />} label="Change Trip Details" />
+            <ChangeTripDetailsAction className="w-100" onClick={onChangeTripDetails} icon={<BsPencil />} label="Edit Trip Details" />
           </div>
         </Card.Body>
       </Card>
 
-      <Card className="surface-card checkout-trust-card">
-        <Card.Body>
-          <h5>Why book with us?</h5>
-          {[
-            ["Best Price Guarantee", "We offer the best prices for all our tours", <BsShieldCheck />],
-            ["Secure Payments", "Your payment is 100% secure", <BsLock />],
-            ["Local Support", "24/7 support from our local team", <BsPeople />],
-            ["Instant Confirmation", "Get your booking confirmation instantly", <BsCheckCircle />]
-          ].map(([title, copy, icon]) => (
-            <div className="checkout-trust-row" key={title}>
-              <span>{icon}</span>
-              <div>
-                <strong>{title}</strong>
-                <small>{copy}</small>
-              </div>
-            </div>
-          ))}
+      {showPaymentSummary ? <CheckoutPaymentSummaryCard flowState={flowState} /> : null}
 
-          <div className="checkout-help-block">
-            <h6>Need help?</h6>
+      {showHelp ? (
+        <Card className="surface-card checkout-help-card">
+          <Card.Body>
+            <h5>Need help?</h5>
             <p>Our support team is here to help you</p>
-            <div><BsWhatsapp /> <span>+255 778 775 044</span></div>
-            <div><BsEnvelope /> <span>info@risertoursandsafaris.co.tz</span></div>
-          </div>
-        </Card.Body>
-      </Card>
+            <div className="checkout-help-row">
+              <BsWhatsapp />
+              <span>+255 778 775 044</span>
+            </div>
+            <div className="checkout-help-row">
+              <BsEnvelope />
+              <span>info@risertoursandsafaris.co.tz</span>
+            </div>
+          </Card.Body>
+        </Card>
+      ) : null}
+
+      {showConfirmAction ? (
+        <Card className="surface-card checkout-side-confirm-card">
+          <Card.Body>
+            <ConfirmActionRow
+              className="checkout-confirm-full"
+              showBack
+              submitting={submitting}
+              disableConfirm={disableConfirm}
+              confirmLabel="Confirm & Pay Secure Checkout"
+              loadingLabel="Redirecting to Pesapal..."
+              onBack={onBack}
+              onConfirm={onConfirm}
+              confirmIcon={<BsLock />}
+            />
+          </Card.Body>
+        </Card>
+      ) : null}
     </div>
   );
 };
 
 export default BookingSummarySidebar;
-

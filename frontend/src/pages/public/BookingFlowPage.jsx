@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button, Card } from "react-bootstrap";
+import { BsArrowLeft, BsArrowRight, BsLock, BsShieldCheck } from "react-icons/bs";
 import { BookingFlowProvider } from "../../context/BookingFlowContext";
 import useBookingFlow from "../../hooks/useBookingFlow";
 import { fetchTourBySlug } from "../../api/toursApi";
@@ -8,7 +9,7 @@ import {
   fetchAvailability,
   createQuote
 } from "../../api/bookingsApi";
-import { fetchBokunCountries, fetchBokunProductDetails } from "../../api/bokunApi";
+import { fetchBokunCountries, fetchBokunPickupPlaces, fetchBokunProductDetails } from "../../api/bokunApi";
 import { createPesapalPayment } from "../../api/paymentsApi";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
@@ -21,6 +22,7 @@ import CustomerDetailsStep from "../../components/booking/CustomerDetailsStep";
 import ReviewConfirmStep from "../../components/booking/ReviewConfirmStep";
 import ConfirmationStep from "../../components/booking/ConfirmationStep";
 import SmartCheckoutInitializer from "../../components/booking/SmartCheckoutInitializer";
+import { isCustomerSummaryValid } from "../../components/booking/CustomerSummaryCard";
 import {
   STEP_IDS,
   buildSmartCheckoutSteps,
@@ -197,6 +199,18 @@ const mergeLivePickupDetails = (tourData = {}, liveProduct = null) => {
   };
 };
 
+const markProductPickupPlaces = (places = []) =>
+  (Array.isArray(places) ? places : []).map((place) => ({
+    ...place,
+    productScoped: place.productScoped !== false
+  }));
+
+const markFallbackPickupPlaces = (places = []) =>
+  (Array.isArray(places) ? places : []).map((place) => ({
+    ...place,
+    productScoped: false
+  }));
+
 const BookingFlowInner = ({ portal = "public" }) => {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
@@ -241,6 +255,10 @@ const BookingFlowInner = ({ portal = "public" }) => {
 
   const hasExtras = Boolean((availability?.extras || []).length);
   const hasConfirmation = Boolean(state.bookingResult);
+  const isReviewStep = currentStepId === STEP_IDS.REVIEW;
+  const isCustomerStep = currentStepId === STEP_IDS.CUSTOMER;
+  const customerReady = isCustomerSummaryValid(state.customer || {});
+  const checkoutConfirmDisabled = !customerReady || !state.quote?.quoteToken;
 
   const steps = useMemo(
     () =>
@@ -252,6 +270,23 @@ const BookingFlowInner = ({ portal = "public" }) => {
       }),
     [hasExtras, hasConfirmation, currentStepId, completedStepIds]
   );
+
+  const displaySteps = useMemo(
+    () =>
+      steps
+        .filter((step) => [STEP_IDS.TRIP_DETAILS, STEP_IDS.CUSTOMER, STEP_IDS.REVIEW].includes(step.id))
+        .map((step, index) => ({
+          ...step,
+          index: index + 1
+        })),
+    [steps]
+  );
+  const checkoutPickupPlaces = useMemo(() => {
+    const statePlaces = Array.isArray(state.pickupPlaces) ? state.pickupPlaces : [];
+    const tourPlaces = Array.isArray(tour?.pickupPlaces) ? tour.pickupPlaces : [];
+
+    return statePlaces.length ? statePlaces : tourPlaces;
+  }, [state.pickupPlaces, tour?.pickupPlaces]);
 
   const markStepCompleted = useCallback((stepId) => {
     setCompletedStepIds((prev) => Array.from(new Set([...prev, stepId])));
@@ -369,7 +404,20 @@ const BookingFlowInner = ({ portal = "public" }) => {
       const liveProduct = tourData?.bokunProductId
         ? await fetchBokunProductDetails(tourData.bokunProductId, { forceRefresh: true }).catch(() => null)
         : null;
-      const checkoutTour = mergeLivePickupDetails(tourData, liveProduct);
+      const mergedTour = mergeLivePickupDetails(tourData, liveProduct);
+      const productPickupPlaces = markProductPickupPlaces(mergedTour.pickupPlaces || []);
+      const fallbackPickupPlaces = productPickupPlaces.length
+        ? []
+        : markFallbackPickupPlaces(
+            await fetchBokunPickupPlaces({
+              limit: 900
+            }).catch(() => [])
+          );
+      const checkoutTour = {
+        ...mergedTour,
+        pickupPlaces: productPickupPlaces.length ? productPickupPlaces : fallbackPickupPlaces,
+        pickupPlacesAreFallback: productPickupPlaces.length === 0 && fallbackPickupPlaces.length > 0
+      };
 
       setTour(checkoutTour);
       setCountries(countryList || []);
@@ -586,6 +634,16 @@ const BookingFlowInner = ({ portal = "public" }) => {
   };
 
   const handleCustomerContinue = async () => {
+    const requiredCustomerFields = ["firstName", "lastName", "email", "phone", "country"];
+    const missingCustomerFields = requiredCustomerFields.filter(
+      (field) => !String(state.customer?.[field] || "").trim()
+    );
+
+    if (missingCustomerFields.length > 0) {
+      setError("Please complete customer name, email, phone, and country before continuing.");
+      return;
+    }
+
     const quote = await refreshLiveQuote();
     if (!quote) {
       return;
@@ -662,6 +720,69 @@ const BookingFlowInner = ({ portal = "public" }) => {
     setInitLoading(false);
   };
 
+  const renderReviewSidebar = (className = "", showConfirmAction = false) => (
+    <BookingSummarySidebar
+      className={className}
+      flowState={state}
+      tour={tour}
+      availability={availability}
+      quoteLoading={quoteLoading}
+      availabilityLoading={availabilityLoading}
+      onChangeTripDetails={handleChangeTripDetails}
+      showPaymentSummary
+      showHelp
+      showConfirmAction={showConfirmAction}
+      submitting={submitLoading}
+      disableConfirm={checkoutConfirmDisabled}
+      onBack={handleGoPrevious}
+      onConfirm={handleCreateBooking}
+      compactProductTitle={isReviewStep}
+    />
+  );
+
+  const renderDesktopConfirmFooter = () => (
+    <div className="checkout-desktop-action-footer">
+      <Button variant="outline-secondary" onClick={handleGoPrevious} disabled={submitLoading}>
+        <BsArrowLeft /> Back
+      </Button>
+      <div className="checkout-footer-secure-note">
+        <BsShieldCheck />
+        <span>
+          <strong>Your payment is secure</strong>
+          <small>We use industry-standard encryption to protect your data and payments.</small>
+        </span>
+      </div>
+      <Button
+        className="premium-btn text-white checkout-footer-confirm-btn"
+        onClick={handleCreateBooking}
+        disabled={submitLoading || checkoutConfirmDisabled}
+      >
+        {!submitLoading ? <BsLock /> : null}
+        {submitLoading ? "Redirecting to Pesapal..." : "Confirm & Pay Secure Checkout"}
+      </Button>
+    </div>
+  );
+
+  const renderCustomerMobileActions = () => (
+    <div className="checkout-mobile-customer-actions">
+      <Button
+        variant="outline-secondary"
+        onClick={hasExtras ? handleGoPrevious : handleChangeTripDetails}
+        disabled={quoteLoading}
+      >
+        <BsArrowLeft /> Back
+      </Button>
+      <Button
+        className="premium-btn text-white"
+        onClick={handleCustomerContinue}
+        disabled={quoteLoading}
+      >
+        {quoteLoading ? "Checking live price..." : "Continue"}
+        {!quoteLoading ? <BsArrowRight /> : null}
+      </Button>
+    </div>
+  );
+
   const renderCurrentStep = () => {
     if (currentStepId === STEP_IDS.EXTRAS) {
       return (
@@ -685,9 +806,10 @@ const BookingFlowInner = ({ portal = "public" }) => {
             const value = typeof updater === "function" ? updater(state.customer) : updater;
             updateFlow({ customer: value });
           }}
-          pickupPlaces={state.pickupPlaces || tour?.pickupPlaces || []}
+          pickupPlaces={checkoutPickupPlaces}
           pickupInfo={tour?.pickupInfo || ""}
           countries={countries}
+          loading={quoteLoading}
           onBack={hasExtras ? handleGoPrevious : handleChangeTripDetails}
           onNext={handleCustomerContinue}
         />
@@ -699,12 +821,14 @@ const BookingFlowInner = ({ portal = "public" }) => {
         <ReviewConfirmStep
           flowState={state}
           submitting={submitLoading}
-          onCustomerChange={(customer) => updateFlow({ customer })}
-          pickupPlaces={state.pickupPlaces || tour?.pickupPlaces || []}
+          pickupPlaces={checkoutPickupPlaces}
           pickupInfo={tour?.pickupInfo || ""}
           countries={countries}
           onBack={handleGoPrevious}
           onConfirm={handleCreateBooking}
+          onEditCustomer={() => setCurrentStepId(STEP_IDS.CUSTOMER)}
+          showPaymentSummary={false}
+          mobileReviewSidebar={renderReviewSidebar("checkout-mobile-review-sidebar", true)}
         />
       );
     }
@@ -725,6 +849,52 @@ const BookingFlowInner = ({ portal = "public" }) => {
           </Button>
         </Card.Body>
       </Card>
+    );
+  };
+
+  const renderMainContent = () => {
+    if (isReviewStep) {
+      return (
+        <>
+          <div className="checkout-review-two-column">
+            <div className="checkout-review-trip-column">
+              <CompletedTripDetailsCard
+                tour={tour}
+                flowState={state}
+                onChangeTripDetails={handleChangeTripDetails}
+                loading={quoteLoading || availabilityLoading || submitLoading}
+              />
+            </div>
+            <div className="checkout-review-customer-column">
+              <ErrorAlert error={error} className="mb-3" />
+              {renderCurrentStep()}
+            </div>
+          </div>
+          {renderDesktopConfirmFooter()}
+        </>
+      );
+    }
+
+    if (isCustomerStep) {
+      return (
+        <>
+          <ErrorAlert error={error} className="mb-3" />
+          {renderCurrentStep()}
+        </>
+      );
+    }
+
+    return (
+      <>
+        <CompletedTripDetailsCard
+          tour={tour}
+          flowState={state}
+          onChangeTripDetails={handleChangeTripDetails}
+          loading={quoteLoading || availabilityLoading || submitLoading}
+        />
+        <ErrorAlert error={error} className="mb-3" />
+        {renderCurrentStep()}
+      </>
     );
   };
 
@@ -786,30 +956,26 @@ const BookingFlowInner = ({ portal = "public" }) => {
     <BookingFlowLayout
       title={tour?.title || "Booking checkout"}
       subtitle="Trip details are already selected. Continue without repeating previous steps."
-      stepper={<BookingStepper steps={steps} />}
+      stepper={<BookingStepper steps={displaySteps} />}
       tour={tour}
-      left={
-        <>
-          <CompletedTripDetailsCard
-            tour={tour}
-            flowState={state}
-            onChangeTripDetails={handleChangeTripDetails}
-            loading={quoteLoading || availabilityLoading || submitLoading}
-          />
-          <ErrorAlert error={error} className="mb-3" />
-          {renderCurrentStep()}
-        </>
-      }
+      left={renderMainContent()}
       right={
         <>
-          <BookingSummarySidebar
-            flowState={state}
-            tour={tour}
-            availability={availability}
-            quoteLoading={quoteLoading}
-            availabilityLoading={availabilityLoading}
-            onChangeTripDetails={handleChangeTripDetails}
-          />
+          {isReviewStep ? (
+            renderReviewSidebar("checkout-desktop-review-sidebar", false)
+          ) : (
+            <BookingSummarySidebar
+              flowState={state}
+              tour={tour}
+              availability={availability}
+              quoteLoading={quoteLoading}
+              availabilityLoading={availabilityLoading}
+              onChangeTripDetails={handleChangeTripDetails}
+              compactProductTitle={false}
+            />
+          )}
+
+          {isCustomerStep ? renderCustomerMobileActions() : null}
 
           {state.bookingResult ? (
             <Card className="surface-card mt-3">

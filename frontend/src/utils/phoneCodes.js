@@ -11,8 +11,11 @@ const countriesByIso = new Map(
   ])
 );
 
+const normalizeCountryCode = (countryCode = "") =>
+  String(countryCode || "").trim().toUpperCase();
+
 export const getDialCodeForCountry = (countryCode = "") => {
-  const country = countriesByIso.get(String(countryCode || "").trim().toUpperCase());
+  const country = countriesByIso.get(normalizeCountryCode(countryCode));
   return country?.dialCode ? `+${country.dialCode}` : "";
 };
 
@@ -30,6 +33,26 @@ export const resolveDefaultCountryCode = (countries = [], preferredCode = "TZ") 
   );
 
   return String(preferred?.code || countries[0]?.code || "").toUpperCase();
+};
+
+export const getCountryFlagUrl = (countryCode = "", width = 40) => {
+  const code = normalizeCountryCode(countryCode);
+
+  if (!/^[A-Z]{2}$/.test(code)) {
+    return "";
+  }
+
+  return `https://flagcdn.com/w${Number(width) || 40}/${code.toLowerCase()}.png`;
+};
+
+export const countryCodeToFlagEmoji = (countryCode = "") => {
+  const code = normalizeCountryCode(countryCode);
+
+  if (!/^[A-Z]{2}$/.test(code)) {
+    return "";
+  }
+
+  return String.fromCodePoint(...[...code].map((char) => 127397 + char.charCodeAt(0)));
 };
 
 export const applyDialCodeToPhone = (phone = "", countryCode = "", countries = []) => {

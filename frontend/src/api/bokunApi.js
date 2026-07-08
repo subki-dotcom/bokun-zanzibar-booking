@@ -5,6 +5,14 @@ export const fetchBokunCountries = async () => {
   return response.data.data;
 };
 
+export const fetchBokunPickupPlaces = async (params = {}) => {
+  const response = await axiosClient.get("/bokun/pickup-places", {
+    params
+  });
+
+  return response.data.data;
+};
+
 export const fetchBokunProductDetails = async (productId, params = {}) => {
   const response = await axiosClient.get(`/bokun/products/${productId}`, {
     params
