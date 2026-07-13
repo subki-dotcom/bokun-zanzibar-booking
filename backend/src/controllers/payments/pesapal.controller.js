@@ -26,7 +26,8 @@ const success = asyncHandler(async (req, res) => {
       req.validated.query.OrderMerchantReference ||
       req.validated.query.orderMerchantReference ||
       "",
-    requestId: req.requestId
+    requestId: req.requestId,
+    source: "callback"
   });
 
   return successResponse(res, {
@@ -70,7 +71,8 @@ const ipn = asyncHandler(async (req, res) => {
       payload.OrderMerchantReference ||
       payload.orderMerchantReference ||
       "",
-    requestId: req.requestId
+    requestId: req.requestId,
+    source: "ipn"
   });
 
   return successResponse(res, {

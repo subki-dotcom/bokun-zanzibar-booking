@@ -44,6 +44,7 @@ const DashboardLayout = ({ portal = "admin" }) => {
           { path: "/admin", label: "Dashboard" },
           { path: "/admin/bookings", label: "Bookings" },
           { path: "/admin/agents", label: "Agents" },
+          { path: "/admin/payments", label: "Payments" },
           { path: "/admin/recovery", label: "Recovery" },
           { path: "/admin/sync-logs", label: "Sync Logs" }
         ];

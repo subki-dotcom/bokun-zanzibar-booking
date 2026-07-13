@@ -81,6 +81,8 @@ const BookingSummarySidebar = ({
   disableConfirm = false,
   onBack,
   onConfirm,
+  confirmLabel = "Confirm & Pay Secure Checkout",
+  loadingLabel = "Redirecting to payment...",
   className = "",
   compactProductTitle = false
 }) => {
@@ -196,8 +198,8 @@ const BookingSummarySidebar = ({
               showBack
               submitting={submitting}
               disableConfirm={disableConfirm}
-              confirmLabel="Confirm & Pay Secure Checkout"
-              loadingLabel="Redirecting to Pesapal..."
+              confirmLabel={confirmLabel}
+              loadingLabel={loadingLabel}
               onBack={onBack}
               onConfirm={onConfirm}
               confirmIcon={<BsLock />}

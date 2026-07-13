@@ -5906,7 +5906,7 @@ textarea.form-control {
 }
 
 .checkout-shell {
-  max-width: 1480px;
+  max-width: 1320px;
 }
 
 .smart-checkout-page .surface-card:hover,
@@ -5916,8 +5916,9 @@ textarea.form-control {
 }
 
 .checkout-topbar {
-  grid-template-columns: 270px minmax(360px, 1fr) 210px auto;
-  min-height: 76px;
+  grid-template-columns: 240px minmax(330px, 1fr) 190px auto;
+  min-height: 66px;
+  padding: 0.8rem 1.1rem;
   border-color: #e6edf5;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
@@ -5932,18 +5933,21 @@ textarea.form-control {
 .checkout-brand strong {
   display: inline;
   color: #0f9f5a;
-  font-size: 1.62rem;
+  font-size: 1.34rem;
   font-weight: 900;
 }
 
 .checkout-brand small {
   display: inline;
   color: #0f172a;
-  font-size: 1.42rem;
+  font-size: 1.16rem;
   font-weight: 500;
 }
 
 .checkout-brand-mark {
+  width: 40px;
+  height: 40px;
+  font-size: 1.18rem;
   background: #0f9f5a;
   box-shadow: inset 0 -8px 18px rgba(15, 23, 42, 0.1);
 }
@@ -5962,16 +5966,16 @@ textarea.form-control {
 }
 
 .smart-stepper-track {
-  gap: 0.8rem;
+  gap: 0.62rem;
 }
 
 .smart-step-connector {
-  width: 56px;
+  width: 42px;
   background: #19a463;
 }
 
 .smart-step-item.is-current {
-  padding-bottom: 1.15rem;
+  padding-bottom: 0.85rem;
 }
 
 .smart-step-item.is-current::after {
@@ -5993,19 +5997,19 @@ textarea.form-control {
 }
 
 .checkout-secure-chip svg {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   color: #0f9f5a;
 }
 
 .checkout-secure-chip strong {
-  font-size: 0.92rem;
+  font-size: 0.84rem;
   font-weight: 900;
 }
 
 .checkout-secure-chip small {
   color: #475569;
-  font-size: 0.82rem;
+  font-size: 0.74rem;
 }
 
 .booking-flow-grid {
@@ -6014,15 +6018,15 @@ textarea.form-control {
 }
 
 .checkout-tour-hero {
-  grid-template-columns: minmax(300px, 42%) minmax(0, 1fr);
-  min-height: 246px;
-  margin-bottom: 1rem;
+  grid-template-columns: minmax(260px, 38%) minmax(0, 1fr);
+  min-height: 196px;
+  margin-bottom: 0.8rem;
   border-color: #e6edf5;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
 }
 
 .checkout-tour-image-wrap {
-  aspect-ratio: 16 / 8.25;
+  aspect-ratio: 16 / 8.8;
 }
 
 .checkout-tour-badge {
@@ -6043,15 +6047,15 @@ textarea.form-control {
 .checkout-tour-copy h1 {
   max-width: 760px;
   color: #0f172a;
-  font-size: clamp(1.45rem, 2vw, 1.9rem);
+  font-size: clamp(1.18rem, 1.55vw, 1.52rem);
   font-weight: 900;
 }
 
 .checkout-tour-copy p {
   max-width: 680px;
   color: #42526b;
-  font-size: 1rem;
-  line-height: 1.55;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .checkout-tour-tags span {
@@ -6085,6 +6089,379 @@ textarea.form-control {
 .checkout-payment-card,
 .checkout-confirm-card {
   margin-bottom: 0;
+}
+
+.payment-method-card {
+  border: 1px solid #e6edf5;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+  padding: 0.95rem;
+}
+
+.payment-method-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.payment-method-head h4 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.98rem;
+  font-weight: 900;
+}
+
+.payment-method-head-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: #0f9f5a;
+  background: #e8f8ef;
+}
+
+.payment-method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.payment-method-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 62px;
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #dce6f1;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.payment-method-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.payment-method-option.is-selected {
+  border-color: #0f9f5a;
+  background: #f3fbf7;
+  box-shadow: 0 0 0 3px rgba(15, 159, 90, 0.12);
+}
+
+.payment-method-option.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  background: #f8fafc;
+}
+
+.payment-method-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(124px, 100%);
+  height: 38px;
+  overflow: hidden;
+}
+
+.payment-method-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.payment-method-selected-dot {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 999px;
+  background: #0f9f5a;
+  box-shadow: 0 0 0 3px #dff7ea;
+}
+
+.payment-checkout-methods {
+  margin: 1rem 0;
+}
+
+.review-section-card,
+.review-order-card,
+.review-pay-card,
+.review-help-card {
+  border: 1px solid #e6edf5;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+.review-section-card .card-body,
+.review-order-card .card-body,
+.review-pay-card .card-body,
+.review-help-card .card-body {
+  padding: 1.05rem;
+}
+
+.review-section-card + .review-section-card,
+.review-section-card + .payment-method-card,
+.review-order-card + .review-pay-card,
+.review-order-card + .payment-method-card,
+.review-pay-card + .review-help-card,
+.payment-method-card + .review-pay-card {
+  margin-top: 0.8rem;
+}
+
+.review-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.72rem;
+}
+
+.review-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.review-section-title h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.review-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+  border-radius: 8px;
+  color: #0f9f5a;
+  background: #e8f8ef;
+}
+
+.review-section-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.review-edit-btn.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 36px;
+  padding-inline: 0.78rem;
+  border-radius: 8px;
+  color: #0f172a;
+  border-color: #d9e3ee;
+  background: #ffffff;
+  font-weight: 900;
+}
+
+.review-edit-btn.btn:hover,
+.review-edit-btn.btn:focus {
+  color: #0f9f5a;
+  border-color: #0f9f5a;
+  background: #ffffff;
+}
+
+.review-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1.45rem;
+}
+
+.review-detail-row {
+  display: grid;
+  grid-template-columns: minmax(106px, 0.4fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.68rem;
+  min-width: 0;
+  padding: 0.56rem 0;
+  border-bottom: 1px solid #e6edf5;
+}
+
+.review-detail-label,
+.review-summary-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.48rem;
+  min-width: 0;
+  color: #52617a;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.review-detail-label svg,
+.review-summary-row svg,
+.review-help-row svg {
+  flex: 0 0 auto;
+  color: #0f9f5a;
+}
+
+.review-detail-row strong {
+  min-width: 0;
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.review-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: auto;
+  padding: 0.28rem 0.55rem;
+  border-radius: 8px;
+  color: #0f8f4f !important;
+  background: #e8f8ef;
+  font-size: 0.8rem;
+}
+
+.review-payment-mobile {
+  display: none;
+}
+
+.review-order-sidebar {
+  display: grid;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.review-order-title {
+  margin-bottom: 1rem;
+}
+
+.review-summary-lines,
+.review-summary-pricing {
+  display: grid;
+  gap: 0.76rem;
+}
+
+.review-summary-pricing {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dfe7f0;
+}
+
+.review-summary-row {
+  display: grid;
+  grid-template-columns: minmax(98px, 0.42fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.review-summary-row strong {
+  min-width: 0;
+  color: #0f172a;
+  font-size: 0.92rem;
+  font-weight: 900;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.review-summary-total {
+  align-items: center;
+  margin-top: 0.2rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #dfe7f0;
+}
+
+.review-summary-total span,
+.review-summary-total strong {
+  color: #0f172a;
+  font-size: 0.98rem;
+  font-weight: 900;
+}
+
+.review-summary-total strong {
+  color: #0f9f5a;
+  font-size: 1.34rem;
+}
+
+.review-pay-card .card-body {
+  padding: 0;
+}
+
+.review-pay-card {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.review-pay-card .review-action-row {
+  display: block;
+}
+
+.review-pay-card .premium-btn {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 8px;
+  font-weight: 900;
+  white-space: normal;
+}
+
+.review-help-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f4fbf7 100%);
+}
+
+.review-help-card h5 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.98rem;
+  font-weight: 900;
+}
+
+.review-help-card p {
+  margin: 0.25rem 0 0.7rem;
+  color: #52617a;
+}
+
+.review-help-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.25rem 0;
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.review-help-row:hover {
+  color: #0f9f5a;
+}
+
+@media (min-width: 1024px) {
+  .checkout-shell {
+    max-width: 1260px;
+  }
+
+  .review-order-sidebar.review-checkout-sidebar {
+    position: sticky;
+    top: 1rem;
+  }
 }
 
 .completed-trip-card .card-body,
@@ -6745,6 +7122,38 @@ textarea.form-control {
     min-height: 0;
   }
 
+  .payment-method-card {
+    padding: 1rem;
+  }
+
+  .payment-method-grid {
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  }
+
+  .payment-method-option {
+    min-height: 74px;
+  }
+
+  .payment-method-logo-wrap {
+    width: min(160px, 100%);
+  }
+
+  .review-payment-desktop {
+    display: none;
+  }
+
+  .review-payment-mobile {
+    display: block;
+  }
+
+  .review-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .review-order-sidebar {
+    margin-top: 1rem;
+  }
+
   .checkout-desktop-review-sidebar {
     display: none;
   }
@@ -6825,34 +7234,34 @@ textarea.form-control {
   }
 
   .checkout-topbar {
-    padding: 1rem;
-    gap: 0.75rem;
+    padding: 0.82rem;
+    gap: 0.58rem;
   }
 
   .checkout-brand-mark {
-    width: 42px;
-    height: 42px;
+    width: 36px;
+    height: 36px;
   }
 
   .checkout-brand strong {
-    font-size: 1.28rem;
+    font-size: 1.08rem;
   }
 
   .checkout-brand small {
-    font-size: 1.05rem;
+    font-size: 0.9rem;
   }
 
   .checkout-secure-chip svg {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
   }
 
   .checkout-secure-chip strong {
-    font-size: 0.82rem;
+    font-size: 0.74rem;
   }
 
   .checkout-secure-chip small {
-    font-size: 0.74rem;
+    font-size: 0.66rem;
   }
 
   .smart-stepper-track {
@@ -6866,17 +7275,17 @@ textarea.form-control {
   }
 
   .smart-step-dot {
-    width: 34px;
-    height: 34px;
-    flex: 0 0 34px;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
   }
 
   .smart-step-label {
-    font-size: 0.76rem;
+    font-size: 0.7rem;
   }
 
   .smart-step-connector {
-    width: 32px;
+    width: 24px;
     margin-left: 0.1rem;
   }
 
@@ -6887,8 +7296,11 @@ textarea.form-control {
   .smart-summary-card .card-body,
   .checkout-help-card .card-body,
   .checkout-side-confirm-card .card-body,
+  .review-section-card .card-body,
+  .review-order-card .card-body,
+  .review-help-card .card-body,
   .checkout-confirm-card .card-body {
-    padding: 1rem;
+    padding: 0.82rem;
   }
 
   .checkout-tour-image-wrap {
@@ -6896,11 +7308,11 @@ textarea.form-control {
   }
 
   .checkout-tour-copy h1 {
-    font-size: 1.36rem;
+    font-size: 1.16rem;
   }
 
   .checkout-tour-copy p {
-    font-size: 0.95rem;
+    font-size: 0.86rem;
   }
 
   .checkout-tour-tags span {
@@ -6964,6 +7376,25 @@ textarea.form-control {
 
   .checkout-side-confirm-card {
     border: 1px solid #e6edf5;
+  }
+
+  .review-section-head {
+    align-items: flex-start;
+  }
+
+  .review-detail-row {
+    grid-template-columns: minmax(94px, 34%) minmax(0, 1fr);
+    gap: 0.55rem;
+    padding: 0.5rem 0;
+  }
+
+  .review-summary-row {
+    grid-template-columns: minmax(84px, 0.36fr) minmax(0, 1fr);
+    gap: 0.58rem;
+  }
+
+  .review-summary-total strong {
+    font-size: 1.18rem;
   }
 
   .checkout-side-confirm-card .card-body {
@@ -7832,6 +8263,81 @@ textarea.form-control {
   max-width: 300px;
   color: #64748b;
   font-size: 0.86rem;
+}
+
+.admin-payment-stat-grid .surface-card .card-body {
+  min-height: 112px;
+}
+
+.admin-payment-stat-grid small,
+.admin-payment-stat-grid strong {
+  display: block;
+}
+
+.admin-payment-stat-grid small {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.admin-payment-stat-grid strong {
+  margin-top: 0.3rem;
+  color: #0f172a;
+  font-size: 1.6rem;
+}
+
+.admin-payment-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-payment-toolbar h5 {
+  margin: 0;
+}
+
+.admin-payment-toolbar span,
+.admin-payment-table small {
+  display: block;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.admin-payment-table th {
+  white-space: nowrap;
+  color: #475569;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-payment-table td {
+  min-width: 118px;
+  vertical-align: top;
+}
+
+.admin-payment-table td:first-child {
+  min-width: 210px;
+}
+
+.admin-payment-row-alert {
+  background: #fffaf0;
+}
+
+.admin-payment-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(130px, 1fr));
+  gap: 0.45rem;
+  min-width: 280px;
+}
+
+.admin-payment-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  white-space: nowrap;
 }
 
 .agent-booking-desk-head {
@@ -9930,6 +10436,19 @@ textarea.form-control {
 
   .admin-recovery-stats {
     grid-template-columns: 1fr;
+  }
+
+  .admin-payment-toolbar {
+    display: block;
+  }
+
+  .admin-payment-toolbar .form-check {
+    margin-top: 0.75rem;
+  }
+
+  .admin-payment-actions {
+    grid-template-columns: 1fr;
+    min-width: 190px;
   }
 
   .agent-booking-desk-head,

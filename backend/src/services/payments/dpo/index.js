@@ -279,6 +279,10 @@ const updatePaymentLogForCreate = async ({ booking, tokenResponse }) => {
     await paymentsService.updatePaymentStatus({
       intentId: latestPayment.intentId,
       status: "pending",
+      providerTransactionId: tokenResponse.transactionToken,
+      orderTrackingId: tokenResponse.transactionToken,
+      merchantReference: tokenResponse.transactionRef || booking.bookingReference,
+      rawResponse: tokenResponse,
       providerResponse
     });
     return latestPayment;
@@ -290,6 +294,9 @@ const updatePaymentLogForCreate = async ({ booking, tokenResponse }) => {
     amount: Number(booking.amount || 0),
     currency: booking.currency || "USD",
     provider: "dpo",
+    providerTransactionId: tokenResponse.transactionToken,
+    orderTrackingId: tokenResponse.transactionToken,
+    merchantReference: tokenResponse.transactionRef || booking.bookingReference,
     notes: "DPO payment intent created"
   });
 
@@ -297,6 +304,10 @@ const updatePaymentLogForCreate = async ({ booking, tokenResponse }) => {
     const updated = await paymentsService.updatePaymentStatus({
       intentId: createdIntent.intentId,
       status: "pending",
+      providerTransactionId: tokenResponse.transactionToken,
+      orderTrackingId: tokenResponse.transactionToken,
+      merchantReference: tokenResponse.transactionRef || booking.bookingReference,
+      rawResponse: tokenResponse,
       providerResponse
     });
 
@@ -317,6 +328,13 @@ const updatePaymentLogForVerification = async ({
     provider: "dpo",
     status: isPaid ? "paid" : "failed",
     paidAmount: isPaid ? Number(amount || 0) : 0,
+    amountPaid: isPaid ? Number(amount || 0) : 0,
+    providerTransactionId: verification.transactionToken || "",
+    orderTrackingId: verification.transactionToken || "",
+    merchantReference: verification.transactionRef || bookingReference,
+    paidAt: isPaid ? new Date() : undefined,
+    lastVerifiedAt: new Date(),
+    rawResponse: verification,
     providerResponse: {
       stage: "verify_token",
       response: verification
@@ -493,6 +511,24 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
     }
 
     const paidAmount = Number(booking.amount || verification.transactionAmount || 0);
+    await updatePaymentLogForVerification({
+      bookingReference: booking.bookingReference,
+      isPaid: true,
+      amount: paidAmount,
+      verification
+    });
+
+    const paidBooking = await bookingsService.markBookingPaymentVerified({
+      bookingId: booking._id,
+      requestId,
+      transactionToken,
+      paymentMethod: "dpo",
+      paymentProvider: "dpo",
+      amountPaid: paidAmount,
+      currency: verification.transactionCurrency || booking.currency || "USD",
+      reason: "DPO payment verified before Bokun finalization"
+    });
+
     const finalized = await bookingsService.finalizePendingBookingAfterPayment({
       bookingId: booking._id,
       transactionToken,
@@ -503,17 +539,10 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
       auditReason: "DPO payment verified and booking created in Bokun"
     });
 
-    await updatePaymentLogForVerification({
-      bookingReference: booking.bookingReference,
-      isPaid: true,
-      amount: paidAmount,
-      verification
-    });
-
     return {
       status: "paid",
       message: "Payment verified and booking confirmed in Bokun",
-      booking: finalized.response
+      booking: finalized.response || paidBooking
     };
   } catch (error) {
     const finalizationMeta = extractBokunFinalizationErrorMeta(error);

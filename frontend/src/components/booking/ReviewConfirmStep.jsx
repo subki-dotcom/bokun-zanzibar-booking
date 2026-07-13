@@ -1,16 +1,25 @@
 import Card from "react-bootstrap/Card";
 import {
+  BsCalendar3,
+  BsCheckCircle,
+  BsClock,
   BsEnvelope,
   BsGeoAlt,
-  BsLock,
+  BsGlobe2,
   BsPencil,
+  BsPeople,
   BsPerson,
-  BsShieldCheck,
+  BsSignpostSplit,
   BsTelephone
 } from "react-icons/bs";
-import { isCustomerSummaryValid } from "./CustomerSummaryCard";
-import ConfirmActionRow from "./ConfirmActionRow";
-import CheckoutPaymentSummaryCard from "./CheckoutPaymentSummaryCard";
+import { formatDate } from "../../utils/formatters";
+
+const toSafeNumber = (value) => {
+  const parsed = Number(value || 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatTravelDate = (value) => (value ? formatDate(value, "ddd, MMM D, YYYY") : "Not selected");
 
 const resolveCountryLabel = (countryCode = "", countries = []) => {
   const rawValue = String(countryCode || "").trim();
@@ -27,10 +36,126 @@ const resolveCountryLabel = (countryCode = "", countries = []) => {
   return rawValue;
 };
 
-const buildCustomerRows = (customer = {}, countries = []) => {
-  const fullName = `${customer.firstName || ""} ${customer.lastName || ""}`.trim();
+const buildPassengerSummary = (rows = [], pax = {}) => {
+  const selectedRows = (rows || []).filter((row) => Number(row.quantity || 0) > 0);
 
-  return [
+  if (selectedRows.length) {
+    return selectedRows
+      .map((row) => {
+        const quantity = toSafeNumber(row.quantity);
+        const rawTitle = String(row.title || "Passenger").trim();
+        const title = quantity === 1 ? rawTitle.replace(/s$/i, "") : rawTitle;
+        return `${title} x${quantity}`;
+      })
+      .join(", ");
+  }
+
+  const adults = toSafeNumber(pax?.adults);
+  const children = toSafeNumber(pax?.children);
+  const infants = toSafeNumber(pax?.infants);
+  const pieces = [];
+
+  if (adults > 0) pieces.push(`${adults === 1 ? "Adult" : "Adults"} x${adults}`);
+  if (children > 0) pieces.push(`${children === 1 ? "Child" : "Children"} x${children}`);
+  if (infants > 0) pieces.push(`${infants === 1 ? "Infant" : "Infants"} x${infants}`);
+
+  return pieces.length ? pieces.join(", ") : "Adult x1";
+};
+
+const ReviewSectionCard = ({ icon, title, actionLabel = "Edit", onAction, actionDisabled = false, children }) => (
+  <Card className="surface-card review-section-card">
+    <Card.Body>
+      <div className="review-section-head">
+        <div className="review-section-title">
+          <span className="review-section-icon">{icon}</span>
+          <h4>{title}</h4>
+        </div>
+        {onAction ? (
+          <button
+            type="button"
+            className="btn btn-outline-secondary review-edit-btn"
+            onClick={onAction}
+            disabled={actionDisabled}
+          >
+            <BsPencil />
+            {actionLabel}
+          </button>
+        ) : null}
+      </div>
+      {children}
+    </Card.Body>
+  </Card>
+);
+
+const ReviewRows = ({ rows = [] }) => (
+  <div className="review-detail-grid">
+    {rows
+      .filter((row) => !row.hidden)
+      .map((row) => (
+        <div className="review-detail-row" key={row.label}>
+          <span className="review-detail-label">
+            {row.icon}
+            {row.label}
+          </span>
+          {row.badge ? (
+            <strong className="review-status-badge">{row.value}</strong>
+          ) : (
+            <strong>{row.value}</strong>
+          )}
+        </div>
+      ))}
+  </div>
+);
+
+const ReviewConfirmStep = ({
+  flowState = {},
+  submitting = false,
+  onEditCustomer,
+  onEditTrip,
+  countries = [],
+  paymentMethodSelector = null
+}) => {
+  const customer = flowState.customer || {};
+  const fullName = `${customer.firstName || ""} ${customer.lastName || ""}`.trim();
+  const passengerText = buildPassengerSummary(flowState.priceCategoryParticipants || [], flowState.pax || {});
+  const pickupAddress = String(customer.hotelName || "").trim();
+
+  const bookedRows = [
+    {
+      icon: <BsSignpostSplit />,
+      label: "Option",
+      value: flowState.option?.name || "Not selected"
+    },
+    {
+      icon: <BsCalendar3 />,
+      label: "Travel Date",
+      value: formatTravelDate(flowState.travelDate)
+    },
+    {
+      icon: <BsClock />,
+      label: "Time",
+      value: flowState.startTime || "Not selected"
+    },
+    {
+      icon: <BsPeople />,
+      label: "Passengers",
+      value: passengerText
+    },
+    {
+      icon: <BsGeoAlt />,
+      label: "Pickup Address",
+      value: pickupAddress,
+      hidden: !pickupAddress
+    },
+    {
+      icon: <BsCheckCircle />,
+      label: "Status",
+      value: flowState.availabilityChecked ? "Live availability checked" : "Pending recheck",
+      badge: true
+    }
+  ];
+
+  const customerRows = [
     {
       icon: <BsPerson />,
       label: "Name",
@@ -47,97 +172,34 @@ const buildCustomerRows = (customer = {}, countries = []) => {
       value: customer.phone || "Not provided"
     },
     {
-      icon: <BsShieldCheck />,
+      icon: <BsGlobe2 />,
       label: "Country",
       value: resolveCountryLabel(customer.country, countries)
-    },
-    {
-      icon: <BsGeoAlt />,
-      label: "Pickup Address",
-      value: customer.hotelName || "Not selected"
     }
   ];
-};
-
-const ReviewConfirmStep = ({
-  flowState = {},
-  submitting = false,
-  onBack,
-  onConfirm,
-  onEditCustomer,
-  countries = [],
-  showPaymentSummary = true,
-  mobileReviewSidebar = null
-}) => {
-  const customer = flowState.customer || {};
-  const customerValid = isCustomerSummaryValid(customer);
-  const hasQuoteToken = Boolean(flowState?.quote?.quoteToken);
-  const disableConfirm = !customerValid || !hasQuoteToken;
-  const rows = buildCustomerRows(customer, countries);
 
   return (
     <div className="checkout-review-stack">
-      <Card className="surface-card smart-step-card review-confirm-main-card checkout-readonly-card">
-        <Card.Body>
-          <div className="review-confirm-header checkout-readonly-head">
-            <div>
-              <h4 className="mb-1">Customer Details</h4>
-            </div>
-            <div className="completed-trip-head-actions">
-              <span className="checkout-review-mode-pill">
-                <BsLock />
-                Review mode
-              </span>
-              <button
-                type="button"
-                className="btn btn-outline-secondary change-trip-btn"
-                onClick={onEditCustomer}
-                disabled={submitting}
-              >
-                <BsPencil />
-                Edit
-              </button>
-            </div>
-          </div>
+      <ReviewSectionCard
+        icon={<BsCalendar3 />}
+        title="Booked Option"
+        actionLabel="Change"
+        onAction={onEditTrip}
+        actionDisabled={submitting}
+      >
+        <ReviewRows rows={bookedRows} />
+      </ReviewSectionCard>
 
-          <div className="checkout-readonly-table mt-3">
-            {rows.map((row) => (
-              <div className="checkout-readonly-row" key={row.label}>
-                <span className="checkout-readonly-label">
-                  {row.icon}
-                  {row.label}
-                </span>
-                <strong>{row.value}</strong>
-              </div>
-            ))}
-          </div>
-        </Card.Body>
-      </Card>
+      <ReviewSectionCard
+        icon={<BsPerson />}
+        title="Customer Details"
+        onAction={onEditCustomer}
+        actionDisabled={submitting}
+      >
+        <ReviewRows rows={customerRows} />
+      </ReviewSectionCard>
 
-      {mobileReviewSidebar ? (
-        <div className="checkout-mobile-review-sidebar-slot">
-          {mobileReviewSidebar}
-        </div>
-      ) : null}
-
-      {showPaymentSummary ? (
-        <>
-          <CheckoutPaymentSummaryCard flowState={flowState} />
-          <Card className="surface-card smart-step-card checkout-confirm-card">
-            <Card.Body>
-              <ConfirmActionRow
-                submitting={submitting}
-                disableConfirm={disableConfirm}
-                confirmLabel="Confirm & Pay Secure Checkout"
-                loadingLabel="Redirecting to Pesapal..."
-                onBack={onBack}
-                onConfirm={onConfirm}
-                confirmIcon={<BsLock />}
-              />
-            </Card.Body>
-          </Card>
-        </>
-      ) : null}
+      {paymentMethodSelector}
     </div>
   );
 };

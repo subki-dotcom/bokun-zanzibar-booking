@@ -3,7 +3,7 @@ import { Badge, Button, Card, Container } from "react-bootstrap";
 import { Link, useSearchParams } from "react-router-dom";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { verifyPesapalPayment } from "../../api/paymentsApi";
+import { verifyDpoPayment, verifyPaypalPayment, verifyPesapalPayment } from "../../api/paymentsApi";
 
 const PaymentSuccessPage = () => {
   const [searchParams] = useSearchParams();
@@ -21,20 +21,35 @@ const PaymentSuccessPage = () => {
       searchParams.get("orderMerchantReference") ||
       ""
   ).trim();
+  const transactionToken = String(
+    searchParams.get("TransactionToken") ||
+      searchParams.get("transactionToken") ||
+      searchParams.get("ID") ||
+      ""
+  ).trim();
+  const paypalOrderId = String(
+    searchParams.get("token") ||
+      searchParams.get("paypalOrderId") ||
+      ""
+  ).trim();
 
   useEffect(() => {
     const verify = async () => {
-      if (!orderTrackingId && !orderMerchantReference) {
-        setError("Missing OrderTrackingId or OrderMerchantReference in payment callback.");
+      if (!orderTrackingId && !orderMerchantReference && !transactionToken && !paypalOrderId) {
+        setError("Missing payment reference in payment callback.");
         setLoading(false);
         return;
       }
 
       try {
-        const data = await verifyPesapalPayment({
-          orderTrackingId,
-          orderMerchantReference
-        });
+        const data = paypalOrderId
+          ? await verifyPaypalPayment({ orderId: paypalOrderId })
+          : transactionToken
+            ? await verifyDpoPayment({ transactionToken })
+            : await verifyPesapalPayment({
+                orderTrackingId,
+                orderMerchantReference
+              });
         setResult(data);
       } catch (err) {
         setError(err.message || "Payment verification failed.");
@@ -44,7 +59,7 @@ const PaymentSuccessPage = () => {
     };
 
     verify();
-  }, [orderTrackingId, orderMerchantReference]);
+  }, [orderTrackingId, orderMerchantReference, transactionToken, paypalOrderId]);
 
   if (loading) {
     return (
@@ -79,7 +94,7 @@ const PaymentSuccessPage = () => {
           <div className="payment-result-badge-wrap">
             <Badge bg={isPaid ? (isPendingFinalization ? "warning" : "success") : "danger"}>
               {isPendingFinalization
-                ? "Payment verified, Bokun sync pending"
+                ? "Paid, supplier confirmation pending"
                 : isPaid
                   ? "Payment verified"
                   : "Payment not completed"}
@@ -95,7 +110,7 @@ const PaymentSuccessPage = () => {
           </h2>
           <p className="section-subtitle mb-3">
             {isPendingFinalization
-              ? "Your payment is confirmed. Bokun confirmation is still processing, please retry shortly."
+              ? "Your payment is confirmed. Supplier confirmation is still processing, but your invoice is marked paid."
               : isPaid
                 ? "Your payment is confirmed and your booking has been processed in Bokun."
                 : "We could not confirm this payment. Please try again or contact support."}
@@ -121,7 +136,7 @@ const PaymentSuccessPage = () => {
           <div className="d-flex flex-wrap gap-2 mt-4">
             {isPendingFinalization ? (
               <Button variant="outline-primary" onClick={() => window.location.reload()}>
-                Retry Bokun confirmation
+                Recheck supplier confirmation
               </Button>
             ) : null}
             {booking?.bookingReference ? (

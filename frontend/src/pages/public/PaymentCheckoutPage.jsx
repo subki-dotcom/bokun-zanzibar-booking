@@ -3,10 +3,12 @@ import { Button, Card, Container } from "react-bootstrap";
 import { BsCreditCard, BsLock, BsShieldCheck } from "react-icons/bs";
 import { Link, useParams } from "react-router-dom";
 import { fetchBookingByReference } from "../../api/bookingsApi";
-import { createPesapalPayment } from "../../api/paymentsApi";
+import { createDpoPayment, createPaypalPayment, createPesapalPayment } from "../../api/paymentsApi";
+import PaymentMethodSelector from "../../components/booking/PaymentMethodSelector";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import { formatCurrency, formatDate } from "../../utils/formatters";
+import { getPaymentMethodLabel, isPaymentMethodEnabled } from "../../utils/paymentMethods";
 
 const PaymentCheckoutPage = () => {
   const { reference } = useParams();
@@ -14,6 +16,7 @@ const PaymentCheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("pesapal");
 
   useEffect(() => {
     const load = async () => {
@@ -36,25 +39,37 @@ const PaymentCheckoutPage = () => {
       return;
     }
 
+    const paymentLabel = getPaymentMethodLabel(selectedPaymentMethod);
+    if (!isPaymentMethodEnabled(selectedPaymentMethod)) {
+      setError(`${paymentLabel} is not configured yet. Please choose Pesapal or DPO.`);
+      return;
+    }
+
     setSubmitting(true);
     setError("");
     try {
       const amount = Number(booking.amount || booking.pricingSnapshot?.finalPayable || 0);
       const currency = booking.currency || booking.pricingSnapshot?.currency || "USD";
-      const result = await createPesapalPayment({
+      const createPayment =
+        selectedPaymentMethod === "dpo"
+          ? createDpoPayment
+          : selectedPaymentMethod === "paypal"
+            ? createPaypalPayment
+            : createPesapalPayment;
+      const result = await createPayment({
         bookingId: booking._id,
         amount,
         currency,
-        paymentMethod: "pesapal"
+        paymentMethod: selectedPaymentMethod
       });
 
       if (!result.redirectUrl) {
-        throw new Error("Pesapal payment URL was not returned.");
+        throw new Error(`${paymentLabel} payment URL was not returned.`);
       }
 
       window.location.assign(result.redirectUrl);
     } catch (err) {
-      setError(err.message || "Could not start Pesapal payment");
+      setError(err.message || `Could not start ${paymentLabel} payment`);
       setSubmitting(false);
     }
   };
@@ -70,6 +85,7 @@ const PaymentCheckoutPage = () => {
   const amount = Number(booking?.amount || booking?.pricingSnapshot?.finalPayable || 0);
   const currency = booking?.currency || booking?.pricingSnapshot?.currency || "USD";
   const isPaid = booking?.paymentStatus === "paid";
+  const paymentLabel = getPaymentMethodLabel(selectedPaymentMethod);
 
   return (
     <main className="payment-status-page">
@@ -102,8 +118,8 @@ const PaymentCheckoutPage = () => {
                 <div className="payment-status-step is-active">
                   <span><BsCreditCard /></span>
                   <div>
-                    <strong>Pesapal Secure Payment</strong>
-                    <p>You will be redirected to Pesapal to complete payment securely.</p>
+                    <strong>{paymentLabel} Secure Payment</strong>
+                    <p>You will be redirected to {paymentLabel} to complete payment securely.</p>
                   </div>
                 </div>
                 <div className="payment-status-step">
@@ -115,9 +131,19 @@ const PaymentCheckoutPage = () => {
                 </div>
               </div>
 
+              <PaymentMethodSelector
+                className="payment-checkout-methods"
+                selectedMethod={selectedPaymentMethod}
+                onChange={(method) => {
+                  setSelectedPaymentMethod(method);
+                  setError("");
+                }}
+                disabled={submitting || isPaid}
+              />
+
               <div className="payment-status-actions">
                 <Button className="premium-btn text-white" onClick={startPayment} disabled={submitting || isPaid}>
-                  {isPaid ? "Payment Already Confirmed" : submitting ? "Opening Pesapal..." : "Pay Securely with Pesapal"}
+                  {isPaid ? "Payment Already Confirmed" : submitting ? `Opening ${paymentLabel}...` : `Pay Securely with ${paymentLabel}`}
                 </Button>
                 <Button as={Link} to={`/payment-status/${booking.bookingReference}`} variant="outline-secondary">
                   Track Status

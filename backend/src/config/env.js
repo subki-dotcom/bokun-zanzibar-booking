@@ -41,6 +41,15 @@ const env = cleanEnv(process.env, {
   PESAPAL_MOCK_MODE: bool({ default: false }),
   PESAPAL_MOCK_CONFIRMS_PAYMENT: bool({ default: false }),
   PESAPAL_ALLOW_LOCAL_REDIRECTS: bool({ default: false }),
+  PAYPAL_BASE_URL: str({ default: "https://api-m.sandbox.paypal.com" }),
+  PAYPAL_CLIENT_ID: str({ default: "" }),
+  PAYPAL_CLIENT_SECRET: str({ default: "" }),
+  PAYPAL_SUCCESS_URL: str({ default: "https://bokun-zanzibar-booking.vercel.app/payment-success" }),
+  PAYPAL_CANCEL_URL: str({ default: "https://bokun-zanzibar-booking.vercel.app/payment-failure" }),
+  PAYPAL_TIMEOUT_MS: num({ default: 20000 }),
+  PAYPAL_MOCK_MODE: bool({ default: false }),
+  PAYPAL_MOCK_CONFIRMS_PAYMENT: bool({ default: false }),
+  PAYPAL_ALLOW_LOCAL_REDIRECTS: bool({ default: false }),
   DPO_BASE_URL: str({ default: "https://secure.3gdirectpay.com" }),
   DPO_API_PATH: str({ default: "/API/v6/" }),
   DPO_PAYMENT_PATH: str({ default: "/payv3.php" }),
@@ -69,4 +78,8 @@ const isPesapalConfigured =
   Boolean(env.PESAPAL_CONSUMER_KEY) &&
   Boolean(env.PESAPAL_CONSUMER_SECRET);
 
-module.exports = { env, isBokunConfigured, isDpoConfigured, isPesapalConfigured };
+const isPaypalConfigured =
+  Boolean(env.PAYPAL_CLIENT_ID) &&
+  Boolean(env.PAYPAL_CLIENT_SECRET);
+
+module.exports = { env, isBokunConfigured, isDpoConfigured, isPesapalConfigured, isPaypalConfigured };

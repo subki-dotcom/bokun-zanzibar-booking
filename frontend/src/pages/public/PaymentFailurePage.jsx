@@ -3,7 +3,7 @@ import { Button, Card, Container } from "react-bootstrap";
 import { Link, useSearchParams } from "react-router-dom";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { cancelPesapalPayment } from "../../api/paymentsApi";
+import { cancelDpoPayment, cancelPaypalPayment, cancelPesapalPayment } from "../../api/paymentsApi";
 
 const PaymentFailurePage = () => {
   const [searchParams] = useSearchParams();
@@ -21,16 +21,31 @@ const PaymentFailurePage = () => {
       searchParams.get("orderMerchantReference") ||
       ""
   ).trim();
+  const transactionToken = String(
+    searchParams.get("TransactionToken") ||
+      searchParams.get("transactionToken") ||
+      searchParams.get("ID") ||
+      ""
+  ).trim();
+  const paypalOrderId = String(
+    searchParams.get("token") ||
+      searchParams.get("paypalOrderId") ||
+      ""
+  ).trim();
   const bookingId = String(searchParams.get("bookingId") || "").trim();
 
   useEffect(() => {
     const cancel = async () => {
       try {
-        const data = await cancelPesapalPayment({
-          orderTrackingId,
-          orderMerchantReference,
-          bookingId
-        });
+        const data = paypalOrderId
+          ? await cancelPaypalPayment({ orderId: paypalOrderId, bookingId })
+          : transactionToken
+            ? await cancelDpoPayment({ transactionToken, bookingId })
+            : await cancelPesapalPayment({
+                orderTrackingId,
+                orderMerchantReference,
+                bookingId
+              });
         setResult(data);
       } catch (err) {
         setError(err.message || "Failed to update cancelled payment status.");
@@ -40,7 +55,7 @@ const PaymentFailurePage = () => {
     };
 
     cancel();
-  }, [orderTrackingId, orderMerchantReference, bookingId]);
+  }, [orderTrackingId, orderMerchantReference, transactionToken, paypalOrderId, bookingId]);
 
   if (loading) {
     return (

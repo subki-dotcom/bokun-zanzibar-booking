@@ -97,6 +97,19 @@ Required backend vars:
 - `PESAPAL_SUCCESS_URL`
 - `PESAPAL_CANCEL_URL`
 - `PESAPAL_ALLOW_LOCAL_REDIRECTS` (default: `false`)
+- `DPO_BASE_URL`
+- `DPO_COMPANY_TOKEN`
+- `DPO_SERVICE_TYPE`
+- `DPO_SUCCESS_URL`
+- `DPO_CANCEL_URL`
+- `DPO_CALLBACK_URL` (optional)
+- `DPO_ALLOW_LOCAL_REDIRECTS` (default: `false`)
+- `PAYPAL_BASE_URL`
+- `PAYPAL_CLIENT_ID`
+- `PAYPAL_CLIENT_SECRET`
+- `PAYPAL_SUCCESS_URL`
+- `PAYPAL_CANCEL_URL`
+- `PAYPAL_ALLOW_LOCAL_REDIRECTS` (default: `false`)
 - `DEFAULT_CURRENCY`
 - `FRONTEND_URL`
 
@@ -106,7 +119,10 @@ Required frontend vars:
 Development fallback:
 - `BOKUN_MOCK_MODE=true` enables mock Bokun layer for frontend and local development.
 - `PESAPAL_MOCK_MODE=true` lets checkout run locally without hitting live Pesapal.
+- `DPO_MOCK_MODE=true` lets checkout run locally without hitting live DPO.
+- `PAYPAL_MOCK_MODE=true` lets checkout run locally without hitting live PayPal.
 - In live Pesapal mode, callback URLs should be public unless `PESAPAL_ALLOW_LOCAL_REDIRECTS=true`.
+- In live DPO/PayPal mode, success and cancel URLs should be public unless the matching `*_ALLOW_LOCAL_REDIRECTS=true` flag is intentionally enabled for local tests.
 
 ## Setup
 
@@ -237,9 +253,20 @@ Behavior:
 - `GET /api/invoices/booking/:bookingReference`
 - `GET /api/invoices/:invoiceNumber`
 - `GET /api/payments`
+- `GET /api/payments/reconciliation`
+- `POST /api/payments/reconciliation/:bookingReference/recheck-pesapal`
+- `POST /api/payments/reconciliation/:bookingReference/sync-invoice`
+- `POST /api/payments/reconciliation/:bookingReference/retry-bokun`
+- `POST /api/payments/reconciliation/:bookingReference/mark-reviewed`
 - `POST /api/payments/pesapal/create`
 - `GET /api/payments/pesapal/success?OrderTrackingId=...`
 - `GET /api/payments/pesapal/cancel?OrderTrackingId=...`
+- `POST /api/payments/dpo/create`
+- `GET /api/payments/dpo/success?TransactionToken=...`
+- `GET /api/payments/dpo/cancel?TransactionToken=...`
+- `POST /api/payments/paypal/create`
+- `GET /api/payments/paypal/success?token=...`
+- `GET /api/payments/paypal/cancel?token=...`
 - `POST /api/webhooks/bokun`
 - `POST /api/webhooks/bokun/poll`
 - `GET /api/offers`
@@ -253,11 +280,13 @@ Behavior:
 4. Frontend requests live availability (`/api/bokun/availability`).
 5. Frontend requests quote (`/api/bookings/quote`) and receives quote token.
 6. Customer enters name, email, phone, and special request in the local customer step.
-7. Customer clicks **Confirm & Pay** and backend creates a local pending booking + Pesapal order (`/api/payments/pesapal/create`).
-8. User is redirected to Pesapal payment page.
-9. Frontend callback verifies payment (`/api/payments/pesapal/success`) before finalizing booking.
-10. Backend confirms payment, creates booking in Bokun, then updates local snapshot/invoice/commission/payment logs.
-11. If Bokun is temporarily unreachable during finalization, backend returns `paid_pending_finalization` (payment remains paid, booking stays pending) and retries can be triggered safely by re-calling success endpoint.
+7. Customer chooses a payment method: Pesapal, DPO, or PayPal.
+8. Customer clicks **Confirm & Pay** and backend creates a local pending booking + gateway order (`/api/payments/:provider/create`).
+9. User is redirected to the selected secure payment page.
+10. Frontend callback/IPN verifies payment and immediately updates the local payment record, booking payment status, invoice amount paid/status, and invoice snapshot.
+11. Backend then finalizes the booking in Bokun as a separate supplier confirmation step.
+12. If the gateway is paid but Bokun is slow or temporarily fails, the customer still sees the invoice as paid while supplier confirmation remains pending.
+13. If Bokun is temporarily unreachable during finalization, backend returns `paid_pending_finalization` (payment remains paid, booking stays pending) and retries can be triggered safely by re-calling the success endpoint.
 
 ## Bokun Booking Sync (Webhook + Polling Fallback)
 
@@ -276,6 +305,8 @@ The sync updates local booking snapshots (status/date/time/confirmation) from Bo
 - Idempotent lock per booking finalization attempt (`pendingCheckout.finalization`).
 - Safe retries with `nextRetryAt` + capped `BOOKING_FINALIZATION_MAX_RETRIES`.
 - Admin recovery APIs for listing stuck paid bookings and retrying safely.
+- Payment reconciliation APIs compare gateway status, local payment status, invoice status, expected/paid amounts, and Bokun supplier status.
+- Bokun retry is allowed only when the verified payment record and invoice are paid.
 - Optional background reconciler:
   - `BOOKING_FINALIZATION_RETRY_ENABLED=true`
   - `BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS=180`
@@ -383,8 +414,14 @@ Agent:
 }
 ```
 
-### Initialize Pesapal Payment
-`POST /api/payments/pesapal/create`
+### Initialize Payment
+
+Checkout supports these provider endpoints:
+- `POST /api/payments/pesapal/create`
+- `POST /api/payments/dpo/create`
+- `POST /api/payments/paypal/create`
+
+Use the same booking payload shape and set `paymentMethod` to `pesapal`, `dpo`, or `paypal`.
 
 ```json
 {
@@ -407,11 +444,16 @@ Agent:
   "bookingQuestions": [
     { "questionId": "pickup_location", "label": "Pickup hotel/location", "scope": "booking", "answer": "Nungwi Beach Lodge" }
   ],
-  "paymentMethod": "pesapal",
+  "paymentMethod": "paypal",
   "amount": 140,
   "currency": "USD"
 }
 ```
+
+Success/cancel callbacks:
+- Pesapal: `/api/payments/pesapal/success`, `/api/payments/pesapal/cancel`
+- DPO: `/api/payments/dpo/success`, `/api/payments/dpo/cancel`
+- PayPal: `/api/payments/paypal/success`, `/api/payments/paypal/cancel`
 
 ## Pesapal Live Checklist
 
@@ -431,6 +473,34 @@ Before using live Pesapal mode (`PESAPAL_MOCK_MODE=false`):
 Common API results:
 - `HTTP 401/403`: auth or edge policy issue (confirm keys/IP/domain with Pesapal support).
 - `PESAPAL_IPN_SETUP_MISSING`: set `PESAPAL_IPN_URL` or `PESAPAL_IPN_ID` before live checkout.
+
+## DPO Live Checklist
+
+Before using live DPO mode (`DPO_MOCK_MODE=false`):
+
+1. Set active credentials:
+   - `DPO_COMPANY_TOKEN`
+   - `DPO_SERVICE_TYPE`
+2. Set callback URLs:
+   - `DPO_SUCCESS_URL=https://<public-domain>/payment-success`
+   - `DPO_CANCEL_URL=https://<public-domain>/payment-failure`
+   - `DPO_CALLBACK_URL=https://<public-backend-domain>/api/payments/dpo/callback` if DPO enables server-to-server callbacks for your account.
+3. Keep callback URLs public unless `DPO_ALLOW_LOCAL_REDIRECTS=true` is intentionally enabled for local tests.
+
+## PayPal Live Checklist
+
+Before using live PayPal mode (`PAYPAL_MOCK_MODE=false`):
+
+1. Set active credentials:
+   - `PAYPAL_CLIENT_ID`
+   - `PAYPAL_CLIENT_SECRET`
+2. Choose the correct API base URL:
+   - Sandbox: `PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com`
+   - Live: `PAYPAL_BASE_URL=https://api-m.paypal.com`
+3. Set callback URLs:
+   - `PAYPAL_SUCCESS_URL=https://<public-domain>/payment-success`
+   - `PAYPAL_CANCEL_URL=https://<public-domain>/payment-failure`
+4. Keep callback URLs public unless `PAYPAL_ALLOW_LOCAL_REDIRECTS=true` is intentionally enabled for local tests.
 
 ## Notes for Production Hardening
 

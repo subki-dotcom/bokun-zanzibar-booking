@@ -1436,6 +1436,46 @@ const finalizePendingBookingAfterPayment = async ({
     throw new AppError("Pending checkout payload is missing", 409, "PENDING_CHECKOUT_NOT_FOUND");
   }
 
+  if (initialBooking.paymentStatus !== "paid") {
+    throw new AppError(
+      "Payment must be verified paid before Bokun finalization",
+      409,
+      "PAYMENT_NOT_VERIFIED_FOR_FINALIZATION"
+    );
+  }
+
+  const verifiedPaidAmount = await paymentsService.getVerifiedPaidAmountByBookingReference({
+    bookingReference: initialBooking.bookingReference
+  });
+  if (verifiedPaidAmount <= 0) {
+    throw new AppError(
+      "Verified payment record is required before Bokun finalization",
+      409,
+      "PAYMENT_RECORD_NOT_VERIFIED_FOR_FINALIZATION"
+    );
+  }
+
+  if (
+    initialBooking.invoiceSnapshot?.paymentStatus !== "paid" ||
+    Number(initialBooking.invoiceSnapshot?.amountPaid || 0) <= 0
+  ) {
+    await syncInvoiceForBooking({
+      bookingDoc: initialBooking,
+      productSnapshot: await ProductSnapshot.findOne({ bokunProductId: initialBooking.bokunProductId }).lean()
+    });
+  }
+
+  if (
+    initialBooking.invoiceSnapshot?.paymentStatus !== "paid" ||
+    Number(initialBooking.invoiceSnapshot?.amountPaid || 0) <= 0
+  ) {
+    throw new AppError(
+      "Invoice must be synced as paid before Bokun finalization",
+      409,
+      "INVOICE_NOT_VERIFIED_FOR_FINALIZATION"
+    );
+  }
+
   const resolvedTransactionToken = String(
     transactionToken || initialBooking.paymentTransactionId || initialBooking.dpoTransactionToken || ""
   );
@@ -1685,6 +1725,134 @@ const markBookingPaymentFailed = async ({
   });
 
   return booking;
+};
+
+const markBookingPaymentVerified = async ({
+  bookingId,
+  requestId,
+  transactionToken = "",
+  paymentMethod = "pesapal",
+  paymentProvider = "pesapal",
+  amountPaid = 0,
+  currency = "",
+  reason = "Payment verified by payment gateway"
+}) => {
+  const booking = await Booking.findById(bookingId);
+  if (!booking) {
+    throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
+  }
+
+  const paidAmount = Number(amountPaid || booking.amount || booking.pricingSnapshot?.finalPayable || 0);
+  const transactionId = String(transactionToken || booking.paymentTransactionId || booking.dpoTransactionToken || "");
+  const paidAt = toIsoNow();
+
+  booking.paymentStatus = "paid";
+  booking.paymentMethod = paymentMethod || booking.paymentMethod || paymentProvider || "pesapal";
+  booking.amount = Number(booking.amount || paidAmount || 0);
+  booking.currency = currency || booking.currency || booking.pricingSnapshot?.currency || "USD";
+  booking.bookingStatus = booking.bokunBookingId ? booking.bookingStatus : "pending";
+  booking.pricingSnapshot = {
+    ...(booking.pricingSnapshot || {}),
+    amountPaid: paidAmount
+  };
+
+  if (transactionId) {
+    booking.paymentTransactionId = transactionId;
+    booking.dpoTransactionToken = transactionId;
+  }
+
+  booking.pendingCheckout = {
+    ...(booking.pendingCheckout || {}),
+    paymentVerifiedAt: booking.pendingCheckout?.paymentVerifiedAt || paidAt,
+    paymentProvider: paymentProvider || paymentMethod || "pesapal",
+    paymentMethod: paymentMethod || booking.paymentMethod || "pesapal",
+    paymentTransactionId: transactionId,
+    paidAmount,
+    paidCurrency: booking.currency,
+    finalization: {
+      ...(booking.pendingCheckout?.finalization || {}),
+      status: booking.bokunBookingId
+        ? FINALIZATION_STATUS.CONFIRMED
+        : booking.pendingCheckout?.finalization?.status || FINALIZATION_STATUS.IDLE,
+      finalizationPending: !booking.bokunBookingId
+    }
+  };
+
+  await booking.save();
+
+  await syncInvoiceForBooking({
+    bookingDoc: booking,
+    productSnapshot: await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean()
+  });
+
+  await AuditLog.create({
+    actorId: null,
+    actorRole: "payment_gateway",
+    action: "booking_payment_verified",
+    entityType: "Booking",
+    entityId: booking._id.toString(),
+    reason,
+    requestId,
+    after: {
+      bookingReference: booking.bookingReference,
+      bookingStatus: booking.bookingStatus,
+      paymentStatus: booking.paymentStatus,
+      amountPaid: paidAmount
+    },
+    metadata: {
+      sourceChannel: booking.sourceChannel || "direct_website",
+      paymentProvider,
+      transactionToken: transactionId
+    }
+  });
+
+  return booking;
+};
+
+const syncInvoiceForBookingReference = async ({
+  bookingReference = "",
+  bookingId = "",
+  auth = null,
+  requestId = "",
+  reason = "Admin synced invoice from verified payment records"
+} = {}) => {
+  const booking = bookingId
+    ? await Booking.findById(bookingId)
+    : await Booking.findOne({ bookingReference: String(bookingReference || "") });
+
+  if (!booking) {
+    throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
+  }
+
+  const productSnapshot = await ProductSnapshot.findOne({
+    bokunProductId: booking.bokunProductId
+  }).lean();
+  const { invoiceSnapshot, invoiceRecord } = await syncInvoiceForBooking({
+    bookingDoc: booking,
+    productSnapshot
+  });
+
+  await AuditLog.create({
+    actorId: auth?.id || null,
+    actorRole: auth?.role || "staff",
+    action: "booking_invoice_synced",
+    entityType: "Booking",
+    entityId: booking._id.toString(),
+    reason,
+    requestId,
+    metadata: {
+      bookingReference: booking.bookingReference,
+      paymentStatus: invoiceSnapshot.paymentStatus,
+      amountPaid: invoiceSnapshot.amountPaid,
+      balanceDue: invoiceSnapshot.balanceDue
+    }
+  });
+
+  return {
+    booking: toBookingResponsePayload({ bookingDoc: booking }),
+    invoice: invoiceRecord,
+    invoiceSnapshot
+  };
 };
 
 const createBooking = async () => {
@@ -1940,11 +2108,42 @@ const retryBookingFinalization = async ({ bookingId, auth, requestId, force = fa
     );
   }
 
+  const paidAmount = await paymentsService.getVerifiedPaidAmountByBookingReference({
+    bookingReference: booking.bookingReference
+  });
+
+  if (
+    paidAmount > 0 &&
+    (Number(booking.invoiceSnapshot?.amountPaid || 0) <= 0 || booking.invoiceSnapshot?.paymentStatus !== "paid")
+  ) {
+    await syncInvoiceForBooking({
+      bookingDoc: booking,
+      productSnapshot: await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean()
+    });
+  }
+
+  const invoicePaid = Number(booking.invoiceSnapshot?.amountPaid || 0);
+  if (paidAmount <= 0 || invoicePaid <= 0 || booking.invoiceSnapshot?.paymentStatus !== "paid") {
+    throw new AppError(
+      "Payment and invoice must be verified paid before retrying Bokun finalization",
+      409,
+      "PAYMENT_INVOICE_NOT_VERIFIED_FOR_FINALIZATION",
+      {
+        bookingReference: booking.bookingReference,
+        paidAmount,
+        invoicePaid,
+        invoiceStatus: booking.invoiceSnapshot?.paymentStatus || ""
+      }
+    );
+  }
+
   const finalized = await finalizePendingBookingAfterPayment({
     bookingId: booking._id,
     transactionToken: String(booking.paymentTransactionId || booking.dpoTransactionToken || ""),
     paymentMethod: booking.paymentMethod || "pending",
-    paymentProvider: booking.paymentMethod === "dpo" ? "dpo" : "pesapal",
+    paymentProvider: ["dpo", "paypal", "pesapal"].includes(booking.paymentMethod)
+      ? booking.paymentMethod
+      : "pesapal",
     requestId,
     source: "admin_manual_retry",
     force,
@@ -2080,7 +2279,9 @@ module.exports = {
   createBooking,
   preparePendingPaymentBooking,
   finalizePendingBookingAfterPayment,
+  markBookingPaymentVerified,
   markBookingPaymentFailed,
+  syncInvoiceForBookingReference,
   listPendingFinalizations,
   retryBookingFinalization,
   reconcilePendingFinalizations,

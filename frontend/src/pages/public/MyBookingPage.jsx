@@ -47,11 +47,13 @@ const BookingDetails = ({ booking }) => {
   const total = Number(booking.pricingSnapshot?.finalPayable || booking.amount || 0);
   const amountPaid = Number(booking.invoiceSnapshot?.amountPaid || 0);
   const balanceDue = Number(booking.invoiceSnapshot?.balanceDue ?? Math.max(0, total - amountPaid));
-  const hasPendingBokun = Boolean(booking.pendingCheckout?.finalizationPending);
+  const hasPendingSupplier =
+    booking.paymentStatus === "paid" &&
+    (Boolean(booking.pendingCheckout?.finalizationPending) || !booking.bokunBookingId);
   const travelerName = `${booking.customer?.firstName || ""} ${booking.customer?.lastName || ""}`.trim();
 
-  const statusCopy = hasPendingBokun
-    ? "Payment is verified. Supplier confirmation is still processing and can be retried."
+  const statusCopy = hasPendingSupplier
+    ? "Paid, supplier confirmation pending. We have received your payment and are waiting for supplier confirmation."
     : "Your booking details are saved and ready to review.";
 
   return (
@@ -64,7 +66,7 @@ const BookingDetails = ({ booking }) => {
           <div className="my-booking-status-row">
             <Badge bg={statusBadgeVariant(booking.paymentStatus)}>{booking.paymentStatus || "payment"}</Badge>
             <Badge bg={statusBadgeVariant(booking.bookingStatus)}>{booking.bookingStatus || "booking"}</Badge>
-            {hasPendingBokun ? <Badge bg="warning" text="dark">Bokun sync pending</Badge> : null}
+            {hasPendingSupplier ? <Badge bg="warning" text="dark">Paid, supplier confirmation pending</Badge> : null}
           </div>
         </div>
         <div className="my-booking-total-panel">

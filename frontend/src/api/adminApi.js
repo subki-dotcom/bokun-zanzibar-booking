@@ -54,6 +54,36 @@ export const reconcileBookingFinalizations = async ({ limit = 20, force = false 
   return response.data.data;
 };
 
+export const fetchPaymentReconciliation = async ({ limit = 100 } = {}) => {
+  const response = await axiosClient.get(`/payments/reconciliation?limit=${encodeURIComponent(limit)}`);
+  return response.data.data;
+};
+
+export const recheckPesapalStatus = async (bookingReference) => {
+  const response = await axiosClient.post(`/payments/reconciliation/${bookingReference}/recheck-pesapal`, {});
+  return response.data.data;
+};
+
+export const syncPaymentInvoice = async (bookingReference) => {
+  const response = await axiosClient.post(`/payments/reconciliation/${bookingReference}/sync-invoice`, {});
+  return response.data.data;
+};
+
+export const retryBokunFromPaymentReconciliation = async (bookingReference, bookingId, { force = false } = {}) => {
+  const response = await axiosClient.post(`/payments/reconciliation/${bookingReference}/retry-bokun`, {
+    bookingId,
+    force
+  });
+  return response.data.data;
+};
+
+export const markPaymentReviewed = async (bookingReference, reviewNote = "") => {
+  const response = await axiosClient.post(`/payments/reconciliation/${bookingReference}/mark-reviewed`, {
+    reviewNote
+  });
+  return response.data.data;
+};
+
 export const fetchAdminAgents = async () => {
   const response = await axiosClient.get("/agents");
   return response.data.data;

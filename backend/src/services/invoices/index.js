@@ -1,6 +1,7 @@
 const dayjs = require("dayjs");
 const Invoice = require("../../models/Invoice");
 const { env } = require("../../config/env");
+const paymentsService = require("../payments");
 
 const nextInvoiceNumber = async () => {
   const datePart = dayjs().format("YYYYMMDD");
@@ -10,12 +11,24 @@ const nextInvoiceNumber = async () => {
 };
 
 const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
-  const invoiceNumber = await nextInvoiceNumber();
+  const existingInvoice = await Invoice.findOne({ bookingReference: booking.bookingReference })
+    .select("invoiceNumber")
+    .lean();
+  const invoiceNumber = existingInvoice?.invoiceNumber || (booking.invoiceSnapshot?.invoiceNumber) || await nextInvoiceNumber();
   const subtotal = Number(booking.pricingSnapshot.grossAmount || 0);
   const discount = Number(booking.pricingSnapshot.discountAmount || 0);
   const tax = Number(((subtotal - discount) * env.TAX_PERCENT) / 100);
   const total = Number((subtotal - discount + tax).toFixed(2));
-  const amountPaid = booking.paymentStatus === "paid" ? total : 0;
+  const verifiedPaidAmount = await paymentsService.getVerifiedPaidAmountByBookingReference({
+    bookingReference: booking.bookingReference
+  });
+  const bookingPaidAmount = Number(booking.pricingSnapshot?.amountPaid || 0);
+  const amountPaid =
+    verifiedPaidAmount > 0
+      ? Math.min(total, Number(verifiedPaidAmount.toFixed(2)))
+      : booking.paymentStatus === "paid"
+        ? Math.min(total, Number((bookingPaidAmount || booking.amount || total).toFixed(2)))
+        : 0;
   const balanceDue = Number((total - amountPaid).toFixed(2));
 
   const snapshot = {

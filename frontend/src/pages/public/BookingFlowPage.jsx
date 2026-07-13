@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button, Card } from "react-bootstrap";
-import { BsArrowLeft, BsArrowRight, BsLock, BsShieldCheck } from "react-icons/bs";
+import { BsArrowLeft, BsArrowRight } from "react-icons/bs";
 import { BookingFlowProvider } from "../../context/BookingFlowContext";
 import useBookingFlow from "../../hooks/useBookingFlow";
 import { fetchTourBySlug } from "../../api/toursApi";
@@ -10,19 +10,22 @@ import {
   createQuote
 } from "../../api/bookingsApi";
 import { fetchBokunCountries, fetchBokunPickupPlaces, fetchBokunProductDetails } from "../../api/bokunApi";
-import { createPesapalPayment } from "../../api/paymentsApi";
+import { createDpoPayment, createPaypalPayment, createPesapalPayment } from "../../api/paymentsApi";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import BookingFlowLayout from "../../components/booking/BookingFlowLayout";
 import BookingStepper from "../../components/booking/BookingStepper";
 import BookingSummarySidebar from "../../components/booking/BookingSummarySidebar";
 import CompletedTripDetailsCard from "../../components/booking/CompletedTripDetailsCard";
+import ReviewOrderSummarySidebar from "../../components/booking/ReviewOrderSummarySidebar";
 import ExtrasStep from "../../components/booking/ExtrasStep";
 import CustomerDetailsStep from "../../components/booking/CustomerDetailsStep";
 import ReviewConfirmStep from "../../components/booking/ReviewConfirmStep";
 import ConfirmationStep from "../../components/booking/ConfirmationStep";
 import SmartCheckoutInitializer from "../../components/booking/SmartCheckoutInitializer";
+import PaymentMethodSelector from "../../components/booking/PaymentMethodSelector";
 import { isCustomerSummaryValid } from "../../components/booking/CustomerSummaryCard";
+import { getPaymentMethodLabel, isPaymentMethodEnabled } from "../../utils/paymentMethods";
 import {
   STEP_IDS,
   buildSmartCheckoutSteps,
@@ -233,6 +236,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("pesapal");
 
   const querySeed = useMemo(() => {
     const optionId = String(searchParams.get("option") || "").trim();
@@ -258,7 +262,11 @@ const BookingFlowInner = ({ portal = "public" }) => {
   const isReviewStep = currentStepId === STEP_IDS.REVIEW;
   const isCustomerStep = currentStepId === STEP_IDS.CUSTOMER;
   const customerReady = isCustomerSummaryValid(state.customer || {});
-  const checkoutConfirmDisabled = !customerReady || !state.quote?.quoteToken;
+  const selectedPaymentLabel = getPaymentMethodLabel(selectedPaymentMethod);
+  const paymentMethodEnabled = isPaymentMethodEnabled(selectedPaymentMethod);
+  const checkoutConfirmDisabled = !customerReady || !state.quote?.quoteToken || !paymentMethodEnabled;
+  const confirmPaymentLabel = `Pay Securely with ${selectedPaymentLabel}`;
+  const loadingPaymentLabel = `Redirecting to ${selectedPaymentLabel}...`;
 
   const steps = useMemo(
     () =>
@@ -660,6 +668,11 @@ const BookingFlowInner = ({ portal = "public" }) => {
       return;
     }
 
+    if (!paymentMethodEnabled) {
+      setError(`${selectedPaymentLabel} is not configured yet. Please choose Pesapal or DPO.`);
+      return;
+    }
+
     setSubmitLoading(true);
     setError("");
 
@@ -670,14 +683,20 @@ const BookingFlowInner = ({ portal = "public" }) => {
           0
       );
       const currency = state.quote?.pricing?.currency || "USD";
+      const createPayment =
+        selectedPaymentMethod === "dpo"
+          ? createDpoPayment
+          : selectedPaymentMethod === "paypal"
+            ? createPaypalPayment
+            : createPesapalPayment;
 
-      const result = await createPesapalPayment({
+      const result = await createPayment({
         ...payload,
         quoteToken: state.quote.quoteToken,
         bookingQuestions: state.answers,
         customer: state.customer,
         sourceChannel,
-        paymentMethod: "pesapal",
+        paymentMethod: selectedPaymentMethod,
         amount: totalAmount,
         currency
       });
@@ -685,7 +704,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
       saveBookingSession({
         ...(readBookingSession() || {}),
         payment: {
-          provider: "pesapal",
+          provider: selectedPaymentMethod,
           bookingId: result.bookingId || "",
           bookingReference: result.bookingReference || "",
           initiatedAt: new Date().toISOString()
@@ -701,14 +720,14 @@ const BookingFlowInner = ({ portal = "public" }) => {
         navigate(bookingDetailsPath(result.bookingReference));
         clearBookingSession();
       } else {
-        throw new Error("Payment redirect URL was not returned.");
+        throw new Error(`${selectedPaymentLabel} payment URL was not returned.`);
       }
     } catch (err) {
-      setError(err.message || "Pesapal payment could not be initialized");
+      setError(err.message || `${selectedPaymentLabel} payment could not be initialized`);
       setSubmitLoading(false);
       return;
     } finally {
-      // Keep loading state active when browser is redirecting to Pesapal.
+      // Keep loading state active when browser is redirecting to the payment provider.
       if (!document.hidden) {
         setSubmitLoading(false);
       }
@@ -720,47 +739,40 @@ const BookingFlowInner = ({ portal = "public" }) => {
     setInitLoading(false);
   };
 
-  const renderReviewSidebar = (className = "", showConfirmAction = false) => (
-    <BookingSummarySidebar
+  const renderPaymentMethodSelector = (
+    className = "",
+    inputName = "paymentMethod",
+    titleId = "payment-method-title"
+  ) => (
+    <PaymentMethodSelector
       className={className}
-      flowState={state}
-      tour={tour}
-      availability={availability}
-      quoteLoading={quoteLoading}
-      availabilityLoading={availabilityLoading}
-      onChangeTripDetails={handleChangeTripDetails}
-      showPaymentSummary
-      showHelp
-      showConfirmAction={showConfirmAction}
-      submitting={submitLoading}
-      disableConfirm={checkoutConfirmDisabled}
-      onBack={handleGoPrevious}
-      onConfirm={handleCreateBooking}
-      compactProductTitle={isReviewStep}
+      inputName={inputName}
+      titleId={titleId}
+      selectedMethod={selectedPaymentMethod}
+      onChange={(method) => {
+        setSelectedPaymentMethod(method);
+        setError("");
+      }}
+      disabled={submitLoading}
     />
   );
 
-  const renderDesktopConfirmFooter = () => (
-    <div className="checkout-desktop-action-footer">
-      <Button variant="outline-secondary" onClick={handleGoPrevious} disabled={submitLoading}>
-        <BsArrowLeft /> Back
-      </Button>
-      <div className="checkout-footer-secure-note">
-        <BsShieldCheck />
-        <span>
-          <strong>Your payment is secure</strong>
-          <small>We use industry-standard encryption to protect your data and payments.</small>
-        </span>
-      </div>
-      <Button
-        className="premium-btn text-white checkout-footer-confirm-btn"
-        onClick={handleCreateBooking}
-        disabled={submitLoading || checkoutConfirmDisabled}
-      >
-        {!submitLoading ? <BsLock /> : null}
-        {submitLoading ? "Redirecting to Pesapal..." : "Confirm & Pay Secure Checkout"}
-      </Button>
-    </div>
+  const renderReviewOrderSidebar = (className = "") => (
+    <ReviewOrderSummarySidebar
+      className={className}
+      flowState={state}
+      tour={tour}
+      paymentMethodSelector={renderPaymentMethodSelector(
+        "review-payment-mobile",
+        "paymentMethodMobile",
+        "payment-method-mobile-title"
+      )}
+      submitting={submitLoading}
+      disableConfirm={checkoutConfirmDisabled}
+      onConfirm={handleCreateBooking}
+      confirmLabel={confirmPaymentLabel}
+      loadingLabel={loadingPaymentLabel}
+    />
   );
 
   const renderCustomerMobileActions = () => (
@@ -827,8 +839,12 @@ const BookingFlowInner = ({ portal = "public" }) => {
           onBack={handleGoPrevious}
           onConfirm={handleCreateBooking}
           onEditCustomer={() => setCurrentStepId(STEP_IDS.CUSTOMER)}
-          showPaymentSummary={false}
-          mobileReviewSidebar={renderReviewSidebar("checkout-mobile-review-sidebar", true)}
+          onEditTrip={handleChangeTripDetails}
+          paymentMethodSelector={renderPaymentMethodSelector(
+            "review-payment-desktop",
+            "paymentMethodDesktop",
+            "payment-method-desktop-title"
+          )}
         />
       );
     }
@@ -856,21 +872,8 @@ const BookingFlowInner = ({ portal = "public" }) => {
     if (isReviewStep) {
       return (
         <>
-          <div className="checkout-review-two-column">
-            <div className="checkout-review-trip-column">
-              <CompletedTripDetailsCard
-                tour={tour}
-                flowState={state}
-                onChangeTripDetails={handleChangeTripDetails}
-                loading={quoteLoading || availabilityLoading || submitLoading}
-              />
-            </div>
-            <div className="checkout-review-customer-column">
-              <ErrorAlert error={error} className="mb-3" />
-              {renderCurrentStep()}
-            </div>
-          </div>
-          {renderDesktopConfirmFooter()}
+          <ErrorAlert error={error} className="mb-3" />
+          {renderCurrentStep()}
         </>
       );
     }
@@ -962,7 +965,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
       right={
         <>
           {isReviewStep ? (
-            renderReviewSidebar("checkout-desktop-review-sidebar", false)
+            renderReviewOrderSidebar("review-checkout-sidebar")
           ) : (
             <BookingSummarySidebar
               flowState={state}

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="70" viewBox="0 0 220 70" role="img" aria-labelledby="dpoTitle">
+  <title id="dpoTitle">DPO Pay</title>
+  <rect width="220" height="70" rx="10" fill="#ffffff"/>
+  <defs>
+    <linearGradient id="dpoGradient" x1="18" y1="0" x2="126" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ef4d64"/>
+      <stop offset=".52" stop-color="#7b3f98"/>
+      <stop offset="1" stop-color="#17345d"/>
+    </linearGradient>
+  </defs>
+  <text x="19" y="42" fill="url(#dpoGradient)" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="800" letter-spacing="-3">DPO</text>
+  <text x="122" y="36" fill="#17345d" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="500" letter-spacing="-1">pay</text>
+  <text x="70" y="58" fill="#17345d" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" letter-spacing=".1">by network</text>
+</svg>

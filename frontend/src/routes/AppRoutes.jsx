@@ -18,6 +18,7 @@ import AgentRegisterPage from "../pages/public/AgentRegisterPage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminBookingsPage from "../pages/admin/AdminBookingsPage";
 import AdminAgentsPage from "../pages/admin/AdminAgentsPage";
+import AdminPaymentsPage from "../pages/admin/AdminPaymentsPage";
 import AdminRecoveryPage from "../pages/admin/AdminRecoveryPage";
 import SyncLogsPage from "../pages/admin/SyncLogsPage";
 import AgentDashboardPage from "../pages/agent/AgentDashboardPage";
@@ -73,6 +74,7 @@ const AppRoutes = () => {
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/admin/bookings" element={<AdminBookingsPage />} />
         <Route path="/admin/agents" element={<AdminAgentsPage />} />
+        <Route path="/admin/payments" element={<AdminPaymentsPage />} />
         <Route path="/admin/recovery" element={<AdminRecoveryPage />} />
         <Route path="/admin/sync-logs" element={<SyncLogsPage />} />
       </Route>

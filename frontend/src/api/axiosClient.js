@@ -49,6 +49,34 @@ const mapProviderErrorMessage = ({ code = "", message = "", details = null }) =>
     return "Payment order could not be created. Please try again.";
   }
 
+  if (normalizedCode === "PAYPAL_NOT_CONFIGURED") {
+    return "PayPal is not configured yet. Please contact support.";
+  }
+
+  if (normalizedCode === "PAYPAL_INVALID_REDIRECT_URLS") {
+    return "PayPal callback URLs are invalid for live mode. Please contact support.";
+  }
+
+  if (normalizedCode === "PAYPAL_TOKEN_MISSING") {
+    return "PayPal authentication failed. Please retry shortly.";
+  }
+
+  if (normalizedCode === "PAYPAL_API_REQUEST_FAILED") {
+    if (providerStatus === 401) {
+      return "PayPal credentials were rejected. Please contact support.";
+    }
+
+    if (providerStatus >= 500) {
+      return "PayPal service is temporarily unavailable. Please try again shortly.";
+    }
+
+    return message || "Could not complete payment request with PayPal.";
+  }
+
+  if (normalizedCode === "PAYPAL_CREATE_ORDER_FAILED") {
+    return "PayPal payment order could not be created. Please try again.";
+  }
+
   return "";
 };
 
