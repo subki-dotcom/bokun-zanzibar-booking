@@ -7193,15 +7193,18 @@ textarea.form-control {
   }
 
   .payment-method-grid {
-    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
   }
 
   .payment-method-option {
-    min-height: 74px;
+    min-height: 64px;
+    padding: 0.45rem 0.5rem;
   }
 
   .payment-method-logo-wrap {
-    width: min(160px, 100%);
+    width: min(100%, 112px);
+    height: 34px;
   }
 
   .review-payment-desktop {
@@ -7328,6 +7331,21 @@ textarea.form-control {
 
   .checkout-secure-chip small {
     font-size: 0.66rem;
+  }
+
+  .payment-method-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.32rem;
+  }
+
+  .payment-method-option {
+    min-height: 54px;
+    padding: 0.32rem;
+  }
+
+  .payment-method-logo-wrap {
+    width: 100%;
+    height: 26px;
   }
 
   .smart-stepper-track {
