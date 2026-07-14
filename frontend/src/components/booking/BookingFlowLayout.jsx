@@ -1,5 +1,5 @@
 import { Container, Row, Col } from "react-bootstrap";
-import { BsGeoAlt, BsShieldCheck, BsClock, BsSignpostSplit, BsCarFront, BsWater, BsList } from "react-icons/bs";
+import { BsGeoAlt, BsShieldCheck, BsClock, BsSignpostSplit, BsCarFront, BsWater } from "react-icons/bs";
 import { toPlainText, truncateText } from "../../utils/formatters";
 
 const fallbackImage = "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1400&q=80";
@@ -27,9 +27,6 @@ const CheckoutTopBar = ({ stepper = null }) => (
         <small>Your data is protected</small>
       </span>
     </div>
-    <button type="button" className="checkout-menu-button" aria-label="Open checkout menu">
-      <BsList />
-    </button>
   </div>
 );
 

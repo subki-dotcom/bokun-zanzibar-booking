@@ -4443,7 +4443,7 @@ textarea.form-control {
 
 .smart-stepper-track {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -4451,6 +4451,7 @@ textarea.form-control {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  min-width: 0;
   padding: 0.5rem 0.6rem;
   border-radius: 14px;
   border: 1px solid #edf2f7;
@@ -4494,10 +4495,13 @@ textarea.form-control {
 }
 
 .smart-step-label {
+  min-width: 0;
   font-size: 0.84rem;
   line-height: 1.2;
   color: #44556d;
   font-weight: 600;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .completed-trip-card {
@@ -5891,6 +5895,60 @@ textarea.form-control {
   .summary-line-item strong {
     max-width: 62%;
   }
+
+  .smart-stepper-track {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .smart-step-item {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.35rem;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .smart-step-dot {
+    flex-shrink: 0;
+  }
+
+  .smart-step-label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 2.1rem;
+    font-size: 0.74rem;
+    line-height: 1.05;
+    text-align: center;
+  }
+}
+
+@media (max-width: 389px) {
+  .smart-step-label-full {
+    display: none;
+  }
+
+  .smart-step-label-short {
+    display: inline;
+  }
+
+  .smart-step-item {
+    padding: 0.4rem 0.2rem;
+  }
+
+  .smart-step-dot {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+
+  .smart-step-label {
+    min-height: 1.8rem;
+    font-size: 0.69rem;
+  }
 }
 
 @media (min-width: 992px) {
@@ -5990,6 +6048,14 @@ textarea.form-control {
 
 .smart-step-label {
   color: #0f172a;
+}
+
+.smart-step-label-full {
+  display: inline;
+}
+
+.smart-step-label-short {
+  display: none;
 }
 
 .checkout-secure-chip {
@@ -7512,9 +7578,9 @@ textarea.form-control {
   }
 
   .smart-stepper-track {
-    grid-template-columns: repeat(3, minmax(150px, 1fr));
-    overflow-x: auto;
-    padding-bottom: 0.35rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow-x: visible;
+    padding-bottom: 0;
   }
 
   .table-responsive .table {
@@ -7740,7 +7806,7 @@ textarea.form-control {
   }
 
   .smart-stepper-track {
-    grid-template-columns: repeat(2, minmax(150px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .checkout-action-row,

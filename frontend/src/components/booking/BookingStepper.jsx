@@ -17,6 +17,14 @@ const normalizeLegacySteps = (currentStep = 1) =>
     };
   });
 
+const compactLabel = (label = "") => {
+  const normalized = String(label).toLowerCase();
+  if (normalized.includes("trip")) return "Trip";
+  if (normalized.includes("customer")) return "Customer";
+  if (normalized.includes("review")) return "Review";
+  return label;
+};
+
 const BookingStepper = ({ currentStep = 1, steps = null }) => {
   const normalizedSteps =
     Array.isArray(steps) && steps.length
@@ -28,7 +36,8 @@ const BookingStepper = ({ currentStep = 1, steps = null }) => {
 
   return (
     <div className="smart-stepper-track">
-      {normalizedSteps.map((step, index) => (
+      <span className="smart-stepper-line" aria-hidden="true" />
+      {normalizedSteps.map((step) => (
         <div
           className={`smart-step-item ${step.current ? "is-current" : ""} ${step.completed ? "is-completed" : ""}`.trim()}
           key={step.id}
@@ -36,8 +45,10 @@ const BookingStepper = ({ currentStep = 1, steps = null }) => {
           <span className="smart-step-dot">
             {step.completed ? <BsCheck2 /> : step.index}
           </span>
-          <span className="smart-step-label">{step.label}</span>
-          {index < normalizedSteps.length - 1 ? <span className="smart-step-connector" /> : null}
+          <span className="smart-step-label" aria-label={step.label}>
+            <span className="smart-step-label-full">{step.label}</span>
+            <span className="smart-step-label-short" aria-hidden="true">{compactLabel(step.label)}</span>
+          </span>
         </div>
       ))}
     </div>

@@ -1,11 +1,16 @@
 import { Container, Nav, Navbar } from "react-bootstrap";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import Footer from "../components/common/footer/Footer";
 import FloatingWhatsAppButton from "../components/common/footer/FloatingWhatsAppButton";
 
 const PublicLayout = () => {
+  const location = useLocation();
+  const isCheckoutRoute = /^(\/booking\/|\/payment\/checkout\/|\/payment-(success|failure)\/|\/payment-status\/)/.test(
+    location.pathname
+  );
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isCheckoutRoute ? "is-checkout-route" : ""}`.trim()}>
       <Navbar expand="lg" className="public-nav py-3">
         <Container>
           <Navbar.Brand as={Link} to="/" className="brand-mark fs-4">
