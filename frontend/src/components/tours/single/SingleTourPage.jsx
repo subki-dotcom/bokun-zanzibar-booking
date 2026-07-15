@@ -1,32 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Col, Container, Row } from "react-bootstrap";
+import { Container } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProductGallery from "./ProductGallery";
 import ProductHeader from "./ProductHeader";
 import QuickFactCards from "./QuickFactCards";
 import StickyAvailabilityCard from "./StickyAvailabilityCard";
 import AboutTourSection from "./AboutTourSection";
-import ExperienceDetailsGrid from "./ExperienceDetailsGrid";
 import ItineraryTimeline from "./ItineraryTimeline";
 import MeetingPickupCards from "./MeetingPickupCards";
 import IncludedExcludedCards from "./IncludedExcludedCards";
 import ImportantInfoCard from "./ImportantInfoCard";
+import ProductTopRow from "./ProductTopRow";
+import ProductDetailTabs from "./ProductDetailTabs";
+import ProductSidebarInfo from "./ProductSidebarInfo";
+import MobileBookingBar from "./MobileBookingBar";
 import AvailabilityOptionModal from "./availabilityPicker/AvailabilityOptionModal";
 import { buildItinerary } from "./singleTour.helpers";
 import { checkTourOptionsAvailability } from "../../../api/toursApi";
 import { saveBookingSession } from "../../../utils/bookingSession";
-
-const CollapsibleInfoBlock = ({ title = "", subtitle = "", defaultOpen = false, children = null }) => (
-  <details className="single-tour-collapse-block" open={defaultOpen}>
-    <summary className="single-tour-collapse-summary">
-      <div>
-        <div className="single-tour-collapse-title">{title}</div>
-        {subtitle ? <div className="single-tour-collapse-subtitle">{subtitle}</div> : null}
-      </div>
-    </summary>
-    <div className="single-tour-collapse-content">{children}</div>
-  </details>
-);
 
 const SingleTourPage = ({
   tour = {},
@@ -41,7 +32,7 @@ const SingleTourPage = ({
       return true;
     }
 
-    return window.matchMedia("(min-width: 992px)").matches;
+    return window.matchMedia("(min-width: 1024px)").matches;
   });
   const preferredOptionId = String(searchParams.get("option") || "").trim();
   const preferredCatalogId = String(searchParams.get("catalog") || "").trim();
@@ -80,13 +71,14 @@ const SingleTourPage = ({
   const [showAvailabilityPicker, setShowAvailabilityPicker] = useState(false);
   const [latestQuote, setLatestQuote] = useState(null);
   const lastAvailabilityCheckKeyRef = useRef("");
+  const mobileBookingRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return undefined;
     }
 
-    const mediaQuery = window.matchMedia("(min-width: 992px)");
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
     const handleBreakpointChange = (event) => {
       setIsDesktop(event.matches);
     };
@@ -422,87 +414,50 @@ const SingleTourPage = ({
     }
   };
 
+  const openMobileBooking = () => {
+    mobileBookingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const hasIncluded = Boolean((tour.included || []).length || (tour.excluded || []).length);
+  const hasMeeting = Boolean(tour.meetingInfo || tour.pickupInfo);
+  const hasImportantInformation = Boolean((tour.importantInformation || []).length);
+  const hasReviews = Number(tour.rating || 0) > 0 || Number(tour.reviewCount || 0) > 0;
+
   return (
-    <section className={`single-tour-page py-4 py-lg-5 ${portal === "agent" ? "agent-tour-booking-page" : ""}`}>
-      <Container>
-        <Row className="g-4 g-xl-5">
-          <Col lg={8}>
-            <div className="single-tour-left-column">
-              {isDesktop ? (
-                <>
-                  <ProductGallery images={tour.images} title={tour.title} />
-                  <ProductHeader tour={tour} />
-                  <QuickFactCards tour={tour} />
-                </>
-              ) : (
-                <>
-                  <ProductHeader tour={tour} />
-                  <QuickFactCards tour={tour} />
-                  <div className="single-tour-mobile-priority-booking">
-                    <StickyAvailabilityCard {...availabilityCardProps} />
-                  </div>
-                  <ProductGallery images={tour.images} title={tour.title} />
-                </>
-              )}
+    <main className={`single-tour-page product-detail-page ${portal === "agent" ? "agent-tour-booking-page" : ""}`}>
+      <Container className="product-detail-shell">
+        <ProductTopRow rating={tour.rating} reviewCount={tour.reviewCount} />
 
-              <section className="single-tour-collapsible-stack">
-                <CollapsibleInfoBlock
-                  title="About this tour"
-                  subtitle="Overview and key experience context"
-                  defaultOpen
-                >
-                  <AboutTourSection description={tour.description} />
-                </CollapsibleInfoBlock>
+        <div className="product-detail-layout">
+          <article className="single-tour-left-column product-detail-main">
+            <ProductGallery images={tour.images} title={tour.title} videoUrl={tour.videoUrl} bestSeller={tour.bestSeller} />
+            <ProductHeader tour={tour} />
+            <QuickFactCards tour={tour} />
 
-                <CollapsibleInfoBlock
-                  title="Experience details"
-                  subtitle="Type, duration, categories, guide, difficulty"
-                >
-                  <ExperienceDetailsGrid tour={tour} />
-                </CollapsibleInfoBlock>
+            {tour.description ? <div id="about" className="product-detail-section"><AboutTourSection description={tour.description} /></div> : null}
 
-                <CollapsibleInfoBlock
-                  title="Itinerary"
-                  subtitle="Stops, route, and day flow"
-                >
-                  <ItineraryTimeline itinerary={itinerary} />
-                </CollapsibleInfoBlock>
+            <ProductDetailTabs
+              hasIncluded={hasIncluded}
+              hasMeeting={hasMeeting}
+              hasImportantInfo={hasImportantInformation}
+              hasReviews={hasReviews}
+            />
 
-                <CollapsibleInfoBlock
-                  title="Meeting and pickup"
-                  subtitle="Pickup/meeting setup from Bokun"
-                >
-                  <MeetingPickupCards meetingInfo={tour.meetingInfo} pickupInfo={tour.pickupInfo} />
-                </CollapsibleInfoBlock>
+            <ItineraryTimeline itinerary={itinerary} />
+            {hasIncluded ? <div id="included" className="product-detail-section"><IncludedExcludedCards included={tour.included} excluded={tour.excluded} /></div> : null}
+            {hasMeeting ? <div id="meeting-pickup" className="product-detail-section"><MeetingPickupCards meetingInfo={tour.meetingInfo} pickupInfo={tour.pickupInfo} /></div> : null}
+            {hasImportantInformation ? <div id="important-info" className="product-detail-section"><ImportantInfoCard importantInformation={tour.importantInformation} /></div> : null}
+            {hasReviews ? <section id="reviews" className="single-tour-section product-detail-section product-reviews-summary"><h3>Reviews</h3><p>{Number(tour.rating).toFixed(1)} rating from {Number(tour.reviewCount || 0)} verified guest reviews.</p></section> : null}
 
-                <CollapsibleInfoBlock
-                  title="Included and excluded"
-                  subtitle="What is covered and what is not"
-                >
-                  <IncludedExcludedCards included={tour.included} excluded={tour.excluded} />
-                </CollapsibleInfoBlock>
+            {!isDesktop ? <div className="single-product-mobile-booking-form" ref={mobileBookingRef}><StickyAvailabilityCard {...availabilityCardProps} /></div> : null}
+            {availabilityError ? <div className="single-booking-inline-error mt-3">{availabilityError}</div> : null}
+          </article>
 
-                <CollapsibleInfoBlock
-                  title="Important information"
-                  subtitle="Policies and practical notes"
-                >
-                  <ImportantInfoCard importantInformation={tour.importantInformation} />
-                </CollapsibleInfoBlock>
-              </section>
-
-              {availabilityError ? (
-                <div className="single-booking-inline-error mt-2">{availabilityError}</div>
-              ) : null}
-            </div>
-          </Col>
-
-          {isDesktop ? (
-            <Col lg={4}>
-              <StickyAvailabilityCard {...availabilityCardProps} />
-            </Col>
-          ) : null}
-        </Row>
+          {isDesktop ? <aside className="product-detail-sidebar"><div className="product-detail-sidebar-inner"><StickyAvailabilityCard {...availabilityCardProps} /><ProductSidebarInfo tour={tour} /></div></aside> : null}
+        </div>
       </Container>
+
+      {!isDesktop ? <MobileBookingBar amount={tour.fromPrice} currency={tour.currency} onOpenBooking={openMobileBooking} /> : null}
 
       <AvailabilityOptionModal
         show={showAvailabilityPicker}
@@ -521,7 +476,7 @@ const SingleTourPage = ({
         onChangeStartTime={handleOptionStartTimeChange}
         onContinue={handleContinueWithOption}
       />
-    </section>
+    </main>
   );
 };
 

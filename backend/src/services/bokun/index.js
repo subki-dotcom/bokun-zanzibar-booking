@@ -386,6 +386,15 @@ const fetchProductPriceList = async ({
   }
 };
 
+const toOptionalAge = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+};
+
 const ensurePricingCategories = (categories = []) => {
   const normalized = ensureArray(categories)
     .map((category = {}) => ({
@@ -394,7 +403,10 @@ const ensurePricingCategories = (categories = []) => {
       min: Math.max(0, Number(category.min ?? category.minQuantity ?? 0)),
       max: Math.max(0, Number(category.max ?? category.maxQuantity ?? 50)),
       defaultQuantity: Math.max(0, Number(category.defaultQuantity ?? 0)),
-      ticketCategory: String(category.ticketCategory || "").trim()
+      ticketCategory: String(category.ticketCategory || "").trim(),
+      ageQualified: Boolean(category.ageQualified),
+      minAge: toOptionalAge(category.minAge),
+      maxAge: toOptionalAge(category.maxAge)
     }))
     .filter((category) => Boolean(category.id));
 
@@ -412,7 +424,10 @@ const ensurePricingCategories = (categories = []) => {
       min: 1,
       max: 20,
       defaultQuantity: 1,
-      ticketCategory: "ADULT"
+      ticketCategory: "ADULT",
+      ageQualified: false,
+      minAge: null,
+      maxAge: null
     }
   ];
 };
@@ -432,6 +447,10 @@ const mapRawProductPricingCategories = (rawProduct = {}) =>
       const ticketCategory = String(category?.ticketCategory || "").trim();
       const token = `${ticketCategory} ${label}`.toLowerCase();
       const id = rawId || slugifyCategoryId(label || ticketCategory);
+      const minAgeValue = Number(category?.minAge ?? category?.minimumAge ?? category?.ageFrom);
+      const maxAgeValue = Number(category?.maxAge ?? category?.maximumAge ?? category?.ageTo);
+      const minAge = Number.isFinite(minAgeValue) && minAgeValue >= 0 ? minAgeValue : null;
+      const maxAge = Number.isFinite(maxAgeValue) && maxAgeValue >= 0 ? maxAgeValue : null;
 
       if (!id) {
         return null;
@@ -443,10 +462,32 @@ const mapRawProductPricingCategories = (rawProduct = {}) =>
         min: 0,
         max: 50,
         defaultQuantity: token.includes("adult") ? 1 : 0,
-        ticketCategory
+        ticketCategory,
+        ageQualified: Boolean(category?.ageQualified) || minAge !== null || maxAge !== null,
+        minAge,
+        maxAge
       };
     })
     .filter(Boolean);
+
+const mergePricingCategoryAgeRanges = (categories = [], rawCategories = []) => {
+  const rawById = new Map(
+    ensureArray(rawCategories).map((category = {}) => [String(category.id || "").trim(), category])
+  );
+
+  return ensureArray(categories).map((category = {}) => {
+    const source = rawById.get(String(category.id || "").trim()) || {};
+    const minAge = category.minAge ?? source.minAge ?? null;
+    const maxAge = category.maxAge ?? source.maxAge ?? null;
+
+    return {
+      ...category,
+      ageQualified: Boolean(category.ageQualified || source.ageQualified || minAge !== null || maxAge !== null),
+      minAge,
+      maxAge
+    };
+  });
+};
 
 const buildDefaultPassengerStateFromCategories = (categories = []) =>
   ensurePricingCategories(categories).map((category) => ({
@@ -675,8 +716,9 @@ const fetchProductBookingConfig = async (productId, options = {}, requestId) => 
 
   const mappedPriceListCategories = mapper.mapBokunPricingCategories(priceList, selectedRateId);
   const mappedRawCategories = mapRawProductPricingCategories(mappedProduct.rawBokunProduct || {});
-  const pricingCategories = ensurePricingCategories(
-    mappedPriceListCategories.length ? mappedPriceListCategories : mappedRawCategories
+  const pricingCategories = mergePricingCategoryAgeRanges(
+    ensurePricingCategories(mappedPriceListCategories.length ? mappedPriceListCategories : mappedRawCategories),
+    mappedRawCategories
   );
   const fallbackStartingPrice = deriveTwoAdultStartingPrice(mappedProduct, selectedRateOption);
   const startingFromPrice = Number(

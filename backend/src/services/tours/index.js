@@ -71,6 +71,8 @@ const hasLegacyContentGap = (tour = {}) => {
   const rawExcludedPresent = Boolean(raw.excluded || (Array.isArray(raw.exclusions) && raw.exclusions.length));
   const rawKnowBeforePresent = Array.isArray(raw.knowBeforeYouGoItems) && raw.knowBeforeYouGoItems.length > 0;
   const rawItineraryPresent = Boolean(raw.itinerary || (Array.isArray(raw.itineraryItems) && raw.itineraryItems.length));
+  const rawAgendaItemsPresent = Array.isArray(raw.agendaItems) && raw.agendaItems.length > 0;
+  const itineraryItems = Array.isArray(tour.itineraryItems) ? tour.itineraryItems : [];
   const rawOptionItineraryPresent = Array.isArray(raw.options || raw.rates)
     ? (raw.options || raw.rates).some(
         (option) => Boolean(option?.itinerary || (Array.isArray(option?.itineraryItems) && option.itineraryItems.length))
@@ -93,6 +95,12 @@ const hasLegacyContentGap = (tour = {}) => {
     raw.productCategory || (Array.isArray(raw.categories) && raw.categories.length > 0)
   );
   const rawGuidePresent = Array.isArray(raw.guidanceTypes) && raw.guidanceTypes.length > 0;
+  const rawVideoPresent = Boolean(raw.video || (Array.isArray(raw.videos) && raw.videos.length > 0));
+  const rawLanguagesPresent = Array.isArray(raw.languages) && raw.languages.length > 0;
+  const rawGroupSizePresent = Boolean(
+    raw.minimumParticipants || raw.minParticipants || raw.minPax || raw.maximumParticipants || raw.maxParticipants || raw.passCapacity || raw.capacity
+  );
+  const rawCancellationPolicyPresent = Boolean(raw.cancellationPolicy || raw.cancellationTerms);
 
   if (rawIncludedPresent && included.length === 0) {
     return true;
@@ -107,6 +115,10 @@ const hasLegacyContentGap = (tour = {}) => {
   }
 
   if ((rawItineraryPresent || rawOptionItineraryPresent) && itinerary.length === 0) {
+    return true;
+  }
+
+  if (rawAgendaItemsPresent && itineraryItems.length === 0) {
     return true;
   }
 
@@ -142,6 +154,22 @@ const hasLegacyContentGap = (tour = {}) => {
     return true;
   }
 
+  if (rawVideoPresent && !tour.videoUrl) {
+    return true;
+  }
+
+  if (rawLanguagesPresent && (!Array.isArray(tour.languages) || tour.languages.length === 0)) {
+    return true;
+  }
+
+  if (rawGroupSizePresent && !tour.groupSize) {
+    return true;
+  }
+
+  if (rawCancellationPolicyPresent && !tour.cancellationPolicy) {
+    return true;
+  }
+
   return false;
 };
 
@@ -169,7 +197,9 @@ const pickLiveSyncFields = (liveProduct = {}) => ({
   difficulty: liveProduct.difficulty,
   liveTourGuide: liveProduct.liveTourGuide,
   images: liveProduct.images,
+  videoUrl: liveProduct.videoUrl,
   itinerary: liveProduct.itinerary,
+  itineraryItems: liveProduct.itineraryItems,
   meetingInfo: liveProduct.meetingInfo,
   pickupInfo: liveProduct.pickupInfo,
   pickupPlaces: liveProduct.pickupPlaces,
@@ -178,6 +208,10 @@ const pickLiveSyncFields = (liveProduct = {}) => ({
   importantInformation: liveProduct.importantInformation,
   highlights: liveProduct.highlights,
   categories: liveProduct.categories,
+  languages: liveProduct.languages,
+  groupSize: liveProduct.groupSize,
+  cancellationPolicy: liveProduct.cancellationPolicy,
+  bestSeller: liveProduct.bestSeller,
   destination: liveProduct.destination,
   status: liveProduct.status,
   currency: liveProduct.currency,
@@ -244,6 +278,80 @@ const hydrateTourOptionsIfNeeded = async (tour, requestId) => {
   );
 
   return ProductSnapshot.findOne({ bokunProductId: tour.bokunProductId }).lean();
+};
+
+const hasSameItinerary = (left = [], right = []) => {
+  const normalize = (items) =>
+    (Array.isArray(items) ? items : []).map((item) => String(item || "").trim()).filter(Boolean);
+
+  const leftItems = normalize(left);
+  const rightItems = normalize(right);
+
+  return leftItems.length === rightItems.length && leftItems.every((item, index) => item === rightItems[index]);
+};
+
+const hasSameItineraryItems = (left = [], right = []) =>
+  JSON.stringify(Array.isArray(left) ? left : []) === JSON.stringify(Array.isArray(right) ? right : []);
+
+const refreshTourItineraryFromBokun = async (tour, requestId) => {
+  if (!tour?.bokunProductId) {
+    return tour;
+  }
+
+  try {
+    const liveProduct = await bokunService.fetchProductDetails(tour.bokunProductId, requestId);
+    if (!liveProduct?.bokunProductId) {
+      return tour;
+    }
+
+    const presentationFields = {
+      title: liveProduct.title || tour.title,
+      description: liveProduct.description || tour.description,
+      shortDescription: liveProduct.shortDescription || tour.shortDescription,
+      duration: liveProduct.duration || tour.duration,
+      experienceType: liveProduct.experienceType || tour.experienceType,
+      difficulty: liveProduct.difficulty || tour.difficulty,
+      liveTourGuide: liveProduct.liveTourGuide || tour.liveTourGuide,
+      images: Array.isArray(liveProduct.images) && liveProduct.images.length ? liveProduct.images : tour.images,
+      videoUrl: liveProduct.videoUrl || "",
+      itinerary: Array.isArray(liveProduct.itinerary) ? liveProduct.itinerary : [],
+      itineraryItems: Array.isArray(liveProduct.itineraryItems) ? liveProduct.itineraryItems : [],
+      languages: Array.isArray(liveProduct.languages) ? liveProduct.languages : [],
+      groupSize: liveProduct.groupSize || "",
+      cancellationPolicy: liveProduct.cancellationPolicy || "",
+      bestSeller: Boolean(liveProduct.bestSeller),
+      categories: Array.isArray(liveProduct.categories) ? liveProduct.categories : tour.categories
+    };
+    const hasPresentationChange = Object.entries(presentationFields).some(([key, value]) => {
+      if (key === "itinerary") {
+        return !hasSameItinerary(tour[key], value);
+      }
+      if (key === "itineraryItems") {
+        return !hasSameItineraryItems(tour[key], value);
+      }
+      return JSON.stringify(tour[key] ?? null) !== JSON.stringify(value ?? null);
+    });
+
+    if (hasPresentationChange) {
+      await ProductSnapshot.updateOne(
+        { bokunProductId: tour.bokunProductId },
+        { $set: presentationFields }
+      );
+    }
+
+    return {
+      ...tour,
+      ...presentationFields
+    };
+  } catch (error) {
+    logger.warn("Live Bokun itinerary refresh skipped", {
+      productId: tour.bokunProductId,
+      requestId,
+      error: error.message
+    });
+
+    return tour;
+  }
 };
 
 const ensurePublicSnapshotCache = async (requestId = "") => {
@@ -554,7 +662,8 @@ const getTourBySlug = async (slug, requestId) => {
     throw new AppError("Tour not found", 404, "TOUR_NOT_FOUND");
   }
 
-  return hydrateTourOptionsIfNeeded(tour, requestId);
+  const hydratedTour = await hydrateTourOptionsIfNeeded(tour, requestId);
+  return refreshTourItineraryFromBokun(hydratedTour, requestId);
 };
 
 const getTourOptions = async (id, requestId) => {

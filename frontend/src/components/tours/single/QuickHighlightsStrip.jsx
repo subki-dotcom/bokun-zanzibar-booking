@@ -1,7 +1,7 @@
-import { BsClock, BsGeoAlt, BsGrid3X3Gap, BsStars } from "react-icons/bs";
+import { BsClock, BsGeoAlt, BsGrid3X3Gap, BsPeople, BsPersonBadge, BsSignpostSplit, BsStars } from "react-icons/bs";
 import { buildQuickHighlights } from "./singleTour.helpers";
 
-const iconMap = [BsClock, BsGeoAlt, BsGrid3X3Gap, BsStars];
+const iconMap = [BsClock, BsGeoAlt, BsSignpostSplit, BsGrid3X3Gap, BsPeople, BsPersonBadge, BsStars];
 
 const QuickHighlightsStrip = ({ tour = {} }) => {
   const highlights = buildQuickHighlights(tour);

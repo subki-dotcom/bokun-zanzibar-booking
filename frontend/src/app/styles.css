@@ -1538,6 +1538,7 @@ a {
 
 .itinerary-item {
   display: flex;
+  align-items: flex-start;
   gap: 0.7rem;
 }
 
@@ -1558,8 +1559,52 @@ a {
   border: 1px solid var(--tour-border);
   border-radius: 14px;
   padding: 0.72rem 0.8rem;
-  flex: 1;
   color: #425164;
+}
+
+.itinerary-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.itinerary-content.has-image {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.itinerary-image {
+  width: 92px;
+  min-height: 72px;
+  height: 72px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.itinerary-text h4 {
+  margin: 0 0 0.35rem;
+  color: var(--tour-heading);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.itinerary-text p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.itinerary-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.itinerary-location svg {
+  color: #0f9f5a;
 }
 
 .itinerary-step-label {
@@ -5833,6 +5878,16 @@ textarea.form-control {
 }
 
 @media (max-width: 767px) {
+  .itinerary-content.has-image {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .itinerary-image {
+    width: 82px;
+    height: 66px;
+    min-height: 66px;
+  }
+
   .smart-checkout-page {
     padding-top: 0.75rem;
   }
@@ -10828,5 +10883,1557 @@ textarea.form-control {
 
   .z-home-hero-search-wrap {
     margin-top: 0.75rem;
+  }
+}
+
+/* Checkout-only compact layout. Kept at the end so legacy mobile rules cannot reintroduce overflow. */
+@media (min-width: 768px) {
+  .smart-checkout-page .smart-stepper-track {
+    position: relative;
+  }
+
+  .smart-checkout-page .smart-stepper-line {
+    position: absolute;
+    top: 16px;
+    right: 15%;
+    left: 15%;
+    z-index: 0;
+    height: 1px;
+    background: #cbd5e1;
+  }
+
+  .smart-checkout-page .smart-step-item {
+    z-index: 1;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .smart-checkout-page .checkout-shell {
+    max-width: 900px;
+  }
+
+  .smart-checkout-page .booking-flow-grid > .booking-flow-main,
+  .smart-checkout-page .booking-flow-grid > .booking-flow-side {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell.is-checkout-route > .public-nav,
+  .app-shell.is-checkout-route > .floating-whatsapp-btn {
+    display: none !important;
+  }
+
+  .app-shell.is-checkout-route .app-main-content {
+    min-width: 0;
+  }
+
+  .smart-checkout-page,
+  .smart-checkout-page .checkout-shell,
+  .smart-checkout-page .booking-flow-grid,
+  .smart-checkout-page .booking-flow-main,
+  .smart-checkout-page .booking-flow-side,
+  .smart-checkout-page .checkout-tour-hero,
+  .smart-checkout-page .checkout-review-stack,
+  .smart-checkout-page .review-order-sidebar {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .smart-checkout-page {
+    padding: 0.75rem 0 1rem;
+  }
+
+  .smart-checkout-page .checkout-shell {
+    padding-inline: 0.75rem;
+  }
+
+  .smart-checkout-page .booking-flow-grid {
+    --bs-gutter-x: 0;
+    --bs-gutter-y: 0.875rem;
+    margin-inline: 0;
+  }
+
+  .smart-checkout-page .booking-flow-grid > [class*="col"] {
+    padding-inline: 0;
+  }
+
+  .smart-checkout-page .checkout-topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .smart-checkout-page .checkout-topbar-steps {
+    grid-column: 1 / -1;
+    order: 3;
+    min-width: 0;
+    padding-top: 0.7rem;
+  }
+
+  .smart-checkout-page .checkout-brand-mark {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    font-size: 1.18rem;
+  }
+
+  .smart-checkout-page .checkout-brand {
+    gap: 0.55rem;
+  }
+
+  .smart-checkout-page .checkout-brand strong {
+    font-size: clamp(1.05rem, 4.8vw, 1.18rem);
+  }
+
+  .smart-checkout-page .checkout-brand small {
+    font-size: 0.74rem;
+  }
+
+  .smart-checkout-page .checkout-secure-chip {
+    gap: 0.35rem;
+  }
+
+  .smart-checkout-page .checkout-secure-chip svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .smart-checkout-page .checkout-secure-chip strong {
+    font-size: 0.72rem;
+  }
+
+  .smart-checkout-page .checkout-menu-button {
+    display: none !important;
+  }
+
+  .smart-checkout-page .smart-stepper-track {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: 0.2rem;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .smart-checkout-page .smart-stepper-line {
+    position: absolute;
+    top: 15px;
+    right: 16.66%;
+    left: 16.66%;
+    z-index: 0;
+    height: 1px;
+    background: #cbd5e1;
+  }
+
+  .smart-checkout-page .smart-step-connector {
+    display: none;
+  }
+
+  .smart-checkout-page .smart-step-item {
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.34rem;
+    min-width: 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  .smart-checkout-page .smart-step-dot {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    font-size: 0.78rem;
+  }
+
+  .smart-checkout-page .smart-step-label {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    color: #52617a;
+    font-size: 0.73rem;
+    line-height: 1.18;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .smart-checkout-page .smart-step-label-short {
+    display: none;
+  }
+
+  .smart-checkout-page .checkout-tour-hero {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    min-height: 0;
+    margin-bottom: 0.9rem;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .smart-checkout-page .checkout-tour-image-wrap {
+    width: 100%;
+    height: clamp(180px, 52vw, 210px);
+    aspect-ratio: auto;
+    border-radius: 10px;
+  }
+
+  .smart-checkout-page .checkout-tour-badge,
+  .smart-checkout-page .checkout-tour-tags {
+    display: none;
+  }
+
+  .smart-checkout-page .checkout-tour-location {
+    margin-bottom: 0.4rem;
+    font-size: 0.94rem;
+  }
+
+  .smart-checkout-page .checkout-tour-copy h1 {
+    display: -webkit-box;
+    margin-bottom: 0.45rem;
+    overflow: hidden;
+    font-size: clamp(1.35rem, 6vw, 1.6rem);
+    line-height: 1.18;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .smart-checkout-page .checkout-tour-copy p {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: #52617a;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .smart-checkout-page .review-section-card,
+  .smart-checkout-page .review-order-card,
+  .smart-checkout-page .review-help-card,
+  .smart-checkout-page .payment-method-card {
+    border-radius: 12px;
+  }
+
+  .smart-checkout-page .review-section-card .card-body,
+  .smart-checkout-page .review-order-card .card-body,
+  .smart-checkout-page .review-help-card .card-body,
+  .smart-checkout-page .payment-method-card {
+    padding: 1rem;
+  }
+
+  .smart-checkout-page .review-section-title h4,
+  .smart-checkout-page .review-order-title h4,
+  .smart-checkout-page .payment-method-head h4 {
+    font-size: 1.12rem;
+  }
+
+  .smart-checkout-page .review-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .smart-checkout-page .review-detail-row {
+    grid-template-columns: minmax(100px, 36%) minmax(0, 64%);
+    align-items: start;
+    gap: 0.55rem;
+    padding: 0.54rem 0;
+  }
+
+  .smart-checkout-page .review-detail-label,
+  .smart-checkout-page .review-summary-row span {
+    font-size: 0.82rem;
+  }
+
+  .smart-checkout-page .review-detail-row strong,
+  .smart-checkout-page .review-summary-row strong {
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  .smart-checkout-page .review-summary-row {
+    grid-template-columns: minmax(86px, 36%) minmax(0, 64%);
+    gap: 0.55rem;
+  }
+
+  .smart-checkout-page .payment-method-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .smart-checkout-page .payment-method-option {
+    min-height: 72px;
+    padding: 0.45rem;
+  }
+
+  .smart-checkout-page .payment-method-logo-wrap {
+    width: 100%;
+    max-width: 96px;
+    height: 34px;
+  }
+
+  .smart-checkout-page .review-pay-card .premium-btn {
+    min-height: 52px;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 767px) {
+  .smart-checkout-page .checkout-tour-hero {
+    grid-template-columns: minmax(210px, 0.42fr) minmax(0, 0.58fr);
+    align-items: center;
+  }
+
+  .smart-checkout-page .checkout-tour-image-wrap {
+    height: 184px;
+  }
+}
+
+@media (max-width: 389px) {
+  .smart-checkout-page .checkout-secure-chip small,
+  .smart-checkout-page .checkout-brand small {
+    display: none;
+  }
+
+  .smart-checkout-page .smart-step-label-full {
+    display: none;
+  }
+
+  .smart-checkout-page .smart-step-label-short {
+    display: inline;
+  }
+
+  .smart-checkout-page .smart-step-label {
+    font-size: 0.72rem;
+  }
+
+  .smart-checkout-page .review-detail-row {
+    grid-template-columns: 1fr;
+    gap: 0.22rem;
+  }
+
+  .smart-checkout-page .payment-method-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-checkout-page .payment-method-option {
+    min-height: 72px;
+  }
+}
+
+/* Single product page: live Bokun content, compact gallery, and responsive booking. */
+.product-detail-page {
+  --product-green: #008d48;
+  --product-green-dark: #006b39;
+  --product-green-soft: #eef9f2;
+  --product-ink: #0b1552;
+  --product-muted: #51617a;
+  --product-border: #dfe6ee;
+  background: #ffffff;
+  color: var(--product-ink);
+  padding: 1rem 0 2.75rem;
+}
+
+.product-detail-page *,
+.product-detail-page *::before,
+.product-detail-page *::after {
+  box-sizing: border-box;
+}
+
+.product-detail-page img {
+  display: block;
+  max-width: 100%;
+}
+
+.product-detail-shell {
+  max-width: 1440px;
+}
+
+.product-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  margin: 0 0 0.9rem;
+  padding: 0 0.1rem;
+}
+
+.product-back-link,
+.product-rating-inline,
+.product-rating-stars {
+  display: inline-flex;
+  align-items: center;
+}
+
+.product-back-link {
+  gap: 0.5rem;
+  color: var(--product-ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.product-back-link:hover,
+.product-back-link:focus {
+  color: var(--product-green-dark);
+}
+
+.product-rating-inline {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+  color: var(--product-ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.product-rating-stars {
+  gap: 0.12rem;
+  color: #d8e1ea;
+}
+
+.product-rating-stars .is-filled {
+  color: var(--product-green);
+}
+
+.product-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.product-detail-main,
+.product-detail-sidebar {
+  min-width: 0;
+}
+
+.product-detail-main {
+  gap: 1.05rem;
+}
+
+.product-gallery,
+.product-identity,
+.product-detail-page .single-tour-quick-strip,
+.product-detail-page .single-tour-section,
+.product-sidebar-card,
+.product-detail-page .single-booking-card {
+  border: 1px solid var(--product-border);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.045);
+}
+
+.product-gallery {
+  padding: 0;
+  overflow: hidden;
+}
+
+.product-gallery-stage {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.product-gallery-stage.has-secondary {
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 0.36fr);
+}
+
+.product-gallery-primary-wrap,
+.product-gallery-main-button,
+.product-gallery-secondary-button {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 0;
+  background: #eaf0f5;
+  padding: 0;
+}
+
+.product-gallery-primary-wrap {
+  min-height: 360px;
+}
+
+.product-gallery-main-button {
+  width: 100%;
+  height: 100%;
+  cursor: zoom-in;
+}
+
+.product-gallery-primary-wrap .single-tour-gallery-main {
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  border-radius: 0;
+  object-fit: cover;
+}
+
+.product-gallery-best-seller {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  border-radius: 6px;
+  background: var(--product-green);
+  color: #ffffff;
+  padding: 0.42rem 0.68rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.product-gallery-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: inline-flex;
+  width: 2.7rem;
+  height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--product-ink);
+  font-size: 1.3rem;
+  transform: translateY(-50%);
+  box-shadow: 0 3px 14px rgba(15, 23, 42, 0.16);
+}
+
+.product-gallery-nav:hover,
+.product-gallery-nav:focus {
+  background: #ffffff;
+  color: var(--product-green);
+}
+
+.product-gallery-nav.is-prev { left: 0.8rem; }
+.product-gallery-nav.is-next { right: 0.8rem; }
+
+.product-gallery-secondary-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.product-gallery-secondary-button {
+  min-height: 0;
+  cursor: zoom-in;
+}
+
+.product-gallery-secondary-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-gallery-video-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: rgba(5, 12, 28, 0.45);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.product-gallery-video-overlay svg {
+  font-size: 2.45rem;
+}
+
+.product-gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.65rem;
+}
+
+.product-gallery-thumbs .single-tour-thumb,
+.product-gallery-more {
+  height: 64px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #d7e1eb;
+  border-radius: 7px;
+  background: #ffffff;
+  padding: 0;
+}
+
+.product-gallery-thumbs .single-tour-thumb.is-active {
+  border: 2px solid var(--product-green);
+  box-shadow: none;
+}
+
+.product-gallery-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--product-ink);
+  font-size: 0.74rem;
+}
+
+.product-gallery-more strong {
+  font-size: 1.12rem;
+}
+
+.product-gallery-lightbox {
+  overflow: hidden;
+  border: 0;
+  border-radius: 12px;
+}
+
+.product-gallery-lightbox .modal-header {
+  border-color: var(--product-border);
+}
+
+.product-gallery-lightbox .modal-body {
+  background: #0f172a;
+  padding: 0;
+}
+
+.product-gallery-lightbox .modal-body > img {
+  max-height: 72vh;
+  width: 100%;
+  object-fit: contain;
+}
+
+.product-gallery-lightbox-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  color: #ffffff;
+}
+
+.product-gallery-lightbox-actions button {
+  display: inline-flex;
+  width: 2.2rem;
+  height: 2.2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 50%;
+  background: transparent;
+  color: #ffffff;
+}
+
+.product-identity {
+  padding: 0.15rem 0.2rem 0.1rem;
+  border: 0;
+  box-shadow: none;
+}
+
+.product-detail-page .single-tour-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  margin: 0 0 0.55rem;
+  color: var(--product-green-dark);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+}
+
+.product-detail-page .single-tour-title {
+  width: 100%;
+  max-width: none;
+  margin: 0 0 0.65rem;
+  color: var(--product-ink);
+  font-size: clamp(1.75rem, 2.5vw, 2.55rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.12;
+}
+
+.product-detail-page .single-tour-summary {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  color: var(--product-muted);
+  font-size: 1rem;
+  line-height: 1.58;
+}
+
+.product-summary-toggle,
+.product-itinerary-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--product-green-dark);
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 0;
+}
+
+.product-detail-page .single-tour-badge-list {
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.product-detail-page .single-tour-chip {
+  border: 0;
+  border-radius: 999px;
+  background: var(--product-green-soft);
+  color: var(--product-green-dark);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.45rem 0.75rem;
+}
+
+.product-detail-page .single-tour-quick-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.62rem;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.product-detail-page .quick-strip-item {
+  min-width: 0;
+  min-height: 76px;
+  align-items: center;
+  border: 1px solid var(--product-border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.7rem;
+}
+
+.product-detail-page .quick-strip-icon {
+  width: 2.15rem;
+  height: 2.15rem;
+  flex: 0 0 2.15rem;
+  background: var(--product-green-soft);
+  color: var(--product-green);
+}
+
+.product-detail-page .quick-strip-label {
+  color: var(--product-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.product-detail-page .quick-strip-value {
+  overflow-wrap: anywhere;
+  color: var(--product-ink);
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.product-detail-section {
+  min-width: 0;
+  scroll-margin-top: 1rem;
+}
+
+.product-detail-page .single-tour-section {
+  padding: 1.15rem;
+}
+
+.product-detail-page .single-tour-section-head {
+  margin-bottom: 0.72rem;
+}
+
+.product-detail-page .single-tour-section-head h3,
+.product-sidebar-card h3 {
+  color: var(--product-ink);
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.product-detail-page .single-tour-section-head p,
+.product-detail-page .single-tour-copy p {
+  color: var(--product-muted);
+  font-size: 0.9rem;
+  line-height: 1.58;
+}
+
+.product-detail-page .single-tour-copy p {
+  margin-bottom: 0.68rem;
+}
+
+.product-detail-tabs {
+  display: flex;
+  min-width: 0;
+  border-bottom: 1px solid var(--product-border);
+  background: #ffffff;
+}
+
+.product-detail-tabs button {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--product-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.8rem 0.68rem;
+  white-space: nowrap;
+}
+
+.product-detail-tabs button.is-active {
+  color: var(--product-green-dark);
+}
+
+.product-detail-tabs button.is-active::after {
+  position: absolute;
+  right: 0.55rem;
+  bottom: -1px;
+  left: 0.55rem;
+  height: 2px;
+  background: var(--product-green);
+  content: "";
+}
+
+.product-itinerary-section {
+  padding-top: 1.05rem !important;
+}
+
+.product-itinerary-list {
+  gap: 0;
+}
+
+.product-itinerary-item {
+  position: relative;
+  gap: 0.7rem;
+  padding: 0.55rem 0;
+}
+
+.product-itinerary-item:not(:last-child) .itinerary-index::after {
+  position: absolute;
+  top: 1.95rem;
+  left: 50%;
+  height: calc(100% + 0.4rem);
+  border-left: 1px dashed #94cfae;
+  content: "";
+}
+
+.product-itinerary-item .itinerary-index {
+  position: relative;
+  z-index: 1;
+  width: 1.75rem;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  background: var(--product-green);
+  color: #ffffff;
+  font-size: 0.78rem;
+}
+
+.product-itinerary-content {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.65rem;
+  border-bottom: 1px solid #edf1f5;
+  padding: 0 0 0.55rem;
+}
+
+.product-itinerary-content.has-image {
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+}
+
+.product-itinerary-content .itinerary-image {
+  width: 92px;
+  height: 70px;
+  min-height: 70px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.product-itinerary-content .itinerary-text {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--product-muted);
+  padding: 0;
+}
+
+.product-itinerary-content .itinerary-text h4 {
+  margin: 0 0 0.22rem;
+  color: var(--product-ink);
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.product-itinerary-content .itinerary-text p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--product-muted);
+  font-size: 0.79rem;
+  line-height: 1.42;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.product-itinerary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.52rem;
+  margin-top: 0.35rem;
+  color: #53627a;
+  font-size: 0.68rem;
+}
+
+.product-itinerary-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+}
+
+.product-itinerary-meta svg,
+.product-itinerary-chevron {
+  color: var(--product-green);
+}
+
+.product-itinerary-chevron {
+  margin-top: 0.15rem;
+}
+
+.product-itinerary-toggle {
+  margin: 0.6rem 0 0 2.45rem;
+}
+
+.product-detail-page .included-excluded-grid,
+.product-detail-page .meeting-pickup-grid {
+  gap: 0.7rem;
+}
+
+.product-detail-page .included-excluded-card,
+.product-detail-page .meeting-pickup-card {
+  border: 1px solid var(--product-border);
+  border-radius: 8px;
+  padding: 0.85rem;
+}
+
+.product-detail-page .important-info-item {
+  border-color: #dfece4;
+  border-radius: 8px;
+  background: #f7fbf8;
+  color: #344458;
+}
+
+.product-reviews-summary p {
+  margin: 0;
+  color: var(--product-muted);
+}
+
+.product-detail-sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.product-detail-page .single-booking-card {
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.06);
+}
+
+.product-detail-page .single-booking-card .card-body {
+  padding: 1rem;
+}
+
+.product-detail-page .single-booking-starting {
+  border: 0;
+  border-bottom: 1px solid var(--product-border);
+  border-radius: 0;
+  background: transparent;
+  padding: 0 0 0.85rem;
+}
+
+.product-detail-page .single-booking-starting-label,
+.product-detail-page .single-booking-inline-label {
+  color: #506078;
+  font-size: 0.67rem;
+  letter-spacing: 0.045em;
+}
+
+.product-detail-page .single-booking-starting-value {
+  margin-top: 0.18rem;
+  color: var(--product-ink);
+  font-size: 1.85rem;
+}
+
+.product-detail-page .single-booking-starting-meta {
+  color: var(--product-green-dark);
+}
+
+.product-detail-page .single-booking-select-wrap .form-select,
+.product-detail-page .single-booking-select-wrap .form-control,
+.product-detail-page .passenger-stepper-row {
+  min-height: 44px;
+  border-radius: 7px;
+  border-color: #d8e1ea;
+}
+
+.product-detail-page .passenger-stepper-row {
+  display: flex;
+  align-items: center;
+  padding: 0 0.55rem 0 2.45rem;
+  background: #ffffff;
+}
+
+.product-detail-page .passenger-stepper-row .single-booking-input-icon {
+  left: 0.85rem;
+}
+
+.passenger-stepper-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
+  flex: 1;
+  color: var(--product-ink);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.passenger-stepper-label small {
+  color: #607089;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.passenger-stepper-actions {
+  display: flex;
+  gap: 0.34rem;
+}
+
+.passenger-stepper-actions button {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d8e1ea;
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--product-green-dark);
+}
+
+.passenger-stepper-actions button:hover:not(:disabled),
+.passenger-stepper-actions button:focus-visible:not(:disabled) {
+  border-color: var(--product-green);
+  background: var(--product-green-soft);
+}
+
+.product-detail-page .single-booking-availability-btn,
+.product-detail-page .premium-btn {
+  min-height: 47px;
+  border-color: var(--product-green);
+  border-radius: 7px;
+  background: var(--product-green);
+  box-shadow: none;
+  font-size: 0.94rem;
+}
+
+.product-detail-page .single-booking-availability-btn:hover,
+.product-detail-page .single-booking-availability-btn:focus,
+.product-detail-page .premium-btn:hover,
+.product-detail-page .premium-btn:focus {
+  border-color: var(--product-green-dark);
+  background: var(--product-green-dark);
+  box-shadow: none;
+  transform: none;
+}
+
+.product-sidebar-info-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.product-sidebar-card {
+  padding: 1rem;
+}
+
+.product-sidebar-card h3 {
+  margin: 0 0 0.78rem;
+  font-size: 0.98rem;
+}
+
+.product-benefit-row,
+.product-sidebar-detail {
+  display: grid;
+  grid-template-columns: 1.15rem minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: start;
+  margin-top: 0.75rem;
+  color: var(--product-green);
+}
+
+.product-benefit-row:first-of-type {
+  margin-top: 0;
+}
+
+.product-benefit-row span,
+.product-sidebar-detail span {
+  color: var(--product-muted);
+  font-size: 0.76rem;
+  line-height: 1.42;
+}
+
+.product-benefit-row strong,
+.product-sidebar-detail strong,
+.product-sidebar-detail small {
+  display: block;
+  color: var(--product-ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.product-sidebar-detail small {
+  margin-bottom: 0.12rem;
+  color: #53627a;
+  text-transform: uppercase;
+}
+
+.product-sidebar-rating {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  color: var(--product-ink);
+  font-size: 0.8rem;
+}
+
+.product-payment-logos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.48rem;
+}
+
+.product-payment-logos img {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #dfe6ee;
+  border-radius: 6px;
+  object-fit: contain;
+  padding: 0.4rem;
+}
+
+.product-sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.48rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product-sidebar-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.43rem;
+  color: var(--product-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.product-sidebar-list.is-success svg { color: var(--product-green); }
+.product-sidebar-list.is-danger svg { color: #e5484d; }
+.product-sidebar-subtitle { margin: 1rem 0 0.6rem; color: var(--product-ink); font-size: 0.86rem; }
+
+.single-product-mobile-booking-form {
+  scroll-margin-top: 1rem;
+}
+
+.single-product-mobile-booking-bar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .product-detail-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
+    align-items: start;
+    gap: 1.25rem;
+  }
+
+  .product-detail-main {
+    gap: 1.1rem;
+  }
+
+  .product-detail-page .single-tour-quick-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .product-detail-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 1.45rem;
+  }
+
+  .product-gallery-primary-wrap,
+  .product-gallery-primary-wrap .single-tour-gallery-main {
+    min-height: 390px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .product-detail-page {
+    padding-bottom: 6.3rem;
+  }
+
+  .product-detail-shell {
+    max-width: 900px;
+  }
+
+  .product-gallery-stage.has-secondary {
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 0.37fr);
+  }
+
+  .product-gallery-primary-wrap,
+  .product-gallery-primary-wrap .single-tour-gallery-main {
+    min-height: 320px;
+  }
+
+  .single-product-mobile-booking-form {
+    margin-top: 0.25rem;
+  }
+
+  .single-product-mobile-booking-bar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1025;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 1.3fr) 48px;
+    align-items: center;
+    gap: 0.55rem;
+    border-top: 1px solid var(--product-border);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 -5px 18px rgba(15, 23, 42, 0.08);
+    padding: 0.62rem max(0.75rem, env(safe-area-inset-right)) calc(0.62rem + env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  }
+
+  .single-product-mobile-price {
+    min-width: 0;
+  }
+
+  .single-product-mobile-price strong,
+  .single-product-mobile-price span {
+    display: block;
+  }
+
+  .single-product-mobile-price strong {
+    overflow: hidden;
+    color: var(--product-ink);
+    font-size: 1.05rem;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .single-product-mobile-price span {
+    color: var(--product-green-dark);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .single-product-mobile-book-button,
+  .single-product-mobile-calendar-button {
+    min-height: 48px;
+    border: 1px solid var(--product-green);
+    border-radius: 7px;
+    background: var(--product-green);
+    color: #ffffff;
+    font-size: 0.94rem;
+    font-weight: 800;
+  }
+
+  .single-product-mobile-calendar-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    color: var(--product-green-dark);
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .product-detail-page {
+    overflow-x: clip;
+    padding: 0.7rem 0 6.1rem;
+  }
+
+  .product-detail-page .container,
+  .product-detail-page .product-detail-shell,
+  .product-detail-page .product-detail-layout,
+  .product-detail-page .product-detail-main,
+  .product-detail-page .product-detail-section {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .product-detail-page .product-detail-shell {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+
+  .product-top-row {
+    margin-bottom: 0.7rem;
+  }
+
+  .product-back-link {
+    font-size: 0.82rem;
+  }
+
+  .product-rating-inline {
+    gap: 0.28rem;
+    font-size: 0.69rem;
+  }
+
+  .product-rating-inline > strong {
+    display: none;
+  }
+
+  .product-gallery-stage,
+  .product-gallery-stage.has-secondary {
+    display: block;
+  }
+
+  .product-gallery-secondary-grid {
+    display: none;
+  }
+
+  .product-gallery-primary-wrap,
+  .product-gallery-primary-wrap .single-tour-gallery-main {
+    min-height: 0;
+    height: clamp(210px, 55vw, 280px);
+  }
+
+  .product-gallery-thumbs {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.45rem;
+    padding: 0.55rem;
+    scrollbar-width: thin;
+  }
+
+  .product-gallery-thumbs .single-tour-thumb,
+  .product-gallery-more {
+    width: 64px;
+    min-width: 64px;
+    height: 54px;
+  }
+
+  .product-gallery-nav {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .product-gallery-best-seller {
+    top: 0.7rem;
+    left: 0.7rem;
+    font-size: 0.7rem;
+  }
+
+  .product-identity {
+    padding: 0.15rem 0.45rem 0;
+  }
+
+  .product-detail-page .single-tour-label {
+    margin-bottom: 0.38rem;
+    font-size: 0.72rem;
+  }
+
+  .product-detail-page .single-tour-title {
+    margin-bottom: 0.48rem;
+    font-size: clamp(1.45rem, 7vw, 1.75rem);
+    line-height: 1.18;
+    overflow-wrap: break-word;
+  }
+
+  .product-detail-page .single-tour-summary {
+    font-size: 0.9rem;
+    line-height: 1.48;
+    overflow-wrap: break-word;
+  }
+
+  .product-detail-page .single-tour-badge-list {
+    gap: 0.35rem;
+    margin-top: 0.7rem;
+  }
+
+  .product-detail-page .single-tour-chip {
+    font-size: 0.68rem;
+    padding: 0.36rem 0.58rem;
+  }
+
+  .product-detail-page .single-tour-quick-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .product-detail-page .quick-strip-item {
+    min-height: 68px;
+    gap: 0.5rem;
+    padding: 0.58rem;
+  }
+
+  .product-detail-page .quick-strip-icon {
+    width: 1.9rem;
+    height: 1.9rem;
+    flex-basis: 1.9rem;
+  }
+
+  .product-detail-page .quick-strip-label {
+    font-size: 0.65rem;
+  }
+
+  .product-detail-page .quick-strip-value {
+    font-size: 0.78rem;
+  }
+
+  .product-detail-page .single-tour-section {
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .product-detail-page .single-tour-section-head h3 {
+    font-size: 1.12rem;
+  }
+
+  .product-detail-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .product-detail-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .product-detail-tabs button {
+    flex: 0 0 auto;
+    font-size: 0.73rem;
+    padding-inline: 0.7rem;
+  }
+
+  .product-itinerary-item {
+    gap: 0.55rem;
+  }
+
+  .product-itinerary-content.has-image {
+    grid-template-columns: 82px minmax(0, 1fr) auto;
+    gap: 0.56rem;
+  }
+
+  .product-itinerary-content .itinerary-image {
+    width: 82px;
+    height: 64px;
+    min-height: 64px;
+  }
+
+  .product-itinerary-content .itinerary-text h4 {
+    font-size: 0.86rem;
+  }
+
+  .product-itinerary-content .itinerary-text p {
+    -webkit-line-clamp: 2;
+  }
+
+  .product-itinerary-meta {
+    gap: 0.36rem;
+    font-size: 0.64rem;
+  }
+
+  .product-itinerary-toggle {
+    margin-left: 2.3rem;
+    font-size: 0.83rem;
+  }
+
+  .product-detail-page .included-excluded-grid,
+  .product-detail-page .meeting-pickup-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-detail-page .single-booking-card .card-body {
+    padding: 0.95rem;
+  }
+
+  .product-detail-page .single-booking-starting-value {
+    font-size: 1.55rem;
+  }
+
+  .single-product-mobile-booking-bar {
+    grid-template-columns: minmax(0, 1fr) minmax(155px, 1.22fr) 42px;
+    gap: 0.42rem;
+    padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom));
+  }
+
+  .single-product-mobile-book-button,
+  .single-product-mobile-calendar-button {
+    min-height: 46px;
+    font-size: 0.84rem;
+  }
+}
+
+@media (max-width: 389px) {
+  .product-top-row {
+    align-items: flex-start;
+  }
+
+  .product-rating-inline > span:not(.product-rating-stars) {
+    display: none;
+  }
+
+  .product-detail-page .product-detail-shell {
+    padding-right: 0.62rem;
+    padding-left: 0.62rem;
+  }
+
+  .product-detail-page .single-tour-quick-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .product-itinerary-content.has-image {
+    grid-template-columns: 72px minmax(0, 1fr) auto !important;
+  }
+
+  .product-itinerary-content .itinerary-image {
+    width: 72px;
+    height: 58px;
+    min-height: 58px;
+  }
+
+  .single-product-mobile-booking-bar {
+    grid-template-columns: minmax(0, 1fr) minmax(136px, 1.08fr) 40px;
+    padding-right: 0.55rem;
+    padding-left: 0.55rem;
+  }
+
+  .single-product-mobile-price strong {
+    font-size: 0.92rem;
   }
 }

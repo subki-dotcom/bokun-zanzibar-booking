@@ -619,54 +619,145 @@ const mapPickupInfo = (root = {}) => {
   return lines.join(" | ");
 };
 
-const mapProductItinerary = (root = {}, mappedOptions = []) =>
-  {
-    const explicit = buildTextList(
-      root.itinerary,
-      root.itineraryItems,
-      root.activityItinerary,
-      ensureArray(root.routes).map((route) => route?.title || route?.description),
-      mappedOptions.flatMap((option) => ensureArray(option?.itinerary))
-    );
+const resolveBokunImageUrl = (photo) => {
+  if (!photo) {
+    return "";
+  }
 
-    if (explicit.length > 0) {
-      return explicit;
-    }
+  if (typeof photo === "string") {
+    return photo.trim();
+  }
 
-    const descriptionText = stripHtml(
-      root.itineraryDescription ||
-        root.description ||
-        root.activityDescription ||
-        root.shortDescription ||
-        root.summary ||
-        ""
-    );
+  const derived = ensureArray(photo.derived);
+  const preferredDerived = derived.find((item) => item?.name === "large") || derived[0] || {};
 
-    if (!descriptionText) {
-      return [];
-    }
+  return String(
+    photo.originalUrl || photo.url || photo.cleanUrl || preferredDerived.cleanUrl || preferredDerived.url || ""
+  ).trim();
+};
 
-    const sentenceCandidates = descriptionText
-      .split(/(?<=[.!?])\s+/)
-      .map((sentence) => sentence.trim())
-      .filter((sentence) => sentence.length >= 24);
+const mapProductVideoUrl = (root = {}) => {
+  const video = ensureArray(root.videos)[0] || root.video || null;
+  if (!video) {
+    return "";
+  }
 
-    if (sentenceCandidates.length > 1) {
-      return sentenceCandidates.slice(0, 6).map((sentence) => sentence.slice(0, 220));
-    }
+  if (typeof video === "string") {
+    return video.trim();
+  }
 
-    const sequenced = descriptionText
-      .replace(/\s+(then|after that|afterwards|finally|finish with|start with)\s+/gi, " | ")
-      .split("|")
-      .map((segment) => segment.trim())
-      .filter((segment) => segment.length >= 24);
+  return String(video.url || video.embedUrl || video.videoUrl || video.sourceUrl || "").trim();
+};
 
-    if (sequenced.length > 1) {
-      return sequenced.slice(0, 6).map((segment) => segment.slice(0, 220));
-    }
+const mapProductLanguages = (root = {}, guide = {}) => {
+  const rawLanguages = ensureArray(root.languages)
+    .map((language) => (typeof language === "string" ? language : language?.title || language?.name || language?.code || ""))
+    .map((language) => normalizeLanguage(language))
+    .filter(Boolean);
+  const guideLanguages = ensureArray(guide.languages).map((language) => normalizeLanguage(language)).filter(Boolean);
 
-    return [descriptionText.slice(0, 220)];
+  return [...rawLanguages, ...guideLanguages].reduce((languages, language) => addUniqueLine(languages, language), []);
+};
+
+const mapGroupSize = (root = {}) => {
+  const min = Number(root.minimumParticipants || root.minParticipants || root.minPax || 0);
+  const max = Number(root.maximumParticipants || root.maxParticipants || root.passCapacity || root.capacity || 0);
+
+  if (Number.isFinite(min) && min > 0 && Number.isFinite(max) && max >= min) {
+    return min === max ? `${min} ${min === 1 ? "person" : "people"}` : `${min}-${max} people`;
+  }
+
+  if (Number.isFinite(max) && max > 0) {
+    return `Up to ${max} people`;
+  }
+
+  return "";
+};
+
+const mapAgendaItem = (rawItem = {}, order = 0) => {
+  if (!rawItem || typeof rawItem !== "object") {
+    return null;
+  }
+
+  const title = stripHtml(rawItem.title || rawItem.name || rawItem.label || "");
+  const description = stripHtml(
+    rawItem.body || rawItem.description || rawItem.content || rawItem.excerpt || rawItem.text || ""
+  );
+  const location = stripHtml(
+    rawItem.location?.wholeAddress || rawItem.location?.address || rawItem.address || rawItem.location?.city || ""
+  );
+  const image =
+    resolveBokunImageUrl(rawItem.keyPhoto) ||
+    resolveBokunImageUrl(ensureArray(rawItem.photos)[0]) ||
+    resolveBokunImageUrl(rawItem.image);
+
+  if (!title && !description && !image) {
+    return null;
+  }
+
+  return {
+    bokunItineraryItemId: String(rawItem.id || rawItem.itemId || "").trim(),
+    day: Math.max(0, Number(rawItem.day || 0)),
+    index: Number.isFinite(Number(rawItem.index)) ? Number(rawItem.index) : order,
+    title,
+    description,
+    image,
+    imageAlt: stripHtml(rawItem.keyPhoto?.alternateText || rawItem.keyPhoto?.description || title),
+    location,
+    duration: stripHtml(rawItem.duration || rawItem.durationText || rawItem.length || ""),
+    admission: stripHtml(rawItem.admission || rawItem.admissionInfo || rawItem.ticketInfo || "")
   };
+};
+
+const mapProductItineraryItems = (root = {}) => {
+  const rawItems = [
+    ...ensureArray(root.agendaItems),
+    ...ensureArray(root.itineraryItems),
+    ...ensureArray(root.activityItineraryItems),
+    ...ensureArray(root.schedule?.items),
+    ...ensureArray(root.dayPlans),
+    ...ensureArray(root.stops),
+    ...ensureArray(root.routes)
+  ];
+  const seen = new Set();
+
+  return rawItems.reduce((items, rawItem, order) => {
+    const item = mapAgendaItem(rawItem, order);
+    if (!item) {
+      return items;
+    }
+
+    const key = [item.bokunItineraryItemId, item.title.toLowerCase(), item.description.toLowerCase()]
+      .filter(Boolean)
+      .join("|");
+    if (key && seen.has(key)) {
+      return items;
+    }
+
+    if (key) {
+      seen.add(key);
+    }
+    items.push(item);
+    return items;
+  }, []);
+};
+
+// Itinerary belongs to the supplier product. Do not infer stops from marketing copy.
+const mapProductItinerary = (root = {}, mappedOptions = [], mappedItineraryItems = []) => {
+  if (mappedItineraryItems.length) {
+    return mappedItineraryItems.map((item) => item.description || item.title).filter(Boolean);
+  }
+
+  return buildTextList(
+    root.itinerary,
+    root.activityItinerary,
+    root.schedule?.itinerary,
+    root.program,
+    root.programme,
+    root.dayPlan,
+    mappedOptions.flatMap((option) => ensureArray(option?.itinerary))
+  );
+};
 
 const mapOption = (rawOption = {}) => ({
   bokunOptionId: String(rawOption.id || rawOption.optionId || ""),
@@ -765,6 +856,10 @@ const normalizePricingCategory = (passenger = {}) => {
   const max = Math.max(min, Number(passenger?.maxPerBooking ?? passenger?.maxQuantity ?? 50));
   const token = `${ticketCategory} ${label}`.toLowerCase();
   const defaultQuantity = token.includes("adult") ? 1 : 0;
+  const minAgeValue = Number(passenger?.minAge ?? passenger?.minimumAge ?? passenger?.ageFrom);
+  const maxAgeValue = Number(passenger?.maxAge ?? passenger?.maximumAge ?? passenger?.ageTo);
+  const minAge = Number.isFinite(minAgeValue) && minAgeValue >= 0 ? minAgeValue : null;
+  const maxAge = Number.isFinite(maxAgeValue) && maxAgeValue >= 0 ? maxAgeValue : null;
 
   return {
     id,
@@ -772,7 +867,10 @@ const normalizePricingCategory = (passenger = {}) => {
     min,
     max,
     defaultQuantity,
-    ticketCategory
+    ticketCategory,
+    ageQualified: Boolean(passenger?.ageQualified) || minAge !== null || maxAge !== null,
+    minAge,
+    maxAge
   };
 };
 
@@ -952,6 +1050,7 @@ const mapProduct = (rawProduct = {}, options = {}) => {
 
   const categories = mapCategories(root);
   const optionFromPrice = resolveMinimumOptionPrice(optionsSource);
+  const liveTourGuide = mapLiveTourGuide(root);
 
   const currency = root.currency || root.paymentCurrency || "USD";
   const fromPrice = pickPrice(
@@ -970,6 +1069,7 @@ const mapProduct = (rawProduct = {}, options = {}) => {
   const reviewCount = resolveProductReviewCount(root);
 
   const mappedOptions = optionsSource.map(mapOption).filter((option) => option.bokunOptionId);
+  const mappedItineraryItems = mapProductItineraryItems(root);
   const mappedPriceCatalogs = ensureArray(root.activityPriceCatalogs)
     .map(mapPriceCatalog)
     .filter((catalog) => catalog.catalogId);
@@ -1003,9 +1103,11 @@ const mapProduct = (rawProduct = {}, options = {}) => {
     duration: buildDurationLabel(root),
     experienceType: mapExperienceType(root),
     difficulty: mapDifficulty(root),
-    liveTourGuide: mapLiveTourGuide(root),
+    liveTourGuide,
     images: imageUrls,
-    itinerary: mapProductItinerary(root, mappedOptions),
+    videoUrl: mapProductVideoUrl(root),
+    itinerary: mapProductItinerary(root, mappedOptions, mappedItineraryItems),
+    itineraryItems: mappedItineraryItems,
     meetingInfo: mapMeetingInfo(root),
     pickupInfo: mapPickupInfo(root),
     pickupPlaces: options.pickupPlaces || mapPickupPlaces(root.pickupPlaceGroups),
@@ -1019,6 +1121,10 @@ const mapProduct = (rawProduct = {}, options = {}) => {
     ),
     highlights: buildTextList(root.highlights, root.keywords),
     categories,
+    languages: mapProductLanguages(root, liveTourGuide),
+    groupSize: mapGroupSize(root),
+    cancellationPolicy: stripHtml(root.cancellationPolicy || root.cancellationTerms || ""),
+    bestSeller: Boolean(root.bestSeller || root.isBestSeller || ensureArray(root.flags).some((flag) => /best.?seller/i.test(String(flag || "")))),
     destination: root.destination || root.location?.name || "Zanzibar",
     status: root.status || (root.active === false ? "inactive" : "active"),
     currency,

@@ -39,6 +39,22 @@ const liveTourGuideSnapshotSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const itineraryItemSnapshotSchema = new mongoose.Schema(
+  {
+    bokunItineraryItemId: { type: String, default: "" },
+    day: { type: Number, default: 0 },
+    index: { type: Number, default: 0 },
+    title: { type: String, default: "" },
+    description: { type: String, default: "" },
+    image: { type: String, default: "" },
+    imageAlt: { type: String, default: "" },
+    location: { type: String, default: "" },
+    duration: { type: String, default: "" },
+    admission: { type: String, default: "" }
+  },
+  { _id: false }
+);
+
 const pickupPlaceSnapshotSchema = new mongoose.Schema(
   {
     id: { type: String, default: "" },
@@ -63,7 +79,9 @@ const productSnapshotSchema = new mongoose.Schema(
     difficulty: { type: String, default: "" },
     liveTourGuide: { type: liveTourGuideSnapshotSchema, default: () => ({}) },
     images: [{ type: String }],
+    videoUrl: { type: String, default: "" },
     itinerary: [{ type: String }],
+    itineraryItems: [itineraryItemSnapshotSchema],
     meetingInfo: { type: String, default: "" },
     pickupInfo: { type: String, default: "" },
     pickupPlaces: [pickupPlaceSnapshotSchema],
@@ -72,6 +90,10 @@ const productSnapshotSchema = new mongoose.Schema(
     importantInformation: [{ type: String }],
     highlights: [{ type: String }],
     categories: [{ type: String }],
+    languages: [{ type: String }],
+    groupSize: { type: String, default: "" },
+    cancellationPolicy: { type: String, default: "" },
+    bestSeller: { type: Boolean, default: false },
     destination: { type: String, default: "Zanzibar" },
     status: { type: String, default: "active" },
     currency: { type: String, default: "USD" },

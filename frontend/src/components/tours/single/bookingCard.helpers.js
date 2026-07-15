@@ -3,6 +3,15 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const toOptionalAge = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+};
+
 export const mapBokunRatesToPriceCatalogOptions = (rateOptions = []) =>
   (rateOptions || [])
     .map((option = {}) => ({
@@ -22,7 +31,10 @@ export const mapBokunPricingCategories = (categories = []) => {
       label: String(category.label || category.title || "Category").trim() || "Category",
       min: Math.max(0, toNumber(category.min ?? category.minQuantity ?? 0)),
       max: Math.max(0, toNumber(category.max ?? category.maxQuantity ?? 50)),
-      defaultQuantity: Math.max(0, toNumber(category.defaultQuantity ?? 0))
+      defaultQuantity: Math.max(0, toNumber(category.defaultQuantity ?? 0)),
+      ageQualified: Boolean(category.ageQualified),
+      minAge: toOptionalAge(category.minAge),
+      maxAge: toOptionalAge(category.maxAge)
     }))
     .filter((category) => category.id)
     .map((category) => ({

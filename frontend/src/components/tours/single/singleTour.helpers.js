@@ -120,34 +120,85 @@ export const buildExperienceDetails = (tour = {}) => {
 };
 
 export const buildItinerary = (tour = {}) => {
+  const structuredItems = Array.isArray(tour.itineraryItems)
+    ? tour.itineraryItems
+        .map((item = {}, index) => {
+          const title = toPlainText(String(item.title || "")).trim();
+          const description = toPlainText(String(item.description || item.body || "")).trim();
+          const image = String(item.image || item.imageUrl || "").trim();
+          const location = toPlainText(String(item.location || "")).trim();
+
+          if (!title && !description && !image) {
+            return null;
+          }
+
+          return {
+            id: String(item.bokunItineraryItemId || item.id || `itinerary-${index + 1}`),
+            day: Number(item.day || 0),
+            title,
+            description,
+            image,
+            imageAlt: toPlainText(String(item.imageAlt || title || "Itinerary stop")).trim(),
+            location
+          };
+        })
+        .filter(Boolean)
+    : [];
+
+  if (structuredItems.length) {
+    return structuredItems;
+  }
+
   const productItinerary = toTextList(tour.itinerary);
   const optionItinerary = (tour.options || []).flatMap((option) => toTextList(option?.itinerary));
-  return uniqueText(productItinerary, optionItinerary);
+  return uniqueText(productItinerary, optionItinerary).map((description, index) => ({
+    id: `legacy-itinerary-${index + 1}`,
+    day: 0,
+    title: "",
+    description,
+    image: "",
+    imageAlt: "",
+    location: ""
+  }));
 };
 
 export const buildQuickHighlights = (tour = {}) => {
   const optionsCount = (tour.options || []).filter((option) => option.active !== false).length;
   const categories = Array.isArray(tour.categories) ? tour.categories.filter(Boolean) : [];
-  const firstCategory = categories[0] || "Tours & Activities";
+  const firstCategory = categories[0] || "";
+  const languages = Array.isArray(tour.languages) ? tour.languages.filter(Boolean) : [];
+  const guideLabel = getGuideLabel(tour.liveTourGuide);
 
   return [
     {
       label: "Duration",
-      value: tour.duration || "Flexible"
+      value: tour.duration || ""
     },
     {
-      label: "Destination",
-      value: tour.destination || "Zanzibar"
+      label: "Location",
+      value: tour.destination || ""
     },
     {
-      label: "Options",
-      value: `${optionsCount || 0} available`
+      label: "Difficulty",
+      value: tour.difficulty || ""
     },
     {
       label: "Category",
       value: firstCategory
+    },
+    {
+      label: "Group size",
+      value: tour.groupSize || (optionsCount > 0 ? `${optionsCount} option${optionsCount === 1 ? "" : "s"}` : "")
+    },
+    {
+      label: "Language",
+      value: languages.join(", ")
+    },
+    {
+      label: "Live tour guide",
+      value: guideLabel
     }
-  ];
+  ].filter((item) => item.value);
 };
 
 export const splitDescription = (description = "") => {

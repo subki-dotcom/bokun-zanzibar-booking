@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { BsArrowRight } from "react-icons/bs";
 import { fetchProductBookingConfig, fetchProductLiveQuote } from "../../../../api/bokunApi";
 import { saveBookingSession } from "../../../../utils/bookingSession";
-import PriceCatalogSelect from "./PriceCatalogSelect";
 import PassengerCategorySelector from "./PassengerCategorySelector";
 import DateAvailabilityPicker from "./DateAvailabilityPicker";
 import StartingPriceBox from "./StartingPriceBox";
@@ -287,16 +286,6 @@ const BookingAvailabilityCard = ({
     ]
   );
 
-  const handleRateChange = async (nextRateId) => {
-    if (!nextRateId || String(nextRateId) === String(selectedRateId)) {
-      return;
-    }
-
-    quoteRequestSeqRef.current += 1;
-    setQuoteLoading(false);
-    await loadBookingConfig(nextRateId, { keepTravelDate: true });
-  };
-
   const handlePassengerChange = (pricingCategoryId, quantity) => {
     quoteRequestSeqRef.current += 1;
     setQuoteLoading(false);
@@ -339,7 +328,7 @@ const BookingAvailabilityCard = ({
   const priceMetaLabel =
     quoteStatus === "success" && Number(quote?.totalPrice || 0) > 0
       ? "Live total for selected passengers"
-      : "per person (2 adults price / 2)";
+      : "per person";
 
   const canContinue = Boolean(
     productId &&
@@ -413,9 +402,6 @@ const BookingAvailabilityCard = ({
   return (
     <Card className="single-booking-card booking-sticky">
       <Card.Body>
-        <div className="single-booking-eyebrow">Ready to book</div>
-        <h4 className="single-booking-title">Check availability</h4>
-
         <StartingPriceBox
           label="Starting price"
           priceLabel={primaryPriceLabel}
@@ -424,13 +410,6 @@ const BookingAvailabilityCard = ({
         />
 
         <div className="single-booking-form mt-3">
-          <PriceCatalogSelect
-            options={rateOptions}
-            value={selectedRateId}
-            disabled={configLoading}
-            onChange={handleRateChange}
-          />
-
           <PassengerCategorySelector
             categories={pricingCategories}
             passengers={passengers}
@@ -479,7 +458,7 @@ const BookingAvailabilityCard = ({
 
         {!hideContinueButton ? (
           <Button className="premium-btn text-white w-100 mt-3" disabled={!canContinue} onClick={handleContinueToBooking}>
-            Continue to booking
+            Book now
             <BsArrowRight className="ms-2" />
           </Button>
         ) : null}
