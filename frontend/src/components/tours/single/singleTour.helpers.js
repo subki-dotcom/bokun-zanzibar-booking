@@ -163,40 +163,43 @@ export const buildItinerary = (tour = {}) => {
 };
 
 export const buildQuickHighlights = (tour = {}) => {
-  const optionsCount = (tour.options || []).filter((option) => option.active !== false).length;
   const categories = Array.isArray(tour.categories) ? tour.categories.filter(Boolean) : [];
   const firstCategory = categories[0] || "";
   const languages = Array.isArray(tour.languages) ? tour.languages.filter(Boolean) : [];
-  const guideLabel = getGuideLabel(tour.liveTourGuide);
+  const compactLanguageLabel = languages.length > 2
+    ? `${languages.slice(0, 2).join(", ")} +${languages.length - 2}`
+    : languages.join(", ");
 
   return [
     {
+      key: "duration",
       label: "Duration",
       value: tour.duration || ""
     },
     {
+      key: "location",
       label: "Location",
       value: tour.destination || ""
     },
     {
+      key: "difficulty",
       label: "Difficulty",
       value: tour.difficulty || ""
     },
     {
+      key: "category",
       label: "Category",
       value: firstCategory
     },
     {
+      key: "group-size",
       label: "Group size",
-      value: tour.groupSize || (optionsCount > 0 ? `${optionsCount} option${optionsCount === 1 ? "" : "s"}` : "")
+      value: tour.groupSize || ""
     },
     {
+      key: "language",
       label: "Language",
-      value: languages.join(", ")
-    },
-    {
-      label: "Live tour guide",
-      value: guideLabel
+      value: compactLanguageLabel
     }
   ].filter((item) => item.value);
 };

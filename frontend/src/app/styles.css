@@ -12292,28 +12292,50 @@ textarea.form-control {
   }
 
   .product-detail-page .single-tour-quick-strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.55rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .product-detail-page .quick-strip-item {
-    min-height: 68px;
-    gap: 0.5rem;
-    padding: 0.58rem;
+    min-width: 0;
+    min-height: 94px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
   }
 
   .product-detail-page .quick-strip-icon {
-    width: 1.9rem;
-    height: 1.9rem;
-    flex-basis: 1.9rem;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+  }
+
+  .product-detail-page .quick-strip-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .product-detail-page .quick-strip-copy {
+    min-width: 0;
   }
 
   .product-detail-page .quick-strip-label {
-    font-size: 0.65rem;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.15;
   }
 
   .product-detail-page .quick-strip-value {
-    font-size: 0.78rem;
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .product-detail-page .single-tour-section {
@@ -12414,7 +12436,7 @@ textarea.form-control {
   }
 
   .product-detail-page .single-tour-quick-strip {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .product-itinerary-content.has-image {
@@ -12435,5 +12457,16 @@ textarea.form-control {
 
   .single-product-mobile-price strong {
     font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 340px) {
+  .product-detail-page .single-tour-quick-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .product-detail-page .quick-strip-item {
+    min-height: 90px;
   }
 }
