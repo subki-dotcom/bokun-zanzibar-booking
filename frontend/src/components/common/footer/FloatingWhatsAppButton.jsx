@@ -1,6 +1,7 @@
 import { BsWhatsapp } from "react-icons/bs";
+import { BRAND } from "../../../config/brand";
 
-const FloatingWhatsAppButton = ({ href = "https://wa.me/255777123456" }) => (
+const FloatingWhatsAppButton = ({ href = BRAND.whatsappHref }) => (
   <a
     href={href}
     target="_blank"

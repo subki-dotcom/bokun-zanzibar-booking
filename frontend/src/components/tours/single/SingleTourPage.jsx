@@ -15,6 +15,7 @@ import ProductDetailTabs from "./ProductDetailTabs";
 import ProductSidebarInfo from "./ProductSidebarInfo";
 import MobileBookingBar from "./MobileBookingBar";
 import AvailabilityOptionModal from "./availabilityPicker/AvailabilityOptionModal";
+import RelatedToursSection from "./RelatedToursSection";
 import { buildItinerary } from "./singleTour.helpers";
 import { checkTourOptionsAvailability } from "../../../api/toursApi";
 import { saveBookingSession } from "../../../utils/bookingSession";
@@ -65,6 +66,7 @@ const SingleTourPage = ({
   const [availabilityError, setAvailabilityError] = useState("");
   const [availabilityResult, setAvailabilityResult] = useState(null);
   const [selectedStartTimesByOption, setSelectedStartTimesByOption] = useState({});
+  const [selectedStartTimeSlotsByOption, setSelectedStartTimeSlotsByOption] = useState({});
   const [selectedPassengers, setSelectedPassengers] = useState([]);
   const [selectedPax, setSelectedPax] = useState({ adults: 1, children: 0, infants: 0 });
   const [selectedRateLabel, setSelectedRateLabel] = useState("");
@@ -142,20 +144,6 @@ const SingleTourPage = ({
 
     return `${match[1].padStart(2, "0")}:${match[2].padStart(2, "0")}`;
   };
-  const getFirstAvailableTime = (optionAvailability = {}) => {
-    const openSlot =
-      (optionAvailability?.slots || []).find(
-        (slot) => slot?.status === "available" || slot?.status === "limited"
-      ) || null;
-
-    return (
-      normalizeTimeToken(openSlot?.time) ||
-      normalizeTimeToken(optionAvailability?.firstAvailableStartTime) ||
-      normalizeTimeToken(optionAvailability?.cheapestStartTime) ||
-      ""
-    );
-  };
-
   const availableOptionIdSet = useMemo(
     () => new Set((availabilityResult?.availableOptionIds || []).map((id) => normalizeOptionId(id))),
     [availabilityResult]
@@ -187,20 +175,52 @@ const SingleTourPage = ({
   }, [activeOptions, availabilityResult, availableOptionIdSet, liveByOptionId, selectedStartTimesByOption]);
 
   const handleSelectOption = (option) => {
-    const nextOptionId = option?.bokunOptionId || "";
+    const nextOptionId = normalizeOptionId(option?.bokunOptionId);
+    if (nextOptionId && nextOptionId !== normalizeOptionId(selectedOptionId)) {
+      setSelectedStartTimesByOption({});
+      setSelectedStartTimeSlotsByOption({});
+    }
     setSelectedOptionId(nextOptionId);
   };
 
-  const handleOptionStartTimeChange = (optionId, startTime) => {
+  const handleOptionStartTimeChange = (optionId, selectedSlot = null) => {
     const normalizedOptionId = normalizeOptionId(optionId);
+    const startTime = normalizeTimeToken(
+      typeof selectedSlot === "object" ? selectedSlot?.time : selectedSlot
+    );
+
+    if (!normalizedOptionId) {
+      return;
+    }
+
+    if (!startTime) {
+      setSelectedStartTimesByOption((prev) => {
+        const next = { ...prev };
+        delete next[normalizedOptionId];
+        return next;
+      });
+      setSelectedStartTimeSlotsByOption((prev) => {
+        const next = { ...prev };
+        delete next[normalizedOptionId];
+        return next;
+      });
+      return;
+    }
+
     setSelectedStartTimesByOption((prev) => ({
       ...prev,
-      [normalizedOptionId]: normalizeTimeToken(startTime)
+      [normalizedOptionId]: startTime
+    }));
+    setSelectedStartTimeSlotsByOption((prev) => ({
+      ...prev,
+      [normalizedOptionId]: {
+        ...(typeof selectedSlot === "object" ? selectedSlot : {}),
+        time: startTime,
+        startTimeId: String(selectedSlot?.startTimeId || "").trim()
+      }
     }));
 
-    if (normalizedOptionId) {
-      setSelectedOptionId(normalizedOptionId);
-    }
+    setSelectedOptionId(normalizedOptionId);
   };
 
   const handleLiveAvailabilityChecked = async ({
@@ -250,6 +270,8 @@ const SingleTourPage = ({
 
     setAvailabilityResult(null);
     setAvailabilityError("");
+    setSelectedStartTimesByOption({});
+    setSelectedStartTimeSlotsByOption({});
 
     setCheckingAvailability(true);
     setAvailabilityError("");
@@ -263,31 +285,6 @@ const SingleTourPage = ({
 
       setAvailabilityResult(result);
       lastAvailabilityCheckKeyRef.current = availabilityRequestKey;
-      setSelectedStartTimesByOption((prev) => {
-        const next = {};
-
-        (result?.options || []).forEach((optionAvailability) => {
-          const optionId = normalizeOptionId(optionAvailability?.optionId);
-          if (!optionId) {
-            return;
-          }
-
-          const openTimes = (optionAvailability?.slots || [])
-            .filter((slot) => slot?.status === "available" || slot?.status === "limited")
-            .map((slot) => normalizeTimeToken(slot.time))
-            .filter(Boolean);
-          const previousTime = normalizeTimeToken(prev[optionId]);
-          const defaultTime = getFirstAvailableTime(optionAvailability);
-
-          if (previousTime && openTimes.includes(previousTime)) {
-            next[optionId] = previousTime;
-          } else {
-            next[optionId] = defaultTime;
-          }
-        });
-
-        return next;
-      });
 
       const availableIds = (result?.availableOptionIds || []).map((id) => String(id));
       const lowestOptionId = String(result?.lowestPriceForTwo?.optionId || "");
@@ -308,13 +305,18 @@ const SingleTourPage = ({
     }
   };
 
-  const handleBookOption = (option, { startTime = "", travelDate: nextDate = "", rateId = "" } = {}) => {
+  const handleBookOption = (
+    option,
+    { startTime = "", startTimeSlot = null, travelDate: nextDate = "", rateId = "" } = {}
+  ) => {
     const optionId = String(option?.bokunOptionId || "").trim();
     const resolvedDate = String(nextDate || travelDate || "").trim();
     const resolvedRateId = String(rateId || selectedPriceCatalogId || "").trim();
     const resolvedStartTime = normalizeTimeToken(
       startTime || selectedStartTimesByOption[String(optionId || "").trim()] || preferredStartTime || ""
     );
+    const resolvedStartTimeSlot =
+      startTimeSlot || selectedStartTimeSlotsByOption[String(optionId || "").trim()] || null;
     const normalizedPassengers = (selectedPassengers || [])
       .map((row = {}) => ({
         pricingCategoryId: String(row.pricingCategoryId || "").trim(),
@@ -322,7 +324,7 @@ const SingleTourPage = ({
       }))
       .filter((row) => row.pricingCategoryId && row.quantity > 0);
 
-    if (!optionId || !resolvedDate || !resolvedRateId || !normalizedPassengers.length) {
+    if (!optionId || !resolvedDate || !resolvedRateId || !resolvedStartTime || !normalizedPassengers.length) {
       return;
     }
 
@@ -348,6 +350,8 @@ const SingleTourPage = ({
         rateTitle: selectedCatalog?.title || selectedCatalog?.label || "",
         travelDate: resolvedDate,
         startTime: resolvedStartTime,
+        startTimeId: String(resolvedStartTimeSlot?.startTimeId || "").trim(),
+        startTimeSlot: resolvedStartTimeSlot,
         passengers: normalizedPassengers,
         pax: selectedPax
       },
@@ -394,10 +398,11 @@ const SingleTourPage = ({
     sessionSource
   };
 
-  const handleContinueWithOption = (option, startTime = "") => {
+  const handleContinueWithOption = (option, startTime = "", startTimeSlot = null) => {
     handleSelectOption(option);
     handleBookOption(option, {
       startTime,
+      startTimeSlot,
       travelDate,
       rateId: selectedPriceCatalogId
     });
@@ -447,7 +452,8 @@ const SingleTourPage = ({
             {hasIncluded ? <div id="included" className="product-detail-section"><IncludedExcludedCards included={tour.included} excluded={tour.excluded} /></div> : null}
             {hasMeeting ? <div id="meeting-pickup" className="product-detail-section"><MeetingPickupCards meetingInfo={tour.meetingInfo} pickupInfo={tour.pickupInfo} /></div> : null}
             {hasImportantInformation ? <div id="important-info" className="product-detail-section"><ImportantInfoCard importantInformation={tour.importantInformation} /></div> : null}
-            {hasReviews ? <section id="reviews" className="single-tour-section product-detail-section product-reviews-summary"><h3>Reviews</h3><p>{Number(tour.rating).toFixed(1)} rating from {Number(tour.reviewCount || 0)} verified guest reviews.</p></section> : null}
+            {hasReviews ? <section id="reviews" className="single-tour-section product-detail-section product-reviews-summary"><h3>Reviews</h3><p>{Number(tour.rating).toFixed(1)} rating from {Number(tour.reviewCount || 0)} guest reviews.</p></section> : null}
+            {portal === "public" ? <RelatedToursSection tour={tour} /> : null}
 
             {!isDesktop ? <div className="single-product-mobile-booking-form" ref={mobileBookingRef}><StickyAvailabilityCard {...availabilityCardProps} /></div> : null}
             {availabilityError ? <div className="single-booking-inline-error mt-3">{availabilityError}</div> : null}
@@ -470,6 +476,7 @@ const SingleTourPage = ({
         pax={selectedPax}
         selectedRateLabel={selectedRateLabel}
         selectedStartTimesByOption={selectedStartTimesByOption}
+        selectedStartTimeSlotsByOption={selectedStartTimeSlotsByOption}
         onClose={() => setShowAvailabilityPicker(false)}
         onEditSearch={handleEditSearch}
         onSelectOption={handleSelectOption}

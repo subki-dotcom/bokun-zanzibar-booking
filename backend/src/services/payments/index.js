@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require("uuid");
 const Payment = require("../../models/Payment");
 const Booking = require("../../models/Booking");
 const Invoice = require("../../models/Invoice");
+const { env, isDpoConfigured, isPesapalConfigured, isPaypalConfigured } = require("../../config/env");
 
 const toNumber = (value = 0) => {
   const parsed = Number(value || 0);
@@ -9,6 +10,18 @@ const toNumber = (value = 0) => {
 };
 
 const normalizeToken = (value = "") => String(value || "").trim();
+
+const calculateVerifiedPaidAmount = (rows = []) => {
+  const paidByIntent = new Map();
+  rows
+    .filter((row) => row?.status === "paid")
+    .forEach((row) => {
+      const intentKey = String(row.intentId || row.providerTransactionId || row.orderTrackingId || row._id);
+      const paid = toNumber(row.amountPaid ?? row.paidAmount);
+      paidByIntent.set(intentKey, Math.max(paidByIntent.get(intentKey) || 0, paid));
+    });
+  return Array.from(paidByIntent.values()).reduce((total, paid) => total + paid, 0);
+};
 
 const buildGatewaySet = ({
   providerTransactionId = undefined,
@@ -263,10 +276,9 @@ const getVerifiedPaidAmountByBookingReference = async ({ bookingReference, provi
     .sort({ lastVerifiedAt: -1, updatedAt: -1 })
     .lean();
 
-  return rows.reduce(
-    (maxPaid, row) => Math.max(maxPaid, toNumber(row.amountPaid ?? row.paidAmount)),
-    0
-  );
+  // A booking may have a verified original payment and one or more verified
+  // adjustments. Each intent is counted once, even if its webhook was retried.
+  return calculateVerifiedPaidAmount(rows);
 };
 
 const markPaymentReviewed = async ({ bookingReference, reviewedBy = "", reviewNote = "" } = {}) =>
@@ -351,13 +363,7 @@ const listPaymentReconciliation = async ({ limit = 100 } = {}) => {
     const booking = bookingsByRef.get(bookingReference) || null;
     const invoice = invoicesByRef.get(bookingReference) || null;
     const invoiceSnapshot = booking?.invoiceSnapshot || {};
-    const verifiedPaidAmount = refPayments.reduce(
-      (maxPaid, payment) =>
-        payment.status === "paid"
-          ? Math.max(maxPaid, toNumber(payment.amountPaid ?? payment.paidAmount))
-          : maxPaid,
-      0
-    );
+    const verifiedPaidAmount = calculateVerifiedPaidAmount(refPayments);
     const invoicePaidAmount = toNumber(invoice?.amountPaid ?? invoiceSnapshot.amountPaid);
     const expectedAmount = toNumber(
       booking?.amount ||
@@ -407,6 +413,27 @@ const listPayments = async () => {
   return Payment.find({}).sort({ createdAt: -1 }).lean();
 };
 
+const getPublicPaymentProviders = () => [
+  {
+    id: "pesapal",
+    enabled: Boolean(isPesapalConfigured || env.PESAPAL_MOCK_MODE),
+    mode: env.PESAPAL_MOCK_MODE ? "test" : isPesapalConfigured ? "live" : "unavailable",
+    unavailableReason: "Pesapal is not configured yet."
+  },
+  {
+    id: "dpo",
+    enabled: Boolean(isDpoConfigured || env.DPO_MOCK_MODE),
+    mode: env.DPO_MOCK_MODE ? "test" : isDpoConfigured ? "live" : "unavailable",
+    unavailableReason: "DPO is not configured yet."
+  },
+  {
+    id: "paypal",
+    enabled: Boolean(isPaypalConfigured || env.PAYPAL_MOCK_MODE),
+    mode: env.PAYPAL_MOCK_MODE ? "test" : isPaypalConfigured ? "live" : "unavailable",
+    unavailableReason: "PayPal is not configured yet."
+  }
+];
+
 module.exports = {
   createPaymentIntent,
   updatePaymentStatus,
@@ -416,5 +443,6 @@ module.exports = {
   getVerifiedPaidAmountByBookingReference,
   markPaymentReviewed,
   listPaymentReconciliation,
-  listPayments
+  listPayments,
+  getPublicPaymentProviders
 };

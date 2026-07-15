@@ -28,6 +28,7 @@ const createDefaultData = () => ({
   quote: null,
   bookingResult: null,
   promoCode: "",
+  marketing: {},
   tripDetailsCompleted: false,
   availabilityChecked: false,
   sourceChannel: "direct_website",

@@ -15,6 +15,7 @@ const {
 
 const router = express.Router();
 
+router.get("/providers", paymentsController.listPublicProviders);
 router.use("/pesapal", pesapalRoutes);
 router.use("/dpo", dpoRoutes);
 router.use("/paypal", paypalRoutes);

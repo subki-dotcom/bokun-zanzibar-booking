@@ -1,30 +1,30 @@
+import { useEffect, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { BsStarFill } from "react-icons/bs";
+import { fetchPublicReviews } from "../../api/reviewsApi";
 
-const testimonials = [
-  {
-    name: "Emma W.",
-    text: "Professional team, smooth booking, and exactly the experience we expected in Zanzibar.",
-    rating: 5
-  },
-  {
-    name: "Daniel K.",
-    text: "Our transfer and tour coordination was perfect. Great communication and on-time pickup.",
-    rating: 5
-  },
-  {
-    name: "Amina R.",
-    text: "Fast checkout and trusted service. The option details and live times made booking easy.",
-    rating: 5
-  }
-];
+const TestimonialsSection = () => {
+  const [reviewData, setReviewData] = useState({ reviews: [] });
 
-const TestimonialsSection = () => (
+  useEffect(() => {
+    let mounted = true;
+    fetchPublicReviews().then((data) => {
+      if (mounted) setReviewData(data || { reviews: [] });
+    }).catch(() => {
+      if (mounted) setReviewData({ reviews: [] });
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const testimonials = reviewData.reviews || [];
+  if (!testimonials.length) return null;
+
+  return (
   <section className="z-home-section z-home-testimonials">
     <Container>
       <div className="z-home-section-head">
         <h2>Traveler testimonials</h2>
-        <p>Real feedback from guests who booked Zanzibar experiences with us.</p>
+        <p>Recent traveler feedback from Google.</p>
       </div>
 
       <Row className="g-3">
@@ -37,13 +37,15 @@ const TestimonialsSection = () => (
                 ))}
               </div>
               <p>{item.text}</p>
-              <strong>{item.name}</strong>
+              <strong>{item.name}</strong>{item.published ? <small>{item.published}</small> : null}
             </article>
           </Col>
         ))}
       </Row>
+      {reviewData.reviewUrl ? <a className="z-home-reviews-link" href={reviewData.reviewUrl} target="_blank" rel="noreferrer">View all Google reviews</a> : null}
     </Container>
   </section>
-);
+  );
+};
 
 export default TestimonialsSection;

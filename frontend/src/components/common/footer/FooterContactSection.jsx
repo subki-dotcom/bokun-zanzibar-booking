@@ -1,9 +1,10 @@
 import { BsGeoAlt, BsTelephone, BsEnvelope } from "react-icons/bs";
+import { BRAND } from "../../../config/brand";
 
 const contactRows = [
-  { icon: BsGeoAlt, label: "Zanzibar, Tanzania" },
-  { icon: BsTelephone, label: "+255 777 123 456", href: "tel:+255777123456" },
-  { icon: BsEnvelope, label: "info@risertoursandsafaris.co.tz", href: "mailto:info@risertoursandsafaris.co.tz" }
+  { icon: BsGeoAlt, label: BRAND.location },
+  { icon: BsTelephone, label: BRAND.phone, href: BRAND.phoneHref },
+  { icon: BsEnvelope, label: BRAND.email, href: `mailto:${BRAND.email}` }
 ];
 
 const FooterContactSection = () => (

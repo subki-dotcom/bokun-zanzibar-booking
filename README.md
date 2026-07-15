@@ -509,3 +509,37 @@ Before using live PayPal mode (`PAYPAL_MOCK_MODE=false`):
 - Add webhook signature validation once Bokun webhook signature contract is finalized.
 - Add additional payment provider adapters (Stripe/manual/cash) behind `payments.service` abstraction.
 - Add charts library (Recharts/Chart.js) to replace dashboard placeholders.
+
+## Booking Change, Cancellation and Refund Workflow
+
+Customers submit requests from **My Booking** after confirming the email used for the booking. They cannot change a confirmed supplier booking directly.
+
+Customer API:
+
+- `POST /api/bookings/:bookingId/requests`
+- `GET /api/bookings/:bookingId/requests?customerEmail=<email>`
+- `GET /api/bookings/:bookingId/cancellation-estimate?customerEmail=<email>`
+- `GET /api/booking-requests/:requestId?customerEmail=<email>`
+- `POST /api/booking-requests/:requestId/customer-response`
+- `POST /api/booking-requests/:requestId/cancel`
+
+Admin API (JWT role: `super_admin`, `admin`, or `staff`; refund completion requires `super_admin` or `admin`):
+
+- `GET /api/admin/booking-requests`
+- `GET /api/admin/booking-requests/:requestId`
+- `POST /api/admin/booking-requests/:requestId/approve`
+- `POST /api/admin/booking-requests/:requestId/reject`
+- `POST /api/admin/booking-requests/:requestId/request-information`
+- `POST /api/admin/booking-requests/:requestId/recalculate-price`
+- `POST /api/admin/booking-requests/:requestId/retry-bokun-sync`
+- `POST /api/admin/booking-requests/:requestId/send-email`
+- `POST /api/admin/refunds/:refundId/status`
+
+MongoDB creates the required indexes automatically when the backend starts. Before production, take a backup and confirm that indexes exist for `BookingRequest`, `Refund`, `PaymentAdjustment`, `Payment`, and `Invoice`.
+
+Required production configuration:
+
+- Set `EMAIL_ENABLED=true`, `RESEND_API_KEY`, and a verified `EMAIL_FROM` address for request notifications.
+- Set `BOOKING_FINALIZATION_RETRY_ENABLED=true` for paid supplier-finalization retries.
+- Keep all gateway callback URLs public and configure the live credentials for each enabled gateway.
+- Keep `BOKUN_MOCK_MODE=false` in production. Cancellation sync uses the configured Bókun cancel endpoint. Confirm the Bókun amendment endpoint and payload for date/traveler edits before enabling automatic amendment sync; unresolved amendments are intentionally marked `manual_action_required` instead of sending an unsafe supplier request.

@@ -1735,6 +1735,7 @@ const mapAvailability = (raw = {}) => ({
     maxQuantity: Number(extra.maxQuantity || 1)
   })),
   slots: (raw.slots || []).map((slot) => ({
+    startTimeId: String(slot.startTimeId || ""),
     time: slot.time,
     capacityLeft: Number(slot.capacityLeft || 0),
     status: slot.status || "unknown"

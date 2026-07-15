@@ -1,5 +1,10 @@
 import axiosClient from "./axiosClient";
 
+export const fetchPaymentProviders = async () => {
+  const response = await axiosClient.get("/payments/providers");
+  return response.data.data || [];
+};
+
 export const createPesapalPayment = async (payload) => {
   const response = await axiosClient.post("/payments/pesapal/create", payload);
   return response.data.data;

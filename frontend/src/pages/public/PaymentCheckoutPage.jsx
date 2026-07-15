@@ -8,7 +8,8 @@ import PaymentMethodSelector from "../../components/booking/PaymentMethodSelecto
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import { formatCurrency, formatDate } from "../../utils/formatters";
-import { getPaymentMethodLabel, isPaymentMethodEnabled } from "../../utils/paymentMethods";
+import { getPaymentMethodLabel } from "../../utils/paymentMethods";
+import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 
 const PaymentCheckoutPage = () => {
   const { reference } = useParams();
@@ -16,7 +17,14 @@ const PaymentCheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [fallbackPaymentMethod, setFallbackPaymentMethod] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("pesapal");
+  const {
+    availableProviders,
+    loading: paymentProvidersLoading,
+    isProviderEnabled,
+    getProvider
+  } = usePaymentProviders();
 
   useEffect(() => {
     const load = async () => {
@@ -33,20 +41,31 @@ const PaymentCheckoutPage = () => {
     load();
   }, [reference]);
 
+  useEffect(() => {
+    if (
+      !paymentProvidersLoading &&
+      availableProviders.length > 0 &&
+      !isProviderEnabled(selectedPaymentMethod)
+    ) {
+      setSelectedPaymentMethod(availableProviders[0].id);
+    }
+  }, [availableProviders, isProviderEnabled, paymentProvidersLoading, selectedPaymentMethod]);
+
   const startPayment = async () => {
     if (!booking?._id) {
       setError("Booking ID is missing for payment retry.");
       return;
     }
 
-    const paymentLabel = getPaymentMethodLabel(selectedPaymentMethod);
-    if (!isPaymentMethodEnabled(selectedPaymentMethod)) {
-      setError(`${paymentLabel} is not configured yet. Please choose Pesapal or DPO.`);
+    const paymentLabel = getProvider(selectedPaymentMethod)?.title || getPaymentMethodLabel(selectedPaymentMethod);
+    if (paymentProvidersLoading || !isProviderEnabled(selectedPaymentMethod)) {
+      setError(`${paymentLabel} is not available right now. Please choose another payment method.`);
       return;
     }
 
     setSubmitting(true);
     setError("");
+    setFallbackPaymentMethod("");
     try {
       const amount = Number(booking.amount || booking.pricingSnapshot?.finalPayable || 0);
       const currency = booking.currency || booking.pricingSnapshot?.currency || "USD";
@@ -70,6 +89,8 @@ const PaymentCheckoutPage = () => {
       window.location.assign(result.redirectUrl);
     } catch (err) {
       setError(err.message || `Could not start ${paymentLabel} payment`);
+      const fallback = availableProviders.find((provider) => provider.id !== selectedPaymentMethod)?.id || "";
+      setFallbackPaymentMethod(fallback);
       setSubmitting(false);
     }
   };
@@ -85,7 +106,7 @@ const PaymentCheckoutPage = () => {
   const amount = Number(booking?.amount || booking?.pricingSnapshot?.finalPayable || 0);
   const currency = booking?.currency || booking?.pricingSnapshot?.currency || "USD";
   const isPaid = booking?.paymentStatus === "paid";
-  const paymentLabel = getPaymentMethodLabel(selectedPaymentMethod);
+  const paymentLabel = getProvider(selectedPaymentMethod)?.title || getPaymentMethodLabel(selectedPaymentMethod);
 
   return (
     <main className="payment-status-page">
@@ -137,12 +158,30 @@ const PaymentCheckoutPage = () => {
                 onChange={(method) => {
                   setSelectedPaymentMethod(method);
                   setError("");
+                  setFallbackPaymentMethod("");
                 }}
                 disabled={submitting || isPaid}
               />
 
+              {fallbackPaymentMethod ? (
+                <div className="payment-fallback-notice" role="status">
+                  <span>{paymentLabel} could not start this payment. You can choose another secure provider.</span>
+                  <Button
+                    size="sm"
+                    variant="outline-success"
+                    onClick={() => {
+                      setSelectedPaymentMethod(fallbackPaymentMethod);
+                      setFallbackPaymentMethod("");
+                      setError("");
+                    }}
+                  >
+                    Try {getProvider(fallbackPaymentMethod)?.title || getPaymentMethodLabel(fallbackPaymentMethod)}
+                  </Button>
+                </div>
+              ) : null}
+
               <div className="payment-status-actions">
-                <Button className="premium-btn text-white" onClick={startPayment} disabled={submitting || isPaid}>
+                <Button className="premium-btn text-white" onClick={startPayment} disabled={submitting || isPaid || paymentProvidersLoading || !isProviderEnabled(selectedPaymentMethod)}>
                   {isPaid ? "Payment Already Confirmed" : submitting ? `Opening ${paymentLabel}...` : `Pay Securely with ${paymentLabel}`}
                 </Button>
                 <Button as={Link} to={`/payment-status/${booking.bookingReference}`} variant="outline-secondary">

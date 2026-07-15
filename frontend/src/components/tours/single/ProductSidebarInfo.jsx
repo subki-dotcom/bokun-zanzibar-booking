@@ -1,5 +1,6 @@
 import { BsCarFront, BsCheckCircleFill, BsGeoAlt, BsShieldCheck, BsStarFill, BsXCircleFill } from "react-icons/bs";
 import { toTextList } from "./singleTour.helpers";
+import { usePaymentProviders } from "../../../context/PaymentProvidersContext";
 
 const SidebarCard = ({ title, children, className = "" }) => (
   <section className={`product-sidebar-card ${className}`.trim()}>
@@ -20,6 +21,7 @@ const CompactList = ({ items = [], tone = "success" }) => (
 );
 
 const ProductSidebarInfo = ({ tour = {} }) => {
+  const { availableProviders } = usePaymentProviders();
   const included = toTextList(tour.included);
   const excluded = toTextList(tour.excluded);
   const importantInformation = toTextList(tour.importantInformation);
@@ -47,13 +49,11 @@ const ProductSidebarInfo = ({ tour = {} }) => {
         </SidebarCard>
       ) : null}
 
-      <SidebarCard title="We accept" className="product-payment-card">
+      {availableProviders.length ? <SidebarCard title="We accept" className="product-payment-card">
         <div className="product-payment-logos">
-          <img src="/assets/payment-logos/pesapal.svg" alt="Pesapal" loading="lazy" />
-          <img src="/assets/payment-logos/dpo.svg" alt="DPO Pay" loading="lazy" />
-          <img src="/assets/payment-logos/paypal.svg" alt="PayPal" loading="lazy" />
+          {availableProviders.map((provider) => <img key={provider.id} src={provider.logo} alt={provider.title} loading="lazy" />)}
         </div>
-      </SidebarCard>
+      </SidebarCard> : null}
 
       {included.length || excluded.length ? (
         <SidebarCard title="Included">

@@ -13,6 +13,17 @@ const priceCategoryParticipantSchema = z.object({
   quantity: z.number().int().min(0)
 });
 
+const marketingSchema = z.object({
+  referralCode: z.string().max(64).optional(),
+  utmSource: z.string().max(180).optional(),
+  utmMedium: z.string().max(180).optional(),
+  utmCampaign: z.string().max(180).optional(),
+  utmTerm: z.string().max(180).optional(),
+  utmContent: z.string().max(180).optional(),
+  landingPage: z.string().max(400).optional(),
+  referrer: z.string().max(400).optional()
+});
+
 const quoteSchema = z.object({
   body: z.object({
     productId: z.string().min(2),
@@ -33,6 +44,7 @@ const quoteSchema = z.object({
       )
       .optional(),
     promoCode: z.string().optional(),
+    marketing: marketingSchema.optional(),
     sourceChannel: z.string().optional()
   }).superRefine((body, ctx) => {
     const paxTotal = Number(body.pax?.adults || 0) + Number(body.pax?.children || 0) + Number(body.pax?.infants || 0);
@@ -82,6 +94,7 @@ const createBookingSchema = z.object({
       )
       .optional(),
     promoCode: z.string().optional(),
+    marketing: marketingSchema.optional(),
     customer: z.object({
       firstName: z.string().min(2),
       lastName: z.string().min(2),

@@ -1,5 +1,5 @@
 import { Form } from "react-bootstrap";
-import { BsSearch } from "react-icons/bs";
+import { BsCalendar3, BsPeople, BsSearch } from "react-icons/bs";
 
 const durationOptions = [
   { value: "all", label: "All durations" },
@@ -23,6 +23,8 @@ const FilterSortBar = ({
   query = "",
   category = "all",
   duration = "all",
+  travelDate = "",
+  travelers = 2,
   sort = "recommended",
   categoryOptions = [],
   resultCount = 0,
@@ -52,6 +54,29 @@ const FilterSortBar = ({
           </option>
         ))}
       </Form.Select>
+
+      <div className="listing-search-wrap listing-date-filter">
+        <BsCalendar3 className="listing-search-icon" />
+        <Form.Control
+          type="date"
+          value={travelDate}
+          onChange={(event) => onFilterChange("travelDate", event.target.value)}
+          aria-label="Check availability for travel date"
+        />
+      </div>
+
+      <div className="listing-search-wrap listing-traveler-filter">
+        <BsPeople className="listing-search-icon" />
+        <Form.Select
+          value={travelers}
+          onChange={(event) => onFilterChange("travelers", event.target.value)}
+          aria-label="Travelers"
+        >
+          {[1, 2, 3, 4, 5, 6, 8, 10].map((count) => (
+            <option key={count} value={count}>{count} traveler{count === 1 ? "" : "s"}</option>
+          ))}
+        </Form.Select>
+      </div>
 
       <Form.Select
         value={duration}

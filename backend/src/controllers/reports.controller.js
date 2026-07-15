@@ -38,9 +38,27 @@ const performance = asyncHandler(async (_req, res) => {
   });
 });
 
+const conversionFunnel = asyncHandler(async (_req, res) => {
+  const data = await reportsService.conversionFunnel();
+  return successResponse(res, { message: "Conversion funnel report", data });
+});
+
+const operationalAlerts = asyncHandler(async (_req, res) => {
+  const data = await reportsService.getOperationalAlerts();
+  return successResponse(res, { message: "Operational alerts fetched", data });
+});
+
+const growthPerformance = asyncHandler(async (_req, res) => {
+  const data = await reportsService.getGrowthPerformance();
+  return successResponse(res, { message: "Growth performance fetched", data });
+});
+
 module.exports = {
   dashboardSummary,
   dailyBookings,
   monthlySales,
-  performance
+  performance,
+  conversionFunnel,
+  operationalAlerts,
+  growthPerformance
 };

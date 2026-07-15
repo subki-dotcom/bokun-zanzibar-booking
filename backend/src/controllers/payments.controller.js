@@ -4,6 +4,15 @@ const paymentsService = require("../services/payments");
 const pesapalService = require("../services/payments/pesapal");
 const bookingsService = require("../services/bookings");
 
+const listPublicProviders = asyncHandler(async (_req, res) => {
+  const data = paymentsService.getPublicPaymentProviders();
+
+  return successResponse(res, {
+    message: "Payment provider availability fetched",
+    data
+  });
+});
+
 const listPayments = asyncHandler(async (_req, res) => {
   const data = await paymentsService.listPayments();
 
@@ -85,6 +94,7 @@ const markReviewed = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  listPublicProviders,
   listPayments,
   listReconciliation,
   recheckPesapalStatus,

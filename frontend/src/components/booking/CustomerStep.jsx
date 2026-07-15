@@ -235,6 +235,16 @@ const CustomerStep = ({
               <span>{notesCount}/250</span>
             </div>
           </Form.Group>
+
+          <Form.Group className="customer-step-wide customer-marketing-consent">
+            <Form.Check
+              type="checkbox"
+              id="checkout-marketing-consent"
+              checked={Boolean(customer.marketingConsent)}
+              label="Send me Zanzibar travel updates and exclusive offers."
+              onChange={(event) => updateCustomer("marketingConsent", event.target.checked)}
+            />
+          </Form.Group>
         </div>
 
         {attemptedSubmit && !isValid ? (

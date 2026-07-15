@@ -41,6 +41,22 @@ const globalRateLimiter = rateLimit({
   }
 });
 
+const bookingRequestWriteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => resolveClientIp(req),
+  message: {
+    success: false,
+    message: "Too many booking change requests. Please wait and try again later.",
+    error: { code: "BOOKING_REQUEST_RATE_LIMITED", details: null },
+    data: {},
+    meta: {}
+  }
+});
+
 module.exports = {
-  globalRateLimiter
+  globalRateLimiter,
+  bookingRequestWriteLimiter
 };

@@ -1,5 +1,6 @@
 const dayjs = require("dayjs");
 const Invoice = require("../../models/Invoice");
+const Refund = require("../../models/Refund");
 const { env } = require("../../config/env");
 const paymentsService = require("../payments");
 
@@ -22,20 +23,37 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
   const verifiedPaidAmount = await paymentsService.getVerifiedPaidAmountByBookingReference({
     bookingReference: booking.bookingReference
   });
-  const bookingPaidAmount = Number(booking.pricingSnapshot?.amountPaid || 0);
-  const amountPaid =
-    verifiedPaidAmount > 0
-      ? Math.min(total, Number(verifiedPaidAmount.toFixed(2)))
-      : booking.paymentStatus === "paid"
-        ? Math.min(total, Number((bookingPaidAmount || booking.amount || total).toFixed(2)))
-        : 0;
-  const balanceDue = Number((total - amountPaid).toFixed(2));
+  const refundRows = await Refund.aggregate([
+    {
+      $match: {
+        bookingId: booking._id,
+        status: { $in: ["refunded", "partially_refunded"] }
+      }
+    },
+    { $group: { _id: null, amount: { $sum: "$amount" } } }
+  ]);
+  const amountPaid = Number(Math.max(0, verifiedPaidAmount).toFixed(2));
+  const amountRefunded = Number(Math.min(amountPaid, Number(refundRows[0]?.amount || 0)).toFixed(2));
+  const netAmountPaid = Number(Math.max(0, amountPaid - amountRefunded).toFixed(2));
+  const balanceDue = Number(Math.max(0, total - netAmountPaid).toFixed(2));
+  const paymentStatus =
+    amountPaid <= 0
+      ? (booking.paymentStatus === "failed" ? "failed" : "pending")
+      : amountRefunded >= amountPaid
+        ? "refunded"
+        : amountRefunded > 0
+          ? "partially_refunded"
+          : netAmountPaid > total + 0.009
+            ? "overpaid"
+            : netAmountPaid >= total
+              ? "paid"
+              : "partial";
 
   const snapshot = {
     invoiceNumber,
     bookingReference: booking.bookingReference,
     issueDate: new Date(),
-    paymentStatus: booking.paymentStatus,
+    paymentStatus,
     bookingStatus: booking.bookingStatus,
     clientName: booking.customer?.firstName
       ? `${booking.customer.firstName} ${booking.customer.lastName || ""}`.trim()
@@ -68,6 +86,8 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
     tax,
     total,
     amountPaid,
+    amountRefunded,
+    netAmountPaid,
     balanceDue,
     paymentMethod: booking.paymentMethod || "pending",
     notes: "Thank you for booking with Zanzibar premium experiences.",
@@ -117,6 +137,8 @@ const upsertInvoiceFromSnapshot = async (invoiceSnapshot) => {
   existing.tax = invoiceSnapshot.tax;
   existing.total = invoiceSnapshot.total;
   existing.amountPaid = invoiceSnapshot.amountPaid;
+  existing.amountRefunded = invoiceSnapshot.amountRefunded;
+  existing.netAmountPaid = invoiceSnapshot.netAmountPaid;
   existing.balanceDue = invoiceSnapshot.balanceDue;
   existing.paymentMethod = invoiceSnapshot.paymentMethod;
   existing.notes = invoiceSnapshot.notes;

@@ -5,6 +5,7 @@ const Customer = require("../../models/Customer");
 const ProductSnapshot = require("../../models/ProductSnapshot");
 const AuditLog = require("../../models/AuditLog");
 const CommissionRecord = require("../../models/CommissionRecord");
+const Agent = require("../../models/Agent");
 const logger = require("../../config/logger");
 const { env } = require("../../config/env");
 const AppError = require("../../utils/AppError");
@@ -14,6 +15,7 @@ const offersService = require("../offers");
 const invoicesService = require("../invoices");
 const commissionsService = require("../commissions");
 const paymentsService = require("../payments");
+const notificationsService = require("../notifications");
 
 const normalizeTicketCategory = (value = "") => {
   const token = String(value).toLowerCase();
@@ -753,8 +755,36 @@ const resolveSelectedPriceCatalog = (requestedCatalogId = "", availableCatalogs 
   };
 };
 
-const resolveSourceContext = (auth) => {
+const cleanMarketing = (marketing = {}) => ({
+  referralCode: String(marketing?.referralCode || "").trim().toUpperCase().slice(0, 64),
+  utmSource: String(marketing?.utmSource || "").trim().slice(0, 180),
+  utmMedium: String(marketing?.utmMedium || "").trim().slice(0, 180),
+  utmCampaign: String(marketing?.utmCampaign || "").trim().slice(0, 180),
+  utmTerm: String(marketing?.utmTerm || "").trim().slice(0, 180),
+  utmContent: String(marketing?.utmContent || "").trim().slice(0, 180),
+  landingPage: String(marketing?.landingPage || "").trim().slice(0, 400),
+  referrer: String(marketing?.referrer || "").trim().slice(0, 400)
+});
+
+const resolveSourceContext = async (auth, marketing = {}) => {
   if (!auth) {
+    const normalizedMarketing = cleanMarketing(marketing);
+    if (normalizedMarketing.referralCode) {
+      const referralAgent = await Agent.findOne({
+        referralCode: normalizedMarketing.referralCode,
+        isActive: true,
+        approvalStatus: "approved"
+      }).lean();
+      if (referralAgent) {
+        return {
+          sourceChannel: "agent_referral",
+          createdByRole: "customer",
+          createdByUser: { id: referralAgent._id, name: `Referral ${referralAgent.fullName || "Agent"}` },
+          agentId: referralAgent._id,
+          referralCode: normalizedMarketing.referralCode
+        };
+      }
+    }
     return {
       sourceChannel: "direct_website",
       createdByRole: "customer",
@@ -914,7 +944,7 @@ const quoteBooking = async ({ payload, auth, requestId }) => {
     promoCode: payload.promoCode || "",
     grossAmount: liveQuote.pricing.grossAmount,
     currency: liveQuote.pricing.currency,
-    source: resolveSourceContext(auth).sourceChannel,
+    source: (await resolveSourceContext(auth, payload.marketing)).sourceChannel,
     issuedAt: new Date().toISOString()
   });
 
@@ -1071,7 +1101,7 @@ const buildValidatedCreateContext = async ({ payload, auth, requestId }) => {
   ensureQuoteMatchesPayload(quoteCheck.payload, payloadWithCatalog);
 
   const { product, option, selectedPriceCatalog } = await getProductAndOption(payloadWithCatalog);
-  const sourceContext = resolveSourceContext(auth);
+  const sourceContext = await resolveSourceContext(auth, payloadWithCatalog.marketing);
   const effectivePriceCatalogId =
     selectedPriceCatalog?.catalogId || String(payloadWithCatalog.priceCatalogId || "");
 
@@ -1139,6 +1169,7 @@ const ensureCommissionForBooking = async ({
   const commissionRecord = await commissionsService.createCommissionForBooking({
     booking: bookingDoc,
     agentId: sourceContext.agentId,
+    marketing: cleanMarketing(payloadWithCatalog.marketing),
     manualOverridePercent,
     notes
   });
@@ -1614,6 +1645,12 @@ const finalizePendingBookingAfterPayment = async ({
       markAmountPaid: true,
       createCommission: true,
       paymentProvider
+    });
+
+    await notificationsService.notifyBookingConfirmed({
+      booking: finalized.bookingDoc,
+      provider: paymentProvider,
+      requestId
     });
 
     return {

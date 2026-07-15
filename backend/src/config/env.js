@@ -63,7 +63,15 @@ const env = cleanEnv(process.env, {
   DPO_ALLOW_LOCAL_REDIRECTS: bool({ default: false }),
   GLOBAL_AGENT_COMMISSION_PERCENT: num({ default: 10 }),
   QUOTE_TTL_MINUTES: num({ default: 15 }),
-  TAX_PERCENT: num({ default: 0 })
+  TAX_PERCENT: num({ default: 0 }),
+  EMAIL_ENABLED: bool({ default: false }),
+  EMAIL_PROVIDER: str({ default: "resend" }),
+  RESEND_API_KEY: str({ default: "" }),
+  EMAIL_FROM: str({ default: "" }),
+  EMAIL_REPLY_TO: str({ default: "info@risertoursandsafaris.co.tz" }),
+  GOOGLE_PLACES_API_KEY: str({ default: "" }),
+  GOOGLE_PLACE_ID: str({ default: "" }),
+  GOOGLE_REVIEW_URL: str({ default: "" })
 });
 
 const isBokunConfigured =
@@ -82,4 +90,10 @@ const isPaypalConfigured =
   Boolean(env.PAYPAL_CLIENT_ID) &&
   Boolean(env.PAYPAL_CLIENT_SECRET);
 
-module.exports = { env, isBokunConfigured, isDpoConfigured, isPesapalConfigured, isPaypalConfigured };
+const isEmailConfigured =
+  Boolean(env.EMAIL_ENABLED) &&
+  env.EMAIL_PROVIDER === "resend" &&
+  Boolean(env.RESEND_API_KEY) &&
+  Boolean(env.EMAIL_FROM);
+
+module.exports = { env, isBokunConfigured, isDpoConfigured, isPesapalConfigured, isPaypalConfigured, isEmailConfigured };

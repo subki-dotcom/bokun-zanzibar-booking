@@ -47,6 +47,8 @@ const invoiceSchema = new mongoose.Schema(
     tax: Number,
     total: Number,
     amountPaid: Number,
+    amountRefunded: { type: Number, default: 0 },
+    netAmountPaid: { type: Number, default: 0 },
     balanceDue: Number,
     paymentMethod: String,
     notes: String,

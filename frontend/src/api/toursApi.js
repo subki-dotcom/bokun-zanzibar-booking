@@ -138,6 +138,11 @@ export const checkTourOptionsAvailability = async (slug, payload) => {
   return response.data.data;
 };
 
+export const searchToursByAvailability = async ({ travelDate, pax, slugs } = {}) => {
+  const response = await axiosClient.post("/tours/availability-search", { travelDate, pax, slugs });
+  return response.data.data || [];
+};
+
 export const syncTours = async () => {
   const response = await axiosClient.post("/tours/sync");
   clearToursCache();

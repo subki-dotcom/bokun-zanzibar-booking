@@ -32,6 +32,8 @@ const customerSchema = z.object({
   notes: z.string().optional()
 });
 
+const marketingSchema = z.object({ referralCode: z.string().max(64).optional(), utmSource: z.string().max(180).optional(), utmMedium: z.string().max(180).optional(), utmCampaign: z.string().max(180).optional(), utmTerm: z.string().max(180).optional(), utmContent: z.string().max(180).optional(), landingPage: z.string().max(400).optional(), referrer: z.string().max(400).optional() });
+
 const createPesapalSchema = z.object({
   body: z
     .object({
@@ -57,6 +59,7 @@ const createPesapalSchema = z.object({
         )
         .optional(),
       promoCode: z.string().optional(),
+      marketing: marketingSchema.optional(),
       customer: customerSchema.optional(),
       bookingQuestions: z.array(bookingQuestionAnswerSchema).optional(),
       commissionManualPercent: z.number().min(0).max(100).optional(),

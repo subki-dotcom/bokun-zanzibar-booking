@@ -5,6 +5,7 @@ const { env, isDpoConfigured } = require("../../../config/env");
 const AppError = require("../../../utils/AppError");
 const bookingsService = require("../../bookings");
 const paymentsService = require("..");
+const notificationsService = require("../../notifications");
 const {
   buildCreateTokenXml,
   buildVerifyTokenXml,
@@ -390,6 +391,11 @@ const createPayment = async ({ payload, auth, requestId }) => {
     booking,
     tokenResponse
   });
+  await notificationsService.notifyPaymentOrderCreated({
+    booking,
+    provider: "dpo",
+    requestId
+  });
 
   const redirectUrl = shouldMock
     ? `${env.DPO_SUCCESS_URL}?TransactionToken=${encodeURIComponent(tokenResponse.transactionToken)}`
@@ -497,6 +503,12 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
         amount: 0,
         verification
       });
+      await notificationsService.notifyPaymentFailed({
+        booking: await Booking.findById(booking._id),
+        provider: "dpo",
+        requestId,
+        reason: verification.resultExplanation || "DPO payment was not successful"
+      });
 
       return {
         status: "failed",
@@ -537,6 +549,11 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
       paymentProvider: "dpo",
       source: "dpo_callback",
       auditReason: "DPO payment verified and booking created in Bokun"
+    });
+    await notificationsService.notifyPaymentVerified({
+      booking: await Booking.findById(booking._id),
+      provider: "dpo",
+      requestId
     });
 
     return {
@@ -591,6 +608,12 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
     });
 
     if (isPendingFinalization) {
+      await notificationsService.notifyBokunPending({
+        booking: bookingAfterError,
+        provider: "dpo",
+        requestId,
+        error: finalizationMeta.message
+      });
       logger.warn("DPO payment verified but Bokun finalization is pending", {
         requestId,
         bookingId: booking._id.toString(),
@@ -611,6 +634,13 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
         }
       };
     }
+
+    await notificationsService.notifyPaymentFailed({
+      booking: bookingAfterError,
+      provider: "dpo",
+      requestId,
+      reason: finalizationMeta.message || "DPO booking finalization failed"
+    });
 
     return {
       status: "failed",

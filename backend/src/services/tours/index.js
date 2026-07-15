@@ -840,11 +840,47 @@ const checkOptionsAvailability = async (slug, payload = {}, requestId) => {
   };
 };
 
+const searchToursByAvailability = async ({ travelDate, pax, slugs = [], requestId = "" } = {}) => {
+  const uniqueSlugs = Array.from(new Set((slugs || []).map((slug) => String(slug || "").trim()).filter(Boolean))).slice(0, 12);
+
+  if (!travelDate || !uniqueSlugs.length) {
+    return [];
+  }
+
+  const results = await mapWithConcurrency(
+    uniqueSlugs,
+    async (slug) => {
+      try {
+        const availability = await checkOptionsAvailability(slug, { travelDate, pax }, requestId);
+        return {
+          slug,
+          available: availability.availableCount > 0,
+          availableCount: availability.availableCount,
+          lowestPrice: availability.lowestPriceForTwo || null,
+          currency: availability.options.find((option) => option.available)?.currency || "USD"
+        };
+      } catch (error) {
+        logger.warn({ err: error, slug, requestId }, "Tour availability search check failed");
+        return {
+          slug,
+          available: false,
+          availableCount: 0,
+          unavailableReason: "Live availability could not be confirmed."
+        };
+      }
+    },
+    LIVE_DETAIL_CONCURRENCY
+  );
+
+  return results;
+};
+
 module.exports = {
   listTours,
   listTourCategories,
   getTourBySlug,
   getTourOptions,
   checkOptionsAvailability,
+  searchToursByAvailability,
   syncProducts
 };

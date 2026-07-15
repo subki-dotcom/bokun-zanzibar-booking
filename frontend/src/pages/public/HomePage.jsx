@@ -11,6 +11,7 @@ import HowItWorksSection from "../../components/home/HowItWorksSection";
 import TestimonialsSection from "../../components/home/TestimonialsSection";
 import InspirationSection from "../../components/home/InspirationSection";
 import FinalCTASection from "../../components/home/FinalCTASection";
+import SeoHead from "../../components/common/SeoHead";
 import {
   buildCategoryCards,
   homeFallbackTours,
@@ -76,6 +77,7 @@ const HomePage = () => {
 
   return (
     <>
+      <SeoHead title="Riser Tours & Safaris | Zanzibar Tours & Activities" description="Book Zanzibar tours, activities, transfers, and safaris with live availability and secure checkout." />
       <HeroSection onSearch={handleHeroSearch} />
       <FeaturedToursSection tours={featuredTours} loading={loading} />
       <WhyBookUsSection />

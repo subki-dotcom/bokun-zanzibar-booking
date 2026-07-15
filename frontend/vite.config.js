@@ -6,5 +6,16 @@ export default defineConfig({
   server: {
     port: 5173,
     host: "127.0.0.1"
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          bootstrap: ["bootstrap", "react-bootstrap"],
+          icons: ["react-icons"]
+        }
+      }
+    }
   }
 });

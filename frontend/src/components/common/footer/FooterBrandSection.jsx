@@ -1,11 +1,12 @@
 import { BsFacebook, BsInstagram, BsTiktok, BsYoutube } from "react-icons/bs";
+import { BRAND } from "../../../config/brand";
 
 const socialLinks = [
-  { label: "Facebook", href: "#", icon: BsFacebook },
-  { label: "Instagram", href: "#", icon: BsInstagram },
-  { label: "TikTok", href: "#", icon: BsTiktok },
-  { label: "YouTube", href: "#", icon: BsYoutube }
-];
+  { label: "Facebook", href: BRAND.social.facebook, icon: BsFacebook },
+  { label: "Instagram", href: BRAND.social.instagram, icon: BsInstagram },
+  { label: "TikTok", href: BRAND.social.tiktok, icon: BsTiktok },
+  { label: "YouTube", href: BRAND.social.youtube, icon: BsYoutube }
+].filter((item) => item.href);
 
 const FooterBrandSection = () => (
   <section className="premium-footer-brand">
@@ -16,7 +17,7 @@ const FooterBrandSection = () => (
       travelers book with confidence.
     </p>
 
-    <div className="premium-footer-socials">
+    {socialLinks.length ? <div className="premium-footer-socials">
       {socialLinks.map((item) => {
         const Icon = item.icon;
         return (
@@ -32,7 +33,7 @@ const FooterBrandSection = () => (
           </a>
         );
       })}
-    </div>
+    </div> : null}
   </section>
 );
 

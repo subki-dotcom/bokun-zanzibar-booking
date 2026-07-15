@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Row, Col, Card, Table, Button, Badge } from "react-bootstrap";
 import {
   fetchDashboardSummary,
+  fetchConversionFunnel,
+  fetchGrowthPerformance,
+  fetchOperationalAlerts,
   fetchPendingFinalizations,
   reconcileBookingFinalizations,
   retryBookingFinalization
@@ -23,6 +26,9 @@ const AdminDashboardPage = () => {
   const [finalizationError, setFinalizationError] = useState("");
   const [reconciling, setReconciling] = useState(false);
   const [retryingBookingId, setRetryingBookingId] = useState("");
+  const [conversionFunnel, setConversionFunnel] = useState(null);
+  const [operationalAlerts, setOperationalAlerts] = useState(null);
+  const [growthPerformance, setGrowthPerformance] = useState(null);
 
   const loadPendingFinalizationData = async () => {
     try {
@@ -37,15 +43,21 @@ const AdminDashboardPage = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [summaryResult, bookingsResult, pendingResult] = await Promise.all([
+        const [summaryResult, bookingsResult, pendingResult, funnelResult, alertsResult, growthResult] = await Promise.all([
           fetchDashboardSummary(),
           fetchRecentBookings(),
-          fetchPendingFinalizations({ limit: 12, includeProcessing: true })
+          fetchPendingFinalizations({ limit: 12, includeProcessing: true }),
+          fetchConversionFunnel().catch(() => null),
+          fetchOperationalAlerts().catch(() => null),
+          fetchGrowthPerformance().catch(() => null)
         ]);
 
         setSummary(summaryResult);
         setRecentBookings(bookingsResult);
         setPendingFinalizations(pendingResult || []);
+        setConversionFunnel(funnelResult);
+        setOperationalAlerts(alertsResult);
+        setGrowthPerformance(growthResult);
       } catch (err) {
         setError(err.message || "Failed to load dashboard");
       } finally {
@@ -108,6 +120,99 @@ const AdminDashboardPage = () => {
         </Col>
         <Col lg={4}>
           <SalesChartPlaceholder title="Monthly Sales" />
+        </Col>
+      </Row>
+
+      <Row className="g-4 mt-1">
+        <Col lg={6}>
+          <Card className="surface-card h-100">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-baseline gap-2 mb-3">
+                <h5 className="mb-0">Checkout Conversion Funnel</h5>
+                <small className="text-muted">Subscribers: {conversionFunnel?.newsletterSubscribers || 0}</small>
+              </div>
+              <Table responsive hover className="mb-0">
+                <thead>
+                  <tr>
+                    <th>Step</th>
+                    <th className="text-end">Customers</th>
+                    <th className="text-end">Step rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(conversionFunnel?.steps || []).length ? conversionFunnel.steps.map((step) => (
+                    <tr key={step.key}>
+                      <td>{step.label}</td>
+                      <td className="text-end">{step.count}</td>
+                      <td className="text-end">{step.conversionRate == null ? "-" : `${step.conversionRate}%`}</td>
+                    </tr>
+                  )) : (
+                    <tr><td colSpan={3} className="text-center text-muted py-4">No conversion data yet.</td></tr>
+                  )}
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col lg={6}>
+          <Card className="surface-card h-100">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-baseline gap-2 mb-3">
+                <h5 className="mb-0">Operational Alerts</h5>
+                <small className="text-muted">
+                  {Number(operationalAlerts?.counts?.paidPendingSupplier || 0) + Number(operationalAlerts?.counts?.failedPayments || 0) + Number(operationalAlerts?.counts?.failedEmailDeliveries || 0)} open
+                </small>
+              </div>
+              {(operationalAlerts?.alerts || []).length ? (
+                <div className="d-grid gap-2">
+                  {operationalAlerts.alerts.slice(0, 5).map((alert) => (
+                    <div key={alert.id} className="border rounded-3 p-2 d-flex justify-content-between gap-2">
+                      <div className="min-w-0">
+                        <div className="fw-semibold">{alert.title}</div>
+                        <small className="text-muted d-block">{alert.description}</small>
+                      </div>
+                      <Badge bg={alert.severity === "danger" ? "danger" : "warning"} text={alert.severity === "danger" ? undefined : "dark"} className="align-self-start">
+                        {alert.bookingReference || "Email"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-muted mb-0">No operational alerts right now.</p>}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row className="g-4 mt-1">
+        <Col lg={6}>
+          <Card className="surface-card h-100">
+            <Card.Body>
+              <h5 className="mb-3">Promotion Performance</h5>
+              <Table responsive hover className="mb-0">
+                <thead><tr><th>Campaign</th><th>Bookings</th><th className="text-end">Sales</th></tr></thead>
+                <tbody>
+                  {(growthPerformance?.campaigns || []).length ? growthPerformance.campaigns.map((campaign) => (
+                    <tr key={campaign._id}><td>{campaign._id || "Automatic campaign"}</td><td>{campaign.bookings}</td><td className="text-end">{formatCurrency(campaign.sales || 0, "USD")}</td></tr>
+                  )) : <tr><td colSpan={3} className="text-center text-muted py-4">No campaign redemptions yet.</td></tr>}
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col lg={6}>
+          <Card className="surface-card h-100">
+            <Card.Body>
+              <h5 className="mb-3">Agent Referral Performance</h5>
+              <Table responsive hover className="mb-0">
+                <thead><tr><th>Referral</th><th>Bookings</th><th className="text-end">Sales</th></tr></thead>
+                <tbody>
+                  {(growthPerformance?.referrals || []).length ? growthPerformance.referrals.map((referral) => (
+                    <tr key={referral._id}><td>{referral._id}</td><td>{referral.bookings}</td><td className="text-end">{formatCurrency(referral.sales || 0, "USD")}</td></tr>
+                  )) : <tr><td colSpan={3} className="text-center text-muted py-4">No attributed referrals yet.</td></tr>}
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 

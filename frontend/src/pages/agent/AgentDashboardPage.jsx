@@ -8,9 +8,11 @@ import {
   BsCashCoin,
   BsCheckCircleFill,
   BsClipboardCheck,
+  BsCopy,
   BsEye,
   BsHourglassSplit,
   BsWallet2,
+  BsLink45Deg,
   BsXCircle
 } from "react-icons/bs";
 import { fetchAgentDashboard, fetchAgentStatement } from "../../api/agentApi";
@@ -136,6 +138,43 @@ const RecentBookings = ({ bookings = [] }) => (
   </Card>
 );
 
+const ReferralCard = ({ agent = {} }) => {
+  const [copied, setCopied] = useState(false);
+  const referralUrl = String(agent.referralUrl || "");
+
+  if (!referralUrl) return null;
+
+  const copyReferralUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(referralUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <Card className="agent-referral-card">
+      <Card.Body>
+        <div>
+          <span className="agent-referral-icon"><BsLink45Deg /></span>
+          <div>
+            <h5>Referral link</h5>
+            <p>Share this link to credit bookings to your agent account.</p>
+          </div>
+        </div>
+        <div className="agent-referral-copy-row">
+          <code>{referralUrl}</code>
+          <Button type="button" variant="outline-primary" onClick={copyReferralUrl} aria-label="Copy referral link">
+            <BsCopy /> {copied ? "Copied" : "Copy"}
+          </Button>
+        </div>
+      </Card.Body>
+    </Card>
+  );
+};
+
 const AgentDashboardPage = () => {
   const [dashboard, setDashboard] = useState(null);
   const [statement, setStatement] = useState(null);
@@ -188,6 +227,8 @@ const AgentDashboardPage = () => {
         <MetricCard label="Unpaid Commission" value={formatCurrency(dashboard?.summary?.unpaidCommission || 0, "USD")} delta="Pending payout" tone="orange" icon={metricIcons.unpaid} />
         <MetricCard label="Total Bookings (This Month)" value={(dashboard?.bookings || []).length} delta="+15% from last month" tone="teal" icon={metricIcons.total} />
       </div>
+
+      <ReferralCard agent={dashboard?.agent || {}} />
 
       <div className="agent-dashboard-grid">
         <div>

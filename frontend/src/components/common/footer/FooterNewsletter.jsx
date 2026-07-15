@@ -1,19 +1,36 @@
 import { useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import { BsEnvelopePaper } from "react-icons/bs";
+import { captureMarketingLead } from "../../../api/marketingApi";
 
 const FooterNewsletter = () => {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!email.trim()) {
       return;
     }
 
-    setSubscribed(true);
-    setEmail("");
+    setSubmitting(true);
+    setError("");
+    try {
+      await captureMarketingLead({
+        email: email.trim(),
+        stage: "newsletter",
+        source: "footer_newsletter",
+        newsletterConsent: true
+      });
+      setSubscribed(true);
+      setEmail("");
+    } catch (requestError) {
+      setError(requestError.message || "Could not save your subscription. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -39,8 +56,8 @@ const FooterNewsletter = () => {
               aria-label="Newsletter email"
             />
           </div>
-          <Button type="submit" className="premium-footer-newsletter-btn text-white">
-            Subscribe
+          <Button type="submit" className="premium-footer-newsletter-btn text-white" disabled={submitting}>
+            {submitting ? "Saving..." : "Subscribe"}
           </Button>
         </Form>
         {subscribed ? (
@@ -48,6 +65,7 @@ const FooterNewsletter = () => {
             Thank you. You are subscribed for Zanzibar updates.
           </p>
         ) : null}
+        {error ? <p className="premium-footer-newsletter-success is-error" role="alert">{error}</p> : null}
       </div>
     </section>
   );

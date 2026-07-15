@@ -5,8 +5,34 @@ const AuditLog = require("../../models/AuditLog");
 const AgentPayoutRequest = require("../../models/AgentPayoutRequest");
 const AppError = require("../../utils/AppError");
 const mongoose = require("mongoose");
+const crypto = require("crypto");
+const { env } = require("../../config/env");
 
 const money = (value = 0) => Number(Number(value || 0).toFixed(2));
+
+const createReferralCode = (companyName = "") => {
+  const prefix = String(companyName || "RISER")
+    .replace(/[^a-z0-9]/gi, "")
+    .toUpperCase()
+    .slice(0, 8) || "RISER";
+  return `${prefix}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+};
+
+const ensureReferralCode = async (agent) => {
+  if (agent?.referralCode) return agent;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    agent.referralCode = createReferralCode(agent.companyName);
+    try {
+      await agent.save();
+      return agent;
+    } catch (error) {
+      if (error?.code !== 11000 || attempt === 4) throw error;
+    }
+  }
+
+  return agent;
+};
 
 const maskAccount = (value = "") => {
   const text = String(value || "").trim();
@@ -34,6 +60,8 @@ const buildAgentPublicProfile = (agent = {}) => ({
   approvalStatus: agent.approvalStatus || "approved",
   termsAcceptedAt: agent.termsAcceptedAt || null,
   termsVersion: agent.termsVersion || "",
+  referralCode: agent.referralCode || "",
+  referralUrl: agent.referralCode ? `${String(env.FRONTEND_URL || "").replace(/\/$/, "")}/?ref=${encodeURIComponent(agent.referralCode)}` : "",
   joinedAt: agent.createdAt
 });
 
@@ -73,7 +101,8 @@ const createAgent = async (payload) => {
     commissionPercent: payload.commissionPercent || null,
     productCommissionOverrides: payload.productCommissionOverrides || [],
     optionCommissionOverrides: payload.optionCommissionOverrides || [],
-    notes: payload.notes || ""
+    notes: payload.notes || "",
+    referralCode: createReferralCode(payload.companyName)
   });
 
   return agent.toObject();
@@ -86,6 +115,8 @@ const listAgents = async () => {
 const getAgentDashboard = async (agentId) => {
   const agentObjectId = new mongoose.Types.ObjectId(agentId);
   const today = new Date().toISOString().slice(0, 10);
+  const agent = await ensureReferralCode(await Agent.findById(agentId));
+  if (!agent) throw new AppError("Agent not found", 404, "AGENT_NOT_FOUND");
 
   const [bookings, commissions, commissionSummary, todayBookings] = await Promise.all([
     Booking.find({ agentId })
@@ -130,6 +161,8 @@ const getAgentDashboard = async (agentId) => {
     .reduce((sum, row) => sum + Number(row.commissionAmount || 0), 0);
 
   return {
+    agent: buildAgentPublicProfile(agent.toObject()),
+    agentName: agent.fullName,
     summary: {
       ...totals,
       totalSales: money(totals.totalSales),
@@ -431,12 +464,12 @@ const acceptTerms = async (agentId, version = "2026-07") => {
 };
 
 const getAgentProfile = async (agentId) => {
-  const agent = await Agent.findById(agentId).lean();
+  const agent = await ensureReferralCode(await Agent.findById(agentId));
   if (!agent) {
     throw new AppError("Agent not found", 404, "AGENT_NOT_FOUND");
   }
 
-  return buildAgentPublicProfile(agent);
+  return buildAgentPublicProfile(agent.toObject());
 };
 
 const updateAgentProfile = async (agentId, payload = {}) => {

@@ -1,7 +1,11 @@
 import { Container, Nav, Navbar } from "react-bootstrap";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Footer from "../components/common/footer/Footer";
 import FloatingWhatsAppButton from "../components/common/footer/FloatingWhatsAppButton";
+import { BRAND } from "../config/brand";
+import { persistMarketingAttribution } from "../utils/marketingAttribution";
+import AnalyticsTracker from "../components/common/AnalyticsTracker";
 
 const PublicLayout = () => {
   const location = useLocation();
@@ -9,8 +13,13 @@ const PublicLayout = () => {
     location.pathname
   );
 
+  useEffect(() => {
+    persistMarketingAttribution(location.search);
+  }, [location.search]);
+
   return (
     <div className={`app-shell ${isCheckoutRoute ? "is-checkout-route" : ""}`.trim()}>
+      <AnalyticsTracker />
       <Navbar expand="lg" className="public-nav py-3">
         <Container>
           <Navbar.Brand as={Link} to="/" className="brand-mark fs-4">
@@ -37,7 +46,7 @@ const PublicLayout = () => {
         <Outlet />
       </main>
       <Footer />
-      <FloatingWhatsAppButton href="https://wa.me/255777123456" />
+      {BRAND.whatsappHref ? <FloatingWhatsAppButton href={BRAND.whatsappHref} /> : null}
     </div>
   );
 };

@@ -4,9 +4,9 @@ const FooterBottom = () => (
   <section className="premium-footer-bottom">
     <p>(c) {new Date().getFullYear()} Riser Tours & Safaris Zanzibar. All rights reserved.</p>
     <div className="premium-footer-bottom-links">
-      <Link to="/tours">Privacy</Link>
-      <Link to="/tours">Terms</Link>
-      <Link to="/my-booking">Support</Link>
+      <Link to="/privacy">Privacy</Link>
+      <Link to="/terms">Terms</Link>
+      <a href="mailto:info@risertoursandsafaris.co.tz">Support</a>
     </div>
   </section>
 );

@@ -1,5 +1,5 @@
-import { PAYMENT_METHODS } from "../../utils/paymentMethods";
 import { BsLock } from "react-icons/bs";
+import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 
 const PaymentMethodSelector = ({
   selectedMethod = "pesapal",
@@ -8,8 +8,11 @@ const PaymentMethodSelector = ({
   className = "",
   inputName = "paymentMethod",
   titleId = "payment-method-title"
-}) => (
-  <section className={`payment-method-card ${className}`.trim()} aria-labelledby={titleId}>
+}) => {
+  const { availableProviders, loading, error } = usePaymentProviders();
+
+  return (
+    <section className={`payment-method-card ${className}`.trim()} aria-labelledby={titleId}>
     <div className="payment-method-head">
       <h4 id={titleId}>
         <span className="payment-method-head-icon">
@@ -19,8 +22,11 @@ const PaymentMethodSelector = ({
       </h4>
     </div>
 
-    <div className="payment-method-grid" role="radiogroup" aria-label="Payment method">
-      {PAYMENT_METHODS.map((method) => {
+    {loading ? <p className="payment-method-status" role="status">Checking secure payment methods...</p> : null}
+    {error ? <p className="payment-method-status is-error" role="alert">{error}</p> : null}
+    {!loading && !availableProviders.length ? <p className="payment-method-status is-error" role="alert">No secure payment method is currently available. Please contact support.</p> : null}
+    {availableProviders.length ? <div className="payment-method-grid" role="radiogroup" aria-label="Payment method">
+      {availableProviders.map((method) => {
         const isSelected = selectedMethod === method.id;
         const isDisabled = disabled || !method.enabled;
 
@@ -54,8 +60,9 @@ const PaymentMethodSelector = ({
           </label>
         );
       })}
-    </div>
-  </section>
-);
+    </div> : null}
+    </section>
+  );
+};
 
 export default PaymentMethodSelector;

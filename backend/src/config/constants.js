@@ -18,7 +18,9 @@ const PAYMENT_STATUS = {
   PARTIAL: "partial",
   PAID: "paid",
   FAILED: "failed",
-  REFUNDED: "refunded"
+  REFUNDED: "refunded",
+  PARTIALLY_REFUNDED: "partially_refunded",
+  OVERPAID: "overpaid"
 };
 
 module.exports = {

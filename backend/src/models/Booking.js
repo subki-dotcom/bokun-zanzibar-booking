@@ -78,6 +78,16 @@ const bookingSchema = new mongoose.Schema(
       name: { type: String, default: "Guest" }
     },
     agentId: { type: mongoose.Schema.Types.ObjectId, ref: "Agent", default: null },
+    marketing: {
+      referralCode: { type: String, default: "" },
+      utmSource: { type: String, default: "" },
+      utmMedium: { type: String, default: "" },
+      utmCampaign: { type: String, default: "" },
+      utmTerm: { type: String, default: "" },
+      utmContent: { type: String, default: "" },
+      landingPage: { type: String, default: "" },
+      referrer: { type: String, default: "" }
+    },
     paymentStatus: {
       type: String,
       enum: Object.values(PAYMENT_STATUS),

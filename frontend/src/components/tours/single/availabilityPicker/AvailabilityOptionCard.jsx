@@ -1,7 +1,6 @@
 import { Button } from "react-bootstrap";
 import { BsArrowRight, BsCheckCircleFill, BsGeoAlt, BsTranslate, BsTruck, BsCashCoin } from "react-icons/bs";
 import { formatCurrency, toPlainText, truncateText } from "../../../../utils/formatters";
-import TimeSlotChips from "./TimeSlotChips";
 
 const normalizeTimeToken = (value = "") => {
   const token = String(value || "").trim();
@@ -40,6 +39,7 @@ const AvailabilityOptionCard = ({
   option = {},
   selected = false,
   selectedTime = "",
+  selectedTimeSlot = null,
   badge = "",
   onSelectOption,
   onChangeTime,
@@ -54,24 +54,43 @@ const AvailabilityOptionCard = ({
   const currency = option?.liveAvailability?.currency || option?.currency || "USD";
   const slots = (option?.liveAvailability?.slots || [])
     .filter((slot) => slot?.status === "available" || slot?.status === "limited")
-    .map((slot) => ({
-      time: normalizeTimeToken(slot?.time),
-      capacityLeft: Number(slot?.capacityLeft || 0)
-    }))
-    .filter((slot) => slot.time);
+    .map((slot, index) => {
+      const time = normalizeTimeToken(slot?.time);
+      const capacityLeft = Number(slot?.capacityLeft);
+      const startTimeId = String(slot?.startTimeId || "").trim();
 
-  const fallbackTime =
-    normalizeTimeToken(option?.liveAvailability?.firstAvailableStartTime) ||
-    normalizeTimeToken(option?.liveAvailability?.cheapestStartTime) ||
-    "";
-  const effectiveTime = normalizeTimeToken(selectedTime) || slots[0]?.time || fallbackTime;
+      return {
+        ...slot,
+        time,
+        startTimeId,
+        capacityLeft,
+        selectionKey: `${startTimeId || "time"}:${time}:${index}`
+      };
+    })
+    .filter((slot) => slot.time && Number.isFinite(slot.capacityLeft) && slot.capacityLeft > 0);
+  const normalizedSelectedTime = normalizeTimeToken(selectedTime);
+  const selectedSlot =
+    slots.find((slot) => {
+      const selectedStartTimeId = String(selectedTimeSlot?.startTimeId || "").trim();
+      if (selectedStartTimeId) {
+        return selectedStartTimeId === slot.startTimeId;
+      }
+
+      return slot.time === normalizedSelectedTime;
+    }) || null;
+  const selectedSlotKey = selectedSlot?.selectionKey || "";
+  const startTimeSelectId = `available-start-time-${String(option?.bokunOptionId || option?.name || "option")
+    .replace(/[^a-z0-9_-]/gi, "-")
+    .toLowerCase()}`;
 
   const handleContinue = () => {
-    onSelectOption?.(option);
-    if (effectiveTime) {
-      onChangeTime?.(option?.bokunOptionId || "", effectiveTime);
+    if (!selectedSlot) {
+      return;
     }
-    onContinue?.(option, effectiveTime);
+
+    onSelectOption?.(option);
+    onChangeTime?.(option?.bokunOptionId || "", selectedSlot);
+    onContinue?.(option, selectedSlot.time, selectedSlot);
   };
 
   return (
@@ -114,22 +133,47 @@ const AvailabilityOptionCard = ({
       </div>
 
       <div className="availability-option-times">
-        <div className="availability-option-times-label">Available start times</div>
-        <TimeSlotChips
-          slots={slots}
-          value={effectiveTime}
-          onChange={(time) => {
+        <label className="availability-option-times-label" htmlFor={startTimeSelectId}>
+          Available start times
+        </label>
+        <select
+          id={startTimeSelectId}
+          className="availability-start-time-select"
+          value={selectedSlotKey}
+          onChange={(event) => {
+            const nextSlot = slots.find((slot) => slot.selectionKey === event.target.value) || null;
             onSelectOption?.(option);
-            onChangeTime?.(option?.bokunOptionId || "", time);
+            onChangeTime?.(option?.bokunOptionId || "", nextSlot);
           }}
-        />
+          disabled={!slots.length}
+          aria-describedby={!slots.length ? `${startTimeSelectId}-status` : undefined}
+        >
+          <option value="">{slots.length ? "Select start time" : "No start times available"}</option>
+          {slots.map((slot) => {
+            const capacityLabel = slot.capacityLeft >= 1000 ? "Available" : `${slot.capacityLeft} left`;
+            return (
+              <option key={slot.selectionKey} value={slot.selectionKey}>
+                {slot.time} - {capacityLabel}
+              </option>
+            );
+          })}
+        </select>
+        {!slots.length ? (
+          <p id={`${startTimeSelectId}-status`} className="availability-start-time-status" role="status">
+            No bookable start times are available for this option.
+          </p>
+        ) : null}
       </div>
 
       <div className="availability-option-footer">
         <Button variant="outline-secondary" className="availability-option-select-btn" onClick={() => onSelectOption?.(option)}>
           Select option
         </Button>
-        <Button className="premium-btn text-white availability-option-continue-btn" onClick={handleContinue}>
+        <Button
+          className="premium-btn text-white availability-option-continue-btn"
+          onClick={handleContinue}
+          disabled={!selectedSlot}
+        >
           Continue
           <BsArrowRight className="ms-2" />
         </Button>

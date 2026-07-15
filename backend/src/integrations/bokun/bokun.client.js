@@ -223,7 +223,8 @@ const request = async ({ method, path, payload = null, requestId = "" }) => {
     method,
     url: path,
     headers: {
-      "x-request-id": requestId
+      "x-request-id": requestId,
+      ...(payload?.idempotencyKey ? { "Idempotency-Key": String(payload.idempotencyKey) } : {})
     }
   };
 

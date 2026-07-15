@@ -21,6 +21,8 @@ import AdminAgentsPage from "../pages/admin/AdminAgentsPage";
 import AdminPaymentsPage from "../pages/admin/AdminPaymentsPage";
 import AdminRecoveryPage from "../pages/admin/AdminRecoveryPage";
 import SyncLogsPage from "../pages/admin/SyncLogsPage";
+import AdminBookingRequestsPage from "../pages/admin/AdminBookingRequestsPage";
+import AdminBookingRequestDetailsPage from "../pages/admin/AdminBookingRequestDetailsPage";
 import AgentDashboardPage from "../pages/agent/AgentDashboardPage";
 import AgentProductsPage from "../pages/agent/AgentProductsPage";
 import AgentNewBookingPage from "../pages/agent/AgentNewBookingPage";
@@ -40,6 +42,7 @@ import AgentNotificationsPage from "../pages/agent/AgentNotificationsPage";
 import AgentActivityPage from "../pages/agent/AgentActivityPage";
 import AgentReportsPage from "../pages/agent/AgentReportsPage";
 import AgentDraftsPage from "../pages/agent/AgentDraftsPage";
+import LegalPage from "../pages/public/LegalPage";
 
 const AdminLayout = () => <DashboardLayout portal="admin" />;
 const AgentLayout = () => <DashboardLayout portal="agent" />;
@@ -62,6 +65,8 @@ const AppRoutes = () => {
         <Route path="/invoice/:bookingReference" element={<InvoiceDetailsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/agent-register" element={<AgentRegisterPage />} />
+        <Route path="/privacy" element={<LegalPage />} />
+        <Route path="/terms" element={<LegalPage />} />
       </Route>
 
       <Route
@@ -75,6 +80,8 @@ const AppRoutes = () => {
         <Route path="/admin/bookings" element={<AdminBookingsPage />} />
         <Route path="/admin/agents" element={<AdminAgentsPage />} />
         <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+        <Route path="/admin/booking-requests" element={<AdminBookingRequestsPage />} />
+        <Route path="/admin/booking-requests/:requestId" element={<AdminBookingRequestDetailsPage />} />
         <Route path="/admin/recovery" element={<AdminRecoveryPage />} />
         <Route path="/admin/sync-logs" element={<SyncLogsPage />} />
       </Route>

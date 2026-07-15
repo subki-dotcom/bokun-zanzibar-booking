@@ -20,6 +20,21 @@ export const fetchPerformanceReport = async () => {
   return response.data.data;
 };
 
+export const fetchConversionFunnel = async () => {
+  const response = await axiosClient.get("/reports/conversion-funnel");
+  return response.data.data;
+};
+
+export const fetchOperationalAlerts = async () => {
+  const response = await axiosClient.get("/reports/operational-alerts");
+  return response.data.data;
+};
+
+export const fetchGrowthPerformance = async () => {
+  const response = await axiosClient.get("/reports/growth-performance");
+  return response.data.data;
+};
+
 export const fetchCommissionSummary = async () => {
   const response = await axiosClient.get("/commissions/summary");
   return response.data.data;

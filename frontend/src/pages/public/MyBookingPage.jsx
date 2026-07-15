@@ -18,6 +18,7 @@ import {
 import { fetchBookingByReference } from "../../api/bookingsApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
+import ManageBookingCard from "../../components/bookingRequests/ManageBookingCard";
 import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
 
 const formatDate = (value = "") => {
@@ -143,6 +144,8 @@ const BookingDetails = ({ booking }) => {
               </div>
             </Card.Body>
           </Card>
+
+          <ManageBookingCard booking={booking} />
         </Col>
 
         <Col lg={4}>

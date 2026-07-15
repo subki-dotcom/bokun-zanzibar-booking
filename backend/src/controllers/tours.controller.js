@@ -65,6 +65,18 @@ const checkOptionsAvailability = asyncHandler(async (req, res) => {
   });
 });
 
+const searchToursByAvailability = asyncHandler(async (req, res) => {
+  const data = await toursService.searchToursByAvailability({
+    ...req.validated.body,
+    requestId: req.requestId
+  });
+
+  return successResponse(res, {
+    message: "Tour availability search completed",
+    data
+  });
+});
+
 const syncProducts = asyncHandler(async (req, res) => {
   const result = await toursService.syncProducts(req.requestId, {
     id: req.auth?.id || null,
@@ -83,5 +95,6 @@ module.exports = {
   getTourBySlug,
   getTourOptions,
   checkOptionsAvailability,
+  searchToursByAvailability,
   syncProducts
 };

@@ -3,6 +3,7 @@ const bookingController = require("../controllers/bookings.controller");
 const validateRequest = require("../middleware/validateRequest");
 const { authenticate } = require("../middleware/auth");
 const { authorize } = require("../middleware/rbac");
+const { bookingRequestWriteLimiter } = require("../middleware/rateLimiter");
 const {
   quoteSchema,
   createBookingSchema,
@@ -12,6 +13,8 @@ const {
   retryFinalizationSchema,
   reconcileFinalizationsSchema
 } = require("../validators/bookings.validation");
+const bookingRequestsController = require("../controllers/bookingRequests.controller");
+const bookingRequestSchemas = require("../validators/bookingRequests.validation");
 
 const router = express.Router();
 
@@ -25,6 +28,9 @@ const optionalAuth = (req, res, next) => {
 
 router.post("/quote", optionalAuth, validateRequest(quoteSchema), bookingController.quote);
 router.post("/create", optionalAuth, validateRequest(createBookingSchema), bookingController.create);
+router.post("/:bookingId/requests", bookingRequestWriteLimiter, validateRequest(bookingRequestSchemas.submitBookingRequestSchema), bookingRequestsController.submit);
+router.get("/:bookingId/cancellation-estimate", validateRequest(bookingRequestSchemas.cancellationEstimateSchema), bookingRequestsController.cancellationEstimate);
+router.get("/:id/requests", validateRequest(bookingRequestSchemas.customerRequestQuerySchema), bookingRequestsController.listCustomer);
 router.get(
   "/recent",
   authenticate,

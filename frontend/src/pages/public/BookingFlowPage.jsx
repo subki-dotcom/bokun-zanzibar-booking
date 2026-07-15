@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button, Card } from "react-bootstrap";
 import { BsArrowLeft, BsArrowRight } from "react-icons/bs";
@@ -11,6 +11,7 @@ import {
 } from "../../api/bookingsApi";
 import { fetchBokunCountries, fetchBokunPickupPlaces, fetchBokunProductDetails } from "../../api/bokunApi";
 import { createDpoPayment, createPaypalPayment, createPesapalPayment } from "../../api/paymentsApi";
+import { captureMarketingLead } from "../../api/marketingApi";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import BookingFlowLayout from "../../components/booking/BookingFlowLayout";
@@ -25,7 +26,8 @@ import ConfirmationStep from "../../components/booking/ConfirmationStep";
 import SmartCheckoutInitializer from "../../components/booking/SmartCheckoutInitializer";
 import PaymentMethodSelector from "../../components/booking/PaymentMethodSelector";
 import { isCustomerSummaryValid } from "../../components/booking/CustomerSummaryCard";
-import { getPaymentMethodLabel, isPaymentMethodEnabled } from "../../utils/paymentMethods";
+import { getPaymentMethodLabel } from "../../utils/paymentMethods";
+import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 import {
   STEP_IDS,
   buildSmartCheckoutSteps,
@@ -39,6 +41,8 @@ import {
   readBookingSession,
   saveBookingSession
 } from "../../utils/bookingSession";
+import { buildMarketingContext } from "../../utils/marketingAttribution";
+import { trackAnalyticsEvent } from "../../utils/analytics";
 
 const normalizeTicketCategory = (value = "") => {
   const token = String(value || "").toLowerCase();
@@ -236,7 +240,24 @@ const BookingFlowInner = ({ portal = "public" }) => {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fallbackPaymentMethod, setFallbackPaymentMethod] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("pesapal");
+  const {
+    availableProviders,
+    loading: paymentProvidersLoading,
+    isProviderEnabled,
+    getProvider
+  } = usePaymentProviders();
+
+  useEffect(() => {
+    if (
+      !paymentProvidersLoading &&
+      availableProviders.length > 0 &&
+      !isProviderEnabled(selectedPaymentMethod)
+    ) {
+      setSelectedPaymentMethod(availableProviders[0].id);
+    }
+  }, [availableProviders, isProviderEnabled, paymentProvidersLoading, selectedPaymentMethod]);
 
   const querySeed = useMemo(() => {
     const optionId = String(searchParams.get("option") || "").trim();
@@ -253,7 +274,8 @@ const BookingFlowInner = ({ portal = "public" }) => {
       startTime,
       rateId,
       participants,
-      pax: participants.length ? buildPaxFromParticipants(participants) : { adults, children: 0, infants: 0 }
+      pax: participants.length ? buildPaxFromParticipants(participants) : { adults, children: 0, infants: 0 },
+      marketing: buildMarketingContext(searchParams.toString())
     };
   }, [searchParams]);
 
@@ -262,9 +284,9 @@ const BookingFlowInner = ({ portal = "public" }) => {
   const isReviewStep = currentStepId === STEP_IDS.REVIEW;
   const isCustomerStep = currentStepId === STEP_IDS.CUSTOMER;
   const customerReady = isCustomerSummaryValid(state.customer || {});
-  const selectedPaymentLabel = getPaymentMethodLabel(selectedPaymentMethod);
-  const paymentMethodEnabled = isPaymentMethodEnabled(selectedPaymentMethod);
-  const checkoutConfirmDisabled = !customerReady || !state.quote?.quoteToken || !paymentMethodEnabled;
+  const selectedPaymentLabel = getProvider(selectedPaymentMethod)?.title || getPaymentMethodLabel(selectedPaymentMethod);
+  const paymentMethodEnabled = isProviderEnabled(selectedPaymentMethod);
+  const checkoutConfirmDisabled = !customerReady || !state.quote?.quoteToken || paymentProvidersLoading || !paymentMethodEnabled;
   const confirmPaymentLabel = `Pay Securely with ${selectedPaymentLabel}`;
   const loadingPaymentLabel = `Redirecting to ${selectedPaymentLabel}...`;
 
@@ -354,7 +376,8 @@ const BookingFlowInner = ({ portal = "public" }) => {
         priceCategoryParticipants:
           overrides.priceCategoryParticipants ?? state.priceCategoryParticipants ?? [],
         extras: overrides.extras ?? state.extras ?? [],
-        promoCode: overrides.promoCode ?? state.promoCode ?? ""
+        promoCode: overrides.promoCode ?? state.promoCode ?? "",
+        marketing: overrides.marketing ?? state.marketing ?? {}
       };
 
       const catalogId =
@@ -484,7 +507,8 @@ const BookingFlowInner = ({ portal = "public" }) => {
         bookingResult: null,
         tripDetailsCompleted: true,
         availabilityChecked: false,
-        sourceChannel
+        sourceChannel,
+        marketing: session?.marketing || querySeed.marketing || {}
       });
 
       const availabilityPayload = {
@@ -555,6 +579,12 @@ const BookingFlowInner = ({ portal = "public" }) => {
         availabilityChecked: true
       });
 
+      trackAnalyticsEvent("begin_checkout", {
+        currency: quoteResult?.pricing?.currency || "USD",
+        value: Number(quoteResult?.pricing?.finalPayable || 0),
+        items: [{ item_id: checkoutTour.bokunProductId, item_name: checkoutTour.title, quantity: 1 }]
+      });
+
       setCompletedStepIds([STEP_IDS.TRIP_DETAILS]);
       setCurrentStepId(firstActionableStep);
 
@@ -577,6 +607,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
         },
         selectedExtras: quoteResult?.extras || seededExtras,
         availabilityQuote: quoteResult,
+        marketing: session?.marketing || querySeed.marketing || {},
         tripDetailsCompleted: true,
         availabilityChecked: true
       });
@@ -657,6 +688,30 @@ const BookingFlowInner = ({ portal = "public" }) => {
       return;
     }
 
+    void captureMarketingLead({
+      email: state.customer.email,
+      firstName: state.customer.firstName,
+      lastName: state.customer.lastName,
+      phone: state.customer.phone,
+      stage: "checkout_customer",
+      source: sourceChannel,
+      newsletterConsent: Boolean(state.customer.marketingConsent),
+      recoveryConsent: Boolean(state.customer.marketingConsent),
+      context: {
+        productSlug: tour?.slug || "",
+        optionId: state.option?.bokunOptionId || "",
+        travelDate: state.travelDate || "",
+        amount: Number(quote?.pricing?.finalPayable || 0),
+        currency: quote?.pricing?.currency || "USD"
+      }
+    }).catch(() => null);
+
+    trackAnalyticsEvent("add_shipping_info", {
+      currency: quote?.pricing?.currency || "USD",
+      value: Number(quote?.pricing?.finalPayable || 0),
+      items: [{ item_id: tour?.bokunProductId || "", item_name: tour?.title || "", quantity: 1 }]
+    });
+
     markStepCompleted(STEP_IDS.CUSTOMER);
     handleGoNext();
   };
@@ -669,12 +724,13 @@ const BookingFlowInner = ({ portal = "public" }) => {
     }
 
     if (!paymentMethodEnabled) {
-      setError(`${selectedPaymentLabel} is not configured yet. Please choose Pesapal or DPO.`);
+      setError(`${selectedPaymentLabel} is not available right now. Please choose another payment method.`);
       return;
     }
 
     setSubmitLoading(true);
     setError("");
+    setFallbackPaymentMethod("");
 
     try {
       const totalAmount = Number(
@@ -701,6 +757,30 @@ const BookingFlowInner = ({ portal = "public" }) => {
         currency
       });
 
+      trackAnalyticsEvent("add_payment_info", {
+        currency,
+        value: totalAmount,
+        payment_type: selectedPaymentMethod,
+        items: [{ item_id: tour?.bokunProductId || "", item_name: tour?.title || "", quantity: 1 }]
+      });
+
+      void captureMarketingLead({
+        email: state.customer.email,
+        firstName: state.customer.firstName,
+        lastName: state.customer.lastName,
+        phone: state.customer.phone,
+        stage: "checkout_payment_started",
+        source: sourceChannel,
+        newsletterConsent: Boolean(state.customer.marketingConsent),
+        recoveryConsent: Boolean(state.customer.marketingConsent),
+        context: {
+          bookingReference: result.bookingReference || "",
+          productSlug: tour?.slug || "",
+          amount: totalAmount,
+          currency
+        }
+      }).catch(() => null);
+
       saveBookingSession({
         ...(readBookingSession() || {}),
         payment: {
@@ -724,6 +804,8 @@ const BookingFlowInner = ({ portal = "public" }) => {
       }
     } catch (err) {
       setError(err.message || `${selectedPaymentLabel} payment could not be initialized`);
+      const fallback = availableProviders.find((provider) => provider.id !== selectedPaymentMethod)?.id || "";
+      setFallbackPaymentMethod(fallback);
       setSubmitLoading(false);
       return;
     } finally {
@@ -732,6 +814,21 @@ const BookingFlowInner = ({ portal = "public" }) => {
         setSubmitLoading(false);
       }
     }
+  };
+
+  const handleApplyPromo = async (promoCode) => {
+    const normalizedCode = String(promoCode || "").trim().toUpperCase();
+    updateFlow({ promoCode: normalizedCode });
+    const quote = await refreshLiveQuote({ promoCode: normalizedCode });
+
+    if (!quote) {
+      return null;
+    }
+
+    return {
+      applied: Boolean(quote?.pricing?.offer),
+      name: quote?.pricing?.offer?.name || ""
+    };
   };
 
   const handleInitializerError = (err) => {
@@ -744,17 +841,36 @@ const BookingFlowInner = ({ portal = "public" }) => {
     inputName = "paymentMethod",
     titleId = "payment-method-title"
   ) => (
-    <PaymentMethodSelector
-      className={className}
-      inputName={inputName}
-      titleId={titleId}
-      selectedMethod={selectedPaymentMethod}
-      onChange={(method) => {
-        setSelectedPaymentMethod(method);
-        setError("");
-      }}
-      disabled={submitLoading}
-    />
+    <>
+      <PaymentMethodSelector
+        className={className}
+        inputName={inputName}
+        titleId={titleId}
+        selectedMethod={selectedPaymentMethod}
+        onChange={(method) => {
+          setSelectedPaymentMethod(method);
+          setError("");
+          setFallbackPaymentMethod("");
+        }}
+        disabled={submitLoading}
+      />
+      {fallbackPaymentMethod ? (
+        <div className="payment-fallback-notice" role="status">
+          <span>{selectedPaymentLabel} could not start this payment. You can choose another secure provider.</span>
+          <Button
+            size="sm"
+            variant="outline-success"
+            onClick={() => {
+              setSelectedPaymentMethod(fallbackPaymentMethod);
+              setFallbackPaymentMethod("");
+              setError("");
+            }}
+          >
+            Try {getProvider(fallbackPaymentMethod)?.title || getPaymentMethodLabel(fallbackPaymentMethod)}
+          </Button>
+        </div>
+      ) : null}
+    </>
   );
 
   const renderReviewOrderSidebar = (className = "") => (
@@ -840,6 +956,8 @@ const BookingFlowInner = ({ portal = "public" }) => {
           onConfirm={handleCreateBooking}
           onEditCustomer={() => setCurrentStepId(STEP_IDS.CUSTOMER)}
           onEditTrip={handleChangeTripDetails}
+          onApplyPromo={handleApplyPromo}
+          promoLoading={quoteLoading}
           paymentMethodSelector={renderPaymentMethodSelector(
             "review-payment-desktop",
             "paymentMethodDesktop",

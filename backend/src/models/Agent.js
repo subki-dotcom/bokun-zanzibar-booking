@@ -20,6 +20,7 @@ const agentSchema = new mongoose.Schema(
       default: "partner"
     },
     profilePhotoUrl: { type: String, default: "" },
+    referralCode: { type: String, unique: true, sparse: true, uppercase: true, trim: true, index: true },
     commissionPercent: { type: Number, default: null },
     productCommissionOverrides: [
       {

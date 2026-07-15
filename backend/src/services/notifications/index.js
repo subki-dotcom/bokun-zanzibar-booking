@@ -1,5 +1,6 @@
 const AuditLog = require("../../models/AuditLog");
 const logger = require("../../config/logger");
+const emailService = require("../email");
 
 const recordNotificationEvent = async ({
   booking,
@@ -43,49 +44,79 @@ const recordNotificationEvent = async ({
   });
 };
 
-const notifyPaymentOrderCreated = ({ booking, provider, requestId }) =>
-  recordNotificationEvent({
+const notifyWithEmail = async ({ booking, provider, requestId, action, channel, reason, templateKey, metadata = {} }) => {
+  const audit = await recordNotificationEvent({
     booking,
+    action,
+    channel,
+    reason,
+    requestId,
+    metadata: { provider, ...metadata }
+  });
+  const delivery = templateKey ? await emailService.sendBookingEmailOnce({ booking, templateKey, requestId }) : null;
+  return { audit, delivery };
+};
+
+const notifyPaymentOrderCreated = ({ booking, provider, requestId }) =>
+  notifyWithEmail({
+    booking,
+    provider,
+    requestId,
     action: "notification_payment_order_created",
     channel: "payment",
     reason: "Payment order created. Customer should complete hosted checkout.",
-    requestId,
-    metadata: { provider }
+    templateKey: "payment_checkout"
   });
 
 const notifyPaymentVerified = ({ booking, provider, requestId }) =>
-  recordNotificationEvent({
+  notifyWithEmail({
     booking,
+    provider,
     action: "notification_payment_verified",
     channel: "payment",
     reason: "Payment verified by payment provider.",
     requestId,
-    metadata: { provider }
+    templateKey: booking?.bokunBookingId ? null : "payment_paid"
   });
 
 const notifyBokunPending = ({ booking, provider, requestId, error = "" }) =>
-  recordNotificationEvent({
+  notifyWithEmail({
     booking,
+    provider,
     action: "notification_bokun_finalization_pending",
     channel: "ops",
     reason: "Payment verified but Bokun confirmation needs retry or admin attention.",
     requestId,
-    metadata: { provider, error }
+    templateKey: "supplier_confirmation_pending",
+    metadata: { error }
   });
 
 const notifyPaymentFailed = ({ booking, provider, requestId, reason = "" }) =>
-  recordNotificationEvent({
+  notifyWithEmail({
     booking,
+    provider,
     action: "notification_payment_failed",
     channel: "payment",
     reason: reason || "Payment failed or was cancelled.",
     requestId,
-    metadata: { provider }
+    templateKey: "payment_failed"
+  });
+
+const notifyBookingConfirmed = ({ booking, provider, requestId }) =>
+  notifyWithEmail({
+    booking,
+    provider,
+    requestId,
+    action: "notification_booking_confirmed",
+    channel: "booking",
+    reason: "Payment and Bokun supplier confirmation completed.",
+    templateKey: "booking_confirmed"
   });
 
 module.exports = {
   notifyPaymentOrderCreated,
   notifyPaymentVerified,
   notifyBokunPending,
-  notifyPaymentFailed
+  notifyPaymentFailed,
+  notifyBookingConfirmed
 };

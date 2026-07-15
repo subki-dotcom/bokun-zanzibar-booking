@@ -44,6 +44,7 @@ const AvailabilityOptionModal = ({
   pax = { adults: 1, children: 0, infants: 0 },
   selectedRateLabel = "",
   selectedStartTimesByOption = {},
+  selectedStartTimeSlotsByOption = {},
   onClose,
   onEditSearch,
   onSelectOption,
@@ -76,6 +77,7 @@ const AvailabilityOptionModal = ({
               badge={resolveBadgeByIndex(index)}
               selected={String(selectedOptionId) === String(option?.bokunOptionId || "")}
               selectedTime={selectedStartTimesByOption[String(option?.bokunOptionId || "")] || ""}
+              selectedTimeSlot={selectedStartTimeSlotsByOption[String(option?.bokunOptionId || "")] || null}
               onSelectOption={onSelectOption}
               onChangeTime={onChangeStartTime}
               onContinue={onContinue}

@@ -13,6 +13,10 @@ const offersRoutes = require("./offers.routes");
 const paymentsRoutes = require("./payments.routes");
 const webhooksRoutes = require("./webhooks.routes");
 const reportsRoutes = require("./reports.routes");
+const marketingRoutes = require("./marketing.routes");
+const reviewsRoutes = require("./reviews.routes");
+const bookingRequestsRoutes = require("./bookingRequests.routes");
+const adminBookingRequestsRoutes = require("./adminBookingRequests.routes");
 
 const router = express.Router();
 
@@ -30,5 +34,9 @@ router.use("/offers", offersRoutes);
 router.use("/payments", paymentsRoutes);
 router.use("/webhooks", webhooksRoutes);
 router.use("/reports", reportsRoutes);
+router.use("/marketing", marketingRoutes);
+router.use("/reviews", reviewsRoutes);
+router.use("/", bookingRequestsRoutes);
+router.use("/admin", adminBookingRequestsRoutes);
 
 module.exports = router;

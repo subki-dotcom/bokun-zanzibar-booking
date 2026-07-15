@@ -1,4 +1,6 @@
 import Card from "react-bootstrap/Card";
+import Form from "react-bootstrap/Form";
+import { useEffect, useState } from "react";
 import {
   BsCalendar3,
   BsCheckCircle,
@@ -113,12 +115,26 @@ const ReviewConfirmStep = ({
   onEditCustomer,
   onEditTrip,
   countries = [],
-  paymentMethodSelector = null
+  paymentMethodSelector = null,
+  onApplyPromo = null,
+  promoLoading = false
 }) => {
   const customer = flowState.customer || {};
   const fullName = `${customer.firstName || ""} ${customer.lastName || ""}`.trim();
   const passengerText = buildPassengerSummary(flowState.priceCategoryParticipants || [], flowState.pax || {});
   const pickupAddress = String(customer.hotelName || "").trim();
+  const [promoCode, setPromoCode] = useState(flowState.promoCode || "");
+  const [promoMessage, setPromoMessage] = useState("");
+
+  useEffect(() => {
+    setPromoCode(flowState.promoCode || "");
+  }, [flowState.promoCode]);
+
+  const applyPromo = async () => {
+    const result = await onApplyPromo?.(promoCode);
+    if (!result) return;
+    setPromoMessage(result.applied ? `Promo applied: ${result.name || "discount added"}.` : "No active promotion matched this code.");
+  };
 
   const bookedRows = [
     {
@@ -198,6 +214,25 @@ const ReviewConfirmStep = ({
       >
         <ReviewRows rows={customerRows} />
       </ReviewSectionCard>
+
+      <Card className="surface-card checkout-promo-card">
+        <Card.Body>
+          <h4>Promo code</h4>
+          <div className="checkout-promo-form">
+            <Form.Control
+              value={promoCode}
+              onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
+              placeholder="Enter promo code"
+              aria-label="Promo code"
+              disabled={promoLoading || submitting}
+            />
+            <button type="button" className="btn btn-outline-success" onClick={applyPromo} disabled={promoLoading || submitting || (!promoCode.trim() && !flowState.promoCode)}>
+              {promoLoading ? "Checking..." : promoCode.trim() ? "Apply" : "Remove"}
+            </button>
+          </div>
+          {promoMessage ? <p className="checkout-promo-message" role="status">{promoMessage}</p> : null}
+        </Card.Body>
+      </Card>
 
       {paymentMethodSelector}
     </div>
