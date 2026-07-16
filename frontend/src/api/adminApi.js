@@ -35,6 +35,11 @@ export const fetchGrowthPerformance = async () => {
   return response.data.data;
 };
 
+export const fetchOperationsOverview = async () => {
+  const response = await axiosClient.get("/reports/operations-overview");
+  return response.data.data;
+};
+
 export const fetchCommissionSummary = async () => {
   const response = await axiosClient.get("/commissions/summary");
   return response.data.data;

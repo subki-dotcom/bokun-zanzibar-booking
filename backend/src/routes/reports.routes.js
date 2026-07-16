@@ -17,5 +17,6 @@ router.get("/performance", authenticate, authorize("super_admin", "admin", "staf
 router.get("/conversion-funnel", authenticate, authorize("super_admin", "admin", "staff"), reportsController.conversionFunnel);
 router.get("/operational-alerts", authenticate, authorize("super_admin", "admin", "staff"), reportsController.operationalAlerts);
 router.get("/growth-performance", authenticate, authorize("super_admin", "admin", "staff"), reportsController.growthPerformance);
+router.get("/operations-overview", authenticate, authorize("super_admin", "admin", "staff"), reportsController.operationsOverview);
 
 module.exports = router;

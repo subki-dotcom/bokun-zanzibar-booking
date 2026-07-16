@@ -40,7 +40,21 @@ const createSignature = ({ dateHeader, method, path }) => {
     .digest("base64");
 };
 
-const shouldMock = env.BOKUN_MOCK_MODE || !isBokunConfigured;
+// Mock data must be explicitly enabled. Falling back silently when live
+// credentials are missing could make a production checkout look available.
+const shouldMock = Boolean(env.BOKUN_MOCK_MODE);
+
+const ensureBokunConfigured = () => {
+  if (isBokunConfigured) {
+    return;
+  }
+
+  throw new AppError(
+    "Bokun is not configured. Set BOKUN_ACCESS_KEY and BOKUN_SECRET_KEY, or explicitly enable BOKUN_MOCK_MODE for local development.",
+    503,
+    "BOKUN_NOT_CONFIGURED"
+  );
+};
 
 const bokunAxios = axios.create({
   baseURL: env.BOKUN_BASE_URL,
@@ -217,6 +231,8 @@ const request = async ({ method, path, payload = null, requestId = "" }) => {
 
     return mockResponse;
   }
+
+  ensureBokunConfigured();
 
   const normalizedMethod = String(method || "get").toLowerCase();
   const requestConfig = {

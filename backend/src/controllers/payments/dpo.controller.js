@@ -41,8 +41,27 @@ const cancel = asyncHandler(async (req, res) => {
   });
 });
 
+const callback = asyncHandler(async (req, res) => {
+  const transactionToken =
+    req.validated.body.TransactionToken ||
+    req.validated.body.transactionToken ||
+    req.validated.query.TransactionToken ||
+    req.validated.query.transactionToken ||
+    "";
+  const data = await dpoService.handlePaymentSuccess({
+    transactionToken,
+    requestId: req.requestId
+  });
+
+  return successResponse(res, {
+    message: "DPO callback verified",
+    data
+  });
+});
+
 module.exports = {
   create,
   success,
-  cancel
+  cancel,
+  callback
 };

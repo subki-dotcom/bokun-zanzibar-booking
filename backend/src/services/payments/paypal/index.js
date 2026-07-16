@@ -58,6 +58,18 @@ const ensurePaypalConfiguration = () => {
   }
 };
 
+const ensurePaypalWebhookConfiguration = () => {
+  ensurePaypalConfiguration();
+
+  if (!shouldMock && !String(env.PAYPAL_WEBHOOK_ID || "").trim()) {
+    throw new AppError(
+      "PayPal webhook is not configured. Set PAYPAL_WEBHOOK_ID before accepting live webhook events.",
+      503,
+      "PAYPAL_WEBHOOK_NOT_CONFIGURED"
+    );
+  }
+};
+
 const requestPaypal = async ({
   method = "get",
   path = "/",
@@ -136,6 +148,61 @@ const getPaypalAccessToken = async (requestId = "") => {
   authTokenCache.expiresAt = Date.now() + Math.max(60, expiresIn - 60) * 1000;
 
   return token;
+};
+
+const paypalHeader = (headers = {}, name = "") => {
+  const normalizedName = String(name || "").toLowerCase();
+  const match = Object.entries(headers).find(([key]) => String(key).toLowerCase() === normalizedName);
+  return String(match?.[1] || "").trim();
+};
+
+const verifyWebhookSignature = async ({ headers = {}, event = {}, requestId = "" } = {}) => {
+  ensurePaypalWebhookConfiguration();
+
+  if (shouldMock) {
+    return true;
+  }
+
+  const payload = {
+    transmission_id: paypalHeader(headers, "paypal-transmission-id"),
+    transmission_time: paypalHeader(headers, "paypal-transmission-time"),
+    cert_url: paypalHeader(headers, "paypal-cert-url"),
+    auth_algo: paypalHeader(headers, "paypal-auth-algo"),
+    transmission_sig: paypalHeader(headers, "paypal-transmission-sig"),
+    webhook_id: String(env.PAYPAL_WEBHOOK_ID || "").trim(),
+    webhook_event: event
+  };
+
+  const missingHeaders = Object.entries(payload)
+    .filter(([key, value]) => key !== "webhook_event" && !value)
+    .map(([key]) => key);
+  if (missingHeaders.length) {
+    throw new AppError(
+      "PayPal webhook signature headers are missing",
+      401,
+      "PAYPAL_WEBHOOK_HEADERS_MISSING",
+      { missingHeaders }
+    );
+  }
+
+  const accessToken = await getPaypalAccessToken(requestId);
+  const verification = await requestPaypal({
+    method: "post",
+    path: "/v1/notifications/verify-webhook-signature",
+    payload,
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    },
+    requestId
+  });
+
+  if (String(verification?.verification_status || "").toUpperCase() !== "SUCCESS") {
+    throw new AppError("PayPal webhook signature is invalid", 401, "PAYPAL_WEBHOOK_SIGNATURE_INVALID", {
+      verificationStatus: verification?.verification_status || "unknown"
+    });
+  }
+
+  return true;
 };
 
 const validateAmountAndCurrency = ({ booking, amount, currency }) => {
@@ -808,8 +875,49 @@ const handlePaymentCancel = async ({ orderId = "", bookingId = "", requestId = "
   };
 };
 
+const resolveWebhookOrderId = (event = {}) => {
+  const resource = event?.resource || {};
+  return String(
+    resource?.supplementary_data?.related_ids?.order_id ||
+      resource?.id ||
+      resource?.invoice_id ||
+      ""
+  ).trim();
+};
+
+const handleWebhookEvent = async ({ event = {}, headers = {}, requestId = "" } = {}) => {
+  await verifyWebhookSignature({ headers, event, requestId });
+
+  const eventType = String(event?.event_type || "").trim().toUpperCase();
+  const orderId = resolveWebhookOrderId(event);
+
+  // Subscribe to CHECKOUT.ORDER.APPROVED in the PayPal dashboard. Capturing
+  // at that point keeps the existing reconciliation and Bokun retry flow intact.
+  if (eventType !== "CHECKOUT.ORDER.APPROVED") {
+    return {
+      accepted: true,
+      ignored: true,
+      eventType,
+      reason: "event_not_handled"
+    };
+  }
+
+  if (!orderId) {
+    throw new AppError("PayPal webhook is missing an order ID", 422, "PAYPAL_WEBHOOK_ORDER_ID_MISSING");
+  }
+
+  const result = await handlePaymentSuccess({ orderId, requestId: requestId || `paypal_webhook_${Date.now()}` });
+  return {
+    accepted: true,
+    eventType,
+    orderId,
+    result
+  };
+};
+
 module.exports = {
   createPayment,
   handlePaymentSuccess,
-  handlePaymentCancel
+  handlePaymentCancel,
+  handleWebhookEvent
 };

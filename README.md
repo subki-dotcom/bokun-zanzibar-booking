@@ -107,6 +107,7 @@ Required backend vars:
 - `PAYPAL_BASE_URL`
 - `PAYPAL_CLIENT_ID`
 - `PAYPAL_CLIENT_SECRET`
+- `PAYPAL_WEBHOOK_ID`
 - `PAYPAL_SUCCESS_URL`
 - `PAYPAL_CANCEL_URL`
 - `PAYPAL_ALLOW_LOCAL_REDIRECTS` (default: `false`)
@@ -494,6 +495,7 @@ Before using live PayPal mode (`PAYPAL_MOCK_MODE=false`):
 1. Set active credentials:
    - `PAYPAL_CLIENT_ID`
    - `PAYPAL_CLIENT_SECRET`
+   - `PAYPAL_WEBHOOK_ID`
 2. Choose the correct API base URL:
    - Sandbox: `PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com`
    - Live: `PAYPAL_BASE_URL=https://api-m.paypal.com`
@@ -501,6 +503,12 @@ Before using live PayPal mode (`PAYPAL_MOCK_MODE=false`):
    - `PAYPAL_SUCCESS_URL=https://<public-domain>/payment-success`
    - `PAYPAL_CANCEL_URL=https://<public-domain>/payment-failure`
 4. Keep callback URLs public unless `PAYPAL_ALLOW_LOCAL_REDIRECTS=true` is intentionally enabled for local tests.
+5. Register `https://<public-backend-domain>/api/payments/paypal/webhook` in the PayPal Developer Dashboard and subscribe to `CHECKOUT.ORDER.APPROVED`.
+
+## Server-to-server Payment Callbacks
+
+- PayPal webhook: `POST /api/payments/paypal/webhook`. The server verifies PayPal's transmission signature using `PAYPAL_WEBHOOK_ID` before it captures an approved order.
+- DPO callback: `GET|POST /api/payments/dpo/callback`. Set `DPO_CALLBACK_URL` to this public endpoint. The callback is only accepted after the backend re-verifies its transaction token with DPO.
 
 ## Notes for Production Hardening
 

@@ -4,6 +4,16 @@ const ProductSnapshot = require("../../models/ProductSnapshot");
 const SyncLog = require("../../models/SyncLog");
 const MarketingLead = require("../../models/MarketingLead");
 const EmailDelivery = require("../../models/EmailDelivery");
+const BookingRequest = require("../../models/BookingRequest");
+const mongoose = require("mongoose");
+const {
+  env,
+  isBokunConfigured,
+  isDpoConfigured,
+  isPesapalConfigured,
+  isPaypalConfigured,
+  isEmailConfigured
+} = require("../../config/env");
 
 const countDistinctLeadStage = async (stage) => {
   const rows = await MarketingLead.aggregate([
@@ -290,6 +300,134 @@ const getGrowthPerformance = async () => {
   return { campaigns, referrals };
 };
 
+const databaseStateLabel = (readyState) => {
+  const labels = {
+    0: "disconnected",
+    1: "connected",
+    2: "connecting",
+    3: "disconnecting"
+  };
+
+  return labels[readyState] || "unknown";
+};
+
+const getOperationsOverview = async () => {
+  const [paidPendingSupplier, retriableFinalizations, failedEmails, openBookingRequests, latestSync] = await Promise.all([
+    Booking.countDocuments({
+      paymentStatus: "paid",
+      $or: [{ bokunBookingId: "" }, { bokunBookingId: { $exists: false } }]
+    }),
+    Booking.countDocuments({
+      paymentStatus: "paid",
+      "pendingCheckout.finalization.status": { $in: ["pending_retry", "failed"] }
+    }),
+    EmailDelivery.countDocuments({ status: "failed" }),
+    BookingRequest.countDocuments({ status: { $in: ["submitted", "under_review", "awaiting_customer"] } }),
+    SyncLog.findOne({ operation: { $in: ["products_sync", "booking_sync", "webhook_update"] } })
+      .sort({ createdAt: -1 })
+      .lean()
+  ]);
+
+  const databaseConnected = mongoose.connection.readyState === 1;
+  const bokunMode = env.BOKUN_MOCK_MODE ? "test" : isBokunConfigured ? "live" : "unavailable";
+  const paymentProviders = [
+    {
+      id: "pesapal",
+      label: "Pesapal",
+      mode: env.PESAPAL_MOCK_MODE ? "test" : isPesapalConfigured ? "live" : "unavailable"
+    },
+    {
+      id: "dpo",
+      label: "DPO",
+      mode: env.DPO_MOCK_MODE ? "test" : isDpoConfigured ? "live" : "unavailable",
+      note:
+        !env.DPO_MOCK_MODE && isDpoConfigured && !env.DPO_CALLBACK_URL
+          ? "Set DPO_CALLBACK_URL to enable server callback verification."
+          : ""
+    },
+    {
+      id: "paypal",
+      label: "PayPal",
+      mode: env.PAYPAL_MOCK_MODE ? "test" : isPaypalConfigured ? "live" : "unavailable",
+      note:
+        !env.PAYPAL_MOCK_MODE && isPaypalConfigured && !env.PAYPAL_WEBHOOK_ID
+          ? "Set PAYPAL_WEBHOOK_ID to verify PayPal webhooks."
+          : ""
+    }
+  ];
+  const liveProviders = paymentProviders.filter((provider) => provider.mode === "live").length;
+  const hasCriticalIssue =
+    !databaseConnected ||
+    (env.NODE_ENV === "production" && bokunMode !== "live") ||
+    (env.NODE_ENV === "production" && liveProviders === 0);
+  const hasWarnings =
+    paidPendingSupplier > 0 ||
+    retriableFinalizations > 0 ||
+    failedEmails > 0 ||
+    openBookingRequests > 0 ||
+    bokunMode !== "live" ||
+    !isEmailConfigured ||
+    paymentProviders.some((provider) => Boolean(provider.note));
+
+  return {
+    status: hasCriticalIssue ? "critical" : hasWarnings ? "warning" : "healthy",
+    generatedAt: new Date().toISOString(),
+    runtime: {
+      environment: env.NODE_ENV,
+      uptimeSeconds: Number(process.uptime().toFixed(0)),
+      database: {
+        status: databaseStateLabel(mongoose.connection.readyState),
+        healthy: databaseConnected
+      }
+    },
+    integrations: [
+      {
+        id: "bokun",
+        label: "Bokun supplier",
+        mode: bokunMode,
+        healthy: bokunMode === "live"
+      },
+      ...paymentProviders.map((provider) => ({
+        ...provider,
+        healthy: provider.mode === "live"
+      })),
+      {
+        id: "email",
+        label: "Transactional email",
+        mode: isEmailConfigured ? "live" : "unavailable",
+        healthy: isEmailConfigured
+      }
+    ],
+    jobs: [
+      {
+        id: "booking_finalization",
+        label: "Paid booking finalization retry",
+        enabled: Boolean(env.BOOKING_FINALIZATION_RETRY_ENABLED),
+        intervalSeconds: Number(env.BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS)
+      },
+      {
+        id: "bokun_sync",
+        label: "Bokun booking sync fallback",
+        enabled: Boolean(env.BOKUN_BOOKING_SYNC_ENABLED),
+        intervalSeconds: Number(env.BOKUN_BOOKING_SYNC_INTERVAL_SECONDS)
+      }
+    ],
+    queue: {
+      paidPendingSupplier,
+      retriableFinalizations,
+      failedEmails,
+      openBookingRequests,
+      latestBokunSync: latestSync
+        ? {
+            status: latestSync.status,
+            operation: latestSync.operation,
+            completedAt: latestSync.completedAt || latestSync.updatedAt || latestSync.createdAt
+          }
+        : null
+    }
+  };
+};
+
 module.exports = {
   getDashboardSummary,
   dailyBookings,
@@ -297,5 +435,6 @@ module.exports = {
   performanceReports,
   conversionFunnel,
   getOperationalAlerts,
-  getGrowthPerformance
+  getGrowthPerformance,
+  getOperationsOverview
 };

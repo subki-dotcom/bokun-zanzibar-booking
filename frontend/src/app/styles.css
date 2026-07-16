@@ -12949,3 +12949,246 @@ textarea.form-control {
     min-height: 90px;
   }
 }
+
+/* Admin Operations Center */
+.admin-operations-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.admin-operations-header,
+.admin-operations-header-actions,
+.admin-operations-card-heading,
+.admin-service-row,
+.admin-job-row,
+.admin-operations-runtime,
+.admin-sync-summary {
+  display: flex;
+  align-items: center;
+}
+
+.admin-operations-header {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-operations-eyebrow {
+  color: #078d46;
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin-bottom: 0.28rem;
+  text-transform: uppercase;
+}
+
+.admin-operations-header h1,
+.admin-operations-card h2 {
+  color: #0f172a;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.admin-operations-header h1 {
+  font-size: 1.8rem;
+}
+
+.admin-operations-header p,
+.admin-operations-card-heading p {
+  color: #64748b;
+  margin: 0.38rem 0 0;
+}
+
+.admin-operations-header-actions {
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.admin-operations-header-actions .btn {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.45rem;
+  min-height: 38px;
+}
+
+.admin-operations-status {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.78rem;
+  gap: 0.4rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.admin-operation-metric {
+  border-color: #dbe5ee;
+  color: inherit;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.admin-operation-metric:hover {
+  border-color: #91d7b0;
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+}
+
+.admin-operation-metric .card-body {
+  align-items: flex-start;
+  display: grid;
+  gap: 0.35rem;
+  min-height: 136px;
+}
+
+.admin-operation-metric span:not(.admin-operation-metric-icon) {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.admin-operation-metric strong {
+  color: #0f172a;
+  font-size: 1.85rem;
+  line-height: 1;
+}
+
+.admin-operation-metric-icon,
+.admin-service-icon {
+  align-items: center;
+  background: #edf9f1;
+  border-radius: 50%;
+  color: #078d46;
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.admin-operations-card .card-body {
+  padding: 1.35rem;
+}
+
+.admin-operations-card-heading {
+  align-items: flex-start;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1.1rem;
+}
+
+.admin-operations-card h2 {
+  font-size: 1.05rem;
+}
+
+.admin-operations-card-heading p,
+.admin-operations-card-heading small {
+  font-size: 0.82rem;
+}
+
+.admin-operations-card-heading small {
+  color: #64748b;
+  text-align: right;
+}
+
+.admin-service-list,
+.admin-job-list {
+  display: grid;
+}
+
+.admin-service-row,
+.admin-job-row {
+  border-top: 1px solid #e7edf3;
+  gap: 0.72rem;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0.78rem 0;
+}
+
+.admin-service-row:first-child,
+.admin-job-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.admin-service-row > div,
+.admin-job-row > div {
+  display: grid;
+  flex: 1;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.admin-service-row strong,
+.admin-job-row strong {
+  color: #1e293b;
+  font-size: 0.88rem;
+}
+
+.admin-service-row small,
+.admin-job-row small {
+  color: #64748b;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-service-row .badge,
+.admin-job-row .badge {
+  flex: 0 0 auto;
+}
+
+.admin-operations-runtime,
+.admin-sync-summary {
+  background: #f8fafc;
+  border: 1px solid #e7edf3;
+  border-radius: 8px;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1rem;
+  padding: 0.8rem;
+}
+
+.admin-operations-runtime span,
+.admin-sync-summary span {
+  color: #64748b;
+  display: inline-flex;
+  font-size: 0.8rem;
+  gap: 0.35rem;
+}
+
+.admin-operations-runtime strong,
+.admin-sync-summary strong {
+  color: #1e293b;
+  font-weight: 800;
+}
+
+.is-spinning {
+  animation: admin-operations-spin 0.8s linear infinite;
+}
+
+@keyframes admin-operations-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 575px) {
+  .admin-operations-header,
+  .admin-operations-card-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-operations-header-actions {
+    justify-content: space-between;
+  }
+
+  .admin-operations-header-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .admin-operations-card-heading small {
+    text-align: left;
+  }
+
+  .admin-service-row,
+  .admin-job-row {
+    align-items: flex-start;
+  }
+}

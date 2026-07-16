@@ -118,8 +118,20 @@ const paymentCancelSchema = z.object({
   })
 });
 
+const paypalWebhookSchema = z.object({
+  body: z
+    .object({
+      event_type: z.string().min(1),
+      resource: z.unknown().optional()
+    })
+    .passthrough(),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
 module.exports = {
   createPaypalSchema,
   paymentSuccessSchema,
-  paymentCancelSchema
+  paymentCancelSchema,
+  paypalWebhookSchema
 };

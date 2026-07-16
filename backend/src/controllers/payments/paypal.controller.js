@@ -41,8 +41,22 @@ const cancel = asyncHandler(async (req, res) => {
   });
 });
 
+const webhook = asyncHandler(async (req, res) => {
+  const data = await paypalService.handleWebhookEvent({
+    event: req.validated.body,
+    headers: req.headers,
+    requestId: req.requestId
+  });
+
+  return successResponse(res, {
+    message: data.ignored ? "PayPal webhook accepted" : "PayPal webhook processed",
+    data
+  });
+});
+
 module.exports = {
   create,
   success,
-  cancel
+  cancel,
+  webhook
 };

@@ -3,6 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const hpp = require("hpp");
+const mongoose = require("mongoose");
 
 const { env } = require("./config/env");
 const logger = require("./config/logger");
@@ -21,14 +22,6 @@ app.use(requestId);
 app.use(helmet());
 const productionFrontendOrigin = "https://bokun-zanzibar-booking.vercel.app";
 const normalizeOriginValue = (value = "") => String(value || "").trim().replace(/\/+$/, "");
-const isTrustedVercelProjectOrigin = (origin = "") => {
-  try {
-    const hostname = new URL(origin).hostname.toLowerCase();
-    return hostname.endsWith(".vercel.app") && hostname.includes("bokun-zanzibar-booking");
-  } catch (_error) {
-    return false;
-  }
-};
 const configuredFrontendOrigins = String(env.FRONTEND_URL || "")
   .split(",")
   .map((value) => normalizeOriginValue(value))
@@ -51,11 +44,6 @@ app.use(
       }
 
       if (allowedOrigins.includes(normalizedOrigin)) {
-        return callback(null, true);
-      }
-
-      // Allow Vercel preview deployments for this project.
-      if (isTrustedVercelProjectOrigin(normalizedOrigin)) {
         return callback(null, true);
       }
 
@@ -120,6 +108,21 @@ app.get("/api/health", (_req, res) => {
     success: true,
     message: "API healthy",
     data: buildHealthPayload(),
+    meta: {}
+  });
+});
+
+app.get("/api/health/ready", (_req, res) => {
+  const databaseReady = mongoose.connection.readyState === 1;
+
+  return res.status(databaseReady ? 200 : 503).json({
+    success: databaseReady,
+    message: databaseReady ? "API ready" : "API is waiting for the database connection",
+    data: {
+      status: databaseReady ? "ready" : "not_ready",
+      database: databaseReady ? "connected" : "unavailable",
+      timestamp: new Date().toISOString()
+    },
     meta: {}
   });
 });

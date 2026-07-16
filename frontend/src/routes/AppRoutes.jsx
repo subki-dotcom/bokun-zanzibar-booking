@@ -23,6 +23,7 @@ import AdminRecoveryPage from "../pages/admin/AdminRecoveryPage";
 import SyncLogsPage from "../pages/admin/SyncLogsPage";
 import AdminBookingRequestsPage from "../pages/admin/AdminBookingRequestsPage";
 import AdminBookingRequestDetailsPage from "../pages/admin/AdminBookingRequestDetailsPage";
+import AdminOperationsPage from "../pages/admin/AdminOperationsPage";
 import AgentDashboardPage from "../pages/agent/AgentDashboardPage";
 import AgentProductsPage from "../pages/agent/AgentProductsPage";
 import AgentNewBookingPage from "../pages/agent/AgentNewBookingPage";
@@ -84,6 +85,7 @@ const AppRoutes = () => {
         <Route path="/admin/booking-requests/:requestId" element={<AdminBookingRequestDetailsPage />} />
         <Route path="/admin/recovery" element={<AdminRecoveryPage />} />
         <Route path="/admin/sync-logs" element={<SyncLogsPage />} />
+        <Route path="/admin/operations" element={<AdminOperationsPage />} />
       </Route>
 
       <Route

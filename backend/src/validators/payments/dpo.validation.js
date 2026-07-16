@@ -127,8 +127,41 @@ const paymentCancelSchema = z.object({
   })
 });
 
+const dpoCallbackSchema = z
+  .object({
+    body: z
+      .object({
+        TransactionToken: z.string().min(3).optional(),
+        transactionToken: z.string().min(3).optional()
+      })
+      .passthrough()
+      .default({}),
+    params: z.object({}).optional(),
+    query: z
+      .object({
+        TransactionToken: z.string().min(3).optional(),
+        transactionToken: z.string().min(3).optional()
+      })
+      .default({})
+  })
+  .superRefine((value, ctx) => {
+    const token =
+      value.body?.TransactionToken ||
+      value.body?.transactionToken ||
+      value.query?.TransactionToken ||
+      value.query?.transactionToken;
+    if (!token) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "TransactionToken is required",
+        path: ["body", "TransactionToken"]
+      });
+    }
+  });
+
 module.exports = {
   createDpoSchema,
   paymentSuccessSchema,
-  paymentCancelSchema
+  paymentCancelSchema,
+  dpoCallbackSchema
 };

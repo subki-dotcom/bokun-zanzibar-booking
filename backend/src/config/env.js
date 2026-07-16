@@ -44,6 +44,7 @@ const env = cleanEnv(process.env, {
   PAYPAL_BASE_URL: str({ default: "https://api-m.sandbox.paypal.com" }),
   PAYPAL_CLIENT_ID: str({ default: "" }),
   PAYPAL_CLIENT_SECRET: str({ default: "" }),
+  PAYPAL_WEBHOOK_ID: str({ default: "" }),
   PAYPAL_SUCCESS_URL: str({ default: "https://bokun-zanzibar-booking.vercel.app/payment-success" }),
   PAYPAL_CANCEL_URL: str({ default: "https://bokun-zanzibar-booking.vercel.app/payment-failure" }),
   PAYPAL_TIMEOUT_MS: num({ default: 20000 }),

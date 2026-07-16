@@ -5,7 +5,8 @@ const paypalController = require("../../controllers/payments/paypal.controller")
 const {
   createPaypalSchema,
   paymentSuccessSchema,
-  paymentCancelSchema
+  paymentCancelSchema,
+  paypalWebhookSchema
 } = require("../../validators/payments/paypal.validation");
 
 const router = express.Router();
@@ -21,5 +22,6 @@ const optionalAuth = (req, res, next) => {
 router.post("/create", optionalAuth, validateRequest(createPaypalSchema), paypalController.create);
 router.get("/success", validateRequest(paymentSuccessSchema), paypalController.success);
 router.get("/cancel", validateRequest(paymentCancelSchema), paypalController.cancel);
+router.post("/webhook", validateRequest(paypalWebhookSchema), paypalController.webhook);
 
 module.exports = router;

@@ -52,7 +52,8 @@ jobs:
           PESAPAL_IPN_ID: mock-ipn
           PESAPAL_ALLOW_LOCAL_REDIRECTS: true
         run: |
-          node -e "require('./src/config/env'); require('./src/modules/bookings/bookings.service'); require('./src/modules/payments/pesapal/pesapal.service'); console.log('Backend smoke OK');"
+          npm run test
+          npm run test:smoke
 
       - name: Install frontend dependencies
         working-directory: frontend

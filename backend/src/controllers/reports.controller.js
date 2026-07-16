@@ -53,6 +53,11 @@ const growthPerformance = asyncHandler(async (_req, res) => {
   return successResponse(res, { message: "Growth performance fetched", data });
 });
 
+const operationsOverview = asyncHandler(async (_req, res) => {
+  const data = await reportsService.getOperationsOverview();
+  return successResponse(res, { message: "Operations overview fetched", data });
+});
+
 module.exports = {
   dashboardSummary,
   dailyBookings,
@@ -60,5 +65,6 @@ module.exports = {
   performance,
   conversionFunnel,
   operationalAlerts,
-  growthPerformance
+  growthPerformance,
+  operationsOverview
 };
