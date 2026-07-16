@@ -407,8 +407,20 @@ const BookingFlowInner = ({ portal = "public" }) => {
           sourceChannel
         });
 
+        // Bókun can normalize passenger categories (including mandatory or
+        // zero-quantity categories). Keep the request payload aligned with
+        // the signed quote token before a payment is initialized.
+        const syncedParticipants = normalizeParticipants(
+          quote?.priceCategoryParticipants || payload.priceCategoryParticipants || []
+        );
+        const syncedPax = syncedParticipants.length
+          ? buildPaxFromParticipants(syncedParticipants)
+          : payload.pax;
+
         updateFlow({
           quote,
+          pax: syncedPax,
+          priceCategoryParticipants: syncedParticipants,
           extras: quote?.extras || payload.extras || []
         });
 
