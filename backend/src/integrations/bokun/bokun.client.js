@@ -165,8 +165,17 @@ const mockRouter = async ({ method, path, payload }) => {
     return mockAvailability(payload);
   }
 
-  if (method === "post" && path === "/booking-questions") {
-    return mockQuestions(payload);
+  if (method === "post" && (path === "/booking-questions" || path.startsWith("/checkout.json/options/booking-request"))) {
+    const activityBooking = payload?.activityBookings?.[0] || {};
+    const questions = mockQuestions({ optionId: String(activityBooking.rateId || "") });
+    return {
+      checkoutOptions: [
+        {
+          type: "CUSTOMER_FULL_PAYMENT",
+          questions
+        }
+      ]
+    };
   }
 
   if (method === "post" && path === "/checkout.json/submit") {

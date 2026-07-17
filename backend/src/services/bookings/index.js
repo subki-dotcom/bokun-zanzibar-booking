@@ -1153,6 +1153,35 @@ const buildBookingReference = () => {
   return `ZNZ-${timestamp}-${nonce}`;
 };
 
+const resolveRequiredBokunAnswers = async ({ payload, liveQuote, requestId }) => {
+  const resolution = await bokunService.resolveBookingQuestions(
+    {
+      ...payload,
+      priceCategoryParticipants:
+        liveQuote?.selectedParticipants?.length > 0
+          ? liveQuote.selectedParticipants
+          : payload.priceCategoryParticipants || [],
+      extras: liveQuote?.selectedExtras?.length > 0 ? liveQuote.selectedExtras : payload.extras || [],
+      currency: liveQuote?.pricing?.currency || payload.currency || "USD"
+    },
+    requestId
+  );
+
+  if (resolution.missing.length > 0) {
+    throw new AppError(
+      "This tour needs additional information before payment. Please complete the required fields and try again.",
+      422,
+      "BOKUN_REQUIRED_ANSWERS",
+      {
+        missingQuestions: resolution.missing,
+        questions: resolution.questions
+      }
+    );
+  }
+
+  return resolution;
+};
+
 const buildValidatedCreateContext = async ({ payload, auth, requestId }) => {
   const quoteCheck = verifyQuoteToken(payload.quoteToken);
   if (!quoteCheck.valid) {
@@ -1189,11 +1218,21 @@ const buildValidatedCreateContext = async ({ payload, auth, requestId }) => {
     );
   }
 
+  const bookingQuestionResolution = await resolveRequiredBokunAnswers({
+    payload: {
+      ...payloadWithCatalog,
+      priceCatalogId: effectivePriceCatalogId
+    },
+    liveQuote,
+    requestId
+  });
+
   return {
     quoteCheck,
     payloadWithCatalog: {
       ...payloadWithCatalog,
-      priceCatalogId: effectivePriceCatalogId
+      priceCatalogId: effectivePriceCatalogId,
+      bookingQuestions: bookingQuestionResolution.bookingQuestions
     },
     product,
     option,
@@ -1633,12 +1672,37 @@ const finalizePendingBookingAfterPayment = async ({
         product
       })
     };
+    const bookingQuestionResolution = await resolveRequiredBokunAnswers({
+      payload: {
+        ...checkoutPayload,
+        customer: customerWithPickupPlace,
+        pickupPlaceId: customerWithPickupPlace.pickupPlaceId
+      },
+      liveQuote,
+      requestId
+    });
+
+    // Finalization always rebuilds answers from the current Bokun question
+    // configuration. This repairs older pending payloads that were saved while
+    // answers were unintentionally omitted from the supplier request.
+    await Booking.updateOne(
+      {
+        _id: booking._id,
+        "pendingCheckout.finalization.lockToken": lockToken
+      },
+      {
+        $set: {
+          "pendingCheckout.checkoutPayload.bookingQuestions": bookingQuestionResolution.bookingQuestions
+        }
+      }
+    );
 
     const bokunCreateResult = await createBookingInBokunWithReliability({
       checkoutPayload: {
         ...checkoutPayload,
         customer: customerWithPickupPlace,
         pickupPlaceId: customerWithPickupPlace.pickupPlaceId,
+        bookingQuestions: bookingQuestionResolution.bookingQuestions,
         bookingReference: booking.bookingReference,
         externalBookingReference: booking.bookingReference,
         transactionId: String(transactionToken || booking.paymentTransactionId || booking.dpoTransactionToken || ""),
@@ -1662,7 +1726,7 @@ const finalizePendingBookingAfterPayment = async ({
       payloadWithCatalog: {
         ...checkoutPayload,
         customer: customerWithPickupPlace,
-        bookingQuestions: checkoutPayload.bookingQuestions || [],
+        bookingQuestions: bookingQuestionResolution.bookingQuestions,
         commissionManualPercent: booking.pendingCheckout?.commissionManualPercent || null
       },
       product,

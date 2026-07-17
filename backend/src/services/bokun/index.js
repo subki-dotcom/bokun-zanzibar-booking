@@ -1770,26 +1770,38 @@ const fetchStartingPricePreview = async (payload, requestId) => {
   };
 };
 
-const fetchBookingQuestions = async () => {
-  // Customer details are owned by this app, not Bokun. Keep this endpoint
-  // for older clients, but never fetch or derive booking questions from Bokun.
-  return [];
-};
-
 const toNumberOrUndefined = (value) => {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? number : undefined;
 };
 
-const buildAnswer = (questionId, value) => {
+const normalizeQuestionId = (value) => {
   const text = String(value || "").trim();
   if (!text) {
     return null;
   }
 
+  const numeric = Number(text);
+  return Number.isFinite(numeric) && String(numeric) === text ? numeric : text;
+};
+
+const normalizeAnswerValues = (value) => {
+  const values = Array.isArray(value) ? value : [value];
+  return values
+    .map((item) => String(item ?? "").trim())
+    .filter(Boolean);
+};
+
+const buildAnswer = (questionId, value) => {
+  const normalizedQuestionId = normalizeQuestionId(questionId);
+  const values = normalizeAnswerValues(value);
+  if (!normalizedQuestionId || !values.length) {
+    return null;
+  }
+
   return {
-    questionId,
-    values: [text]
+    questionId: normalizedQuestionId,
+    values
   };
 };
 
@@ -1799,8 +1811,257 @@ const buildMainContactDetails = (customer = {}) =>
     buildAnswer("lastName", customer.lastName),
     buildAnswer("email", customer.email),
     buildAnswer("phoneNumber", customer.phone),
-    buildAnswer("country", customer.country)
+    // Bokun calls this standard customer field nationality. The customer form
+    // owns the country selection, so map it once instead of asking again.
+    buildAnswer("nationality", customer.country)
   ].filter(Boolean);
+
+const normalizeQuestionScope = (value = "") => {
+  const token = String(value || "booking").trim().toLowerCase();
+  if (token.includes("pickup")) return "pickup";
+  if (token.includes("dropoff")) return "dropoff";
+  if (token.includes("passenger") || token.includes("participant")) return "passenger";
+  return "booking";
+};
+
+const normalizeBookingQuestion = (question = {}, scope = "booking") => {
+  const questionId = String(question.questionId || question.id || "").trim();
+  if (!questionId) {
+    return null;
+  }
+
+  const answerOptions = Array.isArray(question.answerOptions)
+    ? question.answerOptions
+    : Array.isArray(question.options)
+      ? question.options
+      : [];
+
+  return {
+    questionId,
+    label: String(question.label || question.title || question.question || "Additional information").trim(),
+    help: String(question.help || "").trim(),
+    placeholder: String(question.placeholder || "").trim(),
+    type: String(question.dataType || question.type || "text").trim().toLowerCase(),
+    scope: normalizeQuestionScope(question.scope || question.context || scope),
+    required: Boolean(question.required),
+    defaultValue: question.defaultValue ?? "",
+    selectFromOptions: Boolean(question.selectFromOptions),
+    selectMultiple: Boolean(question.selectMultiple),
+    options: answerOptions
+      .map((option) => ({
+        label: String(option?.label ?? option?.title ?? option ?? "").trim(),
+        value: String(option?.value ?? option ?? "").trim()
+      }))
+      .filter((option) => option.value)
+  };
+};
+
+const appendQuestions = (target, questions, scope) => {
+  (Array.isArray(questions) ? questions : []).forEach((question) => {
+    const normalized = normalizeBookingQuestion(question, scope);
+    if (!normalized) return;
+
+    const duplicate = target.some(
+      (existing) =>
+        existing.questionId === normalized.questionId &&
+        existing.scope === normalized.scope
+    );
+    if (!duplicate) {
+      target.push(normalized);
+    }
+  });
+};
+
+const collectQuestionsFromContainer = (container, target = [], inheritedScope = "booking") => {
+  if (!container) return target;
+
+  if (Array.isArray(container)) {
+    container.forEach((entry) => collectQuestionsFromContainer(entry, target, inheritedScope));
+    return target;
+  }
+
+  if (typeof container !== "object") return target;
+
+  if (container.questionId || container.id) {
+    const normalized = normalizeBookingQuestion(container, inheritedScope);
+    if (normalized) {
+      const duplicate = target.some(
+        (existing) =>
+          existing.questionId === normalized.questionId &&
+          existing.scope === normalized.scope
+      );
+      if (!duplicate) target.push(normalized);
+    }
+  }
+
+  appendQuestions(target, container.questions, inheritedScope);
+  appendQuestions(target, container.bookingQuestions, inheritedScope);
+  appendQuestions(target, container.pickupQuestions, "pickup");
+  appendQuestions(target, container.dropoffQuestions, "dropoff");
+
+  (Array.isArray(container.activityBookings) ? container.activityBookings : []).forEach((entry) =>
+    collectQuestionsFromContainer(entry, target, "booking")
+  );
+  (Array.isArray(container.passengers) ? container.passengers : []).forEach((entry) =>
+    collectQuestionsFromContainer(entry, target, "passenger")
+  );
+  (Array.isArray(container.extras) ? container.extras : []).forEach((entry) =>
+    collectQuestionsFromContainer(entry, target, "booking")
+  );
+
+  return target;
+};
+
+const findCustomerAnswerForQuestion = (question = {}, customer = {}) => {
+  const token = `${question.label || ""} ${question.help || ""} ${question.placeholder || ""}`.toLowerCase();
+
+  if (/pickup|hotel|accommodation|meeting point/.test(token)) return customer.hotelName;
+  if (/first\s*name|given\s*name/.test(token)) return customer.firstName;
+  if (/last\s*name|family\s*name|surname/.test(token)) return customer.lastName;
+  if (/full\s*name|passenger\s*name|customer\s*name/.test(token)) {
+    return [customer.firstName, customer.lastName].filter(Boolean).join(" ");
+  }
+  if (/e-?mail/.test(token)) return customer.email;
+  if (/phone|mobile|whatsapp|telephone/.test(token)) return customer.phone;
+  if (/country|nationality/.test(token)) return customer.country;
+  if (/special request|comment|note/.test(token)) return customer.notes;
+
+  return "";
+};
+
+const findProvidedAnswer = (answers = [], question = {}) => {
+  const matched = (Array.isArray(answers) ? answers : []).find((answer = {}) => {
+    const sameId = String(answer.questionId || answer.id || "").trim() === question.questionId;
+    const sameScope = normalizeQuestionScope(answer.scope || "booking") === question.scope;
+    return sameId && sameScope;
+  });
+
+  return matched?.answer ?? matched?.values ?? "";
+};
+
+const buildDirectBookingRequest = (payload = {}) => {
+  const customer = payload.customer || {};
+  const activityId = toNumberOrUndefined(payload.productId);
+  const rateId = toNumberOrUndefined(payload.optionId);
+  const startTimeId = toNumberOrUndefined(payload.startTimeId || payload.startTime);
+  const passengers = buildActivityPassengers(payload);
+  const pickupPlaceId = toNumberOrUndefined(payload.pickupPlaceId || customer.pickupPlaceId);
+  const activityBooking = {
+    activityId,
+    rateId,
+    date: payload.travelDate,
+    pickup: Boolean(pickupPlaceId),
+    pickupPlaceId,
+    pickupDescription: customer.hotelName || "",
+    passengers
+  };
+
+  if (startTimeId) activityBooking.startTimeId = startTimeId;
+
+  Object.keys(activityBooking).forEach((key) => {
+    if (
+      activityBooking[key] === undefined ||
+      activityBooking[key] === "" ||
+      (Array.isArray(activityBooking[key]) && activityBooking[key].length === 0)
+    ) {
+      delete activityBooking[key];
+    }
+  });
+
+  return {
+    mainContactDetails: buildMainContactDetails(customer),
+    activityBookings: [activityBooking],
+    externalBookingReference: String(payload.externalBookingReference || payload.bookingReference || "").trim() || undefined,
+    externalBookingEntityName: "Riser Tours & Safaris",
+    promoCode: payload.promoCode || undefined
+  };
+};
+
+const fetchBookingQuestions = async (payload = {}, requestId) => {
+  const directBooking = buildDirectBookingRequest(payload);
+  const currency = encodeURIComponent(String(payload.currency || env.DEFAULT_CURRENCY || "USD").toUpperCase());
+  const response = await bokunClient.request({
+    method: "post",
+    path: `/checkout.json/options/booking-request?currency=${currency}`,
+    payload: directBooking,
+    requestId
+  });
+
+  const questions = [];
+  const checkoutOptions = Array.isArray(response?.checkoutOptions)
+    ? response.checkoutOptions
+    : Array.isArray(response?.options)
+      ? response.options
+      : [];
+  const selectedOption =
+    checkoutOptions.find((option) => option?.type === "CUSTOMER_FULL_PAYMENT") ||
+    checkoutOptions[0] ||
+    null;
+
+  if (selectedOption) collectQuestionsFromContainer(selectedOption, questions);
+  collectQuestionsFromContainer(response?.questions, questions);
+
+  // Checkout options are authoritative for triggered questions. The product
+  // configuration is retained as a fallback for older Bokun responses.
+  if (!questions.length) {
+    const product = await fetchProductDetails(payload.productId, requestId);
+    const rawProduct = product?.rawBokunProduct || {};
+    collectQuestionsFromContainer(rawProduct.bookingQuestions, questions);
+    collectQuestionsFromContainer(rawProduct.components?.bookingQuestions, questions);
+  }
+
+  return questions;
+};
+
+const resolveBookingQuestions = async (payload = {}, requestId) => {
+  const questions = await fetchBookingQuestions(payload, requestId);
+  const customer = payload.customer || {};
+  const resolved = [];
+  const missing = [];
+
+  questions.forEach((question) => {
+    const provided = findProvidedAnswer(payload.bookingQuestions || payload.answers, question);
+    const derived = question.scope === "passenger" ? "" : findCustomerAnswerForQuestion(question, customer);
+    const value = provided || question.defaultValue || derived;
+    const answer = normalizeAnswerValues(value);
+
+    // The public checkout intentionally collects one primary customer only.
+    // Never pretend that a single answer represents every traveler when a
+    // supplier explicitly requires per-passenger data.
+    if (question.required && question.scope === "passenger") {
+      missing.push({
+        questionId: question.questionId,
+        label: question.label,
+        scope: question.scope,
+        type: question.type,
+        options: question.options
+      });
+      return;
+    }
+
+    if (question.required && !answer.length) {
+      missing.push({
+        questionId: question.questionId,
+        label: question.label,
+        scope: question.scope,
+        type: question.type,
+        options: question.options
+      });
+      return;
+    }
+
+    if (answer.length) {
+      resolved.push({
+        questionId: question.questionId,
+        label: question.label,
+        scope: question.scope,
+        answer: question.selectMultiple ? answer : answer[0]
+      });
+    }
+  });
+
+  return { questions, bookingQuestions: resolved, missing };
+};
 
 const buildActivityPassengers = (payload = {}) => {
   const categoryParticipants = Array.isArray(payload.priceCategoryParticipants)
@@ -1851,6 +2112,28 @@ const buildActivityExtras = (extras = []) =>
     })
     .filter(Boolean);
 
+const groupBookingAnswersByScope = (answers = []) => {
+  const grouped = {
+    booking: [],
+    pickup: [],
+    dropoff: []
+  };
+
+  (Array.isArray(answers) ? answers : []).forEach((answer = {}) => {
+    const scope = normalizeQuestionScope(answer.scope || "booking");
+    if (!Object.prototype.hasOwnProperty.call(grouped, scope)) return;
+
+    const normalized = buildAnswer(answer.questionId || answer.id, answer.answer ?? answer.values);
+    if (!normalized) return;
+
+    if (!grouped[scope].some((entry) => String(entry.questionId) === String(normalized.questionId))) {
+      grouped[scope].push(normalized);
+    }
+  });
+
+  return grouped;
+};
+
 const buildCheckoutPayload = (payload = {}) => {
   const customer = payload.customer || {};
   const activityId = toNumberOrUndefined(payload.productId);
@@ -1859,6 +2142,7 @@ const buildCheckoutPayload = (payload = {}) => {
   const passengers = buildActivityPassengers(payload);
   const extras = buildActivityExtras(payload.extras);
   const pickupPlaceId = toNumberOrUndefined(payload.pickupPlaceId || customer.pickupPlaceId);
+  const groupedAnswers = groupBookingAnswersByScope(payload.bookingQuestions || payload.answers);
   const noteParts = [
     customer.notes,
     customer.hotelName ? `Pickup/hotel: ${customer.hotelName}` : "",
@@ -1884,6 +2168,18 @@ const buildCheckoutPayload = (payload = {}) => {
     activityBooking.passengers = passengers.map((passenger, index) =>
       index === 0 ? { ...passenger, extras } : passenger
     );
+  }
+
+  if (groupedAnswers.booking.length > 0) {
+    activityBooking.answers = groupedAnswers.booking;
+  }
+
+  if (groupedAnswers.pickup.length > 0) {
+    activityBooking.pickupAnswers = groupedAnswers.pickup;
+  }
+
+  if (groupedAnswers.dropoff.length > 0) {
+    activityBooking.dropoffAnswers = groupedAnswers.dropoff;
   }
 
   Object.keys(activityBooking).forEach((key) => {
@@ -1998,6 +2294,8 @@ module.exports = {
   fetchOptionAvailabilityMatrix,
   fetchStartingPricePreview,
   fetchBookingQuestions,
+  resolveBookingQuestions,
+  buildCheckoutPayload,
   createBooking,
   lookupBooking,
   cancelBooking,

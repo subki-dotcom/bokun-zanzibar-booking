@@ -1,6 +1,18 @@
 import CustomerStep from "./CustomerStep";
 
-const CustomerDetailsStep = ({ customer, setCustomer, pickupPlaces = [], pickupInfo = "", countries = [], loading = false, onBack, onNext }) => (
+const CustomerDetailsStep = ({
+  customer,
+  setCustomer,
+  pickupPlaces = [],
+  pickupInfo = "",
+  countries = [],
+  questions = [],
+  answers = [],
+  setAnswers,
+  loading = false,
+  onBack,
+  onNext
+}) => (
   <div className="checkout-customer-step-wrap">
     <CustomerStep
       customer={customer}
@@ -8,6 +20,9 @@ const CustomerDetailsStep = ({ customer, setCustomer, pickupPlaces = [], pickupI
       pickupPlaces={pickupPlaces}
       pickupInfo={pickupInfo}
       countries={countries}
+      questions={questions}
+      answers={answers}
+      setAnswers={setAnswers}
       loading={loading}
       onBack={onBack}
       onNext={onNext}

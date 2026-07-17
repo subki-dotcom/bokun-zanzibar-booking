@@ -16,7 +16,7 @@ const priceCategoryParticipantSchema = z.object({
 const bookingQuestionAnswerSchema = z.object({
   questionId: z.string().min(1),
   label: z.string().min(1),
-  scope: z.enum(["booking", "passenger"]).default("booking"),
+  scope: z.enum(["booking", "pickup", "dropoff", "passenger"]).default("booking"),
   passengerIndex: z.number().int().min(0).nullable().optional(),
   answer: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])
 });

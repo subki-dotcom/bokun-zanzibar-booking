@@ -7,7 +7,8 @@ import useBookingFlow from "../../hooks/useBookingFlow";
 import { fetchTourBySlug } from "../../api/toursApi";
 import {
   fetchAvailability,
-  createQuote
+  createQuote,
+  fetchBookingQuestions
 } from "../../api/bookingsApi";
 import { fetchBokunCountries, fetchBokunPickupPlaces, fetchBokunProductDetails } from "../../api/bokunApi";
 import { createDpoPayment, createPaypalPayment, createPesapalPayment } from "../../api/paymentsApi";
@@ -571,7 +572,19 @@ const BookingFlowInner = ({ portal = "public" }) => {
         ...quotePayload,
         sourceChannel
       });
-      const questionsResult = [];
+      let questionsResult = [];
+      try {
+        questionsResult = await fetchBookingQuestions({
+          ...quotePayload,
+          priceCategoryParticipants: syncedParticipants,
+          extras: quoteResult?.extras || seededExtras,
+          customer: state.customer || {}
+        });
+      } catch (questionError) {
+        // Payment initialization performs the same supplier-side validation,
+        // so a temporary question lookup failure cannot create an invalid booking.
+        console.warn("Unable to prefetch Bokun booking questions", questionError);
+      }
 
       const firstActionableStep = resolveFirstActionableStepId({
         hasExtras: Boolean((availabilityResult?.extras || []).length),
@@ -949,6 +962,12 @@ const BookingFlowInner = ({ portal = "public" }) => {
           pickupPlaces={checkoutPickupPlaces}
           pickupInfo={tour?.pickupInfo || ""}
           countries={countries}
+          questions={state.questions}
+          answers={state.answers}
+          setAnswers={(updater) => {
+            const answers = typeof updater === "function" ? updater(state.answers) : updater;
+            updateFlow({ answers });
+          }}
           loading={quoteLoading}
           onBack={hasExtras ? handleGoPrevious : handleChangeTripDetails}
           onNext={handleCustomerContinue}

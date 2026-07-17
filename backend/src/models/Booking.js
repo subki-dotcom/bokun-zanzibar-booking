@@ -5,7 +5,7 @@ const bookingQuestionAnswerSchema = new mongoose.Schema(
   {
     questionId: { type: String, required: true },
     label: { type: String, required: true },
-    scope: { type: String, enum: ["booking", "passenger"], default: "booking" },
+    scope: { type: String, enum: ["booking", "pickup", "dropoff", "passenger"], default: "booking" },
     passengerIndex: { type: Number, default: null },
     answer: mongoose.Schema.Types.Mixed
   },

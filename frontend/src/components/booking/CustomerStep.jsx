@@ -22,12 +22,42 @@ const findCountry = (countryCode = "", countries = []) =>
     (country = {}) => String(country.code || "").toUpperCase() === String(countryCode || "").toUpperCase()
   );
 
+const normalizeQuestionScope = (value = "") => {
+  const token = String(value || "booking").toLowerCase();
+  if (token.includes("pickup")) return "pickup";
+  if (token.includes("passenger") || token.includes("participant")) return "passenger";
+  return "booking";
+};
+
+const answerFromCustomer = (question = {}, customer = {}) => {
+  const token = `${question.label || ""} ${question.help || ""} ${question.placeholder || ""}`.toLowerCase();
+
+  if (/pickup|hotel|accommodation|meeting point/.test(token)) return customer.hotelName;
+  if (/first\s*name|given\s*name/.test(token)) return customer.firstName;
+  if (/last\s*name|family\s*name|surname/.test(token)) return customer.lastName;
+  if (/full\s*name|customer\s*name/.test(token)) return [customer.firstName, customer.lastName].filter(Boolean).join(" ");
+  if (/e-?mail/.test(token)) return customer.email;
+  if (/phone|mobile|whatsapp|telephone/.test(token)) return customer.phone;
+  if (/country|nationality/.test(token)) return customer.country;
+  if (/special request|comment|note/.test(token)) return customer.notes;
+
+  return "";
+};
+
+const isCustomerManagedQuestion = (question = {}) => {
+  const token = `${question.label || ""} ${question.help || ""} ${question.placeholder || ""}`.toLowerCase();
+  return /pickup|hotel|accommodation|meeting point|first\s*name|given\s*name|last\s*name|family\s*name|surname|full\s*name|customer\s*name|e-?mail|phone|mobile|whatsapp|telephone|country|nationality|special request|comment|note/.test(token);
+};
+
 const CustomerStep = ({
   customer = {},
   setCustomer,
   pickupPlaces = [],
   pickupInfo = "",
   countries = [],
+  questions = [],
+  answers = [],
+  setAnswers,
   loading = false,
   onBack,
   onNext
@@ -48,9 +78,38 @@ const CustomerStep = ({
     ],
     []
   );
+  const additionalQuestions = useMemo(
+    () =>
+      (Array.isArray(questions) ? questions : []).filter((question) => {
+        const scope = normalizeQuestionScope(question.scope);
+        if (!question?.required || scope === "passenger") return false;
+
+        return !isCustomerManagedQuestion(question);
+      }),
+    [questions]
+  );
+  const answerForQuestion = (question = {}) =>
+    (Array.isArray(answers) ? answers : []).find(
+      (answer = {}) =>
+        String(answer.questionId || "") === String(question.questionId || question.id || "") &&
+        normalizeQuestionScope(answer.scope) === normalizeQuestionScope(question.scope)
+    );
+  const missingAdditionalQuestions = additionalQuestions
+    .filter((question) => {
+      const answer = answerForQuestion(question)?.answer;
+      return Array.isArray(answer) ? answer.length === 0 : !String(answer || "").trim();
+    })
+    .map((question) => question.label || "Required tour information");
+  const missingCustomerManagedQuestions = (Array.isArray(questions) ? questions : [])
+    .filter((question) => question?.required && normalizeQuestionScope(question.scope) !== "passenger")
+    .filter((question) => isCustomerManagedQuestion(question))
+    .filter((question) => !String(answerFromCustomer(question, customer) || "").trim())
+    .map((question) => question.label || "Required tour information");
   const missingFields = requiredFields
     .filter(([field]) => !String(customer[field] || "").trim())
-    .map(([, label]) => label);
+    .map(([, label]) => label)
+    .concat(missingAdditionalQuestions, missingCustomerManagedQuestions)
+    .filter((label, index, all) => all.indexOf(label) === index);
   const isValid = missingFields.length === 0;
   const hasPickupPlaces = Array.isArray(pickupPlaces) && pickupPlaces.length > 0;
   const hasPickupInfo = Boolean(String(pickupInfo || "").trim());
@@ -103,6 +162,30 @@ const CustomerStep = ({
       hotelName: pickupLabel,
       pickupPlaceId: selectedPlace?.productScoped === false ? "" : selectedPlace?.id ? String(selectedPlace.id) : ""
     }));
+  };
+
+  const updateAdditionalAnswer = (question, answer) => {
+    const questionId = String(question.questionId || question.id || "");
+    if (!questionId || typeof setAnswers !== "function") return;
+
+    setAnswers((current = []) => {
+      const next = Array.isArray(current) ? current.filter((item = {}) => {
+        return !(
+          String(item.questionId || "") === questionId &&
+          normalizeQuestionScope(item.scope) === normalizeQuestionScope(question.scope)
+        );
+      }) : [];
+
+      return [
+        ...next,
+        {
+          questionId,
+          label: question.label || "Additional information",
+          scope: normalizeQuestionScope(question.scope),
+          answer
+        }
+      ];
+    });
   };
 
   const handleContinue = () => {
@@ -235,6 +318,44 @@ const CustomerStep = ({
               <span>{notesCount}/250</span>
             </div>
           </Form.Group>
+
+          {additionalQuestions.length > 0 ? (
+            <div className="customer-step-wide customer-additional-details" aria-live="polite">
+              <h5>Additional information required for this tour</h5>
+              {additionalQuestions.map((question) => {
+                const questionId = String(question.questionId || question.id || "");
+                const currentAnswer = answerForQuestion(question)?.answer || "";
+                const isSelect = Boolean(question.selectFromOptions || (question.options || []).length > 0);
+                const isTextarea = String(question.type || "").toLowerCase().includes("textarea");
+
+                return (
+                  <Form.Group key={`${question.scope || "booking"}-${questionId}`} className="customer-step-wide">
+                    <Form.Label>{question.label || "Additional information"} <span>*</span></Form.Label>
+                    {question.help ? <Form.Text className="text-muted d-block mb-1">{question.help}</Form.Text> : null}
+                    {isSelect ? (
+                      <Form.Select
+                        value={currentAnswer}
+                        onChange={(event) => updateAdditionalAnswer(question, event.target.value)}
+                      >
+                        <option value="">Select an option</option>
+                        {(question.options || []).map((option) => (
+                          <option key={option.value} value={option.value}>{option.label || option.value}</option>
+                        ))}
+                      </Form.Select>
+                    ) : (
+                      <Form.Control
+                        as={isTextarea ? "textarea" : "input"}
+                        rows={isTextarea ? 3 : undefined}
+                        value={currentAnswer}
+                        placeholder={question.placeholder || "Enter required information"}
+                        onChange={(event) => updateAdditionalAnswer(question, event.target.value)}
+                      />
+                    )}
+                  </Form.Group>
+                );
+              })}
+            </div>
+          ) : null}
 
           <Form.Group className="customer-step-wide customer-marketing-consent">
             <Form.Check
