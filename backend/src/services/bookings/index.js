@@ -890,9 +890,24 @@ const getLiveQuote = async ({
   }
 
   ensureSelectedTimeSlot({ availability, startTime });
+  let livePricingCategories = availability.priceCategories || [];
+
+  if (!livePricingCategories.some((category) => String(category?.categoryId || "").trim())) {
+    const bookingConfig = await bokunService.fetchProductBookingConfig(
+      productId,
+      {
+        rateId: priceCatalogId || "",
+        includeStartingPreview: false
+      },
+      requestId
+    );
+
+    livePricingCategories = bookingConfig.pricingCategories || [];
+  }
+
   const selectedParticipants = sanitizeSelectedParticipants(
     priceCategoryParticipants,
-    availability.priceCategories || [],
+    livePricingCategories,
     pax
   );
   const selectedExtras = sanitizeSelectedExtras(extras, availability.extras || []);
@@ -913,7 +928,10 @@ const getLiveQuote = async ({
   });
 
   return {
-    availability,
+    availability: {
+      ...availability,
+      priceCategories: livePricingCategories
+    },
     selectedPriceCatalog: availability.priceCatalog || null,
     availablePriceCatalogs: availability.availablePriceCatalogs || [],
     selectedParticipants,
