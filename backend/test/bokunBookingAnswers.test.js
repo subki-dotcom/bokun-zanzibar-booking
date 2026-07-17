@@ -11,6 +11,8 @@ const basePayload = {
   productId: "101",
   optionId: "201",
   travelDate: "2026-08-20",
+  startTime: "09:00",
+  startTimeId: "401",
   priceCategoryParticipants: [
     { categoryId: "301", quantity: 1, title: "Adult", ticketCategory: "ADULT" }
   ],
@@ -58,4 +60,14 @@ test("puts resolved booking answers in the Bókun activity request", () => {
       values: ["Tembo House Hotel"]
     }
   ]);
+  assert.equal(checkoutPayload.directBooking.activityBookings[0].startTimeId, 401);
+});
+
+test("does not treat a display time as a Bókun start-time identifier", () => {
+  const checkoutPayload = bokunService.buildCheckoutPayload({
+    ...basePayload,
+    startTimeId: undefined
+  });
+
+  assert.equal(Object.hasOwn(checkoutPayload.directBooking.activityBookings[0], "startTimeId"), false);
 });

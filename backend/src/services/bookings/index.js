@@ -861,7 +861,7 @@ const getProductAndOption = async ({ productId, optionId, priceCatalogId }) => {
 
 const ensureSelectedTimeSlot = ({ availability, startTime }) => {
   if (!startTime) {
-    return;
+    return null;
   }
 
   const selected = (availability.slots || []).find((slot) => slot.time === startTime);
@@ -872,6 +872,25 @@ const ensureSelectedTimeSlot = ({ availability, startTime }) => {
   if (selected.status !== "available" && selected.status !== "limited") {
     throw new AppError("Selected start time is no longer bookable", 409, "SLOT_NOT_BOOKABLE");
   }
+
+  return selected;
+};
+
+const normalizeStartTimeId = (value) => {
+  const parsed = Number(String(value || "").trim().split("_")[0]);
+  return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : "";
+};
+
+const resolveLiveStartTimeId = ({ availability = {}, startTime = "", fallbackStartTimeId = "" }) => {
+  const slots = Array.isArray(availability?.slots) ? availability.slots : [];
+  const selectedTime = String(startTime || "").trim();
+  const selectedSlot = selectedTime
+    ? slots.find((slot) => String(slot?.time || "").trim() === selectedTime)
+    : slots.find((slot) => slot?.status === "available" || slot?.status === "limited");
+
+  return normalizeStartTimeId(
+    selectedSlot?.startTimeId || availability?.selectedStartTimeId || fallbackStartTimeId
+  );
 };
 
 // Booking-config categories use `id`, while availability categories use
@@ -921,7 +940,8 @@ const getLiveQuote = async ({
     throw new AppError("Selected option is not available for this date", 409, "OPTION_NOT_AVAILABLE");
   }
 
-  ensureSelectedTimeSlot({ availability, startTime });
+  const selectedTimeSlot = ensureSelectedTimeSlot({ availability, startTime });
+  const selectedStartTimeId = normalizeStartTimeId(selectedTimeSlot?.startTimeId);
   let livePricingCategories = normalizeLivePricingCategories(availability.priceCategories || []);
 
   if (!hasLiveBokunPricingCategory(livePricingCategories)) {
@@ -962,6 +982,7 @@ const getLiveQuote = async ({
   return {
     availability: {
       ...availability,
+      selectedStartTimeId,
       priceCategories: livePricingCategories
     },
     selectedPriceCatalog: availability.priceCatalog || null,
@@ -1154,9 +1175,24 @@ const buildBookingReference = () => {
 };
 
 const resolveRequiredBokunAnswers = async ({ payload, liveQuote, requestId }) => {
+  const startTimeId = resolveLiveStartTimeId({
+    availability: liveQuote?.availability,
+    startTime: payload.startTime,
+    fallbackStartTimeId: payload.startTimeId
+  });
+
+  if (payload.startTime && !startTimeId) {
+    throw new AppError(
+      "The selected start time could not be confirmed. Please return to Trip Details and choose an available time.",
+      409,
+      "START_TIME_ID_REQUIRED"
+    );
+  }
+
   const resolution = await bokunService.resolveBookingQuestions(
     {
       ...payload,
+      startTimeId,
       priceCategoryParticipants:
         liveQuote?.selectedParticipants?.length > 0
           ? liveQuote.selectedParticipants
@@ -1179,7 +1215,7 @@ const resolveRequiredBokunAnswers = async ({ payload, liveQuote, requestId }) =>
     );
   }
 
-  return resolution;
+  return { ...resolution, startTimeId };
 };
 
 const buildValidatedCreateContext = async ({ payload, auth, requestId }) => {
@@ -1232,6 +1268,7 @@ const buildValidatedCreateContext = async ({ payload, auth, requestId }) => {
     payloadWithCatalog: {
       ...payloadWithCatalog,
       priceCatalogId: effectivePriceCatalogId,
+      startTimeId: bookingQuestionResolution.startTimeId,
       bookingQuestions: bookingQuestionResolution.bookingQuestions
     },
     product,
@@ -1518,6 +1555,7 @@ const preparePendingPaymentBooking = async ({ payload, auth, requestId }) => {
       priceCatalogId: context.payloadWithCatalog.priceCatalogId || "",
       travelDate: context.payloadWithCatalog.travelDate,
       startTime: context.payloadWithCatalog.startTime || "",
+      startTimeId: context.payloadWithCatalog.startTimeId || "",
       pax: context.payloadWithCatalog.pax,
       priceCategoryParticipants: context.liveQuote.selectedParticipants || [],
       extras: context.liveQuote.selectedExtras || [],
@@ -1692,7 +1730,8 @@ const finalizePendingBookingAfterPayment = async ({
       },
       {
         $set: {
-          "pendingCheckout.checkoutPayload.bookingQuestions": bookingQuestionResolution.bookingQuestions
+          "pendingCheckout.checkoutPayload.bookingQuestions": bookingQuestionResolution.bookingQuestions,
+          "pendingCheckout.checkoutPayload.startTimeId": bookingQuestionResolution.startTimeId
         }
       }
     );
@@ -1702,6 +1741,7 @@ const finalizePendingBookingAfterPayment = async ({
         ...checkoutPayload,
         customer: customerWithPickupPlace,
         pickupPlaceId: customerWithPickupPlace.pickupPlaceId,
+        startTimeId: bookingQuestionResolution.startTimeId,
         bookingQuestions: bookingQuestionResolution.bookingQuestions,
         bookingReference: booking.bookingReference,
         externalBookingReference: booking.bookingReference,
@@ -1726,6 +1766,7 @@ const finalizePendingBookingAfterPayment = async ({
       payloadWithCatalog: {
         ...checkoutPayload,
         customer: customerWithPickupPlace,
+        startTimeId: bookingQuestionResolution.startTimeId,
         bookingQuestions: bookingQuestionResolution.bookingQuestions,
         commissionManualPercent: booking.pendingCheckout?.commissionManualPercent || null
       },

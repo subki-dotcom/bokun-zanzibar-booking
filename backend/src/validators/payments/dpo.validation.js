@@ -45,6 +45,7 @@ const createDpoSchema = z.object({
       optionId: z.string().min(2).optional(),
       travelDate: z.string().min(8).optional(),
       startTime: z.string().optional(),
+      startTimeId: z.string().min(1).max(80).optional(),
       priceCatalogId: z.string().min(1).optional(),
       pax: paxSchema.optional(),
       priceCategoryParticipants: z.array(priceCategoryParticipantSchema).optional(),

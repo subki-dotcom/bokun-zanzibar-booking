@@ -5,6 +5,23 @@ const mapProviderErrorMessage = ({ code = "", message = "", details = null }) =>
   const normalizedCode = String(code || "").trim();
   const providerStatus = Number(details?.statusCode || 0);
 
+  if (normalizedCode === "START_TIME_ID_REQUIRED") {
+    return "The selected start time could not be confirmed. Please choose an available time and try again.";
+  }
+
+  if (normalizedCode === "BOKUN_REQUEST_FAILED" && providerStatus === 400) {
+    const supplierMessage = String(details?.message || message || "").toLowerCase();
+    if (/missing starttimeid|starttimeid/.test(supplierMessage)) {
+      return "The selected start time is no longer available. Please choose another time and try again.";
+    }
+
+    if (/invalid or missing answers|invalidanswersexception/.test(supplierMessage)) {
+      return "This tour needs additional booking information before payment. Please complete the required fields.";
+    }
+
+    return "The supplier could not validate these booking details. Please review your trip details and try again.";
+  }
+
   if (normalizedCode === "PESAPAL_NOT_CONFIGURED") {
     return "Payment gateway is not configured yet. Please contact support.";
   }
@@ -108,16 +125,19 @@ axiosClient.interceptors.response.use(
       message: responseMessage,
       details: responseDetails
     });
-    const responseDetailsText =
-      typeof responseDetails === "string"
-        ? responseDetails
-        : JSON.stringify(responseDetails || {});
+    const supplierMessage = String(
+      typeof responseDetails === "string" ? responseDetails : responseDetails?.message || ""
+    );
     const isBokunTimeout =
       responseCode === "BOKUN_TIMEOUT" ||
-      (responseCode === "BOKUN_REQUEST_FAILED" && /timeout|timed out|econnaborted/i.test(responseDetailsText));
+      (responseCode === "BOKUN_REQUEST_FAILED" &&
+        Number(responseDetails?.statusCode || 0) >= 500 &&
+        /timeout|timed out|econnaborted/i.test(supplierMessage));
     const isBokunUpstreamUnavailable =
       responseCode === "BOKUN_UPSTREAM_UNREACHABLE" ||
-      (responseCode === "BOKUN_REQUEST_FAILED" && /enotfound|econnreset|socket hang up|network/i.test(responseDetailsText));
+      (responseCode === "BOKUN_REQUEST_FAILED" &&
+        Number(responseDetails?.statusCode || 0) >= 500 &&
+        /enotfound|econnreset|socket hang up|network/i.test(supplierMessage));
 
     const normalizedError = {
       status: error.response?.status || 500,

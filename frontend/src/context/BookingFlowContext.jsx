@@ -9,6 +9,7 @@ const createDefaultData = () => ({
   priceCatalog: null,
   travelDate: "",
   startTime: "",
+  startTimeId: "",
   pax: { adults: 2, children: 0, infants: 0 },
   priceCategoryParticipants: [],
   extras: [],

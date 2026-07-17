@@ -219,6 +219,16 @@ const markFallbackPickupPlaces = (places = []) =>
     productScoped: false
   }));
 
+const resolveLiveStartTimeId = ({ slots = [], startTime = "", fallbackId = "" } = {}) => {
+  const selectedTime = String(startTime || "").trim();
+  const availableSlots = Array.isArray(slots) ? slots : [];
+  const selectedSlot = selectedTime
+    ? availableSlots.find((slot) => String(slot?.time || "").trim() === selectedTime)
+    : null;
+
+  return String(selectedSlot?.startTimeId || fallbackId || "").trim();
+};
+
 const BookingFlowInner = ({ portal = "public" }) => {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
@@ -373,6 +383,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
         optionId: state.option.bokunOptionId,
         travelDate: overrides.travelDate ?? state.travelDate,
         startTime: overrides.startTime ?? state.startTime,
+        startTimeId: overrides.startTimeId ?? state.startTimeId ?? "",
         pax: overrides.pax ?? state.pax,
         priceCategoryParticipants:
           overrides.priceCategoryParticipants ?? state.priceCategoryParticipants ?? [],
@@ -473,6 +484,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
             optionId: String(session?.tripDetails?.optionId || ""),
             travelDate: String(session?.tripDetails?.travelDate || ""),
             startTime: String(session?.tripDetails?.startTime || ""),
+            startTimeId: String(session?.tripDetails?.startTimeId || ""),
             rateId: String(session?.tripDetails?.rateId || ""),
             participants: normalizeParticipants(session?.tripDetails?.passengers || []),
             pax: session?.tripDetails?.pax || buildPaxFromParticipants(session?.tripDetails?.passengers || [])
@@ -510,6 +522,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
         priceCatalog: resolveCatalogById(checkoutTour.priceCatalogs || [], initialRateId) || defaultCatalog.catalog,
         travelDate: seededTrip.travelDate,
         startTime: seededTrip.startTime || "",
+        startTimeId: seededTrip.startTimeId || "",
         pax: initialPax,
         priceCategoryParticipants: initialParticipants,
         extras: [],
@@ -562,6 +575,11 @@ const BookingFlowInner = ({ portal = "public" }) => {
       const quotePayload = {
         ...availabilityPayload,
         startTime: availabilityResult?.startTime || seededTrip.startTime || "",
+        startTimeId: resolveLiveStartTimeId({
+          slots: availabilityResult?.slots || [],
+          startTime: availabilityResult?.startTime || seededTrip.startTime || "",
+          fallbackId: seededTrip.startTimeId
+        }),
         priceCatalogId: resolvedCatalogId,
         priceCategoryParticipants: syncedParticipants,
         pax: syncedPax,
@@ -595,6 +613,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
         priceCatalogId: resolvedCatalogId,
         priceCatalog: resolvedCatalog || null,
         startTime: quotePayload.startTime || "",
+        startTimeId: quotePayload.startTimeId || "",
         pax: syncedPax,
         priceCategoryParticipants: syncedParticipants,
         extras: quoteResult?.extras || seededExtras,
@@ -627,6 +646,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
           rateTitle: resolvedCatalog?.title || "",
           travelDate: seededTrip.travelDate,
           startTime: quotePayload.startTime || "",
+          startTimeId: quotePayload.startTimeId || "",
           passengers: syncedParticipants,
           pax: syncedPax
         },

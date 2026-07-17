@@ -1943,7 +1943,9 @@ const buildDirectBookingRequest = (payload = {}) => {
   const customer = payload.customer || {};
   const activityId = toNumberOrUndefined(payload.productId);
   const rateId = toNumberOrUndefined(payload.optionId);
-  const startTimeId = toNumberOrUndefined(payload.startTimeId || payload.startTime);
+  // Bókun's display time (for example "09:00") is not a start-time ID.
+  // Only send the live identifier returned by the availability endpoint.
+  const startTimeId = toNumberOrUndefined(payload.startTimeId);
   const passengers = buildActivityPassengers(payload);
   const pickupPlaceId = toNumberOrUndefined(payload.pickupPlaceId || customer.pickupPlaceId);
   const activityBooking = {
@@ -2138,7 +2140,8 @@ const buildCheckoutPayload = (payload = {}) => {
   const customer = payload.customer || {};
   const activityId = toNumberOrUndefined(payload.productId);
   const rateId = toNumberOrUndefined(payload.optionId);
-  const startTimeId = toNumberOrUndefined(payload.startTimeId || payload.startTime);
+  // Never coerce a display time such as "09:00" to the numeric ID 9.
+  const startTimeId = toNumberOrUndefined(payload.startTimeId);
   const passengers = buildActivityPassengers(payload);
   const extras = buildActivityExtras(payload.extras);
   const pickupPlaceId = toNumberOrUndefined(payload.pickupPlaceId || customer.pickupPlaceId);
