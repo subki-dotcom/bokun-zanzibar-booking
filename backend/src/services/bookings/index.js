@@ -868,6 +868,15 @@ const ensureSelectedTimeSlot = ({ availability, startTime }) => {
   }
 };
 
+// Bókun's checkout API accepts its numeric pricing-category identifiers only.
+// Mapper fallbacks such as "adult" are useful for a display quote, but must
+// never be treated as a category that can create a live supplier booking.
+const hasLiveBokunPricingCategory = (categories = []) =>
+  (categories || []).some((category) => {
+    const categoryId = Number(category?.categoryId);
+    return Number.isFinite(categoryId) && categoryId > 0;
+  });
+
 const getLiveQuote = async ({
   productId,
   optionId,
@@ -892,7 +901,7 @@ const getLiveQuote = async ({
   ensureSelectedTimeSlot({ availability, startTime });
   let livePricingCategories = availability.priceCategories || [];
 
-  if (!livePricingCategories.some((category) => String(category?.categoryId || "").trim())) {
+  if (!hasLiveBokunPricingCategory(livePricingCategories)) {
     const bookingConfig = await bokunService.fetchProductBookingConfig(
       productId,
       {
