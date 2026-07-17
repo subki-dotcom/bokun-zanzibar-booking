@@ -868,6 +868,23 @@ const ensureSelectedTimeSlot = ({ availability, startTime }) => {
   }
 };
 
+// Booking-config categories use `id`, while availability categories use
+// `categoryId`. Normalize both sources before producing the supplier payload.
+const normalizeLivePricingCategories = (categories = []) =>
+  (categories || [])
+    .map((category = {}) => ({
+      categoryId: String(category.categoryId || category.id || "").trim(),
+      title: category.title || category.label || "Category",
+      ticketCategory: category.ticketCategory || "",
+      quantity: Math.max(0, Number(category.quantity || 0)),
+      minQuantity: Math.max(0, Number(category.minQuantity ?? category.min ?? 0)),
+      maxQuantity: Math.max(
+        0,
+        Number(category.maxQuantity ?? category.max ?? 50)
+      )
+    }))
+    .filter((category) => category.categoryId);
+
 // Bókun's checkout API accepts its numeric pricing-category identifiers only.
 // Mapper fallbacks such as "adult" are useful for a display quote, but must
 // never be treated as a category that can create a live supplier booking.
@@ -899,7 +916,7 @@ const getLiveQuote = async ({
   }
 
   ensureSelectedTimeSlot({ availability, startTime });
-  let livePricingCategories = availability.priceCategories || [];
+  let livePricingCategories = normalizeLivePricingCategories(availability.priceCategories || []);
 
   if (!hasLiveBokunPricingCategory(livePricingCategories)) {
     const bookingConfig = await bokunService.fetchProductBookingConfig(
@@ -911,7 +928,7 @@ const getLiveQuote = async ({
       requestId
     );
 
-    livePricingCategories = bookingConfig.pricingCategories || [];
+    livePricingCategories = normalizeLivePricingCategories(bookingConfig.pricingCategories || []);
   }
 
   const selectedParticipants = sanitizeSelectedParticipants(
