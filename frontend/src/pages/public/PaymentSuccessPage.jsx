@@ -3,13 +3,18 @@ import { Badge, Button, Card, Container } from "react-bootstrap";
 import { Link, useSearchParams } from "react-router-dom";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { verifyDpoPayment, verifyPaypalPayment, verifyPesapalPayment } from "../../api/paymentsApi";
+import {
+  fetchPesapalPaymentStatus,
+  verifyDpoPayment,
+  verifyPaypalPayment
+} from "../../api/paymentsApi";
 
 const PaymentSuccessPage = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const orderTrackingId = String(
     searchParams.get("OrderTrackingId") ||
@@ -34,10 +39,31 @@ const PaymentSuccessPage = () => {
   ).trim();
 
   useEffect(() => {
+    let isActive = true;
+    let retryTimer = null;
+    let attempts = 0;
+    const maxAttempts = 40;
+
+    const requiresConfirmationPolling = (data) => {
+      const status = String(data?.status || "").toLowerCase();
+      const booking = data?.booking || {};
+      const bookingConfirmed =
+        String(booking.bookingStatus || "").toLowerCase() === "confirmed" && Boolean(booking.bokunBookingId);
+
+      if (bookingConfirmed || status === "paid_manual_review" || status === "failed") {
+        return false;
+      }
+
+      return ["pending", "processing", "payment_processing", "paid_pending_finalization"].includes(status) ||
+        (status === "paid" && !bookingConfirmed);
+    };
+
     const verify = async () => {
       if (!orderTrackingId && !orderMerchantReference && !transactionToken && !paypalOrderId) {
-        setError("Missing payment reference in payment callback.");
-        setLoading(false);
+        if (isActive) {
+          setError("Missing payment reference in payment callback.");
+          setLoading(false);
+        }
         return;
       }
 
@@ -46,20 +72,43 @@ const PaymentSuccessPage = () => {
           ? await verifyPaypalPayment({ orderId: paypalOrderId })
           : transactionToken
             ? await verifyDpoPayment({ transactionToken })
-            : await verifyPesapalPayment({
+            : await fetchPesapalPaymentStatus({
                 orderTrackingId,
                 orderMerchantReference
               });
+        if (!isActive) return;
+
         setResult(data);
+        setError("");
+
+        attempts += 1;
+        if (requiresConfirmationPolling(data) && attempts < maxAttempts) {
+          retryTimer = window.setTimeout(verify, 3000);
+        }
       } catch (err) {
+        if (!isActive) return;
+
         setError(err.message || "Payment verification failed.");
+        attempts += 1;
+        if (attempts < 6) {
+          retryTimer = window.setTimeout(verify, 3000);
+        }
       } finally {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       }
     };
 
     verify();
-  }, [orderTrackingId, orderMerchantReference, transactionToken, paypalOrderId]);
+
+    return () => {
+      isActive = false;
+      if (retryTimer) {
+        window.clearTimeout(retryTimer);
+      }
+    };
+  }, [orderTrackingId, orderMerchantReference, transactionToken, paypalOrderId, refreshKey]);
 
   if (loading) {
     return (
@@ -70,9 +119,18 @@ const PaymentSuccessPage = () => {
   }
 
   const paymentResultStatus = String(result?.status || "").toLowerCase();
-  const isPendingFinalization = paymentResultStatus === "paid_pending_finalization";
-  const isPaid = paymentResultStatus === "paid" || isPendingFinalization;
   const booking = result?.booking || null;
+  const isBookingConfirmed =
+    String(booking?.bookingStatus || "").toLowerCase() === "confirmed" && Boolean(booking?.bokunBookingId);
+  const isPendingFinalization = ["pending", "processing", "payment_processing", "paid_pending_finalization"].includes(
+    paymentResultStatus
+  ) || (paymentResultStatus === "paid" && !isBookingConfirmed);
+  const requiresManualReview = paymentResultStatus === "paid_manual_review";
+  const isPaid =
+    isBookingConfirmed ||
+    isPendingFinalization ||
+    requiresManualReview ||
+    String(booking?.paymentStatus || "").toLowerCase() === "paid";
   const isAgentBooking =
     Boolean(booking?.isAgentBooking) ||
     String(booking?.sourceChannel || "").toLowerCase() === "agent_portal";
@@ -82,7 +140,9 @@ const PaymentSuccessPage = () => {
       : `/my-booking/${booking.bookingReference}`
     : "";
   const paymentStatusPath = booking?.bookingReference
-    ? `/payment-status/${booking.bookingReference}`
+    ? orderTrackingId
+      ? `/payment-status/${booking.bookingReference}?OrderTrackingId=${encodeURIComponent(orderTrackingId)}`
+      : ""
     : "";
 
   return (
@@ -92,28 +152,38 @@ const PaymentSuccessPage = () => {
       <Card className="surface-card payment-result-card">
         <Card.Body>
           <div className="payment-result-badge-wrap">
-            <Badge bg={isPaid ? (isPendingFinalization ? "warning" : "success") : "danger"}>
-              {isPendingFinalization
-                ? "Paid, supplier confirmation pending"
-                : isPaid
-                  ? "Payment verified"
-                  : "Payment not completed"}
+            <Badge bg={isBookingConfirmed ? "success" : isPaid ? "warning" : "danger"}>
+              {isBookingConfirmed
+                ? "Booking confirmed"
+                : requiresManualReview
+                  ? "Payment received"
+                  : isPendingFinalization
+                    ? "Paid, supplier confirmation pending"
+                    : "Payment not completed"}
             </Badge>
           </div>
 
           <h2 className="mb-2">
-            {isPendingFinalization
-              ? "Payment received"
-              : isPaid
-                ? "Payment successful"
-                : "Payment verification failed"}
+            {isBookingConfirmed
+              ? "Booking confirmed"
+              : requiresManualReview
+                ? "Payment confirmed"
+                : isPendingFinalization
+                  ? "Confirming your booking"
+                  : isPaid
+                    ? "Payment successful"
+                    : "Payment verification failed"}
           </h2>
           <p className="section-subtitle mb-3">
-            {isPendingFinalization
-              ? "Your payment is confirmed. Supplier confirmation is still processing, but your invoice is marked paid."
-              : isPaid
-                ? "Your payment is confirmed and your booking has been processed in Bokun."
-                : "We could not confirm this payment. Please try again or contact support."}
+            {isBookingConfirmed
+              ? "Your payment is confirmed and your booking has been processed in Bokun."
+              : requiresManualReview
+                ? "Your payment is confirmed. Our team will review the supplier confirmation shortly."
+                : isPendingFinalization
+                  ? "Your payment is confirmed. We are checking Bokun automatically and this page will update when your booking is confirmed."
+                  : isPaid
+                    ? "Your payment is confirmed and your booking is being processed."
+                    : "We could not confirm this payment. Please try again or contact support."}
           </p>
 
           {booking ? (
@@ -130,13 +200,35 @@ const PaymentSuccessPage = () => {
                 <span>Booking status</span>
                 <strong>{booking.bookingStatus || "-"}</strong>
               </div>
+              {isBookingConfirmed ? (
+                <>
+                  <div>
+                    <span>Tour</span>
+                    <strong>{booking.productTitle || "-"}</strong>
+                  </div>
+                  <div>
+                    <span>Travel date</span>
+                    <strong>{booking.travelDate || "-"}{booking.startTime ? ` at ${booking.startTime}` : ""}</strong>
+                  </div>
+                  <div>
+                    <span>Amount paid</span>
+                    <strong>{booking.currency || "USD"} {Number(booking.amountPaid || 0).toFixed(2)}</strong>
+                  </div>
+                  {booking.confirmationCode ? (
+                    <div>
+                      <span>Confirmation code</span>
+                      <strong>{booking.confirmationCode}</strong>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
             </div>
           ) : null}
 
           <div className="d-flex flex-wrap gap-2 mt-4">
             {isPendingFinalization ? (
-              <Button variant="outline-primary" onClick={() => window.location.reload()}>
-                Recheck supplier confirmation
+              <Button variant="outline-primary" onClick={() => setRefreshKey((current) => current + 1)}>
+                Check status now
               </Button>
             ) : null}
             {booking?.bookingReference ? (
@@ -144,7 +236,7 @@ const PaymentSuccessPage = () => {
                 {isAgentBooking ? "Open agent booking" : "View my booking"}
               </Button>
             ) : null}
-            {booking?.bookingReference ? (
+            {paymentStatusPath ? (
               <Button as={Link} to={paymentStatusPath} variant="outline-primary">
                 Track payment status
               </Button>

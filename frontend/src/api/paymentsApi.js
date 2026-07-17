@@ -30,6 +30,16 @@ export const verifyPesapalPayment = async ({ orderTrackingId = "", orderMerchant
   return response.data.data;
 };
 
+export const fetchPesapalPaymentStatus = async ({ orderTrackingId = "", orderMerchantReference = "" } = {}) => {
+  const response = await axiosClient.get("/payments/pesapal/status", {
+    params: {
+      ...(orderTrackingId ? { OrderTrackingId: orderTrackingId } : {}),
+      ...(orderMerchantReference ? { OrderMerchantReference: orderMerchantReference } : {})
+    }
+  });
+  return response.data.data;
+};
+
 export const verifyDpoPayment = async ({ transactionToken = "" } = {}) => {
   const response = await axiosClient.get("/payments/dpo/success", {
     params: {

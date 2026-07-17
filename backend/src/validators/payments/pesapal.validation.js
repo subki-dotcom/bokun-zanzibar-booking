@@ -134,6 +134,27 @@ const paymentSuccessSchema = z.object({
     })
 });
 
+const customerPaymentStatusSchema = z.object({
+  body: z.object({}).optional(),
+  params: z.object({}).optional(),
+  query: z
+    .object({
+      OrderTrackingId: z.string().min(8).optional(),
+      orderTrackingId: z.string().min(8).optional(),
+      OrderMerchantReference: z.string().optional(),
+      orderMerchantReference: z.string().optional()
+    })
+    .superRefine((query, ctx) => {
+      if (!query.OrderTrackingId && !query.orderTrackingId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "OrderTrackingId is required",
+          path: ["OrderTrackingId"]
+        });
+      }
+    })
+});
+
 const paymentCancelSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
@@ -149,5 +170,6 @@ const paymentCancelSchema = z.object({
 module.exports = {
   createPesapalSchema,
   paymentSuccessSchema,
+  customerPaymentStatusSchema,
   paymentCancelSchema
 };

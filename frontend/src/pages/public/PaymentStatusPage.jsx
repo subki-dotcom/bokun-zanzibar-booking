@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Container } from "react-bootstrap";
 import { BsCheckCircle, BsClockHistory, BsCreditCard, BsExclamationTriangle, BsFileEarmarkText, BsShieldCheck } from "react-icons/bs";
-import { Link, useParams } from "react-router-dom";
-import { fetchBookingByReference } from "../../api/bookingsApi";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { fetchPesapalPaymentStatus } from "../../api/paymentsApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import { formatCurrency } from "../../utils/formatters";
@@ -26,24 +26,69 @@ const StatusStep = ({ icon, title, copy, state }) => (
 
 const PaymentStatusPage = () => {
   const { reference } = useParams();
+  const [searchParams] = useSearchParams();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const orderTrackingId = String(
+    searchParams.get("OrderTrackingId") || searchParams.get("orderTrackingId") || ""
+  ).trim();
 
   useEffect(() => {
+    let isActive = true;
+    let refreshTimer = null;
+    let attempts = 0;
+    const maxAttempts = 40;
+
     const load = async () => {
+      if (!orderTrackingId) {
+        if (isActive) {
+          setError("This payment status link is incomplete. Return to the payment confirmation page.");
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
-        const data = await fetchBookingByReference(reference);
-        setBooking(data);
+        const data = await fetchPesapalPaymentStatus({ orderTrackingId });
+        if (!isActive) return;
+
+        setBooking(data.booking || null);
+        setError("");
+
+        const paymentStatus = String(data?.paymentStatus || "").toLowerCase();
+        const isConfirmed = String(data?.bookingStatus || "").toLowerCase() === "confirmed";
+        const isFailed = data?.isTerminal && !isConfirmed;
+
+        attempts += 1;
+        if (!isConfirmed && !isFailed && attempts < maxAttempts) {
+          refreshTimer = window.setTimeout(load, 3000);
+        }
       } catch (err) {
-        setError(err.message || "Could not load payment status");
+        if (isActive) {
+          setError(err.message || "Could not load payment status");
+        }
+        attempts += 1;
+        if (isActive && attempts < 6) {
+          refreshTimer = window.setTimeout(load, 4000);
+        }
       } finally {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       }
     };
 
     load();
-  }, [reference]);
+
+    return () => {
+      isActive = false;
+      if (refreshTimer) {
+        window.clearTimeout(refreshTimer);
+      }
+    };
+  }, [orderTrackingId, refreshKey]);
 
   const state = useMemo(() => {
     const paymentStatus = String(booking?.paymentStatus || "").toLowerCase();
@@ -52,7 +97,8 @@ const PaymentStatusPage = () => {
 
     return {
       isPaid: paymentStatus === "paid",
-      isFailed: paymentStatus === "failed" || bookingStatus === "failed",
+      isManualReview: bookingStatus === "manual_review_required",
+      isFailed: paymentStatus === "failed" || bookingStatus === "failed" || bookingStatus === "cancelled",
       isConfirmed: bookingStatus === "confirmed" && hasBokun,
       paymentStatus,
       bookingStatus
@@ -69,6 +115,7 @@ const PaymentStatusPage = () => {
 
   const currency = booking?.currency || booking?.pricingSnapshot?.currency || "USD";
   const total = Number(booking?.amount || booking?.pricingSnapshot?.finalPayable || 0);
+  const amountPaid = Number(booking?.amountPaid || total || 0);
 
   return (
     <main className="payment-status-page">
@@ -86,9 +133,9 @@ const PaymentStatusPage = () => {
                 </div>
                 <div className="payment-status-total">
                   <small>Total</small>
-                  <strong>{formatCurrency(total, currency)}</strong>
+                  <strong>{formatCurrency(amountPaid, currency)}</strong>
                   <Badge bg={state.isConfirmed ? "success" : state.isFailed ? "danger" : "warning"}>
-                    {state.isConfirmed ? "Confirmed" : state.isFailed ? "Attention needed" : "Processing"}
+                    {state.isConfirmed ? "Confirmed" : state.isManualReview ? "Review pending" : state.isFailed ? "Attention needed" : "Processing"}
                   </Badge>
                 </div>
               </div>
@@ -103,14 +150,14 @@ const PaymentStatusPage = () => {
                 <StatusStep
                   icon={<BsShieldCheck />}
                   title="Bokun Confirmation"
-                  copy={state.isConfirmed ? "Booking has been created and confirmed in Bokun." : "Booking will be sent to Bokun only after payment is confirmed."}
-                  state={getStepState({ done: state.isConfirmed, active: state.isPaid && !state.isConfirmed, failed: state.isFailed })}
+                  copy={state.isConfirmed ? "Booking has been created and confirmed in Bokun." : state.isManualReview ? "Our team is reviewing the supplier confirmation." : "Booking will be sent to Bokun only after payment is confirmed."}
+                  state={getStepState({ done: state.isConfirmed, active: state.isPaid && !state.isConfirmed && !state.isManualReview, failed: state.isFailed })}
                 />
                 <StatusStep
                   icon={state.isFailed ? <BsExclamationTriangle /> : <BsCheckCircle />}
                   title="Ready for Travel"
-                  copy={state.isConfirmed ? "Your booking is ready. Keep your reference for support." : "We will show confirmation details here once processing is complete."}
-                  state={getStepState({ done: state.isConfirmed, active: state.isPaid && !state.isConfirmed, failed: state.isFailed })}
+                  copy={state.isConfirmed ? "Your booking is ready. Keep your reference for support." : state.isManualReview ? "Your payment is safe. Support will contact you after supplier review." : "We will show confirmation details here once processing is complete."}
+                  state={getStepState({ done: state.isConfirmed, active: state.isPaid && !state.isConfirmed && !state.isManualReview, failed: state.isFailed })}
                 />
               </div>
 
@@ -122,8 +169,8 @@ const PaymentStatusPage = () => {
                   <BsFileEarmarkText /> Invoice
                 </Button>
                 {!state.isConfirmed ? (
-                  <Button variant="outline-primary" onClick={() => window.location.reload()}>
-                    <BsClockHistory /> Refresh Status
+                  <Button variant="outline-primary" onClick={() => setRefreshKey((current) => current + 1)}>
+                    <BsClockHistory /> Check Status
                   </Button>
                 ) : null}
               </div>

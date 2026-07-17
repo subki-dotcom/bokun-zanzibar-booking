@@ -5,6 +5,7 @@ const pesapalController = require("../../controllers/payments/pesapal.controller
 const {
   createPesapalSchema,
   paymentSuccessSchema,
+  customerPaymentStatusSchema,
   paymentCancelSchema
 } = require("../../validators/payments/pesapal.validation");
 
@@ -19,6 +20,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 router.post("/create", optionalAuth, validateRequest(createPesapalSchema), pesapalController.create);
+router.get("/status", validateRequest(customerPaymentStatusSchema), pesapalController.status);
 router.get("/success", validateRequest(paymentSuccessSchema), pesapalController.success);
 router.get("/cancel", validateRequest(paymentCancelSchema), pesapalController.cancel);
 router.get("/ipn", pesapalController.ipn);

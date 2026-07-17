@@ -17,7 +17,7 @@ const create = asyncHandler(async (req, res) => {
 });
 
 const success = asyncHandler(async (req, res) => {
-  const data = await pesapalService.handlePaymentSuccess({
+  const data = await pesapalService.verifyAndReconcilePesapalPayment({
     orderTrackingId:
       req.validated.query.OrderTrackingId ||
       req.validated.query.orderTrackingId ||
@@ -32,6 +32,25 @@ const success = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: data.status === "paid" ? "Payment verified" : "Payment verification completed",
+    data
+  });
+});
+
+const status = asyncHandler(async (req, res) => {
+  const data = await pesapalService.getCustomerPaymentStatus({
+    orderTrackingId:
+      req.validated.query.OrderTrackingId ||
+      req.validated.query.orderTrackingId ||
+      "",
+    orderMerchantReference:
+      req.validated.query.OrderMerchantReference ||
+      req.validated.query.orderMerchantReference ||
+      "",
+    requestId: req.requestId
+  });
+
+  return successResponse(res, {
+    message: data.message,
     data
   });
 });
@@ -62,7 +81,7 @@ const ipn = asyncHandler(async (req, res) => {
     ...(req.body || {})
   };
 
-  const data = await pesapalService.handlePaymentSuccess({
+  const data = await pesapalService.verifyAndReconcilePesapalPayment({
     orderTrackingId:
       payload.OrderTrackingId ||
       payload.orderTrackingId ||
@@ -84,6 +103,7 @@ const ipn = asyncHandler(async (req, res) => {
 module.exports = {
   create,
   success,
+  status,
   cancel,
   ipn
 };
