@@ -104,6 +104,34 @@ const bookingSchema = new mongoose.Schema(
       default: BOOKING_STATUS.PENDING
     },
     pendingCheckout: mongoose.Schema.Types.Mixed,
+    // Only populated for paid legacy bookings that failed because the former
+    // Bókun payload omitted a real pricingCategoryId.
+    legacyBokunRecovery: {
+      status: {
+        type: String,
+        enum: [
+          "processing",
+          "recovered",
+          "reconciled",
+          "handoff_to_standard_retry",
+          "manual_review_required",
+          "skipped"
+        ],
+        default: undefined
+      },
+      classification: { type: String, default: "" },
+      attemptCount: { type: Number, default: 0 },
+      recoveryAttemptedAt: { type: Date, default: null },
+      completedAt: { type: Date, default: null },
+      lockToken: { type: String, default: "" },
+      lockedAt: { type: Date, default: null },
+      lastError: {
+        code: { type: String, default: "" },
+        statusCode: { type: Number, default: null },
+        message: { type: String, default: "" },
+        at: { type: Date, default: null }
+      }
+    },
     cancellation: {
       reason: { type: String, default: "" },
       cancelledAt: Date,
@@ -153,5 +181,15 @@ bookingSchema.index(
     }
   }
 );
+
+bookingSchema.index({
+  paymentStatus: 1,
+  bokunBookingId: 1,
+  bokunConfirmationCode: 1,
+  bookingStatus: 1,
+  travelDate: 1,
+  "pendingCheckout.finalization.status": 1,
+  "legacyBokunRecovery.status": 1
+});
 
 module.exports = mongoose.model("Booking", bookingSchema);

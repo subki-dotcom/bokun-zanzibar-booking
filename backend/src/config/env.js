@@ -25,6 +25,8 @@ const env = cleanEnv(process.env, {
   BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS: num({ default: 180 }),
   BOOKING_FINALIZATION_RETRY_BATCH_SIZE: num({ default: 20 }),
   BOOKING_FINALIZATION_MAX_RETRIES: num({ default: 8 }),
+  BOOKING_LEGACY_PRICING_RECOVERY_ENABLED: bool({ default: true }),
+  BOOKING_LEGACY_PRICING_RECOVERY_BATCH_SIZE: num({ default: 10 }),
   PESAPAL_BASE_URL: str({ default: "https://pay.pesapal.com/v3/api" }),
   PESAPAL_AUTH_PATH: str({ default: "/Auth/RequestToken" }),
   PESAPAL_SUBMIT_ORDER_PATH: str({ default: "/Transactions/SubmitOrderRequest" }),

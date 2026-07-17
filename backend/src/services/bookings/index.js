@@ -16,6 +16,7 @@ const invoicesService = require("../invoices");
 const commissionsService = require("../commissions");
 const paymentsService = require("../payments");
 const notificationsService = require("../notifications");
+const legacyBokunRecoveryService = require("./legacyBokunRecovery.service");
 
 const normalizeTicketCategory = (value = "") => {
   const token = String(value).toLowerCase();
@@ -269,6 +270,11 @@ const buildPendingFinalizationQuery = ({ nowIso = toIsoNow(), force = false } = 
   }
 
   query.$and = [
+    {
+      "legacyBokunRecovery.status": {
+        $nin: ["manual_review_required", "recovered", "reconciled"]
+      }
+    },
     {
       $or: [
         { "pendingCheckout.finalization.status": { $exists: false } },
@@ -2205,6 +2211,35 @@ const retryBookingFinalization = async ({ bookingId, auth, requestId, force = fa
     );
   }
 
+  const legacyRecovery = await legacyBokunRecoveryService.recoverLegacyBooking({
+    bookingId: booking._id,
+    requestId,
+    source: "admin_legacy_recovery",
+    finalizeBooking: finalizePendingBookingAfterPayment,
+    syncInvoice: ({ bookingId: recoveryBookingId, requestId: recoveryRequestId }) =>
+      syncInvoiceForBookingReference({
+        bookingId: recoveryBookingId,
+        auth,
+        requestId: recoveryRequestId,
+        reason: "Legacy Bókun recovery verified the invoice before finalization"
+      })
+  });
+
+  if (legacyRecovery.status === "in_progress") {
+    return {
+      status: "in_progress",
+      reason: legacyRecovery.reason || "legacy_recovery_lock_busy"
+    };
+  }
+
+  if (legacyRecovery.status !== "skipped") {
+    return {
+      status: legacyRecovery.status,
+      booking: legacyRecovery.response || toBookingResponsePayload({ bookingDoc: legacyRecovery.booking || booking }),
+      classification: legacyRecovery.classification || ""
+    };
+  }
+
   const paidAmount = await paymentsService.getVerifiedPaidAmountByBookingReference({
     bookingReference: booking.bookingReference
   });
@@ -2278,28 +2313,70 @@ const reconcilePendingFinalizations = async ({
     1,
     Math.min(200, Number(limit || env.BOOKING_FINALIZATION_RETRY_BATCH_SIZE || 20))
   );
-  const candidates = await Booking.find(
-    buildPendingFinalizationQuery({
-      force,
-      nowIso: toIsoNow()
-    })
-  )
-    .sort({
-      "pendingCheckout.finalization.nextRetryAt": 1,
-      updatedAt: 1
-    })
-    .limit(safeLimit);
+  const legacyRecovery = env.BOOKING_LEGACY_PRICING_RECOVERY_ENABLED
+    ? await legacyBokunRecoveryService.recoverLegacyPricingCategoryBookings({
+        limit: Math.min(safeLimit, Number(env.BOOKING_LEGACY_PRICING_RECOVERY_BATCH_SIZE || 10)),
+        requestId,
+        source,
+        finalizeBooking: finalizePendingBookingAfterPayment,
+        syncInvoice: ({ bookingId, requestId: recoveryRequestId }) =>
+          syncInvoiceForBookingReference({
+            bookingId,
+            auth,
+            requestId: recoveryRequestId,
+            reason: "Legacy Bókun recovery verified the invoice before finalization"
+          })
+      })
+    : {
+        summary: {
+          requested: 0,
+          scanned: 0,
+          eligible: 0,
+          processed: 0,
+          successful: 0,
+          confirmed: 0,
+          pendingRetry: 0,
+          inProgress: 0,
+          failed: 0,
+          manualReview: 0,
+          duplicatesPrevented: 0,
+          skipped: 0,
+          skipReasons: {}
+        },
+        results: []
+  };
+  const remainingLimit = Math.max(0, safeLimit - Number(legacyRecovery.summary.processed || 0));
+  const candidates = remainingLimit
+    ? await Booking.find(
+        buildPendingFinalizationQuery({
+          force,
+          nowIso: toIsoNow()
+        })
+      )
+        .sort({
+          "pendingCheckout.finalization.nextRetryAt": 1,
+          updatedAt: 1
+        })
+        .limit(remainingLimit)
+    : [];
 
   const summary = {
     requested: safeLimit,
-    processed: 0,
-    confirmed: 0,
-    pendingRetry: 0,
-    inProgress: 0,
-    failed: 0
+    scanned: Number(legacyRecovery.summary.scanned || 0),
+    eligible: Number(legacyRecovery.summary.eligible || 0),
+    processed: Number(legacyRecovery.summary.processed || 0),
+    successful: Number(legacyRecovery.summary.successful || 0),
+    confirmed: Number(legacyRecovery.summary.confirmed || 0),
+    pendingRetry: Number(legacyRecovery.summary.pendingRetry || 0),
+    inProgress: Number(legacyRecovery.summary.inProgress || 0),
+    failed: Number(legacyRecovery.summary.failed || 0),
+    manualReview: Number(legacyRecovery.summary.manualReview || 0),
+    duplicatesPrevented: Number(legacyRecovery.summary.duplicatesPrevented || 0),
+    skipped: Number(legacyRecovery.summary.skipped || 0),
+    skipReasons: legacyRecovery.summary.skipReasons || {}
   };
 
-  const results = [];
+  const results = [...legacyRecovery.results];
 
   for (const booking of candidates) {
     summary.processed += 1;
@@ -2317,6 +2394,7 @@ const reconcilePendingFinalizations = async ({
       });
 
       summary.confirmed += 1;
+      summary.successful += 1;
       results.push({
         bookingId: booking._id.toString(),
         bookingReference: booking.bookingReference,
@@ -2361,7 +2439,8 @@ const reconcilePendingFinalizations = async ({
     metadata: {
       source,
       force: Boolean(force),
-      summary
+      summary,
+      legacyRecovery: legacyRecovery.summary
     }
   });
 
