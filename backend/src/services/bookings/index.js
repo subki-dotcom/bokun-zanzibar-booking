@@ -459,22 +459,6 @@ const buildBokunCreatePayloadVariants = ({ checkoutPayload = {}, liveQuote = {} 
     });
   }
 
-  if (baseParticipants.length > 0) {
-    addVariant("pax_only_no_categories", {
-      ...basePayload,
-      priceCategoryParticipants: []
-    });
-  }
-
-  if (basePayload.startTime || baseExtras.length > 0 || baseParticipants.length > 0) {
-    addVariant("minimal_fallback", {
-      ...basePayload,
-      startTime: undefined,
-      priceCategoryParticipants: [],
-      extras: []
-    });
-  }
-
   return variants;
 };
 
@@ -703,17 +687,36 @@ const sanitizeSelectedExtras = (requestedExtras = [], availableExtras = []) => {
     .filter(Boolean);
 };
 
-const sanitizeSelectedParticipants = (requestedParticipants = [], availableCategories = []) => {
+const sanitizeSelectedParticipants = (requestedParticipants = [], availableCategories = [], pax = {}) => {
   const requestedMap = new Map(
     normalizePriceCategoryParticipants(requestedParticipants).map((item) => [item.categoryId, item])
   );
+  const categories = (availableCategories || []).filter((category) => Boolean(category?.categoryId));
+  const hasMatchingRequestedParticipant = categories.some((category) =>
+    requestedMap.has(String(category.categoryId))
+  );
+  const paxSummary = buildPaxSummary(pax);
 
-  return (availableCategories || []).map((category) => {
+  const fallbackQuantityForCategory = (category = {}) => {
+    const ticketCategory = normalizeTicketCategory(category.ticketCategory || category.title);
+
+    if (ticketCategory === "adult") return paxSummary.adults;
+    if (ticketCategory === "child") return paxSummary.children;
+    if (ticketCategory === "infant") return paxSummary.infants;
+
+    return Number(category.quantity || 0);
+  };
+
+  const selected = categories.map((category) => {
     const categoryId = String(category.categoryId || "");
     const requested = requestedMap.get(categoryId);
     const minQuantity = Math.max(0, Number(category.minQuantity || 0));
     const maxQuantity = Math.max(minQuantity, Number(category.maxQuantity || 50));
-    const quantity = requested ? Number(requested.quantity || 0) : Number(category.quantity || 0);
+    const quantity = requested
+      ? Number(requested.quantity || 0)
+      : hasMatchingRequestedParticipant
+        ? Number(category.quantity || 0)
+        : fallbackQuantityForCategory(category);
 
     return {
       categoryId,
@@ -722,6 +725,18 @@ const sanitizeSelectedParticipants = (requestedParticipants = [], availableCateg
       quantity: Math.min(maxQuantity, Math.max(minQuantity, quantity))
     };
   });
+
+  if (!hasMatchingRequestedParticipant && paxSummary.total > 0 && !selected.some((item) => item.quantity > 0)) {
+    const fallback = selected[0];
+    if (fallback) {
+      fallback.quantity = Math.min(
+        Number(fallback.maxQuantity || 50),
+        Math.max(Number(fallback.minQuantity || 0), Math.max(1, paxSummary.total))
+      );
+    }
+  }
+
+  return selected;
 };
 
 const normalizePriceCatalogs = (priceCatalogs = []) =>
@@ -877,7 +892,8 @@ const getLiveQuote = async ({
   ensureSelectedTimeSlot({ availability, startTime });
   const selectedParticipants = sanitizeSelectedParticipants(
     priceCategoryParticipants,
-    availability.priceCategories || []
+    availability.priceCategories || [],
+    pax
   );
   const selectedExtras = sanitizeSelectedExtras(extras, availability.extras || []);
 

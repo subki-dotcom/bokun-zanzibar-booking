@@ -1674,6 +1674,34 @@ const mapActivityAvailability = ({ payload = {}, rawAvailabilities = [], priceLi
     priceList,
     defaultCurrency
   });
+  const priceListRate = resolvePriceListRate({
+    priceList,
+    selectedRateId: selectedRateContext.selectedRateId
+  });
+  const pricingCategoryMap = new Map(
+    ensureArray(pricing.priceCategories).map((category = {}) => [
+      String(category.categoryId || ""),
+      category
+    ])
+  );
+
+  // Bókun requires a pricing category for every activity passenger, even when
+  // the selected rate is priced per booking instead of per person.
+  ensureArray(priceListRate?.passengers).forEach((passenger) => {
+    const category = normalizePassengerCategoryRow(passenger);
+    if (!category || pricingCategoryMap.has(category.categoryId)) {
+      return;
+    }
+
+    pricingCategoryMap.set(category.categoryId, {
+      categoryId: category.categoryId,
+      title: category.title,
+      ticketCategory: category.ticketCategory,
+      quantity: 0,
+      minQuantity: category.minQuantity,
+      maxQuantity: category.maxQuantity
+    });
+  });
 
   const extras = buildOptionalExtras({
     selectedRateDefinition: selectedRateContext.selectedRateDefinition,
@@ -1691,7 +1719,7 @@ const mapActivityAvailability = ({ payload = {}, rawAvailabilities = [], priceLi
     availablePriceCatalogs: selectedCatalog.available,
     currency: pricing.currency,
     slots,
-    priceCategories: pricing.priceCategories || [],
+    priceCategories: Array.from(pricingCategoryMap.values()),
     extras,
     pricing
   };

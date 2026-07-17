@@ -1827,12 +1827,11 @@ const buildActivityPassengers = (payload = {}) => {
     return passengersFromCategories;
   }
 
-  const adults = Math.max(0, Number(payload.pax?.adults || 0));
-  const children = Math.max(0, Number(payload.pax?.children || 0));
-  const infants = Math.max(0, Number(payload.pax?.infants || 0));
-  const total = adults + children + infants;
-
-  return total > 0 ? [{ groupSize: total }] : [];
+  throw new AppError(
+    "A live Bokun pricing category is required for every traveler before booking can be created.",
+    422,
+    "BOKUN_PRICING_CATEGORY_REQUIRED"
+  );
 };
 
 const buildActivityExtras = (extras = []) =>
