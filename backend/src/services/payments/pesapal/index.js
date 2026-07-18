@@ -1026,9 +1026,11 @@ const verifyAndProcessPesapalPayment = async ({
     };
   }
 
+  let verification = null;
+
   try {
     const trackingId = String(orderTrackingId || booking.paymentTransactionId || "").trim();
-    const verification = await verifyOrderWithPesapal({
+    verification = await verifyOrderWithPesapal({
       orderTrackingId: trackingId,
       requestId
     });
@@ -1249,20 +1251,22 @@ const verifyAndProcessPesapalPayment = async ({
       // Never let a mismatched callback alter the local payment state. It may
       // be an invalid request while the legitimate provider verification is
       // still in flight.
-      await updatePaymentLogForVerification({
-        bookingReference: booking.bookingReference,
-        isPaid: false,
-        amount: 0,
-        verification,
-        orderTrackingId: booking.paymentTransactionId || orderTrackingId || "",
-        merchantReference:
-          verification?.merchantReference ||
-          orderMerchantReference ||
-          booking.pendingCheckout?.pesapalMerchantReference ||
-          booking.bookingReference,
-        source,
-        localStatus: "verification_error"
-      });
+      if (verification) {
+        await updatePaymentLogForVerification({
+          bookingReference: booking.bookingReference,
+          isPaid: false,
+          amount: 0,
+          verification,
+          orderTrackingId: booking.paymentTransactionId || orderTrackingId || "",
+          merchantReference:
+            verification.merchantReference ||
+            orderMerchantReference ||
+            booking.pendingCheckout?.pesapalMerchantReference ||
+            booking.bookingReference,
+          source,
+          localStatus: "verification_error"
+        });
+      }
 
       logger.warn("Pesapal verification rejected due to a security mismatch", {
         requestId,
