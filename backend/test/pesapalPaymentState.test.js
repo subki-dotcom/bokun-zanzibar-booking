@@ -49,3 +49,32 @@ test("keeps amount mismatches blocked and records both values for reconciliation
       error.details.verifiedAmount === 80
   );
 });
+
+test("accounts for the original order currency when Pesapal completes a converted payment", () => {
+  const result = __testables.validatePesapalVerification({
+    booking: {
+      bookingReference: "ZNZ-TEST-2",
+      paymentTransactionId: "tracking-2",
+      amount: 1,
+      currency: "USD",
+      pendingCheckout: { pesapalMerchantReference: "ZNZ-TEST-2" }
+    },
+    orderTrackingId: "tracking-2",
+    orderMerchantReference: "ZNZ-TEST-2",
+    verification: {
+      isPaid: true,
+      providerOrderTrackingId: "tracking-2",
+      merchantReference: "ZNZ-TEST-2",
+      amount: 2626,
+      currency: "TZS"
+    }
+  });
+
+  assert.deepEqual(result, {
+    accountingAmount: 1,
+    accountingCurrency: "USD",
+    providerAmount: 2626,
+    providerCurrency: "TZS",
+    currencyConverted: true
+  });
+});

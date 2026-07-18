@@ -440,6 +440,17 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
   const returnedAmount = toMoneyAmount(verification?.amount || 0);
   const expectedCurrency = normalizeCurrency(booking?.currency || booking?.pricingSnapshot?.currency || "USD");
   const returnedCurrency = normalizeCurrency(verification?.currency || expectedCurrency);
+  const submittedAmount = toMoneyAmount(booking?.pendingCheckout?.pesapalRequestedAmount ?? expectedAmount);
+  const submittedCurrency = normalizeCurrency(
+    booking?.pendingCheckout?.pesapalRequestedCurrency || expectedCurrency
+  );
+  const orderQuoteMatchesBooking =
+    Math.abs(submittedAmount - expectedAmount) <= 0.009 && submittedCurrency === expectedCurrency;
+  const isCurrencyConvertedPayment =
+    Boolean(verification?.isPaid) &&
+    returnedAmount > 0 &&
+    returnedCurrency !== expectedCurrency &&
+    orderQuoteMatchesBooking;
 
   if (expectedTrackingId && orderTrackingId && expectedTrackingId !== String(orderTrackingId).trim()) {
     throw new AppError("Pesapal tracking ID does not match this booking", 409, "PESAPAL_TRACKING_MISMATCH");
@@ -450,7 +461,12 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
   if (returnedMerchantReference && expectedMerchantReference && returnedMerchantReference !== expectedMerchantReference) {
     throw new AppError("Pesapal merchant reference does not match this booking", 409, "PESAPAL_MERCHANT_REFERENCE_MISMATCH");
   }
-  if (verification?.isPaid && returnedAmount > 0 && Math.abs(returnedAmount - expectedAmount) > 0.009) {
+  if (
+    verification?.isPaid &&
+    !isCurrencyConvertedPayment &&
+    returnedAmount > 0 &&
+    Math.abs(returnedAmount - expectedAmount) > 0.009
+  ) {
     throw new AppError(
       `Pesapal verified ${returnedCurrency} ${returnedAmount.toFixed(2)}, but this booking expects ${expectedCurrency} ${expectedAmount.toFixed(2)}.`,
       409,
@@ -465,7 +481,7 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
       }
     );
   }
-  if (verification?.isPaid && returnedCurrency !== expectedCurrency) {
+  if (verification?.isPaid && returnedCurrency !== expectedCurrency && !isCurrencyConvertedPayment) {
     throw new AppError("Pesapal verified currency does not match this booking", 409, "PESAPAL_VERIFIED_CURRENCY_MISMATCH", {
       bookingReference: booking?.bookingReference || "",
       expectedAmount,
@@ -475,6 +491,14 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
       orderTrackingId: expectedTrackingId || returnedTrackingId || ""
     });
   }
+
+  return {
+    accountingAmount: expectedAmount,
+    accountingCurrency: expectedCurrency,
+    providerAmount: returnedAmount,
+    providerCurrency: returnedCurrency,
+    currencyConverted: isCurrencyConvertedPayment
+  };
 };
 
 const resolveOrCreatePendingBooking = async ({ payload, auth, requestId }) => {
@@ -933,6 +957,8 @@ const createPayment = async ({ payload, auth, requestId }) => {
     pesapalInitializedAt: new Date().toISOString(),
     pesapalOrderTrackingId: orderResponse.orderTrackingId,
     pesapalMerchantReference: orderResponse.merchantReference,
+    pesapalRequestedAmount: toMoneyAmount(booking.amount || booking.pricingSnapshot?.finalPayable || 0),
+    pesapalRequestedCurrency: normalizeCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD"),
     pesapalCreateOrderResult: orderResponse.raw || {},
     paymentInitiatedAt: new Date().toISOString()
   };
@@ -1039,7 +1065,7 @@ const verifyAndProcessPesapalPayment = async ({
       orderTrackingId: trackingId,
       requestId
     });
-    validatePesapalVerification({
+    const paymentVerification = validatePesapalVerification({
       booking,
       verification,
       orderTrackingId: trackingId,
@@ -1162,7 +1188,7 @@ const verifyAndProcessPesapalPayment = async ({
       };
     }
 
-    const paidAmount = Number(verification.amount || booking.amount || 0);
+    const paidAmount = paymentVerification.accountingAmount;
     const merchantReference =
       verification.merchantReference ||
       orderMerchantReference ||
@@ -1187,8 +1213,10 @@ const verifyAndProcessPesapalPayment = async ({
           paymentMethod: "pesapal",
           paymentProvider: "pesapal",
           amountPaid: paidAmount,
-          currency: verification.currency || booking.currency || "USD",
-          reason: "Pesapal payment verified before Bokun finalization"
+          currency: paymentVerification.accountingCurrency,
+          reason: paymentVerification.currencyConverted
+            ? `Pesapal payment verified after ${paymentVerification.providerCurrency} conversion before Bokun finalization`
+            : "Pesapal payment verified before Bokun finalization"
         })
       : booking;
 
