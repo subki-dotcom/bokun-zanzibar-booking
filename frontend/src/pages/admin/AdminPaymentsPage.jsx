@@ -191,6 +191,11 @@ const AdminPaymentsPage = () => {
                         <Badge bg={statusVariant(row.bokunSupplierStatus)}>
                           {row.bokunBookingId || row.bokunSupplierStatus}
                         </Badge>
+                        {row.bokunFailureReason ? (
+                          <small className="d-block text-danger mt-1" title={row.bokunFailureReason}>
+                            {row.bokunFailureCode ? `${row.bokunFailureCode}: ` : ""}{row.bokunFailureReason}
+                          </small>
+                        ) : null}
                       </td>
                       <td>{formatCurrency(row.expectedAmount || 0, row.currency || "USD")}</td>
                       <td>
