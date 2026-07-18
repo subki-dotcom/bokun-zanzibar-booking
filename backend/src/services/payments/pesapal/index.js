@@ -1205,7 +1205,7 @@ const verifyAndProcessPesapalPayment = async ({
     });
 
     const needsPaymentReconciliation = booking.paymentStatus !== "paid" || !isInvoiceReconciledPaid(booking);
-    const paidBooking = needsPaymentReconciliation
+    let paidBooking = needsPaymentReconciliation
       ? await bookingsService.markBookingPaymentVerified({
           bookingId: booking._id,
           requestId,
@@ -1219,6 +1219,19 @@ const verifyAndProcessPesapalPayment = async ({
             : "Pesapal payment verified before Bokun finalization"
         })
       : booking;
+
+    // Some paid legacy bookings were stopped before Bókun finalization by the
+    // former strict Pesapal currency check. A fresh verified transaction is
+    // enough to reopen only that narrow failure category.
+    const finalizationReactivation =
+      await bookingsService.reactivateFinalizationAfterPesapalVerification({
+        bookingId: paidBooking._id,
+        requestId,
+        source
+      });
+    if (finalizationReactivation.booking) {
+      paidBooking = finalizationReactivation.booking;
+    }
 
     if (paidBooking.bokunBookingId) {
       return {

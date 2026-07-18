@@ -70,6 +70,10 @@ const FINALIZATION_STATUS = {
 };
 
 const FINALIZATION_LOCK_STALE_AFTER_SECONDS = 15 * 60;
+const LEGACY_PESAPAL_VERIFICATION_FAILURE_CODES = new Set([
+  "PESAPAL_VERIFIED_AMOUNT_MISMATCH",
+  "PESAPAL_VERIFIED_CURRENCY_MISMATCH"
+]);
 
 const toIsoNow = () => new Date().toISOString();
 
@@ -236,6 +240,132 @@ const releaseFinalizationLock = async ({
     },
     update
   );
+};
+
+const isRecoverableLegacyPesapalVerificationFailure = (booking = {}) => {
+  const finalization = booking?.pendingCheckout?.finalization || {};
+  const bookingStatus = String(booking?.bookingStatus || "").toLowerCase();
+  const failureCode = String(
+    finalization?.lastError?.code || booking?.pendingCheckout?.finalizationErrorCode || ""
+  ).trim();
+
+  return (
+    booking?.paymentStatus === "paid" &&
+    !booking?.bokunBookingId &&
+    !["cancelled", "completed"].includes(bookingStatus) &&
+    Boolean(booking?.pendingCheckout?.checkoutPayload) &&
+    String(finalization.status || "").toLowerCase() === FINALIZATION_STATUS.FAILED &&
+    LEGACY_PESAPAL_VERIFICATION_FAILURE_CODES.has(failureCode)
+  );
+};
+
+// A legacy Pesapal amount/currency mismatch can be resolved by a later live
+// verification after the gateway conversion rules have been corrected. This
+// reset is intentionally narrow: it never reopens a real Bókun failure.
+const reactivateFinalizationAfterPesapalVerification = async ({
+  bookingId,
+  requestId = "",
+  source = "pesapal_verification"
+} = {}) => {
+  const currentBooking = await Booking.findById(bookingId);
+  if (!currentBooking || !isRecoverableLegacyPesapalVerificationFailure(currentBooking)) {
+    return {
+      reactivated: false,
+      booking: currentBooking
+    };
+  }
+
+  const staleBefore = new Date(
+    Date.now() - FINALIZATION_LOCK_STALE_AFTER_SECONDS * 1000
+  ).toISOString();
+  const nowIso = toIsoNow();
+  const reactivatedBooking = await Booking.findOneAndUpdate(
+    {
+      _id: bookingId,
+      paymentStatus: "paid",
+      bookingStatus: { $nin: ["cancelled", "completed"] },
+      "pendingCheckout.checkoutPayload": { $exists: true },
+      $and: [
+        {
+          $or: [{ bokunBookingId: { $exists: false } }, { bokunBookingId: "" }]
+        },
+        {
+          $or: [
+            {
+              "pendingCheckout.finalization.lastError.code": {
+                $in: [...LEGACY_PESAPAL_VERIFICATION_FAILURE_CODES]
+              }
+            },
+            {
+              "pendingCheckout.finalizationErrorCode": {
+                $in: [...LEGACY_PESAPAL_VERIFICATION_FAILURE_CODES]
+              }
+            }
+          ]
+        },
+        {
+          "pendingCheckout.finalization.status": FINALIZATION_STATUS.FAILED
+        },
+        {
+          $or: [
+            { "pendingCheckout.finalization.lockToken": { $exists: false } },
+            { "pendingCheckout.finalization.lockToken": "" },
+            { "pendingCheckout.finalization.lockedAt": { $exists: false } },
+            { "pendingCheckout.finalization.lockedAt": { $lte: staleBefore } }
+          ]
+        }
+      ]
+    },
+    {
+      $set: {
+        bookingStatus: "pending",
+        supplierStatus: "supplier_pending",
+        supplierStatusUpdatedAt: new Date(),
+        supplierFailureReason: "",
+        "pendingCheckout.finalization.status": FINALIZATION_STATUS.IDLE,
+        "pendingCheckout.finalization.attemptCount": 0,
+        "pendingCheckout.finalization.finalizationPending": true,
+        "pendingCheckout.finalization.reactivatedAt": nowIso,
+        "pendingCheckout.finalization.reactivationSource": source,
+        "pendingCheckout.finalizationErrorAt": nowIso,
+        "pendingCheckout.finalizationPending": true
+      },
+      $unset: {
+        "pendingCheckout.finalization.lastError": "",
+        "pendingCheckout.finalization.nextRetryAt": "",
+        "pendingCheckout.finalizationError": "",
+        "pendingCheckout.finalizationErrorCode": "",
+        "pendingCheckout.finalizationErrorStatusCode": ""
+      }
+    },
+    { new: true }
+  );
+
+  if (!reactivatedBooking) {
+    return {
+      reactivated: false,
+      booking: await Booking.findById(bookingId)
+    };
+  }
+
+  await AuditLog.create({
+    actorId: null,
+    actorRole: "payment_gateway",
+    action: "booking_finalization_reactivated_after_pesapal_verification",
+    entityType: "Booking",
+    entityId: reactivatedBooking._id.toString(),
+    reason: "A current Pesapal verification cleared a legacy amount/currency mismatch before Bókun finalization",
+    requestId,
+    metadata: {
+      source,
+      bookingReference: reactivatedBooking.bookingReference
+    }
+  });
+
+  return {
+    reactivated: true,
+    booking: reactivatedBooking
+  };
 };
 
 const buildPendingFinalizationQuery = ({ nowIso = toIsoNow(), force = false } = {}) => {
@@ -2697,6 +2827,7 @@ module.exports = {
   createBooking,
   preparePendingPaymentBooking,
   finalizePendingBookingAfterPayment,
+  reactivateFinalizationAfterPesapalVerification,
   markBookingPaymentState,
   markBookingPaymentVerified,
   markBookingPaymentFailed,
@@ -2712,6 +2843,7 @@ module.exports = {
   __testables: {
     buildPendingFinalizationQuery,
     calculateNextFinalizationRetryAt,
-    extractFinalizationMetaFromError
+    extractFinalizationMetaFromError,
+    isRecoverableLegacyPesapalVerificationFailure
   }
 };

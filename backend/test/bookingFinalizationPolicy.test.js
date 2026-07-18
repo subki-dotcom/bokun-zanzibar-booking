@@ -50,3 +50,48 @@ test("automatic reconciliation skips permanent failed finalizations", () => {
   assert.equal(statuses.includes("failed"), false);
   assert.deepEqual(statuses.sort(), ["idle", "pending_retry"]);
 });
+
+test("only reactivates legacy Pesapal verification failures after a fresh verification", () => {
+  assert.equal(
+    __testables.isRecoverableLegacyPesapalVerificationFailure({
+      paymentStatus: "paid",
+      pendingCheckout: {
+        checkoutPayload: { productId: "activity-1" },
+        finalization: {
+          status: "failed",
+          lastError: { code: "PESAPAL_VERIFIED_AMOUNT_MISMATCH" }
+        }
+      }
+    }),
+    true
+  );
+
+  assert.equal(
+    __testables.isRecoverableLegacyPesapalVerificationFailure({
+      paymentStatus: "paid",
+      pendingCheckout: {
+        checkoutPayload: { productId: "activity-1" },
+        finalization: {
+          status: "failed",
+          lastError: { code: "BOKUN_REQUEST_FAILED" }
+        }
+      }
+    }),
+    false
+  );
+
+  assert.equal(
+    __testables.isRecoverableLegacyPesapalVerificationFailure({
+      paymentStatus: "paid",
+      bokunBookingId: "123456",
+      pendingCheckout: {
+        checkoutPayload: { productId: "activity-1" },
+        finalization: {
+          status: "failed",
+          lastError: { code: "PESAPAL_VERIFIED_CURRENCY_MISMATCH" }
+        }
+      }
+    }),
+    false
+  );
+});
