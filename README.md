@@ -312,7 +312,7 @@ The sync updates local booking snapshots (status/date/time/confirmation) from Bo
 - Bokun retry is allowed only when the verified payment record and invoice are paid.
 - Optional background reconciler:
   - `BOOKING_FINALIZATION_RETRY_ENABLED=true`
-  - `BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS=180`
+  - `BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS=30`
   - `BOOKING_FINALIZATION_RETRY_BATCH_SIZE=20`
   - `BOOKING_LEGACY_PRICING_RECOVERY_ENABLED=true` safely rechecks only paid, exhausted legacy `pricingCategoryId` failures once.
 

@@ -1254,10 +1254,27 @@ const getSlotStatus = (slot = {}) => {
   return "sold_out";
 };
 
-const getSlotTime = (slot = {}) => slot.startTime || slot.startTimeLabel || "Flexible";
+const getSlotTime = (slot = {}) => {
+  const rawTime = slot.startTime || slot.startTimeLabel || slot.time || "";
+  if (rawTime && typeof rawTime === "object") {
+    return String(rawTime.time || rawTime.label || rawTime.value || "Flexible");
+  }
+
+  return String(rawTime || "Flexible");
+};
 
 const getSlotStartTimeId = (slot = {}) => {
-  const value = slot.startTimeId || slot.startTime?.id || slot.id;
+  const value =
+    slot.startTimeId ||
+    slot.startTimeID ||
+    slot.activityStartTimeId ||
+    slot.activityStartTimeID ||
+    slot.startTime?.id ||
+    slot.startTime?.startTimeId ||
+    slot.startTime?.startTimeID ||
+    slot.startTime?.referenceId ||
+    slot.startTimeReferenceId ||
+    slot.id;
   const token = String(value || "").split("_")[0];
   const number = Number(token);
 
@@ -1657,6 +1674,11 @@ const mapActivityAvailability = ({ payload = {}, rawAvailabilities = [], priceLi
 
   const slots = Array.from(mergedSlots.values());
   const selectedForPricing =
+    internalSlots.find(
+      (slot) =>
+        String(slot.startTimeId || "") === String(payload.startTimeId || "") &&
+        (slot.status === "available" || slot.status === "limited")
+    ) ||
     internalSlots.find((slot) => slot.time === payload.startTime && (slot.status === "available" || slot.status === "limited")) ||
     internalSlots.find((slot) => slot.status === "available" || slot.status === "limited") ||
     internalSlots[0] ||

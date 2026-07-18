@@ -41,7 +41,7 @@ const startBookingFinalizationPoller = () => {
   }
 
   const intervalMs =
-    Math.max(30, Number(env.BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS || 180)) * 1000;
+    Math.max(30, Number(env.BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS || 30)) * 1000;
 
   logger.info("Booking finalization poller started", {
     intervalSeconds: intervalMs / 1000,

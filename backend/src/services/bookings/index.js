@@ -15,6 +15,7 @@ const offersService = require("../offers");
 const invoicesService = require("../invoices");
 const commissionsService = require("../commissions");
 const paymentsService = require("../payments");
+const bokunSyncService = require("../webhooks");
 const notificationsService = require("../notifications");
 const legacyBokunRecoveryService = require("./legacyBokunRecovery.service");
 
@@ -60,22 +61,6 @@ const RETRYABLE_BOKUN_NETWORK_TOKENS = [
   "gateway timeout"
 ];
 
-const RETRYABLE_BOKUN_PAYLOAD_TOKENS = [
-  "could not process this request",
-  "not available",
-  "no availability",
-  "start time",
-  "timeslot",
-  "slot",
-  "capacity",
-  "rate",
-  "catalog",
-  "price category",
-  "participant",
-  "passenger",
-  "extra"
-];
-
 const FINALIZATION_STATUS = {
   IDLE: "idle",
   PROCESSING: "processing",
@@ -105,10 +90,11 @@ const resolveFinalizationIdempotencyKey = (booking = {}) => {
 const isMockPaymentToken = (value = "") => /^MOCK(PESAPAL|DPO)-/i.test(String(value || "").trim());
 
 const calculateNextFinalizationRetryAt = (attemptCount = 1) => {
-  const baseSeconds = Math.max(30, Number(env.BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS || 180));
-  const multiplier = Math.min(Math.max(1, Number(attemptCount || 1)), 6);
-  const waitSeconds = baseSeconds * multiplier;
-  return new Date(Date.now() + waitSeconds * 1000).toISOString();
+  // The first attempt happens immediately after payment verification. Later
+  // transient supplier failures follow 1m, 5m, 15m, then hourly retries.
+  const retryMinutes = [1, 5, 15, 60];
+  const index = Math.min(Math.max(1, Number(attemptCount || 1)) - 1, retryMinutes.length - 1);
+  return new Date(Date.now() + retryMinutes[index] * 60 * 1000).toISOString();
 };
 
 const extractFinalizationMetaFromError = (error) => {
@@ -120,9 +106,7 @@ const extractFinalizationMetaFromError = (error) => {
 
   const isPendingRetry =
     code === "BOKUN_FINALIZATION_PENDING" ||
-    statusCode >= 500 ||
-    isRetryableBokunNetworkError(summary) ||
-    isRetryableBokunPayloadError(summary);
+    isRetryableBokunProviderError(summary);
 
   return {
     code,
@@ -133,7 +117,7 @@ const extractFinalizationMetaFromError = (error) => {
   };
 };
 
-const acquireFinalizationLock = async ({ bookingId, idempotencyKey, requestId, source = "system", force = false }) => {
+const acquireFinalizationLock = async ({ bookingId, idempotencyKey, requestId, source = "system" }) => {
   const lockToken = uuidv4();
   const nowIso = toIsoNow();
   const staleBefore = new Date(
@@ -149,10 +133,6 @@ const acquireFinalizationLock = async ({ bookingId, idempotencyKey, requestId, s
       { "pendingCheckout.finalization.lockedAt": { $lte: staleBefore } }
     ]
   };
-
-  if (force) {
-    delete query.$or;
-  }
 
   const booking = await Booking.findOneAndUpdate(
     query,
@@ -279,7 +259,6 @@ const buildPendingFinalizationQuery = ({ nowIso = toIsoNow(), force = false } = 
       $or: [
         { "pendingCheckout.finalization.status": { $exists: false } },
         { "pendingCheckout.finalization.status": FINALIZATION_STATUS.PENDING_RETRY },
-        { "pendingCheckout.finalization.status": FINALIZATION_STATUS.FAILED },
         { "pendingCheckout.finalization.status": FINALIZATION_STATUS.IDLE }
       ]
     },
@@ -347,28 +326,14 @@ const extractBokunErrorSummary = (error) => {
   };
 };
 
-const isRetryableBokunNetworkError = (errorSummary = {}) => {
-  if (errorSummary.statusCode >= 500) {
+const isRetryableBokunProviderError = (errorSummary = {}) => {
+  const statusCode = Number(errorSummary.statusCode || 0);
+  if (statusCode === 408 || statusCode === 429 || statusCode >= 500) {
     return true;
   }
 
   const token = String(errorSummary.message || "").toLowerCase();
   return RETRYABLE_BOKUN_NETWORK_TOKENS.some((keyword) => token.includes(keyword));
-};
-
-const isRetryableBokunPayloadError = (errorSummary = {}) => {
-  const status = Number(errorSummary.statusCode || 0);
-  const isBokunRequestError = String(errorSummary.code || "") === "BOKUN_REQUEST_FAILED";
-  if (!isBokunRequestError) {
-    return false;
-  }
-
-  if (![400, 404, 409, 422].includes(status)) {
-    return false;
-  }
-
-  const token = String(errorSummary.message || "").toLowerCase();
-  return RETRYABLE_BOKUN_PAYLOAD_TOKENS.some((keyword) => token.includes(keyword));
 };
 
 const sanitizeParticipantsForBokunCreate = (participants = []) =>
@@ -559,7 +524,7 @@ const createBookingInBokunWithReliability = async ({
       const hasMoreAttempts = index < variants.length - 1;
       const canRetry =
         hasMoreAttempts &&
-        (isRetryableBokunNetworkError(errorSummary) || isRetryableBokunPayloadError(errorSummary));
+        isRetryableBokunProviderError(errorSummary);
 
       attempts.push({
         attempt: index + 1,
@@ -592,10 +557,17 @@ const createBookingInBokunWithReliability = async ({
   }
 
   const lastErrorSummary = extractBokunErrorSummary(lastError);
+  const retryableProviderFailure = isRetryableBokunProviderError(lastErrorSummary);
   throw new AppError(
-    onExhaustedMessage,
-    Number(onExhaustedStatusCode || 502),
-    onExhaustedCode,
+    retryableProviderFailure
+      ? onExhaustedMessage
+      : lastErrorSummary.message || "Bokun rejected the booking request and needs review.",
+    retryableProviderFailure
+      ? Number(onExhaustedStatusCode || 502)
+      : Number(lastErrorSummary.statusCode || 422),
+    retryableProviderFailure
+      ? onExhaustedCode
+      : lastErrorSummary.code || "BOKUN_REQUEST_FAILED",
     {
       bookingReference,
       attempts,
@@ -859,12 +831,19 @@ const getProductAndOption = async ({ productId, optionId, priceCatalogId }) => {
   return { product, option, selectedPriceCatalog, availablePriceCatalogs };
 };
 
-const ensureSelectedTimeSlot = ({ availability, startTime }) => {
-  if (!startTime) {
+const ensureSelectedTimeSlot = ({ availability, startTime, startTimeId = "" }) => {
+  if (!startTime && !startTimeId) {
     return null;
   }
 
-  const selected = (availability.slots || []).find((slot) => slot.time === startTime);
+  const requestedStartTimeId = normalizeStartTimeId(startTimeId);
+  const selected =
+    (requestedStartTimeId
+      ? (availability.slots || []).find(
+          (slot) => normalizeStartTimeId(slot.startTimeId) === requestedStartTimeId
+        )
+      : null) ||
+    (availability.slots || []).find((slot) => slot.time === startTime);
   if (!selected) {
     throw new AppError("Selected start time is not available", 409, "SLOT_NOT_AVAILABLE");
   }
@@ -925,6 +904,7 @@ const getLiveQuote = async ({
   priceCatalogId,
   travelDate,
   startTime,
+  startTimeId = "",
   pax,
   priceCategoryParticipants = [],
   extras = [],
@@ -932,7 +912,7 @@ const getLiveQuote = async ({
   requestId
 }) => {
   const availability = await bokunService.fetchAvailability(
-    { productId, optionId, travelDate, startTime, pax, priceCategoryParticipants, priceCatalogId },
+    { productId, optionId, travelDate, startTime, startTimeId, pax, priceCategoryParticipants, priceCatalogId },
     requestId
   );
 
@@ -940,8 +920,9 @@ const getLiveQuote = async ({
     throw new AppError("Selected option is not available for this date", 409, "OPTION_NOT_AVAILABLE");
   }
 
-  const selectedTimeSlot = ensureSelectedTimeSlot({ availability, startTime });
-  const selectedStartTimeId = normalizeStartTimeId(selectedTimeSlot?.startTimeId);
+  const selectedTimeSlot = ensureSelectedTimeSlot({ availability, startTime, startTimeId });
+  const selectedStartTime = String(selectedTimeSlot?.time || startTime || "").trim();
+  const selectedStartTimeId = normalizeStartTimeId(selectedTimeSlot?.startTimeId || startTimeId);
   let livePricingCategories = normalizeLivePricingCategories(availability.priceCategories || []);
 
   if (!hasLiveBokunPricingCategory(livePricingCategories)) {
@@ -982,6 +963,7 @@ const getLiveQuote = async ({
   return {
     availability: {
       ...availability,
+      selectedStartTime,
       selectedStartTimeId,
       priceCategories: livePricingCategories
     },
@@ -1024,7 +1006,8 @@ const quoteBooking = async ({ payload, auth, requestId }) => {
     optionId: payload.optionId,
     priceCatalogId: effectivePriceCatalogId,
     travelDate: payload.travelDate,
-    startTime: payload.startTime || "",
+    startTime: liveQuote.availability.selectedStartTime || payload.startTime || "",
+    startTimeId: liveQuote.availability.selectedStartTimeId || payload.startTimeId || "",
     pax: paxSummary,
     priceCategoryParticipants: liveQuote.selectedParticipants || [],
     extras: liveQuote.selectedExtras || [],
@@ -1051,7 +1034,8 @@ const quoteBooking = async ({ payload, auth, requestId }) => {
     priceCatalogId: effectivePriceCatalogId || null,
     paxSummary,
     travelDate: payload.travelDate,
-    startTime: payload.startTime || null,
+    startTime: liveQuote.availability.selectedStartTime || payload.startTime || null,
+    startTimeId: liveQuote.availability.selectedStartTimeId || payload.startTimeId || "",
     priceCategories: liveQuote.availability.priceCategories || [],
     priceCategoryParticipants: liveQuote.selectedParticipants || [],
     extras: liveQuote.selectedExtras || [],
@@ -1059,6 +1043,7 @@ const quoteBooking = async ({ payload, auth, requestId }) => {
     pricing: liveQuote.pricing,
     availability: {
       slots: liveQuote.availability.slots,
+      selectedStartTimeId: liveQuote.availability.selectedStartTimeId || "",
       available: liveQuote.availability.available
     }
   };
@@ -1107,6 +1092,14 @@ const ensureQuoteMatchesPayload = (quotePayload, requestPayload) => {
 
   if (String(quotePayload.priceCatalogId || "") !== String(requestPayload.priceCatalogId || "")) {
     throw new AppError("Price catalog changed. Please refresh quote.", 409, "QUOTE_MISMATCH");
+  }
+
+  if (
+    quotePayload.startTimeId &&
+    requestPayload.startTimeId &&
+    normalizeStartTimeId(quotePayload.startTimeId) !== normalizeStartTimeId(requestPayload.startTimeId)
+  ) {
+    throw new AppError("Selected start time changed. Please refresh quote.", 409, "QUOTE_MISMATCH");
   }
 
   const quoteParticipants = normalizePriceCategoryParticipants(quotePayload.priceCategoryParticipants || [])
@@ -1682,8 +1675,7 @@ const finalizePendingBookingAfterPayment = async ({
     bookingId: initialBooking._id,
     idempotencyKey,
     requestId,
-    source,
-    force
+    source
   });
 
   if (lockResult.alreadyFinalized) {
@@ -1697,6 +1689,54 @@ const finalizePendingBookingAfterPayment = async ({
   const lockToken = lockResult.lockToken;
 
   try {
+    await AuditLog.create({
+      actorId: null,
+      actorRole: "payment_gateway",
+      action: "booking_finalization_started",
+      entityType: "Booking",
+      entityId: booking._id.toString(),
+      reason: "Verified payment triggered automatic Bokun booking finalization",
+      requestId,
+      metadata: {
+        source,
+        idempotencyKey,
+        attempt: Number(booking.pendingCheckout?.finalization?.attemptCount || 1)
+      }
+    });
+
+    // A retry can follow a network timeout after BÃ³kun already created the
+    // supplier booking. Reconcile the reference first so we never create it twice.
+    if (Number(booking.pendingCheckout?.finalization?.attemptCount || 0) > 1) {
+      const reconciliation = await bokunSyncService.reconcileExistingBokunBooking({
+        bookingDoc: booking,
+        requestId,
+        source: "payment_finalization",
+        reason: "Checked Bokun before retrying paid booking finalization"
+      });
+
+      if (reconciliation.found) {
+        const reconciledBooking = reconciliation.booking;
+        await releaseFinalizationLock({
+          bookingId: booking._id,
+          lockToken,
+          status: FINALIZATION_STATUS.CONFIRMED
+        });
+
+        if (reconciledBooking?.bookingStatus === "confirmed") {
+          await notificationsService.notifyBookingConfirmed({
+            booking: reconciledBooking,
+            provider: paymentProvider,
+            requestId
+          });
+        }
+
+        return {
+          booking: reconciledBooking,
+          response: toBookingResponsePayload({ bookingDoc: reconciledBooking })
+        };
+      }
+    }
+
     const { product, option, selectedPriceCatalog } = await getProductAndOption({
       productId: checkoutPayload.productId,
       optionId: checkoutPayload.optionId,
@@ -1709,6 +1749,7 @@ const finalizePendingBookingAfterPayment = async ({
       priceCatalogId: checkoutPayload.priceCatalogId || "",
       travelDate: checkoutPayload.travelDate,
       startTime: checkoutPayload.startTime || "",
+      startTimeId: checkoutPayload.startTimeId || "",
       pax: checkoutPayload.pax,
       priceCategoryParticipants: checkoutPayload.priceCategoryParticipants || [],
       extras: checkoutPayload.extras || [],
@@ -1743,10 +1784,28 @@ const finalizePendingBookingAfterPayment = async ({
       {
         $set: {
           "pendingCheckout.checkoutPayload.bookingQuestions": bookingQuestionResolution.bookingQuestions,
+          "pendingCheckout.checkoutPayload.startTime": liveQuote.availability?.selectedStartTime || checkoutPayload.startTime || "",
           "pendingCheckout.checkoutPayload.startTimeId": bookingQuestionResolution.startTimeId
         }
       }
     );
+
+    await AuditLog.create({
+      actorId: null,
+      actorRole: "payment_gateway",
+      action: "booking_finalization_payload_rebuilt",
+      entityType: "Booking",
+      entityId: booking._id.toString(),
+      reason: "Bokun payload rebuilt from the current live availability and required answers",
+      requestId,
+      metadata: {
+        startTimeId: bookingQuestionResolution.startTimeId,
+        participantCount: Number(liveQuote.selectedParticipants || []).reduce(
+          (total, participant) => total + Number(participant.quantity || 0),
+          0
+        )
+      }
+    });
 
     const bokunCreateResult = await createBookingInBokunWithReliability({
       checkoutPayload: {
@@ -1867,6 +1926,22 @@ const finalizePendingBookingAfterPayment = async ({
         }
       }
     );
+
+    await AuditLog.create({
+      actorId: null,
+      actorRole: "payment_gateway",
+      action: allowRetry ? "booking_finalization_retry_scheduled" : "booking_finalization_manual_review_required",
+      entityType: "Booking",
+      entityId: booking._id.toString(),
+      reason: errorMeta.message,
+      requestId,
+      metadata: {
+        errorCode: errorMeta.code,
+        statusCode: errorMeta.statusCode || null,
+        attemptCount,
+        nextRetryAt: nextRetryAt || null
+      }
+    });
 
     if (allowRetry && errorMeta.code !== "BOKUN_FINALIZATION_PENDING") {
       throw new AppError(
@@ -2633,5 +2708,10 @@ module.exports = {
   listRecentBookings,
   cancelBooking,
   requestBookingEdit,
-  bookingStats
+  bookingStats,
+  __testables: {
+    buildPendingFinalizationQuery,
+    calculateNextFinalizationRetryAt,
+    extractFinalizationMetaFromError
+  }
 };

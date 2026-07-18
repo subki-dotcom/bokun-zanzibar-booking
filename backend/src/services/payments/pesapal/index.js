@@ -173,6 +173,14 @@ const isBokunFinalizationPendingError = (error = null) => {
   return details.statusCode >= 500;
 };
 
+const isPesapalVerificationSecurityError = (error = null) =>
+  [
+    "PESAPAL_TRACKING_MISMATCH",
+    "PESAPAL_MERCHANT_REFERENCE_MISMATCH",
+    "PESAPAL_VERIFIED_AMOUNT_MISMATCH",
+    "PESAPAL_VERIFIED_CURRENCY_MISMATCH"
+  ].includes(String(error?.code || ""));
+
 const parseExpiryTimestamp = (payload = {}) => {
   const explicitDate = String(payload?.expiryDate || payload?.expiry_date || payload?.expires_at || "").trim();
   if (explicitDate) {
@@ -768,6 +776,39 @@ const updatePaymentLogForVerification = async ({
   });
 };
 
+const markPesapalVerificationPending = async ({
+  booking,
+  verification,
+  orderTrackingId = "",
+  orderMerchantReference = "",
+  source = "callback",
+  requestId,
+  reason = "Pesapal transaction status is not final yet"
+}) => {
+  const trackingId = String(orderTrackingId || booking.paymentTransactionId || "").trim();
+  await updatePaymentLogForVerification({
+    bookingReference: booking.bookingReference,
+    isPaid: false,
+    amount: 0,
+    verification,
+    orderTrackingId: trackingId,
+    merchantReference: orderMerchantReference || booking.bookingReference,
+    source,
+    localStatus: "verification_error"
+  });
+
+  return bookingsService.markBookingPaymentState({
+    bookingId: booking._id,
+    requestId,
+    paymentStatus: "verification_error",
+    reason,
+    transactionToken: trackingId,
+    paymentMethod: "pesapal",
+    bookingStatus: "pending",
+    supplierStatus: "awaiting_payment"
+  });
+};
+
 const resolveBookingByIdentifiers = async ({
   bookingId = "",
   orderTrackingId = "",
@@ -906,7 +947,9 @@ const createPayment = async ({ payload, auth, requestId }) => {
   };
 };
 
-const verifyAndReconcilePesapalPayment = async ({
+// This is the one payment-to-supplier orchestration path. IPN, callback,
+// customer status polling, and admin recovery all enter through this function.
+const verifyAndProcessPesapalPayment = async ({
   orderTrackingId = "",
   orderMerchantReference = "",
   requestId,
@@ -1019,26 +1062,14 @@ const verifyAndReconcilePesapalPayment = async ({
       }
 
       if (paymentState === "verification_error") {
-        await updatePaymentLogForVerification({
-          bookingReference: booking.bookingReference,
-          isPaid: false,
-          amount: 0,
+        const pendingBooking = await markPesapalVerificationPending({
+          booking,
           verification,
           orderTrackingId: trackingId,
-          merchantReference: orderMerchantReference || booking.bookingReference,
+          orderMerchantReference,
           source,
-          localStatus: "verification_error"
-        });
-
-        const pendingBooking = await bookingsService.markBookingPaymentState({
-          bookingId: booking._id,
           requestId,
-          paymentStatus: "verification_error",
-          reason: "Pesapal returned a non-final transaction response. Verification will retry automatically.",
-          transactionToken: trackingId,
-          paymentMethod: "pesapal",
-          bookingStatus: "pending",
-          supplierStatus: "awaiting_payment"
+          reason: "Pesapal returned a non-final transaction response. Verification will retry automatically."
         });
 
         return {
@@ -1198,11 +1229,22 @@ const verifyAndReconcilePesapalPayment = async ({
     const isPendingFinalization = isBokunFinalizationPendingError(error);
     const bookingAfterError = await Booking.findById(booking._id);
     const paymentWasVerified = bookingAfterError?.paymentStatus === "paid";
-    const isTemporaryPesapalError = ["PESAPAL_API_REQUEST_FAILED", "PESAPAL_EDGE_BLOCKED"].includes(
-      String(error?.code || "")
-    );
+    const isSecurityError = isPesapalVerificationSecurityError(error);
 
-    if (!paymentWasVerified && isTemporaryPesapalError) {
+    if (!paymentWasVerified && isSecurityError) {
+      // Never let a mismatched callback alter the local payment state. It may
+      // be an invalid request while the legitimate provider verification is
+      // still in flight.
+      logger.warn("Pesapal verification rejected due to a security mismatch", {
+        requestId,
+        bookingId: booking._id.toString(),
+        bookingReference: booking.bookingReference,
+        errorCode: error.code
+      });
+      throw error;
+    }
+
+    if (!paymentWasVerified) {
       logger.warn("Pesapal verification is temporarily unavailable", {
         requestId,
         bookingId: booking._id.toString(),
@@ -1210,29 +1252,18 @@ const verifyAndReconcilePesapalPayment = async ({
         errorCode: error.code
       });
 
-      await updatePaymentLogForVerification({
-        bookingReference: booking.bookingReference,
-        isPaid: false,
-        amount: 0,
+      const pendingBooking = await markPesapalVerificationPending({
+        booking,
         verification: {
           status: "VERIFICATION_ERROR",
           statusDescription: "Pesapal status verification is temporarily unavailable",
           raw: { code: error.code || "PESAPAL_API_REQUEST_FAILED" }
         },
         orderTrackingId: booking.paymentTransactionId || orderTrackingId || "",
-        merchantReference: orderMerchantReference || booking.bookingReference,
+        orderMerchantReference,
         source,
-        localStatus: "verification_error"
-      });
-      const pendingBooking = await bookingsService.markBookingPaymentState({
-        bookingId: booking._id,
         requestId,
-        paymentStatus: "verification_error",
-        reason: "Pesapal status verification is temporarily unavailable",
-        transactionToken: booking.paymentTransactionId || orderTrackingId || "",
-        paymentMethod: "pesapal",
-        bookingStatus: "pending",
-        supplierStatus: "awaiting_payment"
+        reason: "Pesapal status verification is temporarily unavailable"
       });
 
       return {
@@ -1360,7 +1391,7 @@ const recheckPaymentByBookingReference = async ({
     throw new AppError("Pesapal order tracking ID is missing for this booking", 409, "PESAPAL_ORDER_TRACKING_MISSING");
   }
 
-  const result = await verifyAndReconcilePesapalPayment({
+  const result = await verifyAndProcessPesapalPayment({
     orderTrackingId: trackingId,
     orderMerchantReference: booking.pendingCheckout?.pesapalMerchantReference || booking.bookingReference,
     requestId,
@@ -1380,7 +1411,7 @@ const getCustomerPaymentStatus = async ({
   orderMerchantReference = "",
   requestId = ""
 } = {}) => {
-  const result = await verifyAndReconcilePesapalPayment({
+  const result = await verifyAndProcessPesapalPayment({
     orderTrackingId,
     orderMerchantReference,
     requestId,
@@ -1433,7 +1464,7 @@ const handlePaymentCancel = async ({
     };
   }
 
-  return verifyAndReconcilePesapalPayment({
+  return verifyAndProcessPesapalPayment({
     orderTrackingId: trackingId,
     orderMerchantReference: orderMerchantReference || booking.pendingCheckout?.pesapalMerchantReference || booking.bookingReference,
     requestId,
@@ -1443,8 +1474,10 @@ const handlePaymentCancel = async ({
 
 module.exports = {
   createPayment,
-  verifyAndReconcilePesapalPayment,
-  handlePaymentSuccess: verifyAndReconcilePesapalPayment,
+  verifyAndProcessPesapalPayment,
+  // Backward-compatible alias for callers that have not been deployed yet.
+  verifyAndReconcilePesapalPayment: verifyAndProcessPesapalPayment,
+  handlePaymentSuccess: verifyAndProcessPesapalPayment,
   handlePaymentCancel,
   recheckPaymentByBookingReference,
   getCustomerPaymentStatus

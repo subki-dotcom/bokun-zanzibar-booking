@@ -6,6 +6,7 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || "test-jwt-secret";
 process.env.MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/bokun-test";
 
 const bokunService = require("../src/services/bokun");
+const { mapActivityAvailability } = require("../src/integrations/bokun/bokun.mapper");
 
 const basePayload = {
   productId: "101",
@@ -70,4 +71,37 @@ test("does not treat a display time as a Bókun start-time identifier", () => {
   });
 
   assert.equal(Object.hasOwn(checkoutPayload.directBooking.activityBookings[0], "startTimeId"), false);
+});
+
+test("preserves the live Bokun startTimeId when availability uses a nested start-time object", () => {
+  const availability = mapActivityAvailability({
+    payload: {
+      optionId: "201",
+      travelDate: "2026-08-20",
+      startTime: "09:00",
+      startTimeId: "401",
+      pax: { adults: 1, children: 0, infants: 0 }
+    },
+    rawAvailabilities: [
+      {
+        unlimitedAvailability: true,
+        startTime: { id: "401", time: "09:00" },
+        rates: [
+          {
+            id: 201,
+            pricePerBooking: { amount: 70, currency: "USD" }
+          }
+        ]
+      }
+    ]
+  });
+
+  assert.deepEqual(availability.slots, [
+    {
+      time: "09:00",
+      startTimeId: "401",
+      capacityLeft: 9999,
+      status: "available"
+    }
+  ]);
 });

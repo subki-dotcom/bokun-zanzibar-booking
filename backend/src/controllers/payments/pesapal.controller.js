@@ -17,7 +17,7 @@ const create = asyncHandler(async (req, res) => {
 });
 
 const success = asyncHandler(async (req, res) => {
-  const data = await pesapalService.verifyAndReconcilePesapalPayment({
+  const data = await pesapalService.verifyAndProcessPesapalPayment({
     orderTrackingId:
       req.validated.query.OrderTrackingId ||
       req.validated.query.orderTrackingId ||
@@ -81,7 +81,7 @@ const ipn = asyncHandler(async (req, res) => {
     ...(req.body || {})
   };
 
-  const data = await pesapalService.verifyAndReconcilePesapalPayment({
+  const data = await pesapalService.verifyAndProcessPesapalPayment({
     orderTrackingId:
       payload.OrderTrackingId ||
       payload.orderTrackingId ||

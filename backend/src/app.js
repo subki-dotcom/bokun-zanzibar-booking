@@ -33,10 +33,10 @@ const allowedOrigins = Array.from(
   ])
 );
 const devOriginPattern = /^https?:\/\/(127\.0\.0\.1|localhost):\d+$/i;
+const pesapalIpnPath = "/api/payments/pesapal/ipn";
 
-app.use(
-  cors({
-    origin(origin, callback) {
+const corsMiddleware = cors({
+  origin(origin, callback) {
       const normalizedOrigin = normalizeOriginValue(origin);
       // Allow server-to-server and health checks without origin header
       if (!origin) {
@@ -60,10 +60,20 @@ app.use(
         allowedOrigins
       };
       return callback(corsError);
-    },
-    credentials: true
-  })
-);
+  },
+  credentials: true
+});
+
+app.use((req, res, next) => {
+  // Pesapal's IPN is a server-to-server notification, not a browser request.
+  // Its transaction is still authenticated by a server-side Pesapal status
+  // verification, so it must not be blocked by the public website allow-list.
+  if (req.path === pesapalIpnPath) {
+    return next();
+  }
+
+  return corsMiddleware(req, res, next);
+});
 app.use(globalRateLimiter);
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));

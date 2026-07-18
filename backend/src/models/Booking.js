@@ -159,7 +159,7 @@ const bookingSchema = new mongoose.Schema(
       lastBokunSyncAt: Date,
       lastBokunSyncSource: {
         type: String,
-        enum: ["webhook", "polling", "manual", "payment_callback", "system"],
+        enum: ["webhook", "polling", "manual", "payment_callback", "payment_finalization", "system"],
         default: "system"
       },
       lastBokunStatus: { type: String, default: "" },

@@ -239,6 +239,16 @@ const applyBokunSnapshotToBooking = async ({
     businessChanged = true;
   }
 
+  if (bookingDoc.bokunBookingId) {
+    const supplierStatus = bookingDoc.bookingStatus === BOOKING_STATUS.CONFIRMED ? "confirmed" : "supplier_pending";
+    if (bookingDoc.supplierStatus !== supplierStatus) {
+      bookingDoc.supplierStatus = supplierStatus;
+      bookingDoc.supplierStatusUpdatedAt = new Date();
+      bookingDoc.supplierFailureReason = "";
+      businessChanged = true;
+    }
+  }
+
   if (bokunBooking?.raw) {
     const previousRaw = JSON.stringify(bookingDoc.rawBokunResponse || null);
     const nextRaw = JSON.stringify(bokunBooking.raw);
@@ -390,6 +400,40 @@ const processSyncForBooking = async ({
       bookingReference: bookingDoc.bookingReference
     };
   }
+};
+
+const reconcileExistingBokunBooking = async ({
+  bookingDoc,
+  requestId = "",
+  source = "payment_finalization",
+  reason = "Checked Bokun before retrying paid booking finalization"
+} = {}) => {
+  if (!bookingDoc) {
+    throw new AppError("Booking is required for Bokun reconciliation", 400, "BOOKING_REQUIRED");
+  }
+
+  const bokunBooking = await lookupBokunBookingWithFallback({
+    lookupKeys: resolveLookupKeys({ booking: bookingDoc }),
+    requestId
+  });
+
+  if (!bokunBooking?.bokunBookingId) {
+    return { found: false, booking: bookingDoc };
+  }
+
+  await applyBokunSnapshotToBooking({
+    bookingDoc,
+    bokunBooking,
+    source,
+    requestId,
+    reason
+  });
+
+  return {
+    found: true,
+    booking: await Booking.findById(bookingDoc._id),
+    bokunBooking
+  };
 };
 
 const createSyncLogStarted = async ({ operation, details = {} }) =>
@@ -667,5 +711,6 @@ const pollBookingUpdates = async ({
 
 module.exports = {
   handleBokunWebhook,
-  pollBookingUpdates
+  pollBookingUpdates,
+  reconcileExistingBokunBooking
 };
