@@ -375,6 +375,23 @@ const extractProviderStatus = (payment = {}) => {
   );
 };
 
+const extractProviderAmount = (payment = {}) => {
+  const response = payment.rawResponse || payment.providerResponse?.response || {};
+  return toNumber(
+    response.amount_paid ??
+      response.amount ??
+      response.payment_amount ??
+      response.paymentAmount ??
+      response.total_amount ??
+      0
+  );
+};
+
+const extractProviderCurrency = (payment = {}) => {
+  const response = payment.rawResponse || payment.providerResponse?.response || {};
+  return normalizeToken(response.currency || response.currency_code || payment.currency || "USD") || "USD";
+};
+
 const listPaymentReconciliation = async ({ limit = 100 } = {}) => {
   const safeLimit = Math.max(1, Math.min(200, Number(limit || 100)));
   const payments = await Payment.find({})
@@ -462,6 +479,8 @@ const listPaymentReconciliation = async ({ limit = 100 } = {}) => {
       bokunSupplierStatus: supplierStatus,
       bokunBookingId: booking?.bokunBookingId || "",
       expectedAmount,
+      gatewayVerifiedAmount: extractProviderAmount(latestPayment || {}),
+      gatewayVerifiedCurrency: extractProviderCurrency(latestPayment || {}),
       paidAmount: verifiedPaidAmount || invoicePaidAmount || toNumber(latestPayment?.amountPaid || latestPayment?.paidAmount),
       currency: booking?.currency || invoice?.currency || latestPayment?.currency || "USD",
       lastVerifiedAt: latestPayment?.lastVerifiedAt || latestPayment?.updatedAt || "",

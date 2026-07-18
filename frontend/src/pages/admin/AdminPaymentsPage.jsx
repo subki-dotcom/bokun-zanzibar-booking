@@ -156,6 +156,7 @@ const AdminPaymentsPage = () => {
                 <th>Invoice</th>
                 <th>Bókun Supplier</th>
                 <th>Expected</th>
+                <th>Pesapal Amount</th>
                 <th>Paid</th>
                 <th>Last Verified</th>
                 <th>Actions</th>
@@ -192,6 +193,11 @@ const AdminPaymentsPage = () => {
                         </Badge>
                       </td>
                       <td>{formatCurrency(row.expectedAmount || 0, row.currency || "USD")}</td>
+                      <td>
+                        {row.provider === "pesapal" && Number(row.gatewayVerifiedAmount || 0) > 0
+                          ? formatCurrency(row.gatewayVerifiedAmount, row.gatewayVerifiedCurrency || row.currency || "USD")
+                          : "-"}
+                      </td>
                       <td>{formatCurrency(row.paidAmount || 0, row.currency || "USD")}</td>
                       <td>{row.lastVerifiedAt ? formatDate(row.lastVerifiedAt, "MMM D, YYYY HH:mm") : "-"}</td>
                       <td>
@@ -260,7 +266,7 @@ const AdminPaymentsPage = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan={9} className="text-center text-muted py-4">
+                  <td colSpan={10} className="text-center text-muted py-4">
                     No payment reconciliation rows found.
                   </td>
                 </tr>
