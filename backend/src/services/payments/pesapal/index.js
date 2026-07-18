@@ -451,14 +451,19 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
     throw new AppError("Pesapal merchant reference does not match this booking", 409, "PESAPAL_MERCHANT_REFERENCE_MISMATCH");
   }
   if (verification?.isPaid && returnedAmount > 0 && Math.abs(returnedAmount - expectedAmount) > 0.009) {
-    throw new AppError("Pesapal verified amount does not match this booking", 409, "PESAPAL_VERIFIED_AMOUNT_MISMATCH", {
+    throw new AppError(
+      `Pesapal verified ${returnedCurrency} ${returnedAmount.toFixed(2)}, but this booking expects ${expectedCurrency} ${expectedAmount.toFixed(2)}.`,
+      409,
+      "PESAPAL_VERIFIED_AMOUNT_MISMATCH",
+      {
       bookingReference: booking?.bookingReference || "",
       expectedAmount,
       verifiedAmount: returnedAmount,
       expectedCurrency,
       verifiedCurrency: returnedCurrency,
       orderTrackingId: expectedTrackingId || returnedTrackingId || ""
-    });
+      }
+    );
   }
   if (verification?.isPaid && returnedCurrency !== expectedCurrency) {
     throw new AppError("Pesapal verified currency does not match this booking", 409, "PESAPAL_VERIFIED_CURRENCY_MISMATCH", {
