@@ -14,10 +14,14 @@ const BOOKING_STATUS = {
 };
 
 const PAYMENT_STATUS = {
+  INITIATED: "initiated",
+  PROCESSING: "processing",
   PENDING: "pending",
   PARTIAL: "partial",
   PAID: "paid",
   FAILED: "failed",
+  REVERSED: "reversed",
+  VERIFICATION_ERROR: "verification_error",
   REFUNDED: "refunded",
   PARTIALLY_REFUNDED: "partially_refunded",
   OVERPAID: "overpaid"

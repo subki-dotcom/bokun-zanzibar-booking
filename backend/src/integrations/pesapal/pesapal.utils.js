@@ -19,6 +19,33 @@ const isPaidPesapalStatus = (value = "") => {
   return paidStatuses.has(status);
 };
 
+const isPendingPesapalStatus = (value = "") =>
+  /PENDING|PROCESSING|IN_PROGRESS|SUBMITTED|INITIATED|QUEUED/.test(normalizePesapalStatus(value));
+
+const isReversedPesapalStatus = (value = "") =>
+  /REVERSED|REVOKED|CHARGEBACK/.test(normalizePesapalStatus(value));
+
+const isFailedPesapalStatus = (value = "") =>
+  /FAILED|DECLINED|CANCELLED|CANCELED|EXPIRED|REJECTED|INVALID|ABORTED/.test(normalizePesapalStatus(value));
+
+const resolvePesapalResponseStatusCode = (payload = {}) => {
+  const statusCode = Number(payload?.status_code ?? payload?.statusCode ?? 0);
+  return Number.isFinite(statusCode) ? statusCode : 0;
+};
+
+// A HTTP 200 only confirms that Pesapal handled the API request. The actual
+// transaction is paid only when its API response is successful and completed.
+const isVerifiedPesapalPayment = (payload = {}, status = "") =>
+  resolvePesapalResponseStatusCode(payload) === 1 && isPaidPesapalStatus(status);
+
+const resolvePesapalPaymentState = (payload = {}, status = "") => {
+  if (isVerifiedPesapalPayment(payload, status)) return "paid";
+  if (isReversedPesapalStatus(status)) return "reversed";
+  if (isFailedPesapalStatus(status)) return "failed";
+  if (isPendingPesapalStatus(status)) return "processing";
+  return "verification_error";
+};
+
 const toMoneyAmount = (value = 0) => {
   const numeric = Number(value || 0);
   if (!Number.isFinite(numeric)) {
@@ -126,6 +153,12 @@ const isLocalOrPrivateRedirectUrl = (value = "") => {
 module.exports = {
   normalizePesapalStatus,
   isPaidPesapalStatus,
+  isPendingPesapalStatus,
+  isReversedPesapalStatus,
+  isFailedPesapalStatus,
+  resolvePesapalResponseStatusCode,
+  isVerifiedPesapalPayment,
+  resolvePesapalPaymentState,
   toMoneyAmount,
   normalizeCurrency,
   buildPesapalOrderReference,

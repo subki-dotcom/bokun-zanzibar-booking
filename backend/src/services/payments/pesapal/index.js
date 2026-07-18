@@ -8,7 +8,10 @@ const paymentsService = require("..");
 const notificationsService = require("../../notifications");
 const {
   normalizePesapalStatus,
-  isPaidPesapalStatus,
+  isPendingPesapalStatus,
+  resolvePesapalResponseStatusCode,
+  isVerifiedPesapalPayment,
+  resolvePesapalPaymentState,
   toMoneyAmount,
   normalizeCurrency,
   buildPesapalOrderReference,
@@ -311,14 +314,10 @@ const toPaymentCallbackBooking = (booking = {}) => ({
   bokunConfirmationCode: booking.bokunConfirmationCode || "",
   paymentStatus: booking.paymentStatus || "pending",
   bookingStatus: booking.bookingStatus || "pending",
+  supplierStatus: booking.supplierStatus || "awaiting_payment",
   sourceChannel: booking.sourceChannel || "direct_website",
   isAgentBooking: Boolean(booking.agentId)
 });
-
-const isPendingGatewayStatus = (verification = {}) => {
-  const status = String(verification.status || verification.statusDescription || "").toLowerCase();
-  return /pending|processing|in_progress|submitted|initiated/.test(status);
-};
 
 const isInvoiceReconciledPaid = (booking = {}) =>
   String(booking?.invoiceSnapshot?.paymentStatus || "").toLowerCase() === "paid" &&
@@ -326,6 +325,9 @@ const isInvoiceReconciledPaid = (booking = {}) =>
 
 const resolveBokunSyncStatus = (booking = {}) => {
   if (booking?.bokunBookingId) return "synced";
+
+  if (booking?.supplierStatus === "supplier_failed") return "manual_review_required";
+  if (booking?.supplierStatus === "supplier_pending") return "processing";
 
   const finalization = booking?.pendingCheckout?.finalization || {};
   const status = String(finalization.status || "").toLowerCase();
@@ -337,14 +339,15 @@ const resolveBokunSyncStatus = (booking = {}) => {
 };
 
 const resolveCustomerBookingStatus = (booking = {}, bokunSyncStatus = "") => {
-  if (booking?.bokunBookingId && String(booking?.bookingStatus || "").toLowerCase() === "confirmed") {
-    return "confirmed";
-  }
-
   const paymentStatus = String(booking?.paymentStatus || "").toLowerCase();
   const bookingStatus = String(booking?.bookingStatus || "").toLowerCase();
   if (bookingStatus === "cancelled" || paymentStatus === "refunded") return "cancelled";
+  if (paymentStatus === "reversed") return "reversed";
   if (paymentStatus === "failed" || bookingStatus === "failed") return "failed";
+  if (booking?.bokunBookingId && bookingStatus === "confirmed") return "confirmed";
+  if (["initiated", "processing", "verification_error", "pending"].includes(paymentStatus)) {
+    return "payment_pending";
+  }
   if (paymentStatus === "paid" && bokunSyncStatus === "manual_review_required") {
     return "manual_review_required";
   }
@@ -360,7 +363,7 @@ const buildCustomerPaymentStatus = async ({ booking, status = "", message = "" }
   const bokunSyncStatus = resolveBokunSyncStatus(booking);
   const bookingStatus = resolveCustomerBookingStatus(booking, bokunSyncStatus);
   const invoiceStatus = String(booking?.invoiceSnapshot?.paymentStatus || "unpaid").toLowerCase();
-  const isTerminal = ["confirmed", "manual_review_required", "cancelled", "failed"].includes(bookingStatus);
+  const isTerminal = ["confirmed", "manual_review_required", "cancelled", "failed", "reversed"].includes(bookingStatus);
   const customerMessage =
     message ||
     (bookingStatus === "confirmed"
@@ -369,8 +372,10 @@ const buildCustomerPaymentStatus = async ({ booking, status = "", message = "" }
         ? "Your payment is confirmed. Our team is reviewing the supplier confirmation."
         : bookingStatus === "paid_supplier_pending"
           ? "Payment received. Supplier confirmation is pending."
-          : bookingStatus === "payment_pending"
-            ? "We are confirming your payment with Pesapal."
+        : bookingStatus === "payment_pending"
+          ? "We are confirming your payment with Pesapal."
+          : bookingStatus === "reversed"
+            ? "This payment was reversed by the payment provider."
             : "The payment could not be confirmed.");
 
   return {
@@ -384,6 +389,8 @@ const buildCustomerPaymentStatus = async ({ booking, status = "", message = "" }
     currency: booking?.currency || booking?.pricingSnapshot?.currency || "USD",
     bookingReference: booking?.bookingReference || "",
     confirmationCode: booking?.bokunConfirmationCode || "",
+    paymentMethod: booking?.paymentMethod || "pesapal",
+    paidAt: booking?.pendingCheckout?.paymentVerifiedAt || "",
     isTerminal,
     booking: {
       ...toPaymentCallbackBooking(booking),
@@ -396,7 +403,10 @@ const buildCustomerPaymentStatus = async ({ booking, status = "", message = "" }
       currency: booking?.currency || booking?.pricingSnapshot?.currency || "USD",
       confirmationCode: booking?.bokunConfirmationCode || "",
       invoiceStatus,
-      bokunSyncStatus
+      bokunSyncStatus,
+      supplierStatus: booking?.supplierStatus || "awaiting_payment",
+      paymentMethod: booking?.paymentMethod || "pesapal",
+      paidAt: booking?.pendingCheckout?.paymentVerifiedAt || ""
     }
   };
 };
@@ -577,9 +587,11 @@ const verifyOrderWithPesapal = async ({ orderTrackingId, requestId }) => {
       amount: 0,
       currency: "USD",
       isPaid: mockConfirmsPayment,
+      statusCode: mockConfirmsPayment ? 1 : 0,
       raw: {
         mock: true,
-        canConfirmPayment: mockConfirmsPayment
+        canConfirmPayment: mockConfirmsPayment,
+        status_code: mockConfirmsPayment ? 1 : 0
       }
     };
   }
@@ -606,7 +618,8 @@ const verifyOrderWithPesapal = async ({ orderTrackingId, requestId }) => {
   ).trim();
 
   const status = normalizePesapalStatus(statusDescription);
-  const isPaid = isPaidPesapalStatus(status);
+  const statusCode = resolvePesapalResponseStatusCode(response);
+  const isPaid = isVerifiedPesapalPayment(response, status);
 
   return {
     orderTrackingId: trackingId,
@@ -614,6 +627,7 @@ const verifyOrderWithPesapal = async ({ orderTrackingId, requestId }) => {
     merchantReference: resolveMerchantReference(response),
     status,
     statusDescription,
+    statusCode,
     amount: Number(response?.amount || response?.amount_paid || 0),
     currency: normalizeCurrency(response?.currency || response?.currency_code || "USD"),
     isPaid,
@@ -632,15 +646,18 @@ const updatePaymentLogForCreate = async ({ booking, orderResponse }) => {
     provider: "pesapal"
   });
 
-  if (latestPayment?.intentId) {
+  if (latestPayment?.intentId && !["failed", "reversed", "refunded"].includes(String(latestPayment.status || "").toLowerCase())) {
     await paymentsService.updatePaymentStatus({
       intentId: latestPayment.intentId,
-      status: "pending",
+      status: "initiated",
       providerTransactionId: orderResponse.orderTrackingId,
       orderTrackingId: orderResponse.orderTrackingId,
       merchantReference: orderResponse.merchantReference,
       rawResponse: orderResponse.raw || {},
-      providerResponse
+      providerResponse,
+      event: "gateway_order_created",
+      eventSource: "checkout",
+      eventDescription: "Pesapal order created and ready for customer redirect"
     });
     return latestPayment;
   }
@@ -660,12 +677,15 @@ const updatePaymentLogForCreate = async ({ booking, orderResponse }) => {
   if (createdIntent?.intentId) {
     const updated = await paymentsService.updatePaymentStatus({
       intentId: createdIntent.intentId,
-      status: "pending",
+      status: "initiated",
       providerTransactionId: orderResponse.orderTrackingId,
       orderTrackingId: orderResponse.orderTrackingId,
       merchantReference: orderResponse.merchantReference,
       rawResponse: orderResponse.raw || {},
-      providerResponse
+      providerResponse,
+      event: "gateway_order_created",
+      eventSource: "checkout",
+      eventDescription: "Pesapal order created and ready for customer redirect"
     });
 
     return updated || createdIntent;
@@ -684,7 +704,7 @@ const updatePaymentLogForVerification = async ({
   source = "callback",
   localStatus = ""
 }) => {
-  const status = localStatus || (isPaid ? "paid" : "failed");
+  const status = localStatus || (isPaid ? "paid" : "verification_error");
   const paidAmount = isPaid ? Number(amount || 0) : 0;
   const trackingId = orderTrackingId || verification.orderTrackingId || "";
   const paymentUpdate = {
@@ -711,6 +731,13 @@ const updatePaymentLogForVerification = async ({
     providerResponse: {
       stage: "get_transaction_status",
       response: verification.raw || verification
+    },
+    event: isPaid ? "payment_verified" : "payment_verification_updated",
+    eventSource: source,
+    eventDescription: verification.statusDescription || verification.status || "Pesapal transaction status checked",
+    eventMetadata: {
+      providerStatusCode: Number(verification.statusCode || 0) || null,
+      providerStatus: verification.status || ""
     }
   };
 
@@ -783,14 +810,16 @@ const createPayment = async ({ payload, auth, requestId }) => {
     requestId
   });
 
-  if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
+  if (booking.paymentStatus === "paid") {
     return {
       bookingId: booking._id,
       bookingReference: booking.bookingReference,
       redirectUrl: "",
       paymentStatus: booking.paymentStatus,
       bookingStatus: booking.bookingStatus,
-      message: "Booking already paid and confirmed"
+      message: booking.bokunBookingId
+        ? "Booking already paid and confirmed"
+        : "Payment already verified. Supplier confirmation is still processing."
     };
   }
 
@@ -800,6 +829,33 @@ const createPayment = async ({ payload, auth, requestId }) => {
     currency: payload.currency
   });
 
+  const existingTrackingId = String(booking.paymentTransactionId || booking.dpoTransactionToken || "").trim();
+  const existingRedirectUrl = resolveRedirectUrl(booking.pendingCheckout?.pesapalCreateOrderResult || {});
+  if (
+    existingTrackingId &&
+    ["initiated", "processing", "pending", "verification_error"].includes(String(booking.paymentStatus || "").toLowerCase())
+  ) {
+    if (existingRedirectUrl) {
+      return {
+        bookingId: booking._id,
+        bookingReference: booking.bookingReference,
+        orderTrackingId: existingTrackingId,
+        merchantReference: booking.pendingCheckout?.pesapalMerchantReference || booking.bookingReference,
+        redirectUrl: existingRedirectUrl,
+        paymentStatus: booking.paymentStatus,
+        bookingStatus: booking.bookingStatus,
+        message: "An existing Pesapal payment is still being verified."
+      };
+    }
+
+    throw new AppError(
+      "An existing Pesapal payment is still being verified. Please use the payment status page instead of starting another payment.",
+      409,
+      "PESAPAL_PAYMENT_IN_PROGRESS",
+      { bookingReference: booking.bookingReference, orderTrackingId: existingTrackingId }
+    );
+  }
+
   const orderResponse = await createOrderWithPesapal({
     booking,
     requestId
@@ -807,15 +863,18 @@ const createPayment = async ({ payload, auth, requestId }) => {
 
   booking.paymentTransactionId = orderResponse.orderTrackingId;
   booking.dpoTransactionToken = orderResponse.orderTrackingId;
-  booking.paymentStatus = "pending";
+  booking.paymentStatus = "initiated";
   booking.paymentMethod = "pesapal";
   booking.bookingStatus = booking.bokunBookingId ? booking.bookingStatus : "pending";
+  booking.supplierStatus = booking.bokunBookingId ? "confirmed" : "awaiting_payment";
+  booking.supplierStatusUpdatedAt = new Date();
   booking.pendingCheckout = {
     ...(booking.pendingCheckout || {}),
     pesapalInitializedAt: new Date().toISOString(),
     pesapalOrderTrackingId: orderResponse.orderTrackingId,
     pesapalMerchantReference: orderResponse.merchantReference,
-    pesapalCreateOrderResult: orderResponse.raw || {}
+    pesapalCreateOrderResult: orderResponse.raw || {},
+    paymentInitiatedAt: new Date().toISOString()
   };
   await booking.save();
 
@@ -924,7 +983,12 @@ const verifyAndReconcilePesapalPayment = async ({
     });
 
     if (!verification.isPaid) {
-      if (isPendingGatewayStatus(verification)) {
+      const paymentState = resolvePesapalPaymentState(verification.raw || verification, verification.status);
+      const verificationMessage =
+        verification.statusDescription ||
+        "We are confirming your payment with Pesapal.";
+
+      if (paymentState === "processing") {
         await updatePaymentLogForVerification({
           bookingReference: booking.bookingReference,
           isPaid: false,
@@ -933,20 +997,91 @@ const verifyAndReconcilePesapalPayment = async ({
           orderTrackingId: trackingId,
           merchantReference: orderMerchantReference || booking.bookingReference,
           source,
-          localStatus: "pending"
+          localStatus: "processing"
+        });
+
+        const processingBooking = await bookingsService.markBookingPaymentState({
+          bookingId: booking._id,
+          requestId,
+          paymentStatus: "processing",
+          reason: verificationMessage,
+          transactionToken: trackingId,
+          paymentMethod: "pesapal",
+          bookingStatus: "pending",
+          supplierStatus: "awaiting_payment"
         });
 
         return {
-          status: "pending",
+          status: "processing",
           message: "Payment is still being confirmed by Pesapal.",
-          booking: toPaymentCallbackBooking(booking)
+          booking: toPaymentCallbackBooking(processingBooking)
         };
       }
 
-      await bookingsService.markBookingPaymentFailed({
+      if (paymentState === "verification_error") {
+        await updatePaymentLogForVerification({
+          bookingReference: booking.bookingReference,
+          isPaid: false,
+          amount: 0,
+          verification,
+          orderTrackingId: trackingId,
+          merchantReference: orderMerchantReference || booking.bookingReference,
+          source,
+          localStatus: "verification_error"
+        });
+
+        const pendingBooking = await bookingsService.markBookingPaymentState({
+          bookingId: booking._id,
+          requestId,
+          paymentStatus: "verification_error",
+          reason: "Pesapal returned a non-final transaction response. Verification will retry automatically.",
+          transactionToken: trackingId,
+          paymentMethod: "pesapal",
+          bookingStatus: "pending",
+          supplierStatus: "awaiting_payment"
+        });
+
+        return {
+          status: "processing",
+          message: "We are still confirming your payment with Pesapal. You may safely keep this page open.",
+          booking: toPaymentCallbackBooking(pendingBooking)
+        };
+      }
+
+      if (paymentState === "reversed") {
+        await updatePaymentLogForVerification({
+          bookingReference: booking.bookingReference,
+          isPaid: false,
+          amount: 0,
+          verification,
+          orderTrackingId: trackingId,
+          merchantReference: orderMerchantReference || booking.bookingReference,
+          source,
+          localStatus: "reversed"
+        });
+
+        const reversedBooking = await bookingsService.markBookingPaymentState({
+          bookingId: booking._id,
+          requestId,
+          paymentStatus: "reversed",
+          reason: verificationMessage,
+          transactionToken: trackingId,
+          paymentMethod: "pesapal",
+          bookingStatus: "pending",
+          supplierStatus: "awaiting_payment"
+        });
+
+        return {
+          status: "reversed",
+          message: "Payment was reversed by the payment provider.",
+          booking: toPaymentCallbackBooking(reversedBooking)
+        };
+      }
+
+      const failedBooking = await bookingsService.markBookingPaymentFailed({
         bookingId: booking._id,
         requestId,
-        reason: verification.statusDescription || "Pesapal payment was not successful",
+        reason: verificationMessage,
         transactionToken: trackingId,
         paymentMethod: "pesapal"
       });
@@ -958,23 +1093,20 @@ const verifyAndReconcilePesapalPayment = async ({
         verification,
         orderTrackingId: trackingId,
         merchantReference: orderMerchantReference || booking.bookingReference,
-        source
+        source,
+        localStatus: "failed"
       });
       await notificationsService.notifyPaymentFailed({
         booking,
         provider: "pesapal",
         requestId,
-        reason: verification.statusDescription || "Pesapal payment was not successful"
+        reason: verificationMessage
       });
 
       return {
         status: "failed",
-        message: verification.statusDescription || "Payment was not successful",
-        booking: toPaymentCallbackBooking({
-          ...booking.toObject(),
-          paymentStatus: "failed",
-          bookingStatus: "failed"
-        })
+        message: "Your payment could not be authorized. Please try again or use another payment method.",
+        booking: toPaymentCallbackBooking(failedBooking)
       };
     }
 
@@ -1078,10 +1210,35 @@ const verifyAndReconcilePesapalPayment = async ({
         errorCode: error.code
       });
 
+      await updatePaymentLogForVerification({
+        bookingReference: booking.bookingReference,
+        isPaid: false,
+        amount: 0,
+        verification: {
+          status: "VERIFICATION_ERROR",
+          statusDescription: "Pesapal status verification is temporarily unavailable",
+          raw: { code: error.code || "PESAPAL_API_REQUEST_FAILED" }
+        },
+        orderTrackingId: booking.paymentTransactionId || orderTrackingId || "",
+        merchantReference: orderMerchantReference || booking.bookingReference,
+        source,
+        localStatus: "verification_error"
+      });
+      const pendingBooking = await bookingsService.markBookingPaymentState({
+        bookingId: booking._id,
+        requestId,
+        paymentStatus: "verification_error",
+        reason: "Pesapal status verification is temporarily unavailable",
+        transactionToken: booking.paymentTransactionId || orderTrackingId || "",
+        paymentMethod: "pesapal",
+        bookingStatus: "pending",
+        supplierStatus: "awaiting_payment"
+      });
+
       return {
-        status: "pending",
-        message: "We are confirming your payment with Pesapal. Please keep this page open.",
-        booking: toPaymentCallbackBooking(bookingAfterError || booking)
+        status: "processing",
+        message: "We are confirming your payment with Pesapal. You may safely close this page while we continue checking.",
+        booking: toPaymentCallbackBooking(pendingBooking)
       };
     }
 
@@ -1188,19 +1345,6 @@ const verifyAndReconcilePesapalPayment = async ({
   }
 };
 
-const resolveLocalStatusFromVerification = (verification = {}) => {
-  if (verification.isPaid) {
-    return "paid";
-  }
-
-  const status = String(verification.status || verification.statusDescription || "").toLowerCase();
-  if (/pending|processing|in_progress|submitted/.test(status)) {
-    return "pending";
-  }
-
-  return "failed";
-};
-
 const recheckPaymentByBookingReference = async ({
   bookingReference = "",
   requestId = "",
@@ -1277,57 +1421,24 @@ const handlePaymentCancel = async ({
     };
   }
 
-  if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
+  // A cancellation redirect only indicates that the browser left Pesapal. It
+  // is not proof of failure: always verify the transaction before changing
+  // either payment or booking state.
+  const trackingId = String(orderTrackingId || booking.paymentTransactionId || "").trim();
+  if (!trackingId) {
     return {
-      status: "paid",
-      message: "Booking already paid and confirmed",
-      booking: {
-        bookingId: booking._id,
-        bookingReference: booking.bookingReference
-      }
+      status: "processing",
+      message: "We could not identify the payment yet. Please return to the payment status page shortly.",
+      booking: toPaymentCallbackBooking(booking)
     };
   }
 
-  const trackingId = String(orderTrackingId || booking.paymentTransactionId || "").trim();
-
-  await bookingsService.markBookingPaymentFailed({
-    bookingId: booking._id,
+  return verifyAndReconcilePesapalPayment({
+    orderTrackingId: trackingId,
+    orderMerchantReference: orderMerchantReference || booking.pendingCheckout?.pesapalMerchantReference || booking.bookingReference,
     requestId,
-    reason: "Customer cancelled Pesapal payment",
-    transactionToken: trackingId,
-    paymentMethod: "pesapal"
+    source: "cancel_callback"
   });
-
-  await paymentsService.updatePaymentByBookingReference({
-    bookingReference: booking.bookingReference,
-    provider: "pesapal",
-    status: "failed",
-    paidAmount: 0,
-    providerResponse: {
-      stage: "cancel",
-      response: {
-        orderTrackingId: trackingId,
-        orderMerchantReference
-      }
-    }
-  });
-  await notificationsService.notifyPaymentFailed({
-    booking,
-    provider: "pesapal",
-    requestId,
-    reason: "Payment cancelled"
-  });
-
-  return {
-    status: "cancelled",
-    message: "Payment cancelled",
-    booking: {
-      bookingId: booking._id,
-      bookingReference: booking.bookingReference,
-      paymentStatus: "failed",
-      bookingStatus: "failed"
-    }
-  };
 };
 
 module.exports = {

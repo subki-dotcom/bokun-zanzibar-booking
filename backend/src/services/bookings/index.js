@@ -1330,6 +1330,7 @@ const toBookingResponsePayload = ({
   bokunBookingId: bookingDoc.bokunBookingId,
   confirmationCode: bookingDoc.bokunConfirmationCode,
   bookingStatus: bookingDoc.bookingStatus,
+  supplierStatus: bookingDoc.supplierStatus || "awaiting_payment",
   paymentStatus: bookingDoc.paymentStatus,
   priceCatalog: bookingDoc.priceCatalog || null,
   pricing: bookingDoc.pricingSnapshot,
@@ -1362,6 +1363,7 @@ const persistBookingRecord = async ({
   paymentStatus = "pending",
   paymentMethod = "pending",
   bookingStatus = "pending",
+  supplierStatus = undefined,
   paymentTransactionId = undefined,
   dpoTransactionToken = undefined,
   pendingCheckout,
@@ -1423,6 +1425,15 @@ const persistBookingRecord = async ({
     paymentStatus,
     paymentMethod,
     bookingStatus,
+    supplierStatus:
+      supplierStatus ||
+      (bokunBooking
+        ? bokunBooking.status === "CONFIRMED"
+          ? "confirmed"
+          : "supplier_pending"
+        : existingBooking?.supplierStatus || "awaiting_payment"),
+    supplierStatusUpdatedAt: new Date(),
+    supplierFailureReason: supplierStatus === "supplier_failed" ? existingBooking?.supplierFailureReason || "" : "",
     amount: payableAmount,
     currency: liveQuote.pricing.currency || "USD",
     sourceChannel: sourceContext.sourceChannel,
@@ -1571,6 +1582,7 @@ const preparePendingPaymentBooking = async ({ payload, auth, requestId }) => {
     paymentStatus: "pending",
     paymentMethod: context.payloadWithCatalog.paymentMethod || "pesapal",
     bookingStatus: "pending",
+    supplierStatus: "awaiting_payment",
     pendingCheckout,
     requestId,
     auditAction: "booking_pending_payment_created",
@@ -1807,6 +1819,7 @@ const finalizePendingBookingAfterPayment = async ({
       paymentStatus: "paid",
       paymentMethod: paymentMethod || booking.paymentMethod || "pesapal",
       bookingStatus: bokunBooking.status === "CONFIRMED" ? "confirmed" : "pending",
+      supplierStatus: bokunBooking.status === "CONFIRMED" ? "confirmed" : "supplier_pending",
       paymentTransactionId: String(transactionToken || booking.paymentTransactionId || booking.dpoTransactionToken || ""),
       pendingCheckout,
       requestId,
@@ -1843,6 +1856,17 @@ const finalizePendingBookingAfterPayment = async ({
       nextRetryAt,
       errorMeta
     });
+
+    await Booking.updateOne(
+      { _id: booking._id },
+      {
+        $set: {
+          supplierStatus: allowRetry ? "supplier_pending" : "supplier_failed",
+          supplierStatusUpdatedAt: new Date(),
+          supplierFailureReason: allowRetry ? "" : errorMeta.message
+        }
+      }
+    );
 
     if (allowRetry && errorMeta.code !== "BOKUN_FINALIZATION_PENDING") {
       throw new AppError(
@@ -1883,20 +1907,31 @@ const finalizePendingBookingAfterPayment = async ({
   }
 };
 
-const markBookingPaymentFailed = async ({
+const markBookingPaymentState = async ({
   bookingId,
   requestId,
-  reason = "Payment was not completed",
+  paymentStatus,
+  reason = "Payment status updated by payment gateway",
   transactionToken = "",
-  paymentMethod = "pesapal"
+  paymentMethod = "pesapal",
+  bookingStatus = "pending",
+  supplierStatus = "awaiting_payment"
 }) => {
   const booking = await Booking.findById(bookingId);
   if (!booking) {
     throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
   }
 
-  booking.paymentStatus = "failed";
-  booking.bookingStatus = booking.bokunBookingId ? booking.bookingStatus : "failed";
+  // Old gateway responses cannot downgrade a verified payment. Reversals are
+  // deliberately allowed because they represent a new provider-side state.
+  if (booking.paymentStatus === "paid" && paymentStatus !== "reversed") {
+    return booking;
+  }
+
+  booking.paymentStatus = paymentStatus;
+  booking.bookingStatus = booking.bokunBookingId ? booking.bookingStatus : bookingStatus;
+  booking.supplierStatus = booking.bokunBookingId ? "confirmed" : supplierStatus;
+  booking.supplierStatusUpdatedAt = new Date();
   booking.paymentMethod = paymentMethod || booking.paymentMethod || "pending";
   if (transactionToken) {
     booking.dpoTransactionToken = transactionToken;
@@ -1904,8 +1939,11 @@ const markBookingPaymentFailed = async ({
   }
   booking.pendingCheckout = {
     ...(booking.pendingCheckout || {}),
-    failedAt: new Date().toISOString(),
-    failureReason: reason
+    paymentStatusUpdatedAt: new Date().toISOString(),
+    paymentStatusReason: reason,
+    ...(paymentStatus === "verification_error"
+      ? { paymentVerificationErrorAt: new Date().toISOString() }
+      : {})
   };
   await booking.save();
 
@@ -1916,8 +1954,8 @@ const markBookingPaymentFailed = async ({
 
   await AuditLog.create({
     actorId: null,
-    actorRole: "system",
-    action: "booking_payment_failed",
+    actorRole: "payment_gateway",
+    action: `booking_payment_${paymentStatus}`,
     entityType: "Booking",
     entityId: booking._id.toString(),
     reason,
@@ -1925,14 +1963,35 @@ const markBookingPaymentFailed = async ({
     after: {
       bookingReference: booking.bookingReference,
       bookingStatus: booking.bookingStatus,
+      supplierStatus: booking.supplierStatus,
       paymentStatus: booking.paymentStatus
     },
     metadata: {
-      sourceChannel: booking.sourceChannel || "direct_website"
+      sourceChannel: booking.sourceChannel || "direct_website",
+      transactionToken: String(transactionToken || "")
     }
   });
 
   return booking;
+};
+
+const markBookingPaymentFailed = async ({
+  bookingId,
+  requestId,
+  reason = "Payment was not completed",
+  transactionToken = "",
+  paymentMethod = "pesapal"
+}) => {
+  return markBookingPaymentState({
+    bookingId,
+    requestId,
+    paymentStatus: "failed",
+    reason,
+    transactionToken,
+    paymentMethod,
+    bookingStatus: "failed",
+    supplierStatus: "awaiting_payment"
+  });
 };
 
 const markBookingPaymentVerified = async ({
@@ -1959,6 +2018,9 @@ const markBookingPaymentVerified = async ({
   booking.amount = Number(booking.amount || paidAmount || 0);
   booking.currency = currency || booking.currency || booking.pricingSnapshot?.currency || "USD";
   booking.bookingStatus = booking.bokunBookingId ? booking.bookingStatus : "pending";
+  booking.supplierStatus = booking.bokunBookingId ? "confirmed" : "supplier_pending";
+  booking.supplierStatusUpdatedAt = new Date();
+  booking.supplierFailureReason = "";
   booking.pricingSnapshot = {
     ...(booking.pricingSnapshot || {}),
     amountPaid: paidAmount
@@ -2560,6 +2622,7 @@ module.exports = {
   createBooking,
   preparePendingPaymentBooking,
   finalizePendingBookingAfterPayment,
+  markBookingPaymentState,
   markBookingPaymentVerified,
   markBookingPaymentFailed,
   syncInvoiceForBookingReference,

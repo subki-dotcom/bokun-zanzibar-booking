@@ -78,6 +78,32 @@ const buildIpnPush = (ipnEvent = null) => {
   };
 };
 
+const buildTransactionHistoryPush = ({
+  event = "status_updated",
+  status = "",
+  source = "system",
+  description = "",
+  metadata = {}
+} = {}) => ({
+  occurredAt: new Date(),
+  event: normalizeToken(event) || "status_updated",
+  status: normalizeToken(status),
+  source: normalizeToken(source) || "system",
+  description: String(description || "").slice(0, 500),
+  metadata: metadata || {}
+});
+
+const canReplacePaidStatus = (nextStatus = "") =>
+  ["reversed", "refunded", "partially_refunded"].includes(normalizeToken(nextStatus));
+
+const appendPaymentEvent = (update, event) => {
+  update.$push = {
+    ...(update.$push || {}),
+    transactionHistory: buildTransactionHistoryPush(event)
+  };
+  return update;
+};
+
 const createPaymentIntent = async ({
   bookingReference,
   customerId,
@@ -99,12 +125,20 @@ const createPaymentIntent = async ({
     providerTransactionId: normalizeToken(providerTransactionId || orderTrackingId),
     merchantReference: normalizeToken(merchantReference || bookingReference),
     orderTrackingId: normalizeToken(orderTrackingId || providerTransactionId),
-    status: "pending",
+    status: "initiated",
     notes,
     providerResponse: {
       abstraction: "Payment provider integration placeholder",
       nextProviders: ["pesapal", "stripe", "manual_bank", "cash_on_arrival"]
-    }
+    },
+    transactionHistory: [
+      buildTransactionHistoryPush({
+        event: "payment_initiated",
+        status: "initiated",
+        source: "checkout",
+        description: "Payment intent created before gateway redirect"
+      })
+    ]
   });
 };
 
@@ -122,7 +156,11 @@ const updatePaymentStatus = async ({
   lastVerifiedAt = undefined,
   rawResponse = undefined,
   ipnEvent = null,
-  notes = ""
+  notes = "",
+  event = "status_updated",
+  eventSource = "system",
+  eventDescription = "",
+  eventMetadata = {}
 }) => {
   const paidValue = amountPaid !== undefined ? toNumber(amountPaid) : toNumber(paidAmount);
   const update = {
@@ -148,11 +186,21 @@ const updatePaymentStatus = async ({
     update.$push = { ipnEvents: ipnPush };
   }
 
-  return Payment.findOneAndUpdate(
-    { intentId },
-    update,
-    { new: true }
-  );
+  appendPaymentEvent(update, {
+    event,
+    status,
+    source: eventSource,
+    description: eventDescription,
+    metadata: eventMetadata
+  });
+
+  const query = { intentId };
+  if (status !== "paid" && !canReplacePaidStatus(status)) {
+    query.status = { $ne: "paid" };
+  }
+
+  const updated = await Payment.findOneAndUpdate(query, update, { new: true });
+  return updated || Payment.findOne({ intentId });
 };
 
 const findLatestPaymentByBookingReference = async ({ bookingReference, provider = "" }) => {
@@ -182,7 +230,11 @@ const updatePaymentByBookingReference = async ({
   paidAt = undefined,
   lastVerifiedAt = undefined,
   rawResponse = undefined,
-  ipnEvent = null
+  ipnEvent = null,
+  event = "status_updated",
+  eventSource = "system",
+  eventDescription = "",
+  eventMetadata = {}
 }) => {
   const query = {
     bookingReference: String(bookingReference || "")
@@ -224,11 +276,26 @@ const updatePaymentByBookingReference = async ({
     update.$push = { ipnEvents: ipnPush };
   }
 
-  return Payment.findOneAndUpdate(
-    query,
+  appendPaymentEvent(update, {
+    event,
+    status,
+    source: eventSource,
+    description: eventDescription,
+    metadata: eventMetadata
+  });
+
+  const protectedQuery = { ...query };
+  if (status !== "paid" && !canReplacePaidStatus(status)) {
+    protectedQuery.status = { $ne: "paid" };
+  }
+
+  const updated = await Payment.findOneAndUpdate(
+    protectedQuery,
     update,
     { new: true, sort: { createdAt: -1 } }
   );
+
+  return updated || Payment.findOne(query).sort({ createdAt: -1 });
 };
 
 const findPaymentByGatewayIdentifiers = async ({
@@ -374,14 +441,15 @@ const listPaymentReconciliation = async ({ limit = 100 } = {}) => {
     );
     const supplierStatus = booking?.bokunBookingId
       ? "confirmed"
-      : booking?.paymentStatus === "paid"
-        ? "pending"
-        : booking?.bookingStatus || "unknown";
+      : booking?.supplierStatus ||
+        (booking?.paymentStatus === "paid"
+          ? "supplier_pending"
+          : "awaiting_payment");
     const localPaymentStatus = latestPayment?.status || booking?.paymentStatus || "unknown";
     const invoiceStatus = invoice?.paymentStatus || invoiceSnapshot.paymentStatus || "missing";
     const needsAttention =
       localPaymentStatus === "paid" &&
-      (invoiceStatus !== "paid" || invoicePaidAmount <= 0 || supplierStatus === "pending");
+      (invoiceStatus !== "paid" || invoicePaidAmount <= 0 || supplierStatus !== "confirmed");
 
     return {
       bookingReference,

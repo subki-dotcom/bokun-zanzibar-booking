@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Container } from "react-bootstrap";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import { cancelDpoPayment, cancelPaypalPayment, cancelPesapalPayment } from "../../api/paymentsApi";
@@ -10,6 +10,7 @@ const PaymentFailurePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const navigate = useNavigate();
 
   const orderTrackingId = String(
     searchParams.get("OrderTrackingId") ||
@@ -47,6 +48,13 @@ const PaymentFailurePage = () => {
                 bookingId
               });
         setResult(data);
+        const status = String(data?.status || "").toLowerCase();
+        if (["paid", "processing", "pending", "paid_pending_finalization", "paid_manual_review"].includes(status)) {
+          const trackingId = orderTrackingId || data?.orderTrackingId || "";
+          const query = trackingId ? `?OrderTrackingId=${encodeURIComponent(trackingId)}` : "";
+          navigate(`/payment-success${query}`, { replace: true });
+          return;
+        }
       } catch (err) {
         setError(err.message || "Failed to update cancelled payment status.");
       } finally {
@@ -65,26 +73,43 @@ const PaymentFailurePage = () => {
     );
   }
 
+  const status = String(result?.status || "").toLowerCase();
+  const isReversed = status === "reversed" || String(result?.booking?.paymentStatus || "").toLowerCase() === "reversed";
+  const isFailed = status === "failed" || String(result?.booking?.paymentStatus || "").toLowerCase() === "failed";
+  const bookingReference = result?.booking?.bookingReference || "";
+  const retryPath = bookingReference ? `/payment/checkout/${bookingReference}` : "";
+
   return (
     <Container className="py-4">
       <ErrorAlert error={error} className="mb-3" />
 
-      <Card className="surface-card payment-result-card payment-result-card-failed">
+      <Card className={`surface-card payment-result-card ${isFailed ? "payment-result-card-failed" : ""}`}>
         <Card.Body>
-          <h2 className="mb-2">Payment was not completed</h2>
+          <h2 className="mb-2">{isReversed ? "Payment reversed" : "Payment unsuccessful"}</h2>
           <p className="section-subtitle mb-3">
-            Your booking has not been confirmed in Bokun because payment was cancelled or failed.
+            {isReversed
+              ? "If funds were reversed, they will be handled according to your payment provider's policy."
+              : "Your payment could not be authorized. Please try again or use another payment method."}
           </p>
 
-          {result?.booking?.bookingReference ? (
+          {bookingReference ? (
             <p className="mb-3">
-              <strong>Booking reference:</strong> {result.booking.bookingReference}
+              <strong>Booking reference:</strong> {bookingReference}
             </p>
           ) : null}
 
           <div className="d-flex flex-wrap gap-2">
-            <Button as={Link} to="/tours" className="premium-btn text-white">
-              Choose a tour again
+            {retryPath ? (
+              <Button as={Link} to={retryPath} className="premium-btn text-white">
+                Retry payment
+              </Button>
+            ) : (
+              <Button as={Link} to="/tours" className="premium-btn text-white">
+                Choose a tour again
+              </Button>
+            )}
+            <Button as={Link} to={retryPath || "/tours"} variant="outline-primary">
+              Choose another payment method
             </Button>
             <Button as={Link} to="/my-booking" variant="outline-secondary">
               Check my booking

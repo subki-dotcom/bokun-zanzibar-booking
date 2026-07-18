@@ -127,12 +127,21 @@ const sendWithResend = async ({ to, subject, html }) => {
       html
     },
     {
-      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}` },
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "User-Agent": "riser-booking-backend/1.0"
+      },
       timeout: 15000
     }
   );
   return response.data || {};
 };
+
+const toSafeEmailProviderError = (error = {}) => ({
+  status: Number(error?.response?.status || 0) || null,
+  code: String(error?.response?.data?.name || error?.code || "EMAIL_PROVIDER_REQUEST_FAILED"),
+  message: String(error?.response?.data?.message || error?.message || "Email provider request failed").slice(0, 500)
+});
 
 const sendEmailOnce = async ({ booking, templateKey, message, requestId = "" }) => {
   const recipient = String(booking?.customer?.email || "").trim().toLowerCase();
@@ -175,10 +184,16 @@ const sendEmailOnce = async ({ booking, templateKey, message, requestId = "" }) 
     await delivery.save();
     return { status: "sent", delivery };
   } catch (error) {
+    const providerError = toSafeEmailProviderError(error);
     delivery.status = "failed";
-    delivery.error = String(error.response?.data?.message || error.message || "Email provider request failed").slice(0, 500);
+    delivery.error = providerError.message;
     await delivery.save();
-    logger.error("Transactional email delivery failed", { err: error, bookingReference: booking.bookingReference, templateKey, requestId });
+    logger.error("Transactional email delivery failed", {
+      providerError,
+      bookingReference: booking.bookingReference,
+      templateKey,
+      requestId
+    });
     return { status: "failed", delivery };
   }
 };

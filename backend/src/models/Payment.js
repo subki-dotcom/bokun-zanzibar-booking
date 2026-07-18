@@ -36,6 +36,16 @@ const paymentSchema = new mongoose.Schema(
         raw: mongoose.Schema.Types.Mixed
       }
     ],
+    transactionHistory: [
+      {
+        occurredAt: { type: Date, default: Date.now },
+        event: { type: String, required: true },
+        status: { type: String, default: "" },
+        source: { type: String, default: "system" },
+        description: { type: String, default: "" },
+        metadata: mongoose.Schema.Types.Mixed
+      }
+    ],
     rawResponse: mongoose.Schema.Types.Mixed,
     providerResponse: mongoose.Schema.Types.Mixed,
     reconciliation: {
@@ -51,5 +61,6 @@ const paymentSchema = new mongoose.Schema(
 
 paymentSchema.index({ provider: 1, orderTrackingId: 1 });
 paymentSchema.index({ provider: 1, merchantReference: 1 });
+paymentSchema.index({ bookingReference: 1, provider: 1, status: 1, updatedAt: -1 });
 
 module.exports = mongoose.model("Payment", paymentSchema);

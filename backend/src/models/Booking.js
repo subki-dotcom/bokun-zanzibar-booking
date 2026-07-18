@@ -103,6 +103,15 @@ const bookingSchema = new mongoose.Schema(
       enum: Object.values(BOOKING_STATUS),
       default: BOOKING_STATUS.PENDING
     },
+    // Supplier progress is intentionally distinct from paymentStatus. A paid
+    // customer can still be waiting for Bókun without losing payment evidence.
+    supplierStatus: {
+      type: String,
+      enum: ["awaiting_payment", "supplier_pending", "confirmed", "supplier_failed"],
+      default: "awaiting_payment"
+    },
+    supplierStatusUpdatedAt: { type: Date, default: Date.now },
+    supplierFailureReason: { type: String, default: "" },
     pendingCheckout: mongoose.Schema.Types.Mixed,
     // Only populated for paid legacy bookings that failed because the former
     // Bókun payload omitted a real pricingCategoryId.
@@ -189,6 +198,7 @@ bookingSchema.index({
   bookingStatus: 1,
   travelDate: 1,
   "pendingCheckout.finalization.status": 1,
+  supplierStatus: 1,
   "legacyBokunRecovery.status": 1
 });
 

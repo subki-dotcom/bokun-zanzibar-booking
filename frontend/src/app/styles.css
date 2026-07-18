@@ -12615,6 +12615,17 @@ textarea.form-control {
   }
 }
 
+.payment-polling-notice {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #cfe8d8;
+  border-radius: 8px;
+  background: #f0fbf4;
+  color: #166534;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
 .premium-footer-newsletter-success.is-error {
   color: #fecaca;
 }
