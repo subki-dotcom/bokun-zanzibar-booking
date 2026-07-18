@@ -27,6 +27,23 @@ const statusVariant = (status = "") => {
   return "secondary";
 };
 
+const formatReconciliationError = (error = {}) => {
+  if (error.code !== "PESAPAL_VERIFIED_AMOUNT_MISMATCH") {
+    return error.message || "Action failed";
+  }
+
+  const details = error.details || {};
+  const expectedAmount = Number(details.expectedAmount || 0);
+  const verifiedAmount = Number(details.verifiedAmount || 0);
+  const expectedCurrency = details.expectedCurrency || details.verifiedCurrency || "USD";
+  const verifiedCurrency = details.verifiedCurrency || expectedCurrency;
+
+  return `Payment was not credited and no Bokun booking was created. Expected ${formatCurrency(
+    expectedAmount,
+    expectedCurrency
+  )}, but Pesapal verified ${formatCurrency(verifiedAmount, verifiedCurrency)}.`;
+};
+
 const AdminPaymentsPage = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +92,7 @@ const AdminPaymentsPage = () => {
       setNotice(successMessage);
       await load();
     } catch (err) {
-      setError(err.message || "Action failed");
+      setError(formatReconciliationError(err));
     } finally {
       setBusyKey("");
     }
