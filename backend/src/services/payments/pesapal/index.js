@@ -436,8 +436,8 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
     booking?.pendingCheckout?.pesapalMerchantReference || buildPesapalOrderReference(booking?.bookingReference)
   ).trim();
   const returnedMerchantReference = String(verification?.merchantReference || orderMerchantReference || "").trim();
-  const expectedAmount = Number(booking?.amount || booking?.pricingSnapshot?.finalPayable || 0);
-  const returnedAmount = Number(verification?.amount || 0);
+  const expectedAmount = toMoneyAmount(booking?.amount || booking?.pricingSnapshot?.finalPayable || 0);
+  const returnedAmount = toMoneyAmount(verification?.amount || 0);
   const expectedCurrency = normalizeCurrency(booking?.currency || booking?.pricingSnapshot?.currency || "USD");
   const returnedCurrency = normalizeCurrency(verification?.currency || expectedCurrency);
 
@@ -451,10 +451,24 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
     throw new AppError("Pesapal merchant reference does not match this booking", 409, "PESAPAL_MERCHANT_REFERENCE_MISMATCH");
   }
   if (verification?.isPaid && returnedAmount > 0 && Math.abs(returnedAmount - expectedAmount) > 0.009) {
-    throw new AppError("Pesapal verified amount does not match this booking", 409, "PESAPAL_VERIFIED_AMOUNT_MISMATCH");
+    throw new AppError("Pesapal verified amount does not match this booking", 409, "PESAPAL_VERIFIED_AMOUNT_MISMATCH", {
+      bookingReference: booking?.bookingReference || "",
+      expectedAmount,
+      verifiedAmount: returnedAmount,
+      expectedCurrency,
+      verifiedCurrency: returnedCurrency,
+      orderTrackingId: expectedTrackingId || returnedTrackingId || ""
+    });
   }
   if (verification?.isPaid && returnedCurrency !== expectedCurrency) {
-    throw new AppError("Pesapal verified currency does not match this booking", 409, "PESAPAL_VERIFIED_CURRENCY_MISMATCH");
+    throw new AppError("Pesapal verified currency does not match this booking", 409, "PESAPAL_VERIFIED_CURRENCY_MISMATCH", {
+      bookingReference: booking?.bookingReference || "",
+      expectedAmount,
+      verifiedAmount: returnedAmount,
+      expectedCurrency,
+      verifiedCurrency: returnedCurrency,
+      orderTrackingId: expectedTrackingId || returnedTrackingId || ""
+    });
   }
 };
 
@@ -1235,11 +1249,27 @@ const verifyAndProcessPesapalPayment = async ({
       // Never let a mismatched callback alter the local payment state. It may
       // be an invalid request while the legitimate provider verification is
       // still in flight.
+      await updatePaymentLogForVerification({
+        bookingReference: booking.bookingReference,
+        isPaid: false,
+        amount: 0,
+        verification,
+        orderTrackingId: booking.paymentTransactionId || orderTrackingId || "",
+        merchantReference:
+          verification?.merchantReference ||
+          orderMerchantReference ||
+          booking.pendingCheckout?.pesapalMerchantReference ||
+          booking.bookingReference,
+        source,
+        localStatus: "verification_error"
+      });
+
       logger.warn("Pesapal verification rejected due to a security mismatch", {
         requestId,
         bookingId: booking._id.toString(),
         bookingReference: booking.bookingReference,
-        errorCode: error.code
+        errorCode: error.code,
+        mismatch: error.details || null
       });
       throw error;
     }
@@ -1480,5 +1510,8 @@ module.exports = {
   handlePaymentSuccess: verifyAndProcessPesapalPayment,
   handlePaymentCancel,
   recheckPaymentByBookingReference,
-  getCustomerPaymentStatus
+  getCustomerPaymentStatus,
+  __testables: {
+    validatePesapalVerification
+  }
 };
