@@ -2261,7 +2261,8 @@ const lookupBooking = async (reference, requestId) => {
   const response = await bokunClient.request({
     method: "get",
     path: `/bookings/${reference}`,
-    requestId
+    requestId,
+    expectedNotFound: true
   });
 
   return mapper.mapBookingResponse(response);

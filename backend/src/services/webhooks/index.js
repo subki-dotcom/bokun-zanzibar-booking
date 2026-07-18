@@ -122,17 +122,14 @@ const mapBokunStatusToLocal = (statusValue = "") => {
 
 const resolveLookupKeys = ({
   booking = null,
-  bookingReference = "",
   bokunBookingId = "",
   bokunConfirmationCode = ""
 } = {}) => {
   return Array.from(
     new Set(
       [
-        bookingReference,
         bokunBookingId,
         bokunConfirmationCode,
-        booking?.bookingReference || "",
         booking?.bokunBookingId || "",
         booking?.bokunConfirmationCode || ""
       ]
@@ -412,8 +409,13 @@ const reconcileExistingBokunBooking = async ({
     throw new AppError("Booking is required for Bokun reconciliation", 400, "BOOKING_REQUIRED");
   }
 
+  const lookupKeys = resolveLookupKeys({ booking: bookingDoc });
+  if (!lookupKeys.length) {
+    return { found: false, booking: bookingDoc, skipped: "supplier_identifier_missing" };
+  }
+
   const bokunBooking = await lookupBokunBookingWithFallback({
-    lookupKeys: resolveLookupKeys({ booking: bookingDoc }),
+    lookupKeys,
     requestId
   });
 

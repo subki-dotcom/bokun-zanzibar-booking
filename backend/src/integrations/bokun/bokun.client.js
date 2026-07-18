@@ -136,11 +136,18 @@ bokunAxios.interceptors.response.use(
         ? "Bokun API request failed"
         : "Unable to reach Bokun supplier";
 
-    logger.error("Bokun API error", {
+    const expectedLookupMiss = Boolean(error.config?.bokunExpectedNotFound && statusCode === 404);
+    const logDetails = {
       statusCode,
       details,
       url: error.config?.url
-    });
+    };
+
+    if (expectedLookupMiss) {
+      logger.debug("Bokun booking lookup did not find a supplier booking", logDetails);
+    } else {
+      logger.error("Bokun API error", logDetails);
+    }
 
     throw new AppError(appMessage, statusCode, errorCode, details);
   }
@@ -231,7 +238,7 @@ const mockRouter = async ({ method, path, payload }) => {
   return null;
 };
 
-const request = async ({ method, path, payload = null, requestId = "" }) => {
+const request = async ({ method, path, payload = null, requestId = "", expectedNotFound = false }) => {
   if (shouldMock) {
     const mockResponse = await mockRouter({ method, path, payload });
     if (mockResponse === null) {
@@ -247,6 +254,7 @@ const request = async ({ method, path, payload = null, requestId = "" }) => {
   const requestConfig = {
     method,
     url: path,
+    bokunExpectedNotFound: Boolean(expectedNotFound),
     headers: {
       "x-request-id": requestId,
       ...(payload?.idempotencyKey ? { "Idempotency-Key": String(payload.idempotencyKey) } : {})
