@@ -196,6 +196,11 @@ const AdminPaymentsPage = () => {
                             {row.bokunFailureCode ? `${row.bokunFailureCode}: ` : ""}{row.bokunFailureReason}
                           </small>
                         ) : null}
+                        {row.bokunMissingQuestions?.length ? (
+                          <small className="d-block text-warning-emphasis mt-1">
+                            Required: {row.bokunMissingQuestions.map((question) => question.label).join(", ")}
+                          </small>
+                        ) : null}
                       </td>
                       <td>{formatCurrency(row.expectedAmount || 0, row.currency || "USD")}</td>
                       <td>

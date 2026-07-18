@@ -462,10 +462,7 @@ const listPaymentReconciliation = async ({ limit = 100 } = {}) => {
         (booking?.paymentStatus === "paid"
           ? "supplier_pending"
           : "awaiting_payment");
-    const bokunFailure =
-      booking?.pendingCheckout?.finalization?.lastError ||
-      booking?.pendingCheckout?.finalizationError ||
-      {};
+    const bokunLastError = booking?.pendingCheckout?.finalization?.lastError || {};
     const localPaymentStatus = latestPayment?.status || booking?.paymentStatus || "unknown";
     const invoiceStatus = invoice?.paymentStatus || invoiceSnapshot.paymentStatus || "missing";
     const needsAttention =
@@ -482,10 +479,13 @@ const listPaymentReconciliation = async ({ limit = 100 } = {}) => {
       invoiceStatus,
       bokunSupplierStatus: supplierStatus,
       bokunBookingId: booking?.bokunBookingId || "",
-      bokunFailureCode: String(bokunFailure?.code || booking?.pendingCheckout?.finalizationErrorCode || ""),
+      bokunFailureCode: String(bokunLastError?.code || booking?.pendingCheckout?.finalizationErrorCode || ""),
       bokunFailureReason: String(
-        bokunFailure?.message || booking?.supplierFailureReason || booking?.pendingCheckout?.finalizationError || ""
+        bokunLastError?.message || booking?.supplierFailureReason || booking?.pendingCheckout?.finalizationError || ""
       ),
+      bokunMissingQuestions: Array.isArray(bokunLastError?.missingQuestions)
+        ? bokunLastError.missingQuestions
+        : [],
       expectedAmount,
       gatewayVerifiedAmount: extractProviderAmount(latestPayment || {}),
       gatewayVerifiedCurrency: extractProviderCurrency(latestPayment || {}),

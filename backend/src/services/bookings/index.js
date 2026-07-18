@@ -104,6 +104,16 @@ const calculateNextFinalizationRetryAt = (attemptCount = 1) => {
 const extractFinalizationMetaFromError = (error) => {
   const summary = extractBokunErrorSummary(error);
   const attempts = Array.isArray(error?.details?.attempts) ? error.details.attempts : [];
+  const missingQuestions = Array.isArray(error?.details?.missingQuestions)
+    ? error.details.missingQuestions
+        .map((question = {}) => ({
+          questionId: String(question.questionId || "").trim(),
+          label: String(question.label || "Additional information").trim(),
+          scope: String(question.scope || "booking").trim(),
+          type: String(question.type || "text").trim()
+        }))
+        .filter((question) => question.questionId)
+    : [];
   const statusCode = Number(summary.statusCode || 0);
   const code = summary.code || String(error?.code || "UNKNOWN_ERROR");
   const message = summary.message || String(error?.message || "Bokun booking create failed");
@@ -117,6 +127,7 @@ const extractFinalizationMetaFromError = (error) => {
     statusCode: Number.isFinite(statusCode) ? statusCode : 0,
     message,
     attempts,
+    missingQuestions,
     isPendingRetry
   };
 };
@@ -222,6 +233,7 @@ const releaseFinalizationLock = async ({
       code: errorMeta.code || "UNKNOWN_ERROR",
       statusCode: Number(errorMeta.statusCode || 0) || null,
       message: errorMeta.message || "Bokun finalization failed",
+      missingQuestions: errorMeta.missingQuestions || [],
       at: toIsoNow()
     };
     update.$set["pendingCheckout.finalization.finalizationPending"] = Boolean(errorMeta.isPendingRetry);
@@ -1278,6 +1290,63 @@ const mapBookingQuestionsSnapshot = (bookingQuestions = []) =>
     answer: question.answer
   }));
 
+const hasMeaningfulAnswer = (value) => {
+  if (Array.isArray(value)) return value.some((item) => hasMeaningfulAnswer(item));
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return Boolean(value.trim());
+  return true;
+};
+
+const asPlainObject = (value = {}) =>
+  value && typeof value.toObject === "function" ? value.toObject() : value || {};
+
+const mergeCustomerDetailsForFinalization = ({ bookingCustomer = {}, checkoutCustomer = {} } = {}) => {
+  const merged = { ...asPlainObject(bookingCustomer) };
+
+  Object.entries(asPlainObject(checkoutCustomer)).forEach(([key, value]) => {
+    if (hasMeaningfulAnswer(value)) {
+      merged[key] = value;
+    }
+  });
+
+  return merged;
+};
+
+const mergeBookingQuestionsForFinalization = ({
+  bookingQuestions = [],
+  checkoutQuestions = []
+} = {}) => {
+  const merged = new Map();
+  const addQuestions = (questions = []) => {
+    (questions || []).forEach((question = {}) => {
+      const questionId = String(question.questionId || question.id || "").trim();
+      const answer = question.answer ?? question.values;
+      if (!questionId || !hasMeaningfulAnswer(answer)) return;
+
+      const scope = String(question.scope || "booking").trim().toLowerCase();
+      const passengerIndex =
+        question.passengerIndex !== undefined && question.passengerIndex !== null
+          ? Number(question.passengerIndex)
+          : "";
+      const key = `${questionId}:${scope}:${passengerIndex}`;
+      merged.set(key, {
+        ...question,
+        questionId,
+        scope,
+        answer
+      });
+    });
+  };
+
+  // Current checkout values override a legacy snapshot only when they contain
+  // a real answer. This keeps older paid bookings recoverable without
+  // inventing required Bókun answers.
+  addQuestions(bookingQuestions);
+  addQuestions(checkoutQuestions);
+
+  return [...merged.values()];
+};
+
 const mapPriceCatalogSnapshot = ({ selectedPriceCatalog = null, liveQuote = null } = {}) =>
   selectedPriceCatalog
     ? {
@@ -1886,10 +1955,18 @@ const finalizePendingBookingAfterPayment = async ({
       promoCode: checkoutPayload.promoCode || "",
       requestId
     });
+    const restoredCustomer = mergeCustomerDetailsForFinalization({
+      bookingCustomer: booking.customer || {},
+      checkoutCustomer: checkoutPayload.customer || {}
+    });
+    const restoredBookingQuestions = mergeBookingQuestionsForFinalization({
+      bookingQuestions: booking.bookingQuestionsSnapshot || [],
+      checkoutQuestions: checkoutPayload.bookingQuestions || []
+    });
     const customerWithPickupPlace = {
-      ...(checkoutPayload.customer || {}),
+      ...restoredCustomer,
       pickupPlaceId: resolvePickupPlaceId({
-        customer: checkoutPayload.customer || {},
+        customer: restoredCustomer,
         product
       })
     };
@@ -1897,7 +1974,8 @@ const finalizePendingBookingAfterPayment = async ({
       payload: {
         ...checkoutPayload,
         customer: customerWithPickupPlace,
-        pickupPlaceId: customerWithPickupPlace.pickupPlaceId
+        pickupPlaceId: customerWithPickupPlace.pickupPlaceId,
+        bookingQuestions: restoredBookingQuestions
       },
       liveQuote,
       requestId
@@ -1914,6 +1992,7 @@ const finalizePendingBookingAfterPayment = async ({
       {
         $set: {
           "pendingCheckout.checkoutPayload.bookingQuestions": bookingQuestionResolution.bookingQuestions,
+          "pendingCheckout.checkoutPayload.customer": customerWithPickupPlace,
           "pendingCheckout.checkoutPayload.startTime": liveQuote.availability?.selectedStartTime || checkoutPayload.startTime || "",
           "pendingCheckout.checkoutPayload.startTimeId": bookingQuestionResolution.startTimeId
         }
@@ -2844,6 +2923,8 @@ module.exports = {
     buildPendingFinalizationQuery,
     calculateNextFinalizationRetryAt,
     extractFinalizationMetaFromError,
-    isRecoverableLegacyPesapalVerificationFailure
+    isRecoverableLegacyPesapalVerificationFailure,
+    mergeCustomerDetailsForFinalization,
+    mergeBookingQuestionsForFinalization
   }
 };

@@ -95,3 +95,38 @@ test("only reactivates legacy Pesapal verification failures after a fresh verifi
     false
   );
 });
+
+test("restores saved customer details and answers for a legacy finalization", () => {
+  const customer = __testables.mergeCustomerDetailsForFinalization({
+    bookingCustomer: {
+      firstName: "Asha",
+      email: "asha@example.com",
+      hotelName: "Tembo House Hotel"
+    },
+    checkoutCustomer: {
+      firstName: "Asha",
+      email: "",
+      hotelName: ""
+    }
+  });
+  const questions = __testables.mergeBookingQuestionsForFinalization({
+    bookingQuestions: [
+      { questionId: "pickup", scope: "pickup", answer: "Tembo House Hotel" },
+      { questionId: "flight", scope: "booking", answer: "KQ 488" }
+    ],
+    checkoutQuestions: [
+      { questionId: "pickup", scope: "pickup", answer: "" },
+      { questionId: "flight", scope: "booking", answer: "KQ 488" }
+    ]
+  });
+
+  assert.equal(customer.email, "asha@example.com");
+  assert.equal(customer.hotelName, "Tembo House Hotel");
+  assert.deepEqual(
+    questions.map((question) => [question.questionId, question.answer]),
+    [
+      ["pickup", "Tembo House Hotel"],
+      ["flight", "KQ 488"]
+    ]
+  );
+});
