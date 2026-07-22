@@ -144,14 +144,21 @@ const PaymentSuccessPage = () => {
   const isAgentBooking =
     Boolean(booking?.isAgentBooking) ||
     String(booking?.sourceChannel || "").toLowerCase() === "agent_portal";
+  const paymentStatusQuery = new URLSearchParams();
+  if (orderTrackingId) {
+    paymentStatusQuery.set("OrderTrackingId", orderTrackingId);
+  }
+  if (orderMerchantReference) {
+    paymentStatusQuery.set("OrderMerchantReference", orderMerchantReference);
+  }
   const bookingPath = booking?.bookingReference
     ? isAgentBooking
       ? `/agent/bookings/${booking.bookingReference}`
       : `/my-booking/${booking.bookingReference}`
     : "";
   const paymentStatusPath = booking?.bookingReference
-    ? orderTrackingId
-      ? `/payment-status/${booking.bookingReference}?OrderTrackingId=${encodeURIComponent(orderTrackingId)}`
+    ? paymentStatusQuery.toString()
+      ? `/payment-status/${booking.bookingReference}?${paymentStatusQuery.toString()}`
       : ""
     : "";
   const retryPaymentPath = booking?.bookingReference ? `/payment/checkout/${booking.bookingReference}` : "";

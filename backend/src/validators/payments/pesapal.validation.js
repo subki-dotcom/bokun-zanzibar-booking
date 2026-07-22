@@ -146,10 +146,13 @@ const customerPaymentStatusSchema = z.object({
       orderMerchantReference: z.string().optional()
     })
     .superRefine((query, ctx) => {
-      if (!query.OrderTrackingId && !query.orderTrackingId) {
+      const orderTrackingId = query.OrderTrackingId || query.orderTrackingId || "";
+      const merchantReference = query.OrderMerchantReference || query.orderMerchantReference || "";
+
+      if (!orderTrackingId && !merchantReference) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "OrderTrackingId is required",
+          message: "OrderTrackingId or OrderMerchantReference is required",
           path: ["OrderTrackingId"]
         });
       }

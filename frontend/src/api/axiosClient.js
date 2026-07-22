@@ -38,6 +38,10 @@ const mapProviderErrorMessage = ({ code = "", message = "", details = null }) =>
     return "Payment callback URLs are invalid for live mode. Please contact support.";
   }
 
+  if (normalizedCode === "PESAPAL_CALLBACK_ORIGIN_MISMATCH") {
+    return "Payment callback URLs point to a different site than this checkout. Please contact support.";
+  }
+
   if (normalizedCode === "PESAPAL_EDGE_BLOCKED") {
     return "Pesapal blocked this payment request. Please retry shortly or contact support.";
   }

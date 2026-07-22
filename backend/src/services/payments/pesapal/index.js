@@ -56,6 +56,58 @@ const areLiveRedirectsLocal = () =>
 const resolvePesapalIpnUrl = () =>
   String(env.PESAPAL_IPN_URL || env.PESAPAL_CALLBACK_URL || "").trim();
 
+const resolveUrlOrigin = (value = "") => {
+  const token = String(value || "").trim();
+  if (!token) {
+    return "";
+  }
+
+  try {
+    return new URL(token).origin;
+  } catch (error) {
+    return "";
+  }
+};
+
+const resolveFrontendOrigins = () =>
+  String(env.FRONTEND_URL || "")
+    .split(",")
+    .map((url) => resolveUrlOrigin(url))
+    .filter(Boolean);
+
+const ensurePesapalCallbackOriginsMatchFrontend = () => {
+  const frontendOrigins = resolveFrontendOrigins();
+  if (!frontendOrigins.length) {
+    return;
+  }
+
+  const callbackOrigins = [
+    {
+      key: "PESAPAL_SUCCESS_URL",
+      origin: resolveUrlOrigin(env.PESAPAL_SUCCESS_URL)
+    },
+    {
+      key: "PESAPAL_CANCEL_URL",
+      origin: resolveUrlOrigin(env.PESAPAL_CANCEL_URL)
+    }
+  ].filter(({ origin }) => origin);
+
+  const mismatches = callbackOrigins.filter(({ origin }) => !frontendOrigins.includes(origin));
+  if (!mismatches.length) {
+    return;
+  }
+
+  throw new AppError(
+    "Pesapal callback URLs must point to the same frontend origin that started checkout.",
+    503,
+    "PESAPAL_CALLBACK_ORIGIN_MISMATCH",
+    {
+      frontendOrigins,
+      callbackOrigins: mismatches
+    }
+  );
+};
+
 const ensurePesapalConfiguration = () => {
   if (shouldMock) {
     return;
@@ -88,6 +140,8 @@ const ensurePesapalConfiguration = () => {
       }
     );
   }
+
+  ensurePesapalCallbackOriginsMatchFrontend();
 };
 
 const requestPesapal = async ({

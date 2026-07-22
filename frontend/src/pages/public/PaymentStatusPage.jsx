@@ -35,6 +35,9 @@ const PaymentStatusPage = () => {
   const orderTrackingId = String(
     searchParams.get("OrderTrackingId") || searchParams.get("orderTrackingId") || ""
   ).trim();
+  const orderMerchantReference = String(
+    searchParams.get("OrderMerchantReference") || searchParams.get("orderMerchantReference") || ""
+  ).trim();
 
   useEffect(() => {
     let isActive = true;
@@ -44,7 +47,7 @@ const PaymentStatusPage = () => {
     setPollingTimedOut(false);
 
     const load = async () => {
-      if (!orderTrackingId) {
+      if (!orderTrackingId && !orderMerchantReference) {
         if (isActive) {
           setError("This payment status link is incomplete. Return to the payment confirmation page.");
           setLoading(false);
@@ -53,7 +56,7 @@ const PaymentStatusPage = () => {
       }
 
       try {
-        const data = await fetchPesapalPaymentStatus({ orderTrackingId });
+        const data = await fetchPesapalPaymentStatus({ orderTrackingId, orderMerchantReference });
         if (!isActive) return;
 
         setBooking(data.booking || null);
@@ -91,7 +94,7 @@ const PaymentStatusPage = () => {
         window.clearTimeout(refreshTimer);
       }
     };
-  }, [orderTrackingId, refreshKey]);
+  }, [orderTrackingId, orderMerchantReference, refreshKey]);
 
   const state = useMemo(() => {
     const paymentStatus = String(booking?.paymentStatus || "").toLowerCase();

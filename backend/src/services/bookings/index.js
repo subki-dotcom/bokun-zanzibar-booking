@@ -1486,6 +1486,7 @@ const syncInvoiceForBooking = async ({ bookingDoc, productSnapshot }) => {
 const ensureCommissionForBooking = async ({
   bookingDoc,
   sourceContext,
+  marketing = {},
   manualOverridePercent = null,
   notes = ""
 }) => {
@@ -1503,7 +1504,7 @@ const ensureCommissionForBooking = async ({
   const commissionRecord = await commissionsService.createCommissionForBooking({
     booking: bookingDoc,
     agentId: sourceContext.agentId,
-    marketing: cleanMarketing(payloadWithCatalog.marketing),
+    marketing: cleanMarketing(marketing),
     manualOverridePercent,
     notes
   });
@@ -1686,6 +1687,7 @@ const persistBookingRecord = async ({
     commission = await ensureCommissionForBooking({
       bookingDoc,
       sourceContext,
+      marketing: payloadWithCatalog.marketing,
       manualOverridePercent: payloadWithCatalog.commissionManualPercent || null,
       notes: "Auto-generated on booking finalize"
     });

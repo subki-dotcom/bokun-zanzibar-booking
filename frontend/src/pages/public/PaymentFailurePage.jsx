@@ -51,7 +51,19 @@ const PaymentFailurePage = () => {
         const status = String(data?.status || "").toLowerCase();
         if (["paid", "processing", "pending", "paid_pending_finalization", "paid_manual_review"].includes(status)) {
           const trackingId = orderTrackingId || data?.orderTrackingId || "";
-          const query = trackingId ? `?OrderTrackingId=${encodeURIComponent(trackingId)}` : "";
+          const merchantReference =
+            orderMerchantReference ||
+            data?.orderMerchantReference ||
+            data?.booking?.bookingReference ||
+            "";
+          const redirectParams = new URLSearchParams();
+          if (trackingId) {
+            redirectParams.set("OrderTrackingId", trackingId);
+          }
+          if (merchantReference) {
+            redirectParams.set("OrderMerchantReference", merchantReference);
+          }
+          const query = redirectParams.toString() ? `?${redirectParams.toString()}` : "";
           navigate(`/payment-success${query}`, { replace: true });
           return;
         }

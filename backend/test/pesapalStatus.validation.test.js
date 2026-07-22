@@ -12,11 +12,19 @@ test("accepts a customer Pesapal status request with an order tracking ID", () =
   assert.equal(result.success, true);
 });
 
-test("rejects a customer payment status request without an order tracking ID", () => {
+test("accepts a customer Pesapal status request with a merchant reference", () => {
   const result = customerPaymentStatusSchema.safeParse({
     query: {
       OrderMerchantReference: "ZNZ-1784267117123-3526"
     }
+  });
+
+  assert.equal(result.success, true);
+});
+
+test("rejects a customer payment status request without a payment reference", () => {
+  const result = customerPaymentStatusSchema.safeParse({
+    query: {}
   });
 
   assert.equal(result.success, false);
