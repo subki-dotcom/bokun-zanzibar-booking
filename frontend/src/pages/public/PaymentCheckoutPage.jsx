@@ -9,6 +9,7 @@ import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { getPaymentMethodLabel } from "../../utils/paymentMethods";
+import { buildPesapalProcessingPath } from "../../utils/pesapalProcessing";
 import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 
 const PaymentCheckoutPage = () => {
@@ -84,6 +85,11 @@ const PaymentCheckoutPage = () => {
 
       if (!result.redirectUrl) {
         throw new Error(`${paymentLabel} payment URL was not returned.`);
+      }
+
+      if (selectedPaymentMethod === "pesapal") {
+        window.location.assign(buildPesapalProcessingPath(result));
+        return;
       }
 
       window.location.assign(result.redirectUrl);

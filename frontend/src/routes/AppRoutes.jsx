@@ -10,6 +10,7 @@ import BookingConfirmationPage from "../pages/public/BookingConfirmationPage";
 import PaymentSuccessPage from "../pages/public/PaymentSuccessPage";
 import PaymentFailurePage from "../pages/public/PaymentFailurePage";
 import PaymentStatusPage from "../pages/public/PaymentStatusPage";
+import PaymentProcessingPage from "../pages/public/PaymentProcessingPage";
 import PaymentCheckoutPage from "../pages/public/PaymentCheckoutPage";
 import MyBookingPage from "../pages/public/MyBookingPage";
 import InvoiceDetailsPage from "../pages/public/InvoiceDetailsPage";
@@ -59,6 +60,7 @@ const AppRoutes = () => {
         <Route path="/booking-confirmation/:reference" element={<BookingConfirmationPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/payment-failure" element={<PaymentFailurePage />} />
+        <Route path="/payment-processing" element={<PaymentProcessingPage />} />
         <Route path="/payment/checkout/:reference" element={<PaymentCheckoutPage />} />
         <Route path="/payment-status/:reference" element={<PaymentStatusPage />} />
         <Route path="/my-booking" element={<MyBookingPage />} />

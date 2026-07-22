@@ -28,6 +28,7 @@ import SmartCheckoutInitializer from "../../components/booking/SmartCheckoutInit
 import PaymentMethodSelector from "../../components/booking/PaymentMethodSelector";
 import { isCustomerSummaryValid } from "../../components/booking/CustomerSummaryCard";
 import { getPaymentMethodLabel } from "../../utils/paymentMethods";
+import { buildPesapalProcessingPath } from "../../utils/pesapalProcessing";
 import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 import {
   STEP_IDS,
@@ -837,6 +838,11 @@ const BookingFlowInner = ({ portal = "public" }) => {
       });
 
       if (result.redirectUrl) {
+        if (selectedPaymentMethod === "pesapal") {
+          navigate(buildPesapalProcessingPath(result));
+          return;
+        }
+
         window.location.assign(result.redirectUrl);
         return;
       }
