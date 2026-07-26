@@ -15,11 +15,50 @@ test("requires Pesapal success status code and completed transaction status befo
   assert.equal(isVerifiedPesapalPayment({ status_code: 1 }, "PENDING"), false);
 });
 
-test("normalizes pending, failed, reversed, and indeterminate Pesapal responses", () => {
+test("normalizes pending, failed, cancelled, reversed, and indeterminate Pesapal responses", () => {
   assert.equal(resolvePesapalPaymentState({ status_code: 1 }, "PENDING"), "processing");
   assert.equal(resolvePesapalPaymentState({ status_code: 1 }, "DECLINED"), "failed");
+  assert.equal(resolvePesapalPaymentState({ status_code: 1 }, "CANCELLED"), "cancelled");
   assert.equal(resolvePesapalPaymentState({ status_code: 1 }, "REVERSED"), "reversed");
   assert.equal(resolvePesapalPaymentState({ status_code: 0 }, "COMPLETED"), "verification_error");
+});
+
+test("maps verified payment results to safe public statuses", () => {
+  assert.equal(
+    __testables.resolvePublicPaymentStatus({
+      status: "paid",
+      bookingStatus: "paid_supplier_pending",
+      paymentStatus: "paid",
+      hasBokunBooking: false
+    }),
+    "PAID"
+  );
+  assert.equal(
+    __testables.resolvePublicPaymentStatus({
+      status: "paid",
+      bookingStatus: "confirmed",
+      paymentStatus: "paid",
+      hasBokunBooking: true
+    }),
+    "CONFIRMED"
+  );
+  assert.equal(
+    __testables.resolvePublicPaymentStatus({
+      status: "failed",
+      bookingStatus: "failed",
+      paymentStatus: "failed"
+    }),
+    "FAILED"
+  );
+  assert.equal(
+    __testables.resolvePublicPaymentStatus({
+      status: "cancelled",
+      bookingStatus: "failed",
+      paymentStatus: "failed"
+    }),
+    "CANCELLED"
+  );
+  assert.equal(__testables.resolvePublicPaymentMessage("PENDING"), "Your payment is being processed. Please wait while we confirm it.");
 });
 
 test("keeps amount mismatches blocked and records both values for reconciliation", () => {

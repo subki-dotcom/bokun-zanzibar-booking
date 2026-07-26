@@ -8,6 +8,38 @@ const resolveCheckoutKey = (result = {}) =>
   asText(result.bookingReference || result.bookingId) ||
   `${Date.now()}`;
 
+export const storePesapalProcessingState = ({
+  checkoutKey = "",
+  redirectUrl = "",
+  orderTrackingId = "",
+  orderMerchantReference = "",
+  bookingReference = ""
+} = {}) => {
+  const resolvedCheckoutKey =
+    asText(checkoutKey) ||
+    asText(orderTrackingId) ||
+    asText(orderMerchantReference) ||
+    asText(bookingReference) ||
+    `${Date.now()}`;
+
+  try {
+    window.sessionStorage.setItem(
+      `${STORAGE_PREFIX}${resolvedCheckoutKey}`,
+      JSON.stringify({
+        redirectUrl: asText(redirectUrl),
+        orderTrackingId: asText(orderTrackingId),
+        orderMerchantReference: asText(orderMerchantReference),
+        bookingReference: asText(bookingReference),
+        savedAt: new Date().toISOString()
+      })
+    );
+  } catch (error) {
+    return resolvedCheckoutKey;
+  }
+
+  return resolvedCheckoutKey;
+};
+
 export const buildPesapalProcessingPath = (result = {}) => {
   const checkoutKey = resolveCheckoutKey(result);
   const orderTrackingId = asText(result.orderTrackingId);
@@ -19,32 +51,17 @@ export const buildPesapalProcessingPath = (result = {}) => {
   if (checkoutKey) {
     params.set("checkoutKey", checkoutKey);
   }
-  if (orderTrackingId) {
-    params.set("OrderTrackingId", orderTrackingId);
-  }
-  if (orderMerchantReference) {
-    params.set("OrderMerchantReference", orderMerchantReference);
-  }
   if (bookingReference) {
     params.set("bookingReference", bookingReference);
   }
 
-  try {
-    window.sessionStorage.setItem(
-      `${STORAGE_PREFIX}${checkoutKey}`,
-      JSON.stringify({
-        redirectUrl,
-        orderTrackingId,
-        orderMerchantReference,
-        bookingReference,
-        savedAt: new Date().toISOString()
-      })
-    );
-  } catch (error) {
-    if (redirectUrl) {
-      params.set("redirectUrl", redirectUrl);
-    }
-  }
+  storePesapalProcessingState({
+    checkoutKey,
+    redirectUrl,
+    orderTrackingId,
+    orderMerchantReference,
+    bookingReference
+  });
 
   return `/payment-processing?${params.toString()}`;
 };

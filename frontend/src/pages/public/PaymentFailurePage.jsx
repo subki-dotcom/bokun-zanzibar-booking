@@ -4,6 +4,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import { cancelDpoPayment, cancelPaypalPayment, cancelPesapalPayment } from "../../api/paymentsApi";
+import { BRAND } from "../../config/brand";
+import { publicPaymentRefreshError } from "../../utils/publicPaymentResult";
 
 const PaymentFailurePage = () => {
   const [searchParams] = useSearchParams();
@@ -68,7 +70,7 @@ const PaymentFailurePage = () => {
           return;
         }
       } catch (err) {
-        setError(err.message || "Failed to update cancelled payment status.");
+        setError(publicPaymentRefreshError);
       } finally {
         setLoading(false);
       }
@@ -86,10 +88,12 @@ const PaymentFailurePage = () => {
   }
 
   const status = String(result?.status || "").toLowerCase();
+  const isCancelled = status === "cancelled";
   const isReversed = status === "reversed" || String(result?.booking?.paymentStatus || "").toLowerCase() === "reversed";
   const isFailed = status === "failed" || String(result?.booking?.paymentStatus || "").toLowerCase() === "failed";
   const bookingReference = result?.booking?.bookingReference || "";
   const retryPath = bookingReference ? `/payment/checkout/${bookingReference}` : "";
+  const supportHref = `mailto:${BRAND.email}?subject=${encodeURIComponent(`Payment support ${bookingReference || ""}`)}`;
 
   return (
     <Container className="py-4">
@@ -97,11 +101,11 @@ const PaymentFailurePage = () => {
 
       <Card className={`surface-card payment-result-card ${isFailed ? "payment-result-card-failed" : ""}`}>
         <Card.Body>
-          <h2 className="mb-2">{isReversed ? "Payment reversed" : "Payment unsuccessful"}</h2>
+          <h2 className="mb-2">{isCancelled ? "Payment cancelled" : isReversed ? "Payment unsuccessful" : "Payment unsuccessful"}</h2>
           <p className="section-subtitle mb-3">
-            {isReversed
-              ? "If funds were reversed, they will be handled according to your payment provider's policy."
-              : "Your payment could not be authorized. Please try again or use another payment method."}
+            {isCancelled
+              ? "Payment was cancelled. You have not been charged."
+              : "Payment unsuccessful. Please try again or use another card."}
           </p>
 
           {bookingReference ? (
@@ -113,15 +117,15 @@ const PaymentFailurePage = () => {
           <div className="d-flex flex-wrap gap-2">
             {retryPath ? (
               <Button as={Link} to={retryPath} className="premium-btn text-white">
-                Retry payment
+                Try Again
               </Button>
             ) : (
               <Button as={Link} to="/tours" className="premium-btn text-white">
                 Choose a tour again
               </Button>
             )}
-            <Button as={Link} to={retryPath || "/tours"} variant="outline-primary">
-              Choose another payment method
+            <Button as="a" href={supportHref} variant="outline-primary">
+              Contact Support
             </Button>
             <Button as={Link} to="/my-booking" variant="outline-secondary">
               Check my booking

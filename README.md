@@ -126,6 +126,7 @@ Development fallback:
 - `PAYPAL_MOCK_MODE=true` lets checkout run locally without hitting live PayPal.
 - In live Pesapal mode, callback URLs should be public unless `PESAPAL_ALLOW_LOCAL_REDIRECTS=true`.
 - `PESAPAL_SUCCESS_URL` and `PESAPAL_CANCEL_URL` must use one of the configured `FRONTEND_URL` origins, and `PESAPAL_IPN_URL` must point to the backend that owns the same database/payment records.
+- Pesapal success, failed, cancelled, and pending attempts are verified by the backend and displayed on the branded frontend result page; never rely on the browser redirect alone as proof of payment.
 - For local live Pesapal tests, expose both frontend and backend through a public tunnel and set `FRONTEND_URL`, `PESAPAL_SUCCESS_URL`, `PESAPAL_CANCEL_URL`, `PESAPAL_IPN_URL`, and frontend `VITE_API_BASE_URL` to that same test environment.
 - In live DPO/PayPal mode, success and cancel URLs should be public unless the matching `*_ALLOW_LOCAL_REDIRECTS=true` flag is intentionally enabled for local tests.
 

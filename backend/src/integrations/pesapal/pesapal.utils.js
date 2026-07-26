@@ -25,8 +25,11 @@ const isPendingPesapalStatus = (value = "") =>
 const isReversedPesapalStatus = (value = "") =>
   /REVERSED|REVOKED|CHARGEBACK/.test(normalizePesapalStatus(value));
 
+const isCancelledPesapalStatus = (value = "") =>
+  /CANCELLED|CANCELED|ABORTED/.test(normalizePesapalStatus(value));
+
 const isFailedPesapalStatus = (value = "") =>
-  /FAILED|DECLINED|CANCELLED|CANCELED|EXPIRED|REJECTED|INVALID|ABORTED/.test(normalizePesapalStatus(value));
+  /FAILED|DECLINED|EXPIRED|REJECTED|INVALID/.test(normalizePesapalStatus(value));
 
 const resolvePesapalResponseStatusCode = (payload = {}) => {
   const statusCode = Number(payload?.status_code ?? payload?.statusCode ?? 0);
@@ -41,6 +44,7 @@ const isVerifiedPesapalPayment = (payload = {}, status = "") =>
 const resolvePesapalPaymentState = (payload = {}, status = "") => {
   if (isVerifiedPesapalPayment(payload, status)) return "paid";
   if (isReversedPesapalStatus(status)) return "reversed";
+  if (isCancelledPesapalStatus(status)) return "cancelled";
   if (isFailedPesapalStatus(status)) return "failed";
   if (isPendingPesapalStatus(status)) return "processing";
   return "verification_error";
@@ -155,6 +159,7 @@ module.exports = {
   isPaidPesapalStatus,
   isPendingPesapalStatus,
   isReversedPesapalStatus,
+  isCancelledPesapalStatus,
   isFailedPesapalStatus,
   resolvePesapalResponseStatusCode,
   isVerifiedPesapalPayment,

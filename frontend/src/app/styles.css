@@ -4782,6 +4782,30 @@ textarea.form-control {
   background: #fffaf8;
 }
 
+.payment-result-brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.85rem;
+  color: #10233f;
+}
+
+.payment-result-brand strong,
+.payment-result-brand span {
+  display: block;
+}
+
+.payment-result-brand strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.payment-result-brand span {
+  color: #667085;
+  font-size: 0.86rem;
+}
+
 .payment-result-badge-wrap {
   margin-bottom: 0.8rem;
 }

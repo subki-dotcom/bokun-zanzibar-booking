@@ -13,47 +13,32 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fetchPesapalPaymentStatus } from "../../api/paymentsApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import { readPesapalProcessingState } from "../../utils/pesapalProcessing";
-
-const SUCCESS_STATUSES = new Set(["paid", "paid_pending_finalization", "paid_manual_review"]);
-const FAILURE_STATUSES = new Set(["failed", "reversed"]);
-
-const buildPesapalResultQuery = ({ orderTrackingId = "", orderMerchantReference = "" } = {}) => {
-  const params = new URLSearchParams();
-  if (orderTrackingId) {
-    params.set("OrderTrackingId", orderTrackingId);
-  }
-  if (orderMerchantReference) {
-    params.set("OrderMerchantReference", orderMerchantReference);
-  }
-  return params.toString();
-};
+import {
+  buildPaymentResultQuery,
+  getPaymentResultPresentation,
+  publicPaymentRefreshError
+} from "../../utils/publicPaymentResult";
 
 const resolveStatusMeta = ({ statusResult = null, timedOut = false, error = "" } = {}) => {
-  const status = String(statusResult?.status || "").toLowerCase();
-  const paymentStatus = String(statusResult?.paymentStatus || statusResult?.booking?.paymentStatus || "").toLowerCase();
-  const bookingStatus = String(statusResult?.bookingStatus || statusResult?.booking?.bookingStatus || "").toLowerCase();
+  const presentation = getPaymentResultPresentation(statusResult);
 
-  if (SUCCESS_STATUSES.has(status) || paymentStatus === "paid") {
+  if (presentation.publicStatus === "PAID" || presentation.publicStatus === "CONFIRMED") {
     return {
-      badge: "Payment received",
+      badge: presentation.badge,
       badgeVariant: "success",
       icon: <BsCheckCircle />,
-      title: "Payment received",
-      copy: "We have received the payment update and are finalizing your booking."
+      title: presentation.title,
+      copy: presentation.message
     };
   }
 
-  if (
-    FAILURE_STATUSES.has(status) ||
-    ["failed", "reversed", "cancelled"].includes(paymentStatus) ||
-    ["failed", "reversed", "cancelled"].includes(bookingStatus)
-  ) {
+  if (presentation.publicStatus === "FAILED" || presentation.publicStatus === "CANCELLED") {
     return {
-      badge: "Payment unsuccessful",
-      badgeVariant: "danger",
+      badge: presentation.badge,
+      badgeVariant: presentation.badgeVariant,
       icon: <BsExclamationTriangle />,
-      title: "Payment unsuccessful",
-      copy: "The gateway reported that this payment did not complete."
+      title: presentation.title,
+      copy: presentation.message
     };
   }
 
@@ -63,7 +48,7 @@ const resolveStatusMeta = ({ statusResult = null, timedOut = false, error = "" }
       badgeVariant: "warning",
       icon: <BsArrowRepeat />,
       title: "Still checking payment",
-      copy: "We could not confirm the latest gateway status yet."
+      copy: publicPaymentRefreshError
     };
   }
 
@@ -73,16 +58,16 @@ const resolveStatusMeta = ({ statusResult = null, timedOut = false, error = "" }
       badgeVariant: "warning",
       icon: <BsClockHistory />,
       title: "Still processing",
-      copy: "The payment provider has not returned a final result yet."
+      copy: "Your payment is being processed. Please wait while we confirm it."
     };
   }
 
   return {
-    badge: "Waiting for confirmation",
-    badgeVariant: "info",
+    badge: presentation.badge,
+    badgeVariant: presentation.badgeVariant,
     icon: <BsCreditCard />,
-    title: "Waiting for payment",
-    copy: "Complete the mobile money prompt while we check the transaction in the background."
+    title: presentation.title,
+    copy: presentation.message
   };
 };
 
@@ -96,7 +81,7 @@ const PaymentProcessingPage = () => {
   const [pollingTimedOut, setPollingTimedOut] = useState(false);
   const [frameLoaded, setFrameLoaded] = useState(false);
 
-  const resultQuery = buildPesapalResultQuery({
+  const resultQuery = buildPaymentResultQuery({
     orderTrackingId: checkout.orderTrackingId,
     orderMerchantReference: checkout.orderMerchantReference
   });
@@ -111,7 +96,7 @@ const PaymentProcessingPage = () => {
     const verify = async () => {
       if (!checkout.orderTrackingId && !checkout.orderMerchantReference) {
         if (isActive) {
-          setError("Payment reference is missing. Please reopen checkout from your booking.");
+          setError(publicPaymentRefreshError);
         }
         return;
       }
@@ -126,19 +111,9 @@ const PaymentProcessingPage = () => {
         setStatusResult(data);
         setError("");
 
-        const status = String(data?.status || "").toLowerCase();
-        const paymentStatus = String(data?.paymentStatus || data?.booking?.paymentStatus || "").toLowerCase();
-        const bookingStatus = String(data?.bookingStatus || data?.booking?.bookingStatus || "").toLowerCase();
-        const bookingConfirmed =
-          bookingStatus === "confirmed" && Boolean(data?.booking?.bokunBookingId);
-        const paymentReceived =
-          SUCCESS_STATUSES.has(status) ||
-          bookingConfirmed ||
-          paymentStatus === "paid";
-        const paymentFailed =
-          FAILURE_STATUSES.has(status) ||
-          ["failed", "reversed", "cancelled"].includes(paymentStatus) ||
-          ["failed", "reversed", "cancelled"].includes(bookingStatus);
+        const presentation = getPaymentResultPresentation(data);
+        const paymentReceived = ["PAID", "CONFIRMED"].includes(presentation.publicStatus);
+        const paymentFailed = ["FAILED", "CANCELLED"].includes(presentation.publicStatus);
 
         if (paymentReceived) {
           navigate(`/payment-success${resultQuery ? `?${resultQuery}` : ""}`, { replace: true });
@@ -146,7 +121,7 @@ const PaymentProcessingPage = () => {
         }
 
         if (paymentFailed) {
-          navigate(`/payment-failure${resultQuery ? `?${resultQuery}` : ""}`, { replace: true });
+          navigate(`/payment-success${resultQuery ? `?${resultQuery}` : ""}`, { replace: true });
           return;
         }
 
@@ -159,7 +134,7 @@ const PaymentProcessingPage = () => {
       } catch (err) {
         if (!isActive) return;
 
-        setError(err.message || "Could not confirm payment status yet.");
+        setError(publicPaymentRefreshError);
         attempts += 1;
         if (attempts < maxAttempts) {
           retryTimer = window.setTimeout(verify, 5000);
@@ -184,7 +159,8 @@ const PaymentProcessingPage = () => {
     timedOut: pollingTimedOut,
     error
   });
-  const latestMessage = statusResult?.message || statusMeta.copy;
+  const presentation = getPaymentResultPresentation(statusResult);
+  const latestMessage = statusMeta.copy;
   const bookingReference = statusResult?.booking?.bookingReference || checkout.bookingReference || "";
   const isAgentBooking =
     Boolean(statusResult?.booking?.isAgentBooking) ||
@@ -267,12 +243,12 @@ const PaymentProcessingPage = () => {
                   <strong>{bookingReference || "-"}</strong>
                 </div>
                 <div>
-                  <span>Gateway status</span>
-                  <strong>{statusResult?.status || "checking"}</strong>
+                  <span>Payment</span>
+                  <strong>{presentation.paymentLabel}</strong>
                 </div>
                 <div>
-                  <span>Payment status</span>
-                  <strong>{statusResult?.paymentStatus || statusResult?.booking?.paymentStatus || "pending"}</strong>
+                  <span>Booking confirmation</span>
+                  <strong>{presentation.bookingLabel}</strong>
                 </div>
               </div>
 

@@ -417,6 +417,43 @@ const resolveCustomerBookingStatus = (booking = {}, bokunSyncStatus = "") => {
   return "payment_pending";
 };
 
+const resolvePublicPaymentStatus = ({ status = "", bookingStatus = "", paymentStatus = "", hasBokunBooking = false } = {}) => {
+  const resultStatus = String(status || "").toLowerCase();
+  const customerBookingStatus = String(bookingStatus || "").toLowerCase();
+  const localPaymentStatus = String(paymentStatus || "").toLowerCase();
+
+  if (customerBookingStatus === "confirmed" && hasBokunBooking) return "CONFIRMED";
+  if (
+    resultStatus === "paid" ||
+    resultStatus === "paid_pending_finalization" ||
+    resultStatus === "paid_manual_review" ||
+    localPaymentStatus === "paid"
+  ) {
+    return "PAID";
+  }
+  if (resultStatus === "cancelled" || customerBookingStatus === "cancelled") return "CANCELLED";
+  if (
+    resultStatus === "failed" ||
+    resultStatus === "reversed" ||
+    localPaymentStatus === "failed" ||
+    localPaymentStatus === "reversed" ||
+    customerBookingStatus === "failed" ||
+    customerBookingStatus === "reversed"
+  ) {
+    return "FAILED";
+  }
+
+  return "PENDING";
+};
+
+const resolvePublicPaymentMessage = (publicStatus = "PENDING") => {
+  if (publicStatus === "CONFIRMED") return "Payment successful. Your booking is confirmed.";
+  if (publicStatus === "PAID") return "Payment successful. We are confirming your booking.";
+  if (publicStatus === "FAILED") return "Payment unsuccessful. Please try again or use another card.";
+  if (publicStatus === "CANCELLED") return "Payment was cancelled. You have not been charged.";
+  return "Your payment is being processed. Please wait while we confirm it.";
+};
+
 const buildCustomerPaymentStatus = async ({ booking, status = "", message = "" } = {}) => {
   const paidAmount = await paymentsService.getVerifiedPaidAmountByBookingReference({
     bookingReference: booking.bookingReference,
@@ -424,6 +461,13 @@ const buildCustomerPaymentStatus = async ({ booking, status = "", message = "" }
   });
   const bokunSyncStatus = resolveBokunSyncStatus(booking);
   const bookingStatus = resolveCustomerBookingStatus(booking, bokunSyncStatus);
+  const publicStatus = resolvePublicPaymentStatus({
+    status,
+    bookingStatus,
+    paymentStatus: booking?.paymentStatus || "pending",
+    hasBokunBooking: Boolean(booking?.bokunBookingId)
+  });
+  const publicMessage = resolvePublicPaymentMessage(publicStatus);
   const invoiceStatus = String(booking?.invoiceSnapshot?.paymentStatus || "unpaid").toLowerCase();
   const isTerminal = ["confirmed", "manual_review_required", "cancelled", "failed", "reversed"].includes(bookingStatus);
   const customerMessage =
@@ -443,6 +487,8 @@ const buildCustomerPaymentStatus = async ({ booking, status = "", message = "" }
   return {
     status,
     message: customerMessage,
+    publicStatus,
+    publicMessage,
     paymentStatus: String(booking?.paymentStatus || "pending").toLowerCase(),
     invoiceStatus,
     bookingStatus,
@@ -637,8 +683,10 @@ const createOrderWithPesapal = async ({ booking, requestId }) => {
       amount,
       description: `${booking.productTitle || "Tour booking"} (${booking.bookingReference})`,
       callback_url: env.PESAPAL_SUCCESS_URL,
-      cancellation_url: env.PESAPAL_CANCEL_URL,
-      // Explicitly return the customer to the React success page after payment.
+      // Send failed/cancelled attempts to the same branded result page. The
+      // frontend never trusts this redirect; it asks the backend to verify.
+      cancellation_url: env.PESAPAL_SUCCESS_URL,
+      // Explicitly return the customer to the React result page after payment.
       redirect_mode: "TOP_WINDOW",
       notification_id: notificationId,
       branch: "Zanzibar",
@@ -1180,6 +1228,33 @@ const verifyAndProcessPesapalPayment = async ({
         };
       }
 
+      if (paymentState === "cancelled") {
+        await updatePaymentLogForVerification({
+          bookingReference: booking.bookingReference,
+          isPaid: false,
+          amount: 0,
+          verification,
+          orderTrackingId: trackingId,
+          merchantReference: orderMerchantReference || booking.bookingReference,
+          source,
+          localStatus: "failed"
+        });
+
+        const cancelledBooking = await bookingsService.markBookingPaymentFailed({
+          bookingId: booking._id,
+          requestId,
+          reason: "Customer cancelled the payment before completion.",
+          transactionToken: trackingId,
+          paymentMethod: "pesapal"
+        });
+
+        return {
+          status: "cancelled",
+          message: "Payment was cancelled. You have not been charged.",
+          booking: toPaymentCallbackBooking(cancelledBooking)
+        };
+      }
+
       if (paymentState === "reversed") {
         await updatePaymentLogForVerification({
           bookingReference: booking.bookingReference,
@@ -1616,6 +1691,8 @@ module.exports = {
   recheckPaymentByBookingReference,
   getCustomerPaymentStatus,
   __testables: {
-    validatePesapalVerification
+    validatePesapalVerification,
+    resolvePublicPaymentStatus,
+    resolvePublicPaymentMessage
   }
 };
