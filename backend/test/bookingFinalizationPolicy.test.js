@@ -40,6 +40,19 @@ test("uses the 1m, 5m, 15m, then hourly retry schedule", () => {
   assert.ok(waits[3] >= 3_599_000 && waits[3] <= 3_601_000);
 });
 
+test("counts selected participants without breaking Bokun finalization metadata", () => {
+  assert.equal(
+    __testables.calculateSelectedParticipantCount([
+      { quantity: 1 },
+      { quantity: 2 },
+      { quantity: "3" }
+    ]),
+    6
+  );
+  assert.equal(__testables.calculateSelectedParticipantCount(null), 0);
+  assert.equal(__testables.calculateSelectedParticipantCount({ quantity: 4 }), 0);
+});
+
 test("automatic reconciliation skips permanent failed finalizations", () => {
   const query = __testables.buildPendingFinalizationQuery({ nowIso: "2026-07-18T12:00:00.000Z" });
   const statusClause = query.$and.find((clause) => Array.isArray(clause.$or));

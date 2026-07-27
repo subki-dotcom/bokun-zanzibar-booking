@@ -47,6 +47,12 @@ const normalizePriceCategoryParticipants = (participants = []) =>
     }))
     .filter((item) => item.categoryId);
 
+const calculateSelectedParticipantCount = (participants = []) =>
+  (Array.isArray(participants) ? participants : []).reduce(
+    (total, participant) => total + Math.max(0, Number(participant?.quantity || 0)),
+    0
+  );
+
 const RETRYABLE_BOKUN_NETWORK_TOKENS = [
   "timeout",
   "timed out",
@@ -2011,10 +2017,7 @@ const finalizePendingBookingAfterPayment = async ({
       requestId,
       metadata: {
         startTimeId: bookingQuestionResolution.startTimeId,
-        participantCount: Number(liveQuote.selectedParticipants || []).reduce(
-          (total, participant) => total + Number(participant.quantity || 0),
-          0
-        )
+        participantCount: calculateSelectedParticipantCount(liveQuote.selectedParticipants)
       }
     });
 
@@ -2924,6 +2927,7 @@ module.exports = {
   __testables: {
     buildPendingFinalizationQuery,
     calculateNextFinalizationRetryAt,
+    calculateSelectedParticipantCount,
     extractFinalizationMetaFromError,
     isRecoverableLegacyPesapalVerificationFailure,
     mergeCustomerDetailsForFinalization,
