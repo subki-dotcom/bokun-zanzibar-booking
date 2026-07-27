@@ -80,6 +80,9 @@ const LEGACY_PESAPAL_VERIFICATION_FAILURE_CODES = new Set([
   "PESAPAL_VERIFIED_AMOUNT_MISMATCH",
   "PESAPAL_VERIFIED_CURRENCY_MISMATCH"
 ]);
+const RECOVERABLE_FINALIZATION_FAILURE_MESSAGES = [
+  "Number(...).reduce is not a function"
+];
 
 const toIsoNow = () => new Date().toISOString();
 
@@ -266,6 +269,12 @@ const isRecoverableLegacyPesapalVerificationFailure = (booking = {}) => {
   const failureCode = String(
     finalization?.lastError?.code || booking?.pendingCheckout?.finalizationErrorCode || ""
   ).trim();
+  const failureMessage = String(
+    finalization?.lastError?.message || booking?.pendingCheckout?.finalizationError || ""
+  );
+  const isRecoverableInternalFailure = RECOVERABLE_FINALIZATION_FAILURE_MESSAGES.some((message) =>
+    failureMessage.includes(message)
+  );
 
   return (
     booking?.paymentStatus === "paid" &&
@@ -273,7 +282,7 @@ const isRecoverableLegacyPesapalVerificationFailure = (booking = {}) => {
     !["cancelled", "completed"].includes(bookingStatus) &&
     Boolean(booking?.pendingCheckout?.checkoutPayload) &&
     String(finalization.status || "").toLowerCase() === FINALIZATION_STATUS.FAILED &&
-    LEGACY_PESAPAL_VERIFICATION_FAILURE_CODES.has(failureCode)
+    (LEGACY_PESAPAL_VERIFICATION_FAILURE_CODES.has(failureCode) || isRecoverableInternalFailure)
   );
 };
 
@@ -318,6 +327,12 @@ const reactivateFinalizationAfterPesapalVerification = async ({
               "pendingCheckout.finalizationErrorCode": {
                 $in: [...LEGACY_PESAPAL_VERIFICATION_FAILURE_CODES]
               }
+            },
+            {
+              "pendingCheckout.finalization.lastError.message": /Number\(\.\.\.\)\.reduce is not a function/
+            },
+            {
+              "pendingCheckout.finalizationError": /Number\(\.\.\.\)\.reduce is not a function/
             }
           ]
         },
@@ -372,7 +387,7 @@ const reactivateFinalizationAfterPesapalVerification = async ({
     action: "booking_finalization_reactivated_after_pesapal_verification",
     entityType: "Booking",
     entityId: reactivatedBooking._id.toString(),
-    reason: "A current Pesapal verification cleared a legacy amount/currency mismatch before Bókun finalization",
+    reason: "A current Pesapal verification cleared a recoverable finalization failure before Bokun finalization",
     requestId,
     metadata: {
       source,

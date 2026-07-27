@@ -107,6 +107,20 @@ test("only reactivates legacy Pesapal verification failures after a fresh verifi
     }),
     false
   );
+
+  assert.equal(
+    __testables.isRecoverableLegacyPesapalVerificationFailure({
+      paymentStatus: "paid",
+      pendingCheckout: {
+        checkoutPayload: { productId: "activity-1" },
+        finalization: {
+          status: "failed",
+          lastError: { code: "UNKNOWN_ERROR", message: "Number(...).reduce is not a function" }
+        }
+      }
+    }),
+    true
+  );
 });
 
 test("restores saved customer details and answers for a legacy finalization", () => {
