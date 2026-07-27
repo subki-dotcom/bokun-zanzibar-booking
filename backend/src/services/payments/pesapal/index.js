@@ -377,6 +377,18 @@ const toPaymentCallbackBooking = (booking = {}) => ({
   paymentStatus: booking.paymentStatus || "pending",
   bookingStatus: booking.bookingStatus || "pending",
   supplierStatus: booking.supplierStatus || "awaiting_payment",
+  amountPaid: Number(
+    booking?.invoiceSnapshot?.amountPaid ||
+      booking?.pendingCheckout?.paidAmount ||
+      booking?.pricingSnapshot?.amountPaid ||
+      0
+  ),
+  currency: booking?.invoiceSnapshot?.currency || booking.currency || booking?.pricingSnapshot?.currency || "USD",
+  invoiceStatus: String(booking?.invoiceSnapshot?.paymentStatus || "unpaid").toLowerCase(),
+  paidAt: booking?.pendingCheckout?.paymentVerifiedAt || "",
+  productTitle: booking.productTitle || "",
+  travelDate: booking.travelDate || "",
+  startTime: booking.startTime || "",
   sourceChannel: booking.sourceChannel || "direct_website",
   isAgentBooking: Boolean(booking.agentId)
 });
@@ -1698,6 +1710,7 @@ module.exports = {
   recheckPaymentByBookingReference,
   getCustomerPaymentStatus,
   __testables: {
+    toPaymentCallbackBooking,
     validatePesapalVerification,
     resolvePublicPaymentStatus,
     resolvePublicPaymentMessage

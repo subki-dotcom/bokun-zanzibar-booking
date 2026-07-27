@@ -168,8 +168,15 @@ const PaymentSuccessPage = () => {
   const supportHref = `mailto:${BRAND.email}?subject=${encodeURIComponent(`Payment support ${bookingReference || ""}`)}`;
   const canRetry = presentation.isFailed || presentation.isCancelled;
   const canCheckAgain = presentation.publicStatus === "PENDING" || presentation.publicStatus === "PAID";
-  const paidAmount = Number(result?.amountPaid || booking?.amountPaid || 0);
-  const currency = booking?.currency || result?.currency || "USD";
+  const paidAmount = Number(
+    result?.amountPaid ||
+      booking?.amountPaid ||
+      booking?.invoiceSnapshot?.amountPaid ||
+      booking?.pendingCheckout?.paidAmount ||
+      booking?.pricingSnapshot?.amountPaid ||
+      0
+  );
+  const currency = booking?.currency || booking?.invoiceSnapshot?.currency || result?.currency || "USD";
 
   return (
     <Container className="py-4">

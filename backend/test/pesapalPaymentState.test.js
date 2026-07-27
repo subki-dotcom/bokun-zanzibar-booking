@@ -71,6 +71,25 @@ test("maps verified payment results to safe public statuses", () => {
   assert.equal(__testables.resolvePublicPaymentMessage("PENDING"), "Your payment is being processed. Please wait while we confirm it.");
 });
 
+test("includes paid amount in already processed Pesapal callback bookings", () => {
+  const booking = __testables.toPaymentCallbackBooking({
+    _id: "booking-1",
+    bookingReference: "ZNZ-PAID-1",
+    paymentStatus: "paid",
+    bookingStatus: "confirmed",
+    bokunBookingId: "98613320",
+    bokunConfirmationCode: "VIA-98613320",
+    invoiceSnapshot: { paymentStatus: "paid", amountPaid: 1 },
+    currency: "USD",
+    pendingCheckout: { paymentVerifiedAt: "2026-07-27T06:06:57.374Z" }
+  });
+
+  assert.equal(booking.amountPaid, 1);
+  assert.equal(booking.currency, "USD");
+  assert.equal(booking.invoiceStatus, "paid");
+  assert.equal(booking.paidAt, "2026-07-27T06:06:57.374Z");
+});
+
 test("keeps amount mismatches blocked and records both values for reconciliation", () => {
   assert.throws(
     () =>

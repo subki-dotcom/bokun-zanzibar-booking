@@ -32,7 +32,15 @@ export const resolvePublicPaymentStatus = (result = {}) => {
   const paymentStatus = normalize(result?.paymentStatus || result?.booking?.paymentStatus);
   const bookingStatus = normalize(result?.bookingStatus || result?.booking?.bookingStatus);
   const hasBokunBooking = Boolean(result?.booking?.bokunBookingId || result?.bokunBookingId);
-  const hasVerifiedPaidPayment = Number(result?.amountPaid || result?.booking?.amountPaid || 0) > 0;
+  const hasVerifiedPaidPayment =
+    Number(
+      result?.amountPaid ||
+        result?.booking?.amountPaid ||
+        result?.booking?.invoiceSnapshot?.amountPaid ||
+        result?.booking?.pendingCheckout?.paidAmount ||
+        result?.booking?.pricingSnapshot?.amountPaid ||
+        0
+    ) > 0;
 
   if (bookingStatus === "confirmed" && hasBokunBooking) return "CONFIRMED";
   if (SUCCESS_STATUSES.has(status) || (paymentStatus === "paid" && hasVerifiedPaidPayment)) return "PAID";
