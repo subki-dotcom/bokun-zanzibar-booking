@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Container } from "react-bootstrap";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  fetchPesapalPaymentStatus,
+  verifyPesapalPayment,
   verifyDpoPayment,
   verifyPaypalPayment
 } from "../../api/paymentsApi";
@@ -97,7 +97,7 @@ const PaymentSuccessPage = () => {
           ? await verifyPaypalPayment({ orderId: paypalOrderId })
           : transactionToken
             ? await verifyDpoPayment({ transactionToken })
-            : await fetchPesapalPaymentStatus({
+            : await verifyPesapalPayment({
                 orderTrackingId,
                 orderMerchantReference
               });

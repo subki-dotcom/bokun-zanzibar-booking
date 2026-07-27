@@ -417,7 +417,13 @@ const resolveCustomerBookingStatus = (booking = {}, bokunSyncStatus = "") => {
   return "payment_pending";
 };
 
-const resolvePublicPaymentStatus = ({ status = "", bookingStatus = "", paymentStatus = "", hasBokunBooking = false } = {}) => {
+const resolvePublicPaymentStatus = ({
+  status = "",
+  bookingStatus = "",
+  paymentStatus = "",
+  hasBokunBooking = false,
+  hasVerifiedPaidPayment = false
+} = {}) => {
   const resultStatus = String(status || "").toLowerCase();
   const customerBookingStatus = String(bookingStatus || "").toLowerCase();
   const localPaymentStatus = String(paymentStatus || "").toLowerCase();
@@ -427,7 +433,7 @@ const resolvePublicPaymentStatus = ({ status = "", bookingStatus = "", paymentSt
     resultStatus === "paid" ||
     resultStatus === "paid_pending_finalization" ||
     resultStatus === "paid_manual_review" ||
-    localPaymentStatus === "paid"
+    (localPaymentStatus === "paid" && hasVerifiedPaidPayment)
   ) {
     return "PAID";
   }
@@ -465,7 +471,8 @@ const buildCustomerPaymentStatus = async ({ booking, status = "", message = "" }
     status,
     bookingStatus,
     paymentStatus: booking?.paymentStatus || "pending",
-    hasBokunBooking: Boolean(booking?.bokunBookingId)
+    hasBokunBooking: Boolean(booking?.bokunBookingId),
+    hasVerifiedPaidPayment: Number(paidAmount || 0) > 0
   });
   const publicMessage = resolvePublicPaymentMessage(publicStatus);
   const invoiceStatus = String(booking?.invoiceSnapshot?.paymentStatus || "unpaid").toLowerCase();

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Container } from "react-bootstrap";
 import {
   BsArrowRepeat,
@@ -77,82 +77,63 @@ const PaymentProcessingPage = () => {
   const checkout = useMemo(() => readPesapalProcessingState(searchParams), [searchParams]);
   const [statusResult, setStatusResult] = useState(null);
   const [error, setError] = useState("");
-  const [refreshKey, setRefreshKey] = useState(0);
   const [pollingTimedOut, setPollingTimedOut] = useState(false);
   const [frameLoaded, setFrameLoaded] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   const resultQuery = buildPaymentResultQuery({
     orderTrackingId: checkout.orderTrackingId,
     orderMerchantReference: checkout.orderMerchantReference
   });
+  const hasGatewayReturnParams = Boolean(
+    String(searchParams.get("OrderTrackingId") || searchParams.get("orderTrackingId") || "").trim() ||
+      String(searchParams.get("OrderMerchantReference") || searchParams.get("orderMerchantReference") || "").trim()
+  );
 
-  useEffect(() => {
-    let isActive = true;
-    let retryTimer = null;
-    let attempts = 0;
-    const maxAttempts = 60;
-    setPollingTimedOut(false);
-
-    const verify = async () => {
+  const checkStatus = useCallback(
+    async ({ redirectOnTerminal = false } = {}) => {
       if (!checkout.orderTrackingId && !checkout.orderMerchantReference) {
-        if (isActive) {
-          setError(publicPaymentRefreshError);
-        }
+        setError(publicPaymentRefreshError);
         return;
       }
+
+      setChecking(true);
+      setError("");
+      setPollingTimedOut(false);
 
       try {
         const data = await fetchPesapalPaymentStatus({
           orderTrackingId: checkout.orderTrackingId,
           orderMerchantReference: checkout.orderMerchantReference
         });
-        if (!isActive) return;
 
         setStatusResult(data);
         setError("");
 
         const presentation = getPaymentResultPresentation(data);
-        const paymentReceived = ["PAID", "CONFIRMED"].includes(presentation.publicStatus);
-        const paymentFailed = ["FAILED", "CANCELLED"].includes(presentation.publicStatus);
+        const terminal = ["PAID", "CONFIRMED", "FAILED", "CANCELLED"].includes(presentation.publicStatus);
 
-        if (paymentReceived) {
+        if (redirectOnTerminal && terminal) {
           navigate(`/payment-success${resultQuery ? `?${resultQuery}` : ""}`, { replace: true });
-          return;
-        }
-
-        if (paymentFailed) {
-          navigate(`/payment-success${resultQuery ? `?${resultQuery}` : ""}`, { replace: true });
-          return;
-        }
-
-        attempts += 1;
-        if (attempts < maxAttempts) {
-          retryTimer = window.setTimeout(verify, 5000);
-        } else {
-          setPollingTimedOut(true);
         }
       } catch (err) {
-        if (!isActive) return;
-
         setError(publicPaymentRefreshError);
-        attempts += 1;
-        if (attempts < maxAttempts) {
-          retryTimer = window.setTimeout(verify, 5000);
-        } else {
-          setPollingTimedOut(true);
-        }
+      } finally {
+        setChecking(false);
       }
-    };
+    },
+    [checkout.orderTrackingId, checkout.orderMerchantReference, navigate, resultQuery]
+  );
 
-    verify();
+  useEffect(() => {
+    if (!hasGatewayReturnParams) {
+      return;
+    }
 
-    return () => {
-      isActive = false;
-      if (retryTimer) {
-        window.clearTimeout(retryTimer);
-      }
-    };
-  }, [checkout.orderTrackingId, checkout.orderMerchantReference, navigate, refreshKey, resultQuery]);
+    setPollingTimedOut(false);
+
+    checkStatus({ redirectOnTerminal: true });
+  }, [checkStatus, hasGatewayReturnParams]);
 
   const statusMeta = resolveStatusMeta({
     statusResult,
@@ -259,8 +240,12 @@ const PaymentProcessingPage = () => {
               ) : null}
 
               <div className="payment-processing-actions">
-                <Button variant="outline-primary" onClick={() => setRefreshKey((current) => current + 1)}>
-                  <BsArrowRepeat /> Check now
+                <Button
+                  variant="outline-primary"
+                  disabled={checking}
+                  onClick={() => checkStatus({ redirectOnTerminal: true })}
+                >
+                  <BsArrowRepeat /> {checking ? "Checking..." : "Check now"}
                 </Button>
                 {trackStatusPath ? (
                   <Button as={Link} to={trackStatusPath} variant="outline-secondary">

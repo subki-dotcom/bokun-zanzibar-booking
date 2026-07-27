@@ -35,6 +35,16 @@ test("maps verified payment results to safe public statuses", () => {
   );
   assert.equal(
     __testables.resolvePublicPaymentStatus({
+      status: "processing",
+      bookingStatus: "payment_pending",
+      paymentStatus: "paid",
+      hasBokunBooking: false,
+      hasVerifiedPaidPayment: false
+    }),
+    "PENDING"
+  );
+  assert.equal(
+    __testables.resolvePublicPaymentStatus({
       status: "paid",
       bookingStatus: "confirmed",
       paymentStatus: "paid",

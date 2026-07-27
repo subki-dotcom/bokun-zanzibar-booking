@@ -32,9 +32,10 @@ export const resolvePublicPaymentStatus = (result = {}) => {
   const paymentStatus = normalize(result?.paymentStatus || result?.booking?.paymentStatus);
   const bookingStatus = normalize(result?.bookingStatus || result?.booking?.bookingStatus);
   const hasBokunBooking = Boolean(result?.booking?.bokunBookingId || result?.bokunBookingId);
+  const hasVerifiedPaidPayment = Number(result?.amountPaid || result?.booking?.amountPaid || 0) > 0;
 
   if (bookingStatus === "confirmed" && hasBokunBooking) return "CONFIRMED";
-  if (SUCCESS_STATUSES.has(status) || paymentStatus === "paid") return "PAID";
+  if (SUCCESS_STATUSES.has(status) || (paymentStatus === "paid" && hasVerifiedPaidPayment)) return "PAID";
   if (CANCELLED_STATUSES.has(status) || bookingStatus === "cancelled") return "CANCELLED";
   if (
     FAILURE_STATUSES.has(status) ||
