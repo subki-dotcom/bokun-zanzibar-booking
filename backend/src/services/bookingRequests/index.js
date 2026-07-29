@@ -518,6 +518,30 @@ const isBokunAlreadyCancelledError = (error = {}) => {
   return /already\s+cancel|already\s+canceled|booking\s+cancelled|booking\s+canceled/.test(text);
 };
 
+const lookupCancelledSupplierState = async ({ booking, requestId = "" }) => {
+  const references = [
+    booking.bokunBookingId,
+    booking.bokunConfirmationCode,
+    booking.bookingReference
+  ].map((value) => String(value || "").trim()).filter(Boolean);
+  const seen = new Set();
+  for (const reference of references) {
+    if (seen.has(reference)) continue;
+    seen.add(reference);
+    try {
+      const supplierBooking = await bokunService.lookupBooking(reference, requestId);
+      if (isBokunCancellationConfirmed(supplierBooking)) {
+        return supplierBooking;
+      }
+    } catch (error) {
+      if (isBokunAlreadyCancelledError(error)) {
+        return { recoveredFromSupplierState: true, reference, message: "Supplier reported this booking was already cancelled." };
+      }
+    }
+  }
+  return null;
+};
+
 const markCancellationSyncedLocally = async ({ request, booking, response = null }) => {
   booking.bookingStatus = "cancelled";
   booking.cancellation = {
@@ -531,6 +555,16 @@ const markCancellationSyncedLocally = async ({ request, booking, response = null
   request.bokunSync.lastError = "";
   request.bokunSync.responseSnapshot = response || request.bokunSync.responseSnapshot || { recoveredFromSupplierState: true };
   await request.save();
+};
+
+const resolveApprovedRefundContext = async ({ request, booking, approvedAmount }) => {
+  const safeApprovedAmount = number(approvedAmount || request.refund?.approvedAmount || request.refund?.eligibleAmount || request.refund?.estimatedAmount || 0);
+  if (safeApprovedAmount <= 0) return null;
+  return refundsService.resolveRefundContext({
+    booking,
+    eligibleRefundAmount: safeApprovedAmount,
+    approvedRefundAmount: safeApprovedAmount
+  });
 };
 
 const performBokunSync = async ({ request, booking, requestId = "" }) => {
@@ -557,6 +591,12 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
         idempotencyKey: request.bokunSync.idempotencyKey
       }, requestId);
       if (!isBokunCancellationConfirmed(response)) {
+        const supplierState = await lookupCancelledSupplierState({ booking, requestId });
+        if (supplierState) {
+          await markCancellationSyncedLocally({ request, booking, response: supplierState });
+          await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId, reason: "Booking request synchronized after supplier state lookup" });
+          return { synced: true, request };
+        }
         request.bokunSync.status = "manual_action_required";
         request.bokunSync.lastError = "Supplier response did not confirm cancellation.";
         request.bokunSync.responseSnapshot = response;
@@ -605,6 +645,14 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
       });
       await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId, reason: "Booking request synchronized after supplier cancellation" });
       return { synced: true, request };
+    }
+    if (request.type === "cancel_booking") {
+      const supplierState = await lookupCancelledSupplierState({ booking, requestId });
+      if (supplierState) {
+        await markCancellationSyncedLocally({ request, booking, response: supplierState });
+        await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId, reason: "Booking request synchronized after supplier cancellation lookup" });
+        return { synced: true, request };
+      }
     }
     request.bokunSync.status = request.type === "cancel_booking" ? "cancellation_pending_supplier" : "failed";
     request.bokunSync.lastError = String(error.message || "Bokun update failed").slice(0, 1000);
@@ -793,14 +841,20 @@ const approveRequest = async ({ requestId, auth, payload = {}, traceId = "" }) =
     await recordAudit({ action: "booking_request_approved", request, booking, auth, requestId: traceId, before, after: { status: request.status } });
     queueRequestEmail({ booking, request, templateKey: "request_approved" });
     const finalized = await finalizeApprovedRequest({ request, booking, auth, requestId: traceId });
-    if (finalized.synced && refundPlan.amount > 0 && refundPlan.context?.providerKnown && !refundPlan.context?.requiresManualReview) {
+    if (finalized.synced && refundPlan.amount > 0) {
+      const approvedContext = refundPlan.context?.providerKnown && !refundPlan.context?.requiresManualReview
+        ? refundPlan.context
+        : await resolveApprovedRefundContext({ request, booking, approvedAmount: refundPlan.amount });
+      if (!approvedContext?.providerKnown || approvedContext?.requiresManualReview) {
+        return finalized;
+      }
       const refund = await createRefundRecord({
         request,
         booking,
         amount: refundPlan.amount,
         reason: refundPlan.reason,
         auth,
-        refundContext: refundPlan.context
+        refundContext: approvedContext
       });
       return { ...finalized, refund };
     }
@@ -879,17 +933,22 @@ const retryBokunSync = async ({ requestId, auth, traceId = "" }) =>
       result.synced &&
       request.type === "cancel_booking" &&
       Number(request.refund?.approvedAmount || 0) > 0 &&
-      !request.refund?.refundId &&
-      request.refund?.providerResolution?.providerKnown &&
-      !request.refund?.providerResolution?.requiresManualReview
+      !request.refund?.refundId
     ) {
+      const refundContext = request.refund?.providerResolution?.providerKnown && !request.refund?.providerResolution?.requiresManualReview
+        ? request.refund.providerResolution
+        : await resolveApprovedRefundContext({ request, booking, approvedAmount: request.refund.approvedAmount });
+      if (!refundContext?.providerKnown || refundContext?.requiresManualReview) {
+        await recordAudit({ action: "booking_request_refund_manual_review_required", request, booking, auth, requestId: traceId, metadata: { approvedAmount: request.refund.approvedAmount, reason: refundContext?.manualReviewReason || "Refund provider requires review" } });
+        return result;
+      }
       await createRefundRecord({
         request,
         booking,
         amount: request.refund.approvedAmount,
         reason: request.customerReason,
         auth,
-        refundContext: request.refund.providerResolution
+        refundContext
       });
     }
     await recordAudit({ action: result.synced ? "booking_request_bokun_sync_succeeded" : "booking_request_bokun_sync_failed", request, booking, auth, requestId: traceId });
