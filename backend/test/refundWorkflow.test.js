@@ -15,6 +15,7 @@ const {
 const {
   ensureRequestWorkflowDefaults,
   isBokunAlreadyCancelledError,
+  isBokunNotConfirmedCancellationError,
   isBokunCancellationConfirmed
 } = bookingRequestsService.__testables;
 
@@ -156,6 +157,13 @@ test("recognizes safe Bokun cancellation confirmation variants", () => {
 test("detects already-cancelled Bokun errors for idempotent retry recovery", () => {
   assert.equal(
     isBokunAlreadyCancelledError({ details: { message: "This booking is already cancelled" } }),
+    true
+  );
+});
+
+test("detects Bokun not-confirmed cancellation errors as terminal supplier state", () => {
+  assert.equal(
+    isBokunNotConfirmedCancellationError({ details: { message: "Booking is not confirmed." } }),
     true
   );
 });

@@ -518,6 +518,16 @@ const isBokunAlreadyCancelledError = (error = {}) => {
   return /already\s+cancel|already\s+canceled|booking\s+cancelled|booking\s+canceled/.test(text);
 };
 
+const isBokunNotConfirmedCancellationError = (error = {}) => {
+  const text = [
+    error.message,
+    error.details?.message,
+    error.details?.response,
+    error.details?.data?.message
+  ].map((value) => String(value || "").toLowerCase()).join(" ");
+  return /booking\s+is\s+not\s+confirmed|not\s+a\s+confirmed\s+booking|booking\s+not\s+confirmed/.test(text);
+};
+
 const lookupCancelledSupplierState = async ({ booking, requestId = "" }) => {
   const references = [
     booking.bokunBookingId,
@@ -644,6 +654,19 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
         response: { recoveredFromSupplierState: true, message: "Supplier reported this booking was already cancelled." }
       });
       await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId, reason: "Booking request synchronized after supplier cancellation" });
+      return { synced: true, request };
+    }
+    if (request.type === "cancel_booking" && isBokunNotConfirmedCancellationError(error)) {
+      await markCancellationSyncedLocally({
+        request,
+        booking,
+        response: {
+          recoveredFromSupplierState: true,
+          supplierTerminalState: "not_confirmed",
+          message: "Bokun reported this booking is not confirmed, so no active confirmed supplier booking remains to cancel."
+        }
+      });
+      await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId, reason: "Booking request synchronized after supplier not-confirmed response" });
       return { synced: true, request };
     }
     if (request.type === "cancel_booking") {
@@ -1078,6 +1101,7 @@ module.exports = {
   __testables: {
     ensureRequestWorkflowDefaults,
     isBokunAlreadyCancelledError,
+    isBokunNotConfirmedCancellationError,
     isBokunCancellationConfirmed
   }
 };
