@@ -5,10 +5,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const refundsService = require("../src/services/refunds");
+const bookingRequestsService = require("../src/services/bookingRequests");
 const {
   buildRefundContextFromRecords,
   extractPesapalConfirmationCode
 } = refundsService.__testables;
+const { ensureRequestWorkflowDefaults } = bookingRequestsService.__testables;
 
 const booking = {
   _id: "booking-1",
@@ -94,4 +96,28 @@ test("extracts Pesapal confirmation code required by refund request", () => {
   });
 
   assert.equal(code, "PESA-CONF-123");
+});
+
+test("backfills cancellation workflow defaults for older booking requests", () => {
+  const legacyRequest = {
+    type: "cancel_booking",
+    status: "submitted",
+    originalSnapshot: { totalAmount: 1, currency: "USD" }
+  };
+
+  ensureRequestWorkflowDefaults(legacyRequest, {
+    amount: 1,
+    currency: "USD",
+    bokunBookingId: "BOKUN-123",
+    bokunConfirmationCode: "CONF-123"
+  });
+
+  assert.equal(legacyRequest.bokunSync.status, "pending");
+  assert.equal(legacyRequest.bokunSync.bokunBookingId, "BOKUN-123");
+  assert.equal(legacyRequest.bokunSync.bokunConfirmationCode, "CONF-123");
+  assert.match(legacyRequest.bokunSync.idempotencyKey, /^[0-9a-f-]{36}$/i);
+  assert.equal(legacyRequest.refund.status, "not_required");
+  assert.equal(legacyRequest.refund.confirmedRefundedAmount, 0);
+  assert.equal(legacyRequest.priceAdjustment.type, "unknown");
+  assert.equal(legacyRequest.additionalPayment.status, "not_required");
 });

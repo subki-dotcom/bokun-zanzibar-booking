@@ -87,6 +87,72 @@ const snapshotBooking = (booking) => ({
   currency: booking.currency || booking.pricingSnapshot?.currency || "USD"
 });
 
+const ensureRequestWorkflowDefaults = (request, booking = null) => {
+  if (!request) return request;
+  const bookingAmount = number(booking?.amount || booking?.pricingSnapshot?.finalPayable || request.originalSnapshot?.totalAmount);
+
+  if (!request.originalSnapshot && booking) {
+    request.originalSnapshot = snapshotBooking(booking);
+  }
+
+  if (!request.priceAdjustment) request.priceAdjustment = {};
+  if (request.priceAdjustment.originalAmount === undefined || request.priceAdjustment.originalAmount === null) {
+    request.priceAdjustment.originalAmount = bookingAmount;
+  }
+  if (request.priceAdjustment.newAmount === undefined) request.priceAdjustment.newAmount = null;
+  if (request.priceAdjustment.difference === undefined) request.priceAdjustment.difference = null;
+  if (!["none", "additional_payment", "refund", "unknown"].includes(String(request.priceAdjustment.type || ""))) {
+    request.priceAdjustment.type = "unknown";
+  }
+  if (request.priceAdjustment.adminOverrideAmount === undefined) request.priceAdjustment.adminOverrideAmount = null;
+  if (request.priceAdjustment.adminOverrideReason === undefined) request.priceAdjustment.adminOverrideReason = "";
+
+  if (!request.refund) request.refund = {};
+  if (request.refund.required === undefined || request.refund.required === null) request.refund.required = false;
+  if (request.refund.estimatedAmount === undefined || request.refund.estimatedAmount === null) request.refund.estimatedAmount = 0;
+  if (request.refund.eligibleAmount === undefined) {
+    request.refund.eligibleAmount = request.refund.estimatedAmount > 0 ? number(request.refund.estimatedAmount) : null;
+  }
+  if (request.refund.approvedAmount === undefined) request.refund.approvedAmount = null;
+  if (request.refund.requestedAmount === undefined || request.refund.requestedAmount === null) request.refund.requestedAmount = 0;
+  if (request.refund.confirmedRefundedAmount === undefined || request.refund.confirmedRefundedAmount === null) request.refund.confirmedRefundedAmount = 0;
+  if (request.refund.cancellationFee === undefined) request.refund.cancellationFee = null;
+  if (request.refund.provider === undefined) request.refund.provider = "";
+  if (request.refund.providerLabel === undefined) request.refund.providerLabel = "";
+  if (!request.refund.status) {
+    request.refund.status = request.type === "cancel_booking" && number(request.refund.estimatedAmount) > 0 ? "eligible" : "not_required";
+  }
+
+  if (!request.additionalPayment) request.additionalPayment = {};
+  if (request.additionalPayment.required === undefined || request.additionalPayment.required === null) request.additionalPayment.required = false;
+  if (request.additionalPayment.status === undefined || request.additionalPayment.status === null) request.additionalPayment.status = "not_required";
+
+  if (!request.bokunSync) request.bokunSync = {};
+  if (!request.bokunSync.status || (request.type === "cancel_booking" && request.bokunSync.status === "not_required")) {
+    request.bokunSync.status = request.type === "cancel_booking" ? "pending" : "not_required";
+  }
+  if (request.bokunSync.attempts === undefined || request.bokunSync.attempts === null) request.bokunSync.attempts = 0;
+  if (request.bokunSync.lastAttemptAt === undefined) request.bokunSync.lastAttemptAt = null;
+  if (request.bokunSync.syncedAt === undefined) request.bokunSync.syncedAt = null;
+  if (request.bokunSync.lastError === undefined) request.bokunSync.lastError = "";
+  if (!request.bokunSync.idempotencyKey) request.bokunSync.idempotencyKey = syncKey();
+  if (request.bokunSync.bokunBookingId === undefined) request.bokunSync.bokunBookingId = booking?.bokunBookingId || "";
+  if (request.bokunSync.bokunConfirmationCode === undefined) request.bokunSync.bokunConfirmationCode = booking?.bokunConfirmationCode || "";
+
+  if (!request.adminDecision) request.adminDecision = {};
+  if (request.adminDecision.decision === undefined) request.adminDecision.decision = "";
+  if (request.adminDecision.customerFacingReason === undefined) request.adminDecision.customerFacingReason = "";
+  if (request.adminDecision.internalNote === undefined) request.adminDecision.internalNote = "";
+  if (request.adminDecision.decidedAt === undefined) request.adminDecision.decidedAt = null;
+
+  if (!request.processingLock) request.processingLock = {};
+  if (request.processingLock.lockedAt === undefined) request.processingLock.lockedAt = null;
+  if (request.processingLock.lockedBy === undefined) request.processingLock.lockedBy = null;
+  if (request.processingLock.action === undefined) request.processingLock.action = "";
+
+  return request;
+};
+
 const publicRequest = (request) => ({
   id: request._id,
   requestReference: request.requestReference,
@@ -323,6 +389,7 @@ const adminGetRequest = async ({ requestId }) => {
     .populate("additionalPayment.paymentAdjustmentId")
     .lean();
   if (!request) throw new AppError("Booking request not found", 404, "BOOKING_REQUEST_NOT_FOUND");
+  ensureRequestWorkflowDefaults(request, request.booking);
   const [payments, invoice, audit] = await Promise.all([
     Payment.find({ bookingReference: request.booking.bookingReference }).sort({ createdAt: -1 }).lean(),
     Invoice.findOne({ bookingReference: request.booking.bookingReference }).lean(),
@@ -366,6 +433,7 @@ const withAdminLock = async ({ requestId, auth, action, callback }) => {
 };
 
 const checkAvailabilityAndPrice = async ({ request, booking, requestId = "" }) => {
+  ensureRequestWorkflowDefaults(request, booking);
   if (request.type === "cancel_booking") return { available: true, pricing: null };
   const targetDate = request.requestedChanges?.date || booking.travelDate;
   const targetTime = request.requestedChanges?.startTime || booking.startTime;
@@ -409,6 +477,7 @@ const isBokunCancellationConfirmed = (response = {}) => {
 };
 
 const performBokunSync = async ({ request, booking, requestId = "" }) => {
+  ensureRequestWorkflowDefaults(request, booking);
   if (request.bokunSync.status === "synced") return { synced: true, request };
   if (!booking.bokunBookingId) {
     request.bokunSync.status = "manual_action_required";
@@ -581,10 +650,11 @@ const approveRequest = async ({ requestId, auth, payload = {}, traceId = "" }) =
   withAdminLock({ requestId, auth, action: "approve", callback: async (request) => {
     const booking = await Booking.findById(request.booking);
     assertRequestableBooking(booking);
+    ensureRequestWorkflowDefaults(request, booking);
     if (!["submitted", "under_review", "awaiting_availability_check", "approved"].includes(request.status)) {
       throw new AppError("This request cannot be approved in its current state.", 409, "BOOKING_REQUEST_NOT_ACTIONABLE");
     }
-    const before = { status: request.status, bokunSync: request.bokunSync.status };
+    const before = { status: request.status, bokunSync: request.bokunSync?.status || "" };
     request.adminDecision = { decision: "approved", customerFacingReason: String(payload.customerFacingReason || "").trim(), internalNote: String(payload.internalNote || "").trim(), decidedBy: auth?.id || null, decidedAt: new Date() };
     request.status = "approved";
     if (request.type === "cancel_booking") {
@@ -702,6 +772,7 @@ const requestMoreInformation = async ({ requestId, auth, customerFacingReason, i
 const recalculateRequest = async ({ requestId, auth, traceId = "" }) =>
   withAdminLock({ requestId, auth, action: "recalculate", callback: async (request) => {
     const booking = await Booking.findById(request.booking);
+    ensureRequestWorkflowDefaults(request, booking);
     if (request.type === "cancel_booking") {
       const amountPaid = await paymentsService.getVerifiedPaidAmountByBookingReference({ bookingReference: booking.bookingReference });
       const productSnapshot = await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean();
@@ -732,6 +803,7 @@ const recalculateRequest = async ({ requestId, auth, traceId = "" }) =>
 const retryBokunSync = async ({ requestId, auth, traceId = "" }) =>
   withAdminLock({ requestId, auth, action: "retry_bokun", callback: async (request) => {
     const booking = await Booking.findById(request.booking);
+    ensureRequestWorkflowDefaults(request, booking);
     if (!["approved", "processing", "failed", "completed"].includes(request.status)) throw new AppError("Approve the request before retrying supplier sync.", 409, "REQUEST_NOT_APPROVED");
     const result = await performBokunSync({ request, booking, requestId: traceId });
     if (result.synced && request.status !== "completed") {
@@ -770,6 +842,7 @@ const markAdjustmentPaid = async ({ adjustmentId, auth, paymentReference = "", t
   await adjustment.save();
   const request = await BookingRequest.findById(adjustment.bookingRequestId);
   const booking = await Booking.findById(adjustment.bookingId);
+  ensureRequestWorkflowDefaults(request, booking);
   const provider = adjustment.provider === "manual_bank_transfer" ? "manual_bank" : adjustment.provider === "cash" ? "cash_on_arrival" : adjustment.provider;
   await Payment.findOneAndUpdate(
     { intentId: `adjustment-${adjustment._id}` },
@@ -810,6 +883,7 @@ const updateRefundStatus = async ({ refundId, auth, status, providerRefundRefere
   if (!allowed.includes(status)) throw new AppError("Invalid refund status.", 422, "INVALID_REFUND_STATUS");
   const booking = await Booking.findById(refund.bookingId);
   const request = await BookingRequest.findById(refund.bookingRequestId);
+  ensureRequestWorkflowDefaults(request, booking);
   if (["refunded", "partially_refunded"].includes(status)) {
     const completed = await Refund.aggregate([
       { $match: { bookingId: booking._id, _id: { $ne: refund._id }, status: { $in: ["refunded", "partially_refunded"] } } },
@@ -877,5 +951,8 @@ module.exports = {
   markAdjustmentPaid,
   updateRefundStatus,
   processRefund,
-  retryRequestEmail
+  retryRequestEmail,
+  __testables: {
+    ensureRequestWorkflowDefaults
+  }
 };
