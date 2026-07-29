@@ -807,6 +807,69 @@ const verifyOrderWithPesapal = async ({ orderTrackingId, requestId }) => {
   };
 };
 
+const requestRefund = async ({
+  confirmationCode = "",
+  amount = 0,
+  username = "Riser Tours admin",
+  remarks = "",
+  requestId = ""
+} = {}) => {
+  ensurePesapalConfiguration();
+  const code = String(confirmationCode || "").trim();
+  if (!code) {
+    throw new AppError("Pesapal confirmation code is required before refunding.", 422, "PESAPAL_CONFIRMATION_CODE_REQUIRED");
+  }
+
+  const refundAmount = toMoneyAmount(amount);
+  const payload = {
+    confirmation_code: code,
+    amount: refundAmount,
+    username: String(username || "Riser Tours admin").slice(0, 120),
+    remarks: String(remarks || "Cancellation refund").slice(0, 250)
+  };
+
+  if (shouldMock) {
+    return {
+      provider: "pesapal",
+      status: "PROCESSING",
+      providerRefundReference: code,
+      requestedAmount: Number(refundAmount),
+      confirmedAmount: 0,
+      currency: "",
+      request: payload,
+      response: {
+        status: "200",
+        message: "Mock Pesapal refund request accepted for processing",
+        mock: true
+      }
+    };
+  }
+
+  const accessToken = await getPesapalAccessToken(requestId);
+  const response = await requestPesapal({
+    method: "post",
+    path: env.PESAPAL_REFUND_PATH,
+    payload,
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`
+    },
+    requestId
+  });
+  const accepted = String(response?.status || response?.error || "").trim() === "200";
+
+  return {
+    provider: "pesapal",
+    status: accepted ? "PROCESSING" : "FAILED",
+    providerRefundReference: code,
+    requestedAmount: Number(refundAmount),
+    confirmedAmount: 0,
+    currency: "",
+    request: payload,
+    response
+  };
+};
+
 const updatePaymentLogForCreate = async ({ booking, orderResponse }) => {
   const providerResponse = {
     stage: "submit_order",
@@ -1707,6 +1770,7 @@ module.exports = {
   verifyAndReconcilePesapalPayment: verifyAndProcessPesapalPayment,
   handlePaymentSuccess: verifyAndProcessPesapalPayment,
   handlePaymentCancel,
+  requestRefund,
   recheckPaymentByBookingReference,
   getCustomerPaymentStatus,
   __testables: {

@@ -16,15 +16,18 @@ const requestStatusValues = [
 
 const refundStatusValues = [
   "not_required",
+  "eligible",
   "pending_approval",
   "approved",
   "processing",
+  "verification_required",
   "partially_refunded",
   "refunded",
   "failed",
   "rejected",
   "cancelled",
-  "manual_review"
+  "manual_review",
+  "manual_refund_required"
 ];
 
 const bokunSyncStatusValues = [
@@ -34,6 +37,7 @@ const bokunSyncStatusValues = [
   "available",
   "unavailable",
   "syncing",
+  "cancellation_pending_supplier",
   "synced",
   "failed",
   "manual_action_required"
@@ -109,6 +113,14 @@ const bookingRequestSchema = new mongoose.Schema(
     refund: {
       required: { type: Boolean, default: false },
       estimatedAmount: { type: Number, default: 0 },
+      eligibleAmount: { type: Number, default: null },
+      approvedAmount: { type: Number, default: null },
+      requestedAmount: { type: Number, default: 0 },
+      confirmedRefundedAmount: { type: Number, default: 0 },
+      cancellationFee: { type: Number, default: null },
+      provider: { type: String, default: "" },
+      providerLabel: { type: String, default: "" },
+      providerResolution: mongoose.Schema.Types.Mixed,
       refundId: { type: mongoose.Schema.Types.ObjectId, ref: "Refund", default: null },
       status: { type: String, enum: refundStatusValues, default: "not_required" }
     },

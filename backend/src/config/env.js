@@ -31,6 +31,7 @@ const env = cleanEnv(process.env, {
   PESAPAL_AUTH_PATH: str({ default: "/Auth/RequestToken" }),
   PESAPAL_SUBMIT_ORDER_PATH: str({ default: "/Transactions/SubmitOrderRequest" }),
   PESAPAL_STATUS_PATH: str({ default: "/Transactions/GetTransactionStatus" }),
+  PESAPAL_REFUND_PATH: str({ default: "/Transactions/RefundRequest" }),
   PESAPAL_REGISTER_IPN_PATH: str({ default: "/URLSetup/RegisterIPN" }),
   PESAPAL_CONSUMER_KEY: str({ default: "" }),
   PESAPAL_CONSUMER_SECRET: str({ default: "" }),

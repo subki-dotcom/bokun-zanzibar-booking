@@ -2,8 +2,8 @@ const { z } = require("zod");
 
 const requestTypes = ["reschedule", "change_travelers", "cancel_booking", "combined_change"];
 const requestStatuses = ["submitted", "under_review", "awaiting_customer_information", "awaiting_availability_check", "awaiting_additional_payment", "approved", "rejected", "processing", "completed", "cancelled_by_customer", "failed"];
-const refundStatuses = ["pending_approval", "approved", "processing", "partially_refunded", "refunded", "failed", "rejected", "cancelled", "manual_review"];
-const bokunStatuses = ["pending", "checking_availability", "available", "unavailable", "syncing", "synced", "failed", "manual_action_required"];
+const refundStatuses = ["eligible", "pending_approval", "approved", "processing", "verification_required", "partially_refunded", "refunded", "failed", "rejected", "cancelled", "manual_review", "manual_refund_required"];
+const bokunStatuses = ["pending", "checking_availability", "available", "unavailable", "syncing", "cancellation_pending_supplier", "synced", "failed", "manual_action_required"];
 
 const mongoObjectId = z.string().regex(/^[a-f\d]{24}$/i, "A valid record ID is required");
 const idParams = z.object({ id: mongoObjectId });
@@ -69,7 +69,8 @@ const adminApproveSchema = z.object({
 });
 const adminDecisionSchema = z.object({ params: idParams, query: z.object({}).optional(), body: z.object({ customerFacingReason: z.string().min(3).max(1500), internalNote: z.string().max(2500).optional() }) });
 const adjustmentPaidSchema = z.object({ params: idParams, query: z.object({}).optional(), body: z.object({ paymentReference: z.string().max(200).optional() }) });
-const refundStatusSchema = z.object({ params: idParams, query: z.object({}).optional(), body: z.object({ status: z.enum(refundStatuses), providerRefundReference: z.string().max(200).optional(), failureReason: z.string().max(1000).optional() }) });
+const refundStatusSchema = z.object({ params: idParams, query: z.object({}).optional(), body: z.object({ status: z.enum(refundStatuses), providerRefundReference: z.string().max(200).optional(), failureReason: z.string().max(1000).optional(), confirmedAmount: z.number().min(0).optional() }) });
+const refundProcessSchema = z.object({ params: idParams, query: z.object({}).optional(), body: z.object({ confirm: z.boolean().optional(), notes: z.string().max(1000).optional() }).default({}) });
 
 module.exports = {
   submitBookingRequestSchema,
@@ -82,5 +83,6 @@ module.exports = {
   adminApproveSchema,
   adminDecisionSchema,
   adjustmentPaidSchema,
-  refundStatusSchema
+  refundStatusSchema,
+  refundProcessSchema
 };

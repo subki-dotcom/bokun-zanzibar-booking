@@ -386,6 +386,93 @@ const captureOrderWithPaypal = async ({ orderId, bookingReference = "", requestI
   };
 };
 
+const refundCapturedPayment = async ({
+  captureId = "",
+  amount = 0,
+  currency = "USD",
+  idempotencyKey = "",
+  invoiceNumber = "",
+  note = "",
+  requestId = ""
+} = {}) => {
+  ensurePaypalConfiguration();
+  const token = String(captureId || "").trim();
+  if (!token) {
+    throw new AppError("PayPal capture ID is required before refunding.", 422, "PAYPAL_CAPTURE_ID_REQUIRED");
+  }
+
+  const refundAmount = toMoneyAmount(amount);
+  const refundCurrency = String(currency || "USD").toUpperCase();
+  const requestKey = String(idempotencyKey || `refund-${token}-${refundAmount}`).replace(/[^A-Za-z0-9_-]/g, "-").slice(0, 78);
+
+  if (shouldMock) {
+    const status = "COMPLETED";
+    const refundId = `MOCK-PP-RFD-${Date.now()}`;
+    return {
+      provider: "paypal",
+      status,
+      providerRefundReference: refundId,
+      requestedAmount: Number(refundAmount),
+      confirmedAmount: status === "COMPLETED" ? Number(refundAmount) : 0,
+      currency: refundCurrency,
+      request: {
+        captureId: token,
+        amount: refundAmount,
+        currency: refundCurrency,
+        idempotencyKey: requestKey
+      },
+      response: {
+        id: refundId,
+        status,
+        mock: true
+      }
+    };
+  }
+
+  const accessToken = await getPaypalAccessToken(requestId);
+  const payload = {
+    amount: {
+      value: refundAmount,
+      currency_code: refundCurrency
+    },
+    invoice_id: String(invoiceNumber || "").slice(0, 127),
+    note_to_payer: String(note || "Riser Tours & Safaris Zanzibar cancellation refund.").slice(0, 255)
+  };
+  const response = await requestPaypal({
+    method: "post",
+    path: `/v2/payments/captures/${encodeURIComponent(token)}/refund`,
+    payload,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Prefer: "return=representation",
+      "PayPal-Request-Id": requestKey
+    },
+    requestId
+  });
+
+  const status = String(response?.status || "").toUpperCase();
+  const responseAmount = response?.amount || {};
+  const confirmedAmount = status === "COMPLETED"
+    ? Number(responseAmount.value || refundAmount)
+    : 0;
+
+  return {
+    provider: "paypal",
+    status: status || "VERIFICATION_REQUIRED",
+    providerRefundReference: String(response?.id || "").trim(),
+    requestedAmount: Number(refundAmount),
+    confirmedAmount,
+    currency: String(responseAmount.currency_code || refundCurrency).toUpperCase(),
+    request: {
+      captureId: token,
+      amount: refundAmount,
+      currency: refundCurrency,
+      idempotencyKey: requestKey
+    },
+    response
+  };
+};
+
 const updatePaymentLogForCreate = async ({ booking, orderResponse }) => {
   const providerResponse = {
     stage: "create_order",
@@ -919,5 +1006,6 @@ module.exports = {
   createPayment,
   handlePaymentSuccess,
   handlePaymentCancel,
-  handleWebhookEvent
+  handleWebhookEvent,
+  refundCapturedPayment
 };

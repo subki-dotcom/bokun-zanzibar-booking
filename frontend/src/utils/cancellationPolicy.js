@@ -58,7 +58,9 @@ export const buildCancellationTimeline = (request = {}, currency = "USD") => {
   const status = String(request.status || "");
   const supplier = String(request.bokunSync?.status || "");
   const refund = String(request.refund?.status || "not_required");
-  const refundAmount = Number(request.refund?.estimatedAmount || 0);
+  const refundAmount = Number(request.refund?.approvedAmount || request.refund?.eligibleAmount || request.refund?.estimatedAmount || 0);
+  const confirmedRefundedAmount = Number(request.refund?.confirmedRefundedAmount || 0);
+  const providerLabel = request.refund?.providerLabel || "";
 
   const steps = [
     {
@@ -83,13 +85,20 @@ export const buildCancellationTimeline = (request = {}, currency = "USD") => {
   ];
 
   if (refund !== "not_required") {
+    const completed = ["refunded", "partially_refunded"].includes(refund);
+    const processing = ["processing", "verification_required"].includes(refund);
+    const manual = ["manual_review", "manual_refund_required", "failed"].includes(refund);
     steps.push({
-      label: "Refund processing",
-      done: ["refunded", "partially_refunded"].includes(refund),
-      active: ["pending_approval", "approved", "processing", "manual_review", "failed"].includes(refund),
-      text: ["refunded", "partially_refunded"].includes(refund)
-        ? "Your refund has been completed."
-        : `Your refund${refundAmount > 0 ? ` of ${new Intl.NumberFormat("en-US", { style: "currency", currency }).format(refundAmount)}` : ""} is being reviewed separately.`
+      label: completed ? "Refund completed" : processing ? "Refund processing" : "Refund review",
+      done: completed,
+      active: ["eligible", "pending_approval", "approved", "processing", "verification_required", "manual_review", "manual_refund_required", "failed"].includes(refund),
+      text: completed
+        ? `Your refund${confirmedRefundedAmount > 0 ? ` of ${new Intl.NumberFormat("en-US", { style: "currency", currency }).format(confirmedRefundedAmount)}` : ""} has been completed.`
+        : processing
+          ? `Your refund${refundAmount > 0 ? ` of ${new Intl.NumberFormat("en-US", { style: "currency", currency }).format(refundAmount)}` : ""}${providerLabel ? ` to your original ${providerLabel} payment method` : ""} is being processed.`
+          : manual
+            ? "Your refund requires assistance from our team."
+            : `Your refund${refundAmount > 0 ? ` of ${new Intl.NumberFormat("en-US", { style: "currency", currency }).format(refundAmount)}` : ""} is awaiting admin processing.`
     });
   }
 

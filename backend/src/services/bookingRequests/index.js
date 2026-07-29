@@ -12,6 +12,7 @@ const AppError = require("../../utils/AppError");
 const bokunService = require("../bokun");
 const paymentsService = require("../payments");
 const bookingsService = require("../bookings");
+const refundsService = require("../refunds");
 const emailService = require("../email");
 const { env } = require("../../config/env");
 const { ACTIVE_REQUEST_STATUSES, assertTransition } = require("./status");
@@ -100,6 +101,13 @@ const publicRequest = (request) => ({
   refund: {
     required: request.refund?.required,
     estimatedAmount: request.refund?.estimatedAmount,
+    eligibleAmount: request.refund?.eligibleAmount ?? request.refund?.estimatedAmount,
+    approvedAmount: request.refund?.approvedAmount ?? null,
+    requestedAmount: request.refund?.requestedAmount ?? 0,
+    confirmedRefundedAmount: request.refund?.confirmedRefundedAmount ?? 0,
+    cancellationFee: request.refund?.cancellationFee ?? null,
+    provider: request.refund?.provider || "",
+    providerLabel: request.refund?.providerLabel || "",
     status: request.refund?.status
   },
   additionalPayment: { required: request.additionalPayment?.required, status: request.additionalPayment?.status },
@@ -196,7 +204,7 @@ const submitRequest = async ({ bookingId, customerEmail, payload, requestId = ""
     : estimatedRefundAmount === null || policy.requiresManualReview
       ? "manual_review"
       : Number(estimatedRefundAmount || 0) > 0
-        ? "pending_approval"
+        ? "eligible"
         : "not_required";
   let request;
   try {
@@ -213,7 +221,16 @@ const submitRequest = async ({ bookingId, customerEmail, payload, requestId = ""
       attachments: payload.attachments || [],
       cancellationPolicySnapshot: policy,
       priceAdjustment: { originalAmount: number(booking.amount || booking.pricingSnapshot?.finalPayable), type: "unknown" },
-      refund: isCancellation ? { required: Number(estimatedRefundAmount || 0) > 0, estimatedAmount: number(estimatedRefundAmount || 0), status: refundStatus } : undefined,
+      refund: isCancellation ? {
+        required: Number(estimatedRefundAmount || 0) > 0,
+        estimatedAmount: number(estimatedRefundAmount || 0),
+        eligibleAmount: estimatedRefundAmount === null ? null : number(estimatedRefundAmount || 0),
+        approvedAmount: null,
+        requestedAmount: 0,
+        confirmedRefundedAmount: 0,
+        cancellationFee: policy?.estimatedCancellationFee === null || policy?.estimatedCancellationFee === undefined ? null : number(policy.estimatedCancellationFee),
+        status: refundStatus
+      } : undefined,
       bokunSync: { status: "pending", idempotencyKey: syncKey(), bokunBookingId: booking.bokunBookingId || "", bokunConfirmationCode: booking.bokunConfirmationCode || "" }
     });
   } catch (error) {
@@ -224,43 +241,6 @@ const submitRequest = async ({ bookingId, customerEmail, payload, requestId = ""
   }
   await recordAudit({ action: "booking_request_submitted", request, booking, requestId, reason: request.customerReason });
   queueRequestEmail({ booking, request, templateKey: "request_received" });
-  if (isCancellation && policy?.automaticCancellationAllowed) {
-    request.status = "approved";
-    request.adminDecision = {
-      decision: "approved",
-      customerFacingReason: "Free cancellation was available at the time of request.",
-      internalNote: "Automatically approved by verified cancellation policy.",
-      decidedBy: null,
-      decidedAt: new Date()
-    };
-    await request.save();
-    await recordAudit({
-      action: "booking_request_auto_approved",
-      request,
-      booking,
-      requestId,
-      metadata: { deadline: policy.deadline, refundAmount: policy.estimatedRefundAmount }
-    });
-    const finalized = await finalizeApprovedRequest({
-      request,
-      booking,
-      auth: { role: "system", id: null },
-      requestId
-    });
-    if (finalized.synced && Number(policy.estimatedRefundAmount || 0) > 0) {
-      await createRefundRecord({
-        request,
-        booking,
-        amount: policy.estimatedRefundAmount,
-        provider: booking.paymentMethod,
-        reason: request.customerReason,
-        auth: { role: "system", id: null },
-        initialStatus: "manual_review"
-      });
-      queueRequestEmail({ booking, request, templateKey: "refund_processing" });
-    }
-    return publicRequest(await BookingRequest.findById(request._id));
-  }
   return publicRequest(request);
 };
 
@@ -348,7 +328,27 @@ const adminGetRequest = async ({ requestId }) => {
     Invoice.findOne({ bookingReference: request.booking.bookingReference }).lean(),
     AuditLog.find({ entityType: "BookingRequest", entityId: String(request._id) }).sort({ createdAt: 1 }).lean()
   ]);
-  return { request, payments, invoice, audit };
+  let refundContext = null;
+  if (request.type === "cancel_booking") {
+    try {
+      refundContext = await refundsService.resolveRefundContext({
+        booking: request.booking,
+        eligibleRefundAmount: request.refund?.eligibleAmount ?? request.refund?.estimatedAmount ?? request.cancellationPolicySnapshot?.estimatedRefundAmount ?? null,
+        approvedRefundAmount: request.refund?.approvedAmount ?? null
+      });
+    } catch (error) {
+      refundContext = {
+        requiresManualReview: true,
+        manualReviewReason: "Refund provider and amount require manual review.",
+        eligibleRefundAmount: request.refund?.eligibleAmount ?? null,
+        defaultApprovedRefundAmount: null,
+        provider: "",
+        providerLabel: "",
+        providerKnown: false
+      };
+    }
+  }
+  return { request, payments, invoice, audit, refundContext };
 };
 
 const withAdminLock = async ({ requestId, auth, action, callback }) => {
@@ -473,44 +473,73 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
     await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId, reason: "Booking request synchronized" });
     return { synced: true, request };
   } catch (error) {
-    request.bokunSync.status = "failed";
+    request.bokunSync.status = request.type === "cancel_booking" ? "cancellation_pending_supplier" : "failed";
     request.bokunSync.lastError = String(error.message || "Bokun update failed").slice(0, 1000);
     await request.save();
     return { synced: false, request, error };
   }
 };
 
-const createRefundRecord = async ({ request, booking, amount, provider = "other", reason, auth, initialStatus = "approved" }) => {
+const createRefundRecord = async ({ request, booking, amount, reason, auth, initialStatus = "approved", refundContext = null }) => {
   const safeAmount = Math.max(0, number(amount));
   if (!safeAmount) return null;
-  const completedRows = await Refund.aggregate([{ $match: { bookingId: booking._id, status: { $in: ["refunded", "partially_refunded"] } } }, { $group: { _id: null, amount: { $sum: "$amount" } } }]);
-  const paidAmount = await paymentsService.getVerifiedPaidAmountByBookingReference({ bookingReference: booking.bookingReference });
-  const available = Math.max(0, paidAmount - number(completedRows[0]?.amount));
-  if (safeAmount > available + 0.009) throw new AppError("Refund amount exceeds the verified amount paid.", 422, "REFUND_EXCEEDS_PAID_AMOUNT");
   const existing = request.refund?.refundId ? await Refund.findById(request.refund.refundId) : null;
   if (existing) return existing;
-  const latestPayment = await Payment.findOne({ bookingReference: booking.bookingReference, status: "paid" }).sort({ createdAt: -1 });
+  const context = refundContext || await refundsService.resolveRefundContext({
+    booking,
+    eligibleRefundAmount: request.refund?.eligibleAmount ?? request.refund?.estimatedAmount ?? safeAmount,
+    approvedRefundAmount: safeAmount
+  });
+  refundsService.assertRefundAmountAllowed({ amount: safeAmount, context });
+  if (!context.providerKnown || !context.selectedPaymentId) {
+    throw new AppError(context.manualReviewReason || "Refund provider requires manual review.", 422, "REFUND_PROVIDER_REQUIRES_REVIEW");
+  }
+  const latestPayment = await Payment.findById(context.selectedPaymentId);
   const invoice = await Invoice.findOne({ bookingReference: booking.bookingReference });
-  const refundStatus = ["approved", "processing", "manual_review", "pending_approval"].includes(initialStatus)
+  const refundStatus = ["approved", "processing", "manual_review", "manual_refund_required", "pending_approval", "verification_required"].includes(initialStatus)
     ? initialStatus
     : "approved";
+  const generatedRefundReference = refundReference();
   const refund = await Refund.create({
-    refundReference: refundReference(),
+    refundReference: generatedRefundReference,
     bookingId: booking._id,
     bookingRequestId: request._id,
     customerId: booking.customer?.customerId || null,
     paymentId: latestPayment?._id || null,
     invoiceId: invoice?._id || null,
-    provider: ["pesapal", "dpo", "paypal", "manual_bank_transfer", "cash", "other"].includes(provider) ? provider : "other",
-    originalTransactionReference: latestPayment?.providerTransactionId || latestPayment?.orderTrackingId || "",
+    provider: context.provider,
+    originalTransactionReference: refundsService.extractOriginalTransactionReference(latestPayment || {}),
     amount: safeAmount,
+    requestedAmount: safeAmount,
+    confirmedRefundedAmount: 0,
+    eligibleRefundAmount: context.eligibleRefundAmount,
+    cancellationFee: request.refund?.cancellationFee ?? request.cancellationPolicySnapshot?.estimatedCancellationFee ?? null,
     currency: booking.currency || "USD",
     reason: reason || request.customerReason,
     status: refundStatus,
     approvedAt: refundStatus === "approved" || refundStatus === "processing" ? new Date() : undefined,
-    approvedBy: auth?.id || null
+    approvedBy: auth?.id || null,
+    idempotencyKey: `${context.provider}-${generatedRefundReference}`,
+    metadata: {
+      providerResolution: context,
+      originalTransactionReferenceMasked: refundsService.maskReference(refundsService.extractOriginalTransactionReference(latestPayment || {}))
+    }
   });
-  request.refund = { required: true, estimatedAmount: safeAmount, refundId: refund._id, status: refundStatus };
+  request.refund = {
+    ...(request.refund || {}),
+    required: true,
+    estimatedAmount: context.eligibleRefundAmount ?? safeAmount,
+    eligibleAmount: context.eligibleRefundAmount,
+    approvedAmount: safeAmount,
+    requestedAmount: 0,
+    confirmedRefundedAmount: 0,
+    cancellationFee: request.refund?.cancellationFee ?? request.cancellationPolicySnapshot?.estimatedCancellationFee ?? null,
+    provider: context.provider,
+    providerLabel: context.providerLabel,
+    providerResolution: context,
+    refundId: refund._id,
+    status: refundStatus
+  };
   await request.save();
   return refund;
 };
@@ -562,9 +591,6 @@ const approveRequest = async ({ requestId, auth, payload = {}, traceId = "" }) =
       const amountPaid = await paymentsService.getVerifiedPaidAmountByBookingReference({ bookingReference: booking.bookingReference });
       const productSnapshot = await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean();
       request.cancellationPolicySnapshot = calculateCancellationPolicy({ booking, productSnapshot, amountPaid });
-      if (request.cancellationPolicySnapshot?.requiresManualReview && payload.refundAmount === undefined) {
-        request.refund = { required: false, estimatedAmount: 0, status: "manual_review" };
-      }
     }
     if (request.type !== "cancel_booking") {
       const availability = await checkAvailabilityAndPrice({ request, booking, requestId: traceId });
@@ -583,23 +609,38 @@ const approveRequest = async ({ requestId, auth, payload = {}, traceId = "" }) =
       request.priceAdjustment.type = number(override) > 0 ? "additional_payment" : number(override) < 0 ? "refund" : "none";
     }
     const difference = number(request.priceAdjustment.difference);
-    const refundPlan = {
-      amount: 0,
-      provider: payload.refundProvider || booking.paymentMethod,
-      reason: payload.refundReason || request.customerReason
-    };
+    const refundPlan = { amount: 0, context: null, reason: payload.refundReason || request.customerReason };
     if (request.type === "cancel_booking") {
+      const eligibleAmount = request.cancellationPolicySnapshot?.estimatedRefundAmount;
+      refundPlan.context = await refundsService.resolveRefundContext({
+        booking,
+        eligibleRefundAmount: eligibleAmount,
+        approvedRefundAmount: payload.refundAmount !== undefined ? payload.refundAmount : eligibleAmount
+      });
       refundPlan.amount = payload.refundAmount !== undefined
         ? number(payload.refundAmount)
-        : number(request.cancellationPolicySnapshot?.estimatedRefundAmount);
-      const cancellationRefundStatus = request.cancellationPolicySnapshot?.requiresManualReview && payload.refundAmount === undefined
+        : number(refundPlan.context.defaultApprovedRefundAmount || 0);
+      if (refundPlan.amount > 0 && !refundPlan.context.requiresManualReview) {
+        refundsService.assertRefundAmountAllowed({ amount: refundPlan.amount, context: refundPlan.context });
+      }
+      const cancellationRefundStatus = eligibleAmount === null || eligibleAmount === undefined || request.cancellationPolicySnapshot?.requiresManualReview || refundPlan.context.requiresManualReview
         ? "manual_review"
         : refundPlan.amount > 0
-          ? "pending_approval"
+          ? "approved"
           : "not_required";
       request.refund = {
         required: refundPlan.amount > 0,
-        estimatedAmount: refundPlan.amount,
+        estimatedAmount: eligibleAmount === null || eligibleAmount === undefined ? 0 : number(eligibleAmount || 0),
+        eligibleAmount: eligibleAmount === null || eligibleAmount === undefined ? null : number(eligibleAmount || 0),
+        approvedAmount: refundPlan.amount > 0 ? refundPlan.amount : null,
+        requestedAmount: 0,
+        confirmedRefundedAmount: 0,
+        cancellationFee: request.cancellationPolicySnapshot?.estimatedCancellationFee === null || request.cancellationPolicySnapshot?.estimatedCancellationFee === undefined
+          ? null
+          : number(request.cancellationPolicySnapshot.estimatedCancellationFee),
+        provider: refundPlan.context.providerKnown ? refundPlan.context.provider : "",
+        providerLabel: refundPlan.context.providerKnown ? refundPlan.context.providerLabel : "",
+        providerResolution: refundPlan.context,
         status: cancellationRefundStatus
       };
     } else if (difference > 0) {
@@ -618,16 +659,15 @@ const approveRequest = async ({ requestId, auth, payload = {}, traceId = "" }) =
     await recordAudit({ action: "booking_request_approved", request, booking, auth, requestId: traceId, before, after: { status: request.status } });
     queueRequestEmail({ booking, request, templateKey: "request_approved" });
     const finalized = await finalizeApprovedRequest({ request, booking, auth, requestId: traceId });
-    if (finalized.synced && refundPlan.amount > 0) {
+    if (finalized.synced && refundPlan.amount > 0 && refundPlan.context?.providerKnown && !refundPlan.context?.requiresManualReview) {
       const refund = await createRefundRecord({
         request,
         booking,
         amount: refundPlan.amount,
-        provider: refundPlan.provider,
         reason: refundPlan.reason,
-        auth
+        auth,
+        refundContext: refundPlan.context
       });
-      queueRequestEmail({ booking, request, templateKey: "refund_processing" });
       return { ...finalized, refund };
     }
     return finalized;
@@ -666,11 +706,20 @@ const recalculateRequest = async ({ requestId, auth, traceId = "" }) =>
       const amountPaid = await paymentsService.getVerifiedPaidAmountByBookingReference({ bookingReference: booking.bookingReference });
       const productSnapshot = await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean();
       request.cancellationPolicySnapshot = calculateCancellationPolicy({ booking, productSnapshot, amountPaid });
-      request.refund.estimatedAmount = number(request.cancellationPolicySnapshot.estimatedRefundAmount || 0);
-      request.refund.status = request.cancellationPolicySnapshot.requiresManualReview
+      const context = await refundsService.resolveRefundContext({
+        booking,
+        eligibleRefundAmount: request.cancellationPolicySnapshot.estimatedRefundAmount
+      });
+      request.refund.estimatedAmount = request.cancellationPolicySnapshot.estimatedRefundAmount === null ? 0 : number(request.cancellationPolicySnapshot.estimatedRefundAmount || 0);
+      request.refund.eligibleAmount = request.cancellationPolicySnapshot.estimatedRefundAmount === null ? null : number(request.cancellationPolicySnapshot.estimatedRefundAmount || 0);
+      request.refund.cancellationFee = request.cancellationPolicySnapshot.estimatedCancellationFee === null || request.cancellationPolicySnapshot.estimatedCancellationFee === undefined ? null : number(request.cancellationPolicySnapshot.estimatedCancellationFee);
+      request.refund.provider = context.providerKnown ? context.provider : "";
+      request.refund.providerLabel = context.providerKnown ? context.providerLabel : "";
+      request.refund.providerResolution = context;
+      request.refund.status = request.cancellationPolicySnapshot.requiresManualReview || context.requiresManualReview
         ? "manual_review"
         : request.refund.estimatedAmount > 0
-          ? "pending_approval"
+          ? "eligible"
           : "not_required";
       await request.save();
       return request;
@@ -689,6 +738,23 @@ const retryBokunSync = async ({ requestId, auth, traceId = "" }) =>
       request.status = "completed";
       request.completedAt = new Date();
       await request.save();
+    }
+    if (
+      result.synced &&
+      request.type === "cancel_booking" &&
+      Number(request.refund?.approvedAmount || 0) > 0 &&
+      !request.refund?.refundId &&
+      request.refund?.providerResolution?.providerKnown &&
+      !request.refund?.providerResolution?.requiresManualReview
+    ) {
+      await createRefundRecord({
+        request,
+        booking,
+        amount: request.refund.approvedAmount,
+        reason: request.customerReason,
+        auth,
+        refundContext: request.refund.providerResolution
+      });
     }
     await recordAudit({ action: result.synced ? "booking_request_bokun_sync_succeeded" : "booking_request_bokun_sync_failed", request, booking, auth, requestId: traceId });
     return result;
@@ -736,38 +802,53 @@ const markAdjustmentPaid = async ({ adjustmentId, auth, paymentReference = "", t
   return { adjustment, request: finalized.request };
 };
 
-const updateRefundStatus = async ({ refundId, auth, status, providerRefundReference = "", failureReason = "", traceId = "" }) => {
+const updateRefundStatus = async ({ refundId, auth, status, providerRefundReference = "", failureReason = "", confirmedAmount = undefined, traceId = "" }) => {
   const refund = await Refund.findById(refundId);
   if (!refund) throw new AppError("Refund not found", 404, "REFUND_NOT_FOUND");
   if (["refunded", "partially_refunded"].includes(refund.status) && status !== refund.status) throw new AppError("Completed refunds cannot be edited.", 409, "REFUND_ALREADY_COMPLETED");
-  const allowed = ["approved", "processing", "partially_refunded", "refunded", "failed", "rejected", "cancelled", "manual_review"];
+  const allowed = ["eligible", "approved", "processing", "verification_required", "partially_refunded", "refunded", "failed", "rejected", "cancelled", "manual_review", "manual_refund_required"];
   if (!allowed.includes(status)) throw new AppError("Invalid refund status.", 422, "INVALID_REFUND_STATUS");
   const booking = await Booking.findById(refund.bookingId);
   const request = await BookingRequest.findById(refund.bookingRequestId);
   if (["refunded", "partially_refunded"].includes(status)) {
-    const completed = await Refund.aggregate([{ $match: { bookingId: booking._id, _id: { $ne: refund._id }, status: { $in: ["refunded", "partially_refunded"] } } }, { $group: { _id: null, amount: { $sum: "$amount" } } }]);
+    const completed = await Refund.aggregate([
+      { $match: { bookingId: booking._id, _id: { $ne: refund._id }, status: { $in: ["refunded", "partially_refunded"] } } },
+      { $group: { _id: null, amount: { $sum: { $ifNull: ["$confirmedRefundedAmount", "$amount"] } } } }
+    ]);
     const paid = await paymentsService.getVerifiedPaidAmountByBookingReference({ bookingReference: booking.bookingReference });
-    if (number(completed[0]?.amount) + number(refund.amount) > paid + 0.009) throw new AppError("Completed refunds cannot exceed the verified amount paid.", 422, "REFUND_EXCEEDS_PAID_AMOUNT");
+    const confirmedRefundAmount = confirmedAmount !== undefined ? number(confirmedAmount) : number(refund.amount);
+    if (confirmedRefundAmount <= 0) throw new AppError("Confirmed refund amount is required.", 422, "CONFIRMED_REFUND_AMOUNT_REQUIRED");
+    if (number(completed[0]?.amount) + confirmedRefundAmount > paid + 0.009) throw new AppError("Completed refunds cannot exceed the verified amount paid.", 422, "REFUND_EXCEEDS_PAID_AMOUNT");
+    refund.confirmedRefundedAmount = confirmedRefundAmount;
     refund.completedAt = new Date();
-    const payment = await Payment.findOne({ bookingReference: booking.bookingReference, status: "paid" }).sort({ createdAt: -1 });
+    const payment = refund.paymentId ? await Payment.findById(refund.paymentId) : await Payment.findOne({ bookingReference: booking.bookingReference, status: "paid" }).sort({ createdAt: -1 });
     if (payment) {
-      payment.refundedAmount = number(completed[0]?.amount) + number(refund.amount);
+      payment.refundedAmount = number(completed[0]?.amount) + confirmedRefundAmount;
       await payment.save();
     }
   }
   if (status === "processing") refund.processingStartedAt = new Date();
   if (status === "failed") { refund.failedAt = new Date(); refund.failureReason = String(failureReason || "Refund failed").trim(); }
+  if (!["refunded", "partially_refunded"].includes(status)) refund.confirmedRefundedAmount = 0;
   refund.status = status;
   if (providerRefundReference) refund.providerRefundReference = String(providerRefundReference).trim();
   refund.processedBy = auth?.id || refund.processedBy;
   await refund.save();
   request.refund.status = status;
+  request.refund.confirmedRefundedAmount = refund.confirmedRefundedAmount || 0;
+  request.refund.requestedAmount = refund.requestedAmount || refund.amount || 0;
+  request.refund.approvedAmount = refund.amount || request.refund.approvedAmount || null;
+  request.refund.provider = refund.provider || request.refund.provider || "";
+  request.refund.providerLabel = refundsService.providerLabel(refund.provider || request.refund.provider || "");
   await request.save();
   await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId: traceId, reason: "Refund status updated" });
   await recordAudit({ action: "booking_request_refund_updated", request, booking, auth, requestId: traceId, metadata: { refundReference: refund.refundReference, status } });
   queueRequestEmail({ booking, request, templateKey: status === "refunded" || status === "partially_refunded" ? "refund_completed" : status === "failed" ? "refund_failed" : "refund_processing" });
   return refund;
 };
+
+const processRefund = async ({ refundId, auth, traceId = "", notes = "" }) =>
+  refundsService.processRefund({ refundId, auth, traceId, notes });
 
 const retryRequestEmail = async ({ requestId, auth, traceId = "" }) => {
   const request = await BookingRequest.findById(requestId);
@@ -795,5 +876,6 @@ module.exports = {
   retryBokunSync,
   markAdjustmentPaid,
   updateRefundStatus,
+  processRefund,
   retryRequestEmail
 };

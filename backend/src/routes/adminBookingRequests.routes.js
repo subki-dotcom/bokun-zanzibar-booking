@@ -17,5 +17,6 @@ router.post("/booking-requests/:id/retry-bokun-sync", validateRequest(schemas.ad
 router.post("/booking-requests/:id/send-email", validateRequest(schemas.adminRequestIdSchema), controller.retryEmail);
 router.post("/payment-adjustments/:id/mark-paid", validateRequest(schemas.adjustmentPaidSchema), controller.markAdjustmentPaid);
 router.post("/refunds/:id/status", authorize("super_admin", "admin"), validateRequest(schemas.refundStatusSchema), controller.updateRefund);
+router.post("/refunds/:id/process", authorize("super_admin", "admin"), validateRequest(schemas.refundProcessSchema), controller.processRefund);
 
 module.exports = router;

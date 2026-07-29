@@ -30,7 +30,7 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
         status: { $in: ["refunded", "partially_refunded"] }
       }
     },
-    { $group: { _id: null, amount: { $sum: "$amount" } } }
+    { $group: { _id: null, amount: { $sum: { $ifNull: ["$confirmedRefundedAmount", "$amount"] } } } }
   ]);
   const amountPaid = Number(Math.max(0, verifiedPaidAmount).toFixed(2));
   const amountRefunded = Number(Math.min(amountPaid, Number(refundRows[0]?.amount || 0)).toFixed(2));
@@ -92,7 +92,9 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
     paymentMethod: booking.paymentMethod || "pending",
     notes: "Thank you for booking with Zanzibar premium experiences.",
     cancellationPolicy:
-      "Free cancellation up to 48 hours before departure unless supplier terms state otherwise.",
+      booking.cancellationPolicySnapshot?.policySummary ||
+      booking.cancellationPolicySnapshot?.policyDescription ||
+      "Cancellation terms are determined by the supplier policy for this booking.",
     paymentTerms: "Balance due as per selected payment method or prepayment policy."
   };
 

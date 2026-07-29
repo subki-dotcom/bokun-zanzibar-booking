@@ -228,7 +228,9 @@ const ManageBookingCard = ({ booking }) => {
                   <span>Refund: {String(request.refund?.status || "not_required").replaceAll("_", " ")}</span>
                   {request.additionalPayment?.required ? <span>Additional payment required</span> : null}
                 </div>
-                {request.refund?.estimatedAmount > 0 ? <small>Estimated refund: {formatCurrency(request.refund.estimatedAmount, currency)}</small> : null}
+                {request.refund?.eligibleAmount > 0 ? <small>Estimated refund: {formatCurrency(request.refund.eligibleAmount, currency)}</small> : null}
+                {request.refund?.approvedAmount > 0 ? <small>Approved refund: {formatCurrency(request.refund.approvedAmount, currency)}</small> : null}
+                {request.refund?.confirmedRefundedAmount > 0 ? <small>Refund completed: {formatCurrency(request.refund.confirmedRefundedAmount, currency)}</small> : null}
                 {request.type === "cancel_booking" ? (
                   <div className="cancellation-status-timeline">
                     {buildCancellationTimeline(request, currency).map((step) => (
