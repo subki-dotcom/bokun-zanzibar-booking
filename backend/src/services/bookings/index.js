@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const Booking = require("../../models/Booking");
 const Customer = require("../../models/Customer");
 const ProductSnapshot = require("../../models/ProductSnapshot");
+const BookingRequest = require("../../models/BookingRequest");
 const AuditLog = require("../../models/AuditLog");
 const CommissionRecord = require("../../models/CommissionRecord");
 const Agent = require("../../models/Agent");
@@ -1598,7 +1599,43 @@ const toPublicCancellationPolicy = (policy = {}) => {
   return safePolicy;
 };
 
-const toPublicBookingDetails = ({ booking, productSnapshot = null }) => {
+const toPublicCancellationRequest = (request = null) => {
+  if (!request) return null;
+  const refundRecord = request.refund?.refundId && typeof request.refund.refundId === "object"
+    ? request.refund.refundId
+    : null;
+  return {
+    requestReference: request.requestReference || "",
+    type: request.type || "cancel_booking",
+    status: request.status || "",
+    createdAt: request.createdAt || null,
+    updatedAt: request.updatedAt || null,
+    completedAt: request.completedAt || null,
+    adminDecision: {
+      customerFacingReason: request.adminDecision?.customerFacingReason || ""
+    },
+    bokunSync: {
+      status: request.bokunSync?.status || "",
+      syncedAt: request.bokunSync?.syncedAt || null,
+      lastError: request.bokunSync?.status === "manual_action_required" || request.bokunSync?.status === "failed"
+        ? "Supplier cancellation requires review."
+        : ""
+    },
+    cancellationPolicySnapshot: toPublicCancellationPolicy(request.cancellationPolicySnapshot),
+    refund: {
+      required: Boolean(request.refund?.required),
+      status: refundRecord?.status || request.refund?.status || "not_required",
+      eligibleAmount: request.refund?.eligibleAmount ?? request.refund?.estimatedAmount ?? null,
+      approvedAmount: request.refund?.approvedAmount ?? refundRecord?.amount ?? null,
+      requestedAmount: refundRecord?.requestedAmount ?? request.refund?.requestedAmount ?? 0,
+      confirmedRefundedAmount: refundRecord?.confirmedRefundedAmount ?? request.refund?.confirmedRefundedAmount ?? 0,
+      cancellationFee: request.refund?.cancellationFee ?? null,
+      providerLabel: request.refund?.providerLabel || ""
+    }
+  };
+};
+
+const toPublicBookingDetails = ({ booking, productSnapshot = null, cancellationRequest = null }) => {
   const cancellationPolicy = calculateCancellationPolicy({
     booking,
     productSnapshot,
@@ -1635,6 +1672,7 @@ const toPublicBookingDetails = ({ booking, productSnapshot = null }) => {
       subtotal: Number(booking.invoiceSnapshot?.subtotal ?? total),
       total: Number(booking.invoiceSnapshot?.total ?? total),
       amountPaid,
+      amountRefunded: Number(booking.invoiceSnapshot?.amountRefunded || 0),
       balanceDue: Number(booking.invoiceSnapshot?.balanceDue ?? Math.max(0, total - amountPaid)),
       paymentStatus: booking.invoiceSnapshot?.paymentStatus || booking.paymentStatus || "",
       pickupLocation: booking.invoiceSnapshot?.pickupLocation || booking.customer?.hotelName || ""
@@ -1651,6 +1689,7 @@ const toPublicBookingDetails = ({ booking, productSnapshot = null }) => {
     cancellation: {
       cancelledAt: booking.cancellation?.cancelledAt || null
     },
+    cancellationRequest: toPublicCancellationRequest(cancellationRequest),
     cancellationPolicy: toPublicCancellationPolicy(cancellationPolicy),
     createdAt: booking.createdAt,
     updatedAt: booking.updatedAt
@@ -1658,14 +1697,35 @@ const toPublicBookingDetails = ({ booking, productSnapshot = null }) => {
 };
 
 const isBokunCancellationConfirmed = (response = {}) => {
+  if (response === null || response === undefined || response === "") return true;
+  if (typeof response === "string") return /cancel|void|success|accepted|ok/i.test(response);
+  const cancelledFlags = [
+    response.cancelled,
+    response.canceled,
+    response.isCancelled,
+    response.isCanceled,
+    response.booking?.cancelled,
+    response.booking?.canceled,
+    response.data?.cancelled,
+    response.data?.canceled,
+    response.result?.cancelled,
+    response.result?.canceled
+  ];
   const status = String(
     response?.status ||
       response?.booking?.status ||
       response?.data?.status ||
       response?.result?.status ||
+      response?.state ||
+      response?.booking?.state ||
+      response?.data?.state ||
       ""
   ).toLowerCase();
-  return response?.success === true || status.includes("cancel");
+  const message = String(response?.message || response?.data?.message || response?.result?.message || "").toLowerCase();
+  return response?.success === true ||
+    cancelledFlags.some((value) => value === true || String(value).toLowerCase() === "true") ||
+    /cancel|void/.test(status) ||
+    /already\s+cancel|cancelled|canceled/.test(message);
 };
 
 const persistBookingRecord = async ({
@@ -2562,8 +2622,14 @@ const getBookingByReference = async (reference) => {
     throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
   }
 
-  const productSnapshot = await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean();
-  return toPublicBookingDetails({ booking, productSnapshot });
+  const [productSnapshot, cancellationRequest] = await Promise.all([
+    ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean(),
+    BookingRequest.findOne({ booking: booking._id, type: "cancel_booking" })
+      .populate("refund.refundId")
+      .sort({ createdAt: -1 })
+      .lean()
+  ]);
+  return toPublicBookingDetails({ booking, productSnapshot, cancellationRequest });
 };
 
 const listRecentBookings = async (auth) => {

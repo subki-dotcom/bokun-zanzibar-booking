@@ -13,6 +13,7 @@ import {
   BsPerson,
   BsSearch,
   BsShieldCheck,
+  BsXCircle,
   BsTelephone
 } from "react-icons/bs";
 import { fetchBookingByReference } from "../../api/bookingsApi";
@@ -21,6 +22,7 @@ import Loader from "../../components/common/Loader";
 import ManageBookingCard from "../../components/bookingRequests/ManageBookingCard";
 import CancellationPolicyPanel from "../../components/cancellation/CancellationPolicyPanel";
 import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
+import { buildCancellationTimeline } from "../../utils/cancellationPolicy";
 
 const formatDate = (value = "") => {
   if (!value) return "-";
@@ -44,19 +46,100 @@ const InfoRow = ({ icon, label, value, strong = false }) => (
   </div>
 );
 
+const formatDateTime = (value = "") => {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString(undefined, {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+};
+
+const friendlyStatus = (value = "") => String(value || "not_required").replaceAll("_", " ");
+
+const CancellationStatusCard = ({ booking, currency }) => {
+  const fallbackRequest = booking.bookingStatus === "cancelled"
+    ? {
+        type: "cancel_booking",
+        status: "completed",
+        createdAt: booking.cancellation?.cancelledAt || booking.updatedAt,
+        completedAt: booking.cancellation?.cancelledAt || booking.updatedAt,
+        bokunSync: { status: "synced", syncedAt: booking.cancellation?.cancelledAt || booking.updatedAt },
+        refund: {
+          status: Number(booking.invoiceSnapshot?.amountRefunded || 0) > 0 ? "refunded" : "not_required",
+          confirmedRefundedAmount: Number(booking.invoiceSnapshot?.amountRefunded || 0)
+        }
+      }
+    : null;
+  const request = booking.cancellationRequest || fallbackRequest;
+  if (!request) return null;
+
+  const refund = request.refund || {};
+  const refundAmount = Number(refund.approvedAmount ?? refund.eligibleAmount ?? 0);
+  const refundedAmount = Number(refund.confirmedRefundedAmount || booking.invoiceSnapshot?.amountRefunded || 0);
+  const supplierConfirmed = request.bokunSync?.status === "synced" || booking.bookingStatus === "cancelled";
+
+  return (
+    <Card className="my-booking-card">
+      <Card.Body>
+        <div className="my-booking-section-head">
+          <span><BsXCircle /></span>
+          <div>
+            <h2>Cancellation Status</h2>
+            <p>{supplierConfirmed ? "Your booking cancellation is confirmed with the supplier." : "Your cancellation request is being reviewed with the supplier."}</p>
+          </div>
+        </div>
+
+        <div className="my-booking-info-grid">
+          <InfoRow icon={<BsFileEarmarkText />} label="Request reference" value={request.requestReference || booking.bookingReference} strong />
+          <InfoRow icon={<BsCalendar2Check />} label="Cancellation requested" value={formatDateTime(request.createdAt)} />
+          <InfoRow icon={<BsShieldCheck />} label="Supplier status" value={supplierConfirmed ? "Cancelled in Bokun" : friendlyStatus(request.bokunSync?.status)} strong />
+          <InfoRow icon={<BsCashCoin />} label="Refund status" value={friendlyStatus(refund.status)} />
+          <InfoRow icon={<BsCashCoin />} label="Approved refund" value={refundAmount > 0 ? formatCurrency(refundAmount, currency) : "Awaiting review"} />
+          <InfoRow icon={<BsCashCoin />} label="Amount refunded" value={formatCurrency(refundedAmount, currency)} strong />
+        </div>
+
+        {request.adminDecision?.customerFacingReason ? <p className="text-muted mt-3 mb-0">{request.adminDecision.customerFacingReason}</p> : null}
+        <div className="cancellation-status-timeline mt-3">
+          {buildCancellationTimeline(request, currency).map((step) => (
+            <div className={`cancellation-status-step ${step.done ? "is-done" : ""} ${step.active ? "is-active" : ""}`} key={step.label}>
+              <span />
+              <div>
+                <strong>{step.label}</strong>
+                <small>{step.text}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card.Body>
+    </Card>
+  );
+};
+
 const BookingDetails = ({ booking }) => {
   const currency = booking.pricingSnapshot?.currency || booking.currency || "USD";
   const total = Number(booking.pricingSnapshot?.finalPayable || booking.amount || 0);
   const amountPaid = Number(booking.invoiceSnapshot?.amountPaid || 0);
+  const amountRefunded = Number(booking.invoiceSnapshot?.amountRefunded || booking.cancellationRequest?.refund?.confirmedRefundedAmount || 0);
   const balanceDue = Number(booking.invoiceSnapshot?.balanceDue ?? Math.max(0, total - amountPaid));
   const hasPendingSupplier =
     booking.paymentStatus === "paid" &&
     (Boolean(booking.pendingCheckout?.finalizationPending) || !booking.bokunBookingId);
+  const isCancelled = booking.bookingStatus === "cancelled" || Boolean(booking.cancellation?.cancelledAt);
+  const hasCancellationRequest = Boolean(booking.cancellationRequest);
   const travelerName = `${booking.customer?.firstName || ""} ${booking.customer?.lastName || ""}`.trim();
 
-  const statusCopy = hasPendingSupplier
-    ? "Paid, supplier confirmation pending. We have received your payment and are waiting for supplier confirmation."
-    : "Your booking details are saved and ready to review.";
+  const statusCopy = isCancelled
+    ? "Your booking has been cancelled. Cancellation and refund status are shown below."
+    : hasCancellationRequest
+      ? "Your cancellation request is being tracked. Supplier and refund status are shown below."
+    : hasPendingSupplier
+      ? "Paid, supplier confirmation pending. We have received your payment and are waiting for supplier confirmation."
+      : "Your booking details are saved and ready to review.";
 
   return (
     <div className="my-booking-result">
@@ -68,6 +151,7 @@ const BookingDetails = ({ booking }) => {
           <div className="my-booking-status-row">
             <Badge bg={statusBadgeVariant(booking.paymentStatus)}>{booking.paymentStatus || "payment"}</Badge>
             <Badge bg={statusBadgeVariant(booking.bookingStatus)}>{booking.bookingStatus || "booking"}</Badge>
+            {booking.cancellationRequest ? <Badge bg="warning" text="dark">Cancellation request</Badge> : null}
             {hasPendingSupplier ? <Badge bg="warning" text="dark">Paid, supplier confirmation pending</Badge> : null}
           </div>
         </div>
@@ -124,6 +208,12 @@ const BookingDetails = ({ booking }) => {
                   <span>Amount Paid</span>
                   <strong>{formatCurrency(amountPaid, currency)}</strong>
                 </div>
+                {amountRefunded > 0 || booking.cancellationRequest ? (
+                  <div>
+                    <span>Amount Refunded</span>
+                    <strong>{formatCurrency(amountRefunded, currency)}</strong>
+                  </div>
+                ) : null}
                 <div className="is-total">
                   <span>Balance Due</span>
                   <strong>{formatCurrency(balanceDue, currency)}</strong>
@@ -145,6 +235,8 @@ const BookingDetails = ({ booking }) => {
               </div>
             </Card.Body>
           </Card>
+
+          <CancellationStatusCard booking={booking} currency={currency} />
 
           <Card className="my-booking-card">
             <Card.Body>

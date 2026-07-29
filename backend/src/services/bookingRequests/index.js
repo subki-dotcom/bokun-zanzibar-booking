@@ -477,14 +477,60 @@ const checkAvailabilityAndPrice = async ({ request, booking, requestId = "" }) =
 };
 
 const isBokunCancellationConfirmed = (response = {}) => {
+  if (response === null || response === undefined || response === "") return true;
+  if (typeof response === "string") return /cancel|void|success|accepted|ok/i.test(response);
+  const cancelledFlags = [
+    response.cancelled,
+    response.canceled,
+    response.isCancelled,
+    response.isCanceled,
+    response.booking?.cancelled,
+    response.booking?.canceled,
+    response.data?.cancelled,
+    response.data?.canceled,
+    response.result?.cancelled,
+    response.result?.canceled
+  ];
   const status = String(
     response?.status ||
       response?.booking?.status ||
       response?.data?.status ||
       response?.result?.status ||
+      response?.state ||
+      response?.booking?.state ||
+      response?.data?.state ||
       ""
   ).toLowerCase();
-  return response?.success === true || status.includes("cancel");
+  const message = String(response?.message || response?.data?.message || response?.result?.message || "").toLowerCase();
+  return response?.success === true ||
+    cancelledFlags.some((value) => value === true || String(value).toLowerCase() === "true") ||
+    /cancel|void/.test(status) ||
+    /already\s+cancel|cancelled|canceled/.test(message);
+};
+
+const isBokunAlreadyCancelledError = (error = {}) => {
+  const text = [
+    error.message,
+    error.details?.message,
+    error.details?.response,
+    error.details?.data?.message
+  ].map((value) => String(value || "").toLowerCase()).join(" ");
+  return /already\s+cancel|already\s+canceled|booking\s+cancelled|booking\s+canceled/.test(text);
+};
+
+const markCancellationSyncedLocally = async ({ request, booking, response = null }) => {
+  booking.bookingStatus = "cancelled";
+  booking.cancellation = {
+    reason: request.customerReason,
+    cancelledAt: booking.cancellation?.cancelledAt || new Date(),
+    cancelledBy: "admin_request_workflow"
+  };
+  await booking.save();
+  request.bokunSync.status = "synced";
+  request.bokunSync.syncedAt = new Date();
+  request.bokunSync.lastError = "";
+  request.bokunSync.responseSnapshot = response || request.bokunSync.responseSnapshot || { recoveredFromSupplierState: true };
+  await request.save();
 };
 
 const performBokunSync = async ({ request, booking, requestId = "" }) => {
@@ -517,9 +563,7 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
         await request.save();
         return { synced: false, manual: true, request };
       }
-      booking.bookingStatus = "cancelled";
-      booking.cancellation = { reason: request.customerReason, cancelledAt: new Date(), cancelledBy: "admin_request_workflow" };
-      await booking.save();
+      await markCancellationSyncedLocally({ request, booking, response });
     } else if (env.BOKUN_MOCK_MODE) {
       response = await bokunService.editBooking(booking.bokunBookingId, {
         travelDate: request.requestedChanges?.date || booking.travelDate,
@@ -553,6 +597,15 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
     await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId, reason: "Booking request synchronized" });
     return { synced: true, request };
   } catch (error) {
+    if (request.type === "cancel_booking" && isBokunAlreadyCancelledError(error)) {
+      await markCancellationSyncedLocally({
+        request,
+        booking,
+        response: { recoveredFromSupplierState: true, message: "Supplier reported this booking was already cancelled." }
+      });
+      await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId, reason: "Booking request synchronized after supplier cancellation" });
+      return { synced: true, request };
+    }
     request.bokunSync.status = request.type === "cancel_booking" ? "cancellation_pending_supplier" : "failed";
     request.bokunSync.lastError = String(error.message || "Bokun update failed").slice(0, 1000);
     await request.save();
@@ -964,6 +1017,8 @@ module.exports = {
   processRefund,
   retryRequestEmail,
   __testables: {
-    ensureRequestWorkflowDefaults
+    ensureRequestWorkflowDefaults,
+    isBokunAlreadyCancelledError,
+    isBokunCancellationConfirmed
   }
 };

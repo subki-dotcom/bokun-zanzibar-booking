@@ -12,7 +12,11 @@ const {
   buildRefundContextFromRecords,
   extractPesapalConfirmationCode
 } = refundsService.__testables;
-const { ensureRequestWorkflowDefaults } = bookingRequestsService.__testables;
+const {
+  ensureRequestWorkflowDefaults,
+  isBokunAlreadyCancelledError,
+  isBokunCancellationConfirmed
+} = bookingRequestsService.__testables;
 
 const booking = {
   _id: "booking-1",
@@ -140,4 +144,18 @@ test("backfilled legacy cancellation requests pass model validation", () => {
 
   assert.equal(legacyRequest.customerReason, "Customer requested cancellation");
   assert.ifError(legacyRequest.validateSync());
+});
+
+test("recognizes safe Bokun cancellation confirmation variants", () => {
+  assert.equal(isBokunCancellationConfirmed(null), true);
+  assert.equal(isBokunCancellationConfirmed({ cancelled: true }), true);
+  assert.equal(isBokunCancellationConfirmed({ booking: { state: "VOIDED" } }), true);
+  assert.equal(isBokunCancellationConfirmed({ message: "Booking already cancelled" }), true);
+});
+
+test("detects already-cancelled Bokun errors for idempotent retry recovery", () => {
+  assert.equal(
+    isBokunAlreadyCancelledError({ details: { message: "This booking is already cancelled" } }),
+    true
+  );
 });
