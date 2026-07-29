@@ -15,6 +15,39 @@ const errorHandler = (err, req, res, _next) => {
     });
   }
 
+  if (err?.name === "ValidationError") {
+    return errorResponse(res, {
+      statusCode: 422,
+      code: "DATABASE_VALIDATION_ERROR",
+      message: "Some saved booking data needs review before this action can be completed.",
+      details: Object.keys(err.errors || {}).reduce((fields, key) => {
+        fields[key] = err.errors[key]?.kind || err.errors[key]?.name || "invalid";
+        return fields;
+      }, {}),
+      meta: { requestId: req.requestId }
+    });
+  }
+
+  if (err?.name === "CastError") {
+    return errorResponse(res, {
+      statusCode: 422,
+      code: "DATABASE_CAST_ERROR",
+      message: "Some saved booking data has an invalid reference and needs review.",
+      details: { path: err.path || "", kind: err.kind || "" },
+      meta: { requestId: req.requestId }
+    });
+  }
+
+  if (err?.code === 11000) {
+    return errorResponse(res, {
+      statusCode: 409,
+      code: "DUPLICATE_RECORD",
+      message: "This action has already been recorded. Please refresh and check the latest status.",
+      details: { fields: Object.keys(err.keyPattern || err.keyValue || {}) },
+      meta: { requestId: req.requestId }
+    });
+  }
+
   logger.error("Unhandled request error", {
     requestId: req.requestId,
     path: req.originalUrl,

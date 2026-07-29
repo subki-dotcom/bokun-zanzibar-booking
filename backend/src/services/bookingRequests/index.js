@@ -94,6 +94,13 @@ const ensureRequestWorkflowDefaults = (request, booking = null) => {
   if (!request.originalSnapshot && booking) {
     request.originalSnapshot = snapshotBooking(booking);
   }
+  if (!String(request.customerReason || "").trim()) {
+    request.customerReason = request.type === "cancel_booking"
+      ? "Customer requested cancellation"
+      : "Customer requested a booking change";
+  }
+  if (request.customerNotes === undefined || request.customerNotes === null) request.customerNotes = "";
+  if (!request.requestedChanges) request.requestedChanges = {};
 
   if (!request.priceAdjustment) request.priceAdjustment = {};
   if (request.priceAdjustment.originalAmount === undefined || request.priceAdjustment.originalAmount === null) {

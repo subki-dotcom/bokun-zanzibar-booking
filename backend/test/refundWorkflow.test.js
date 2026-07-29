@@ -3,9 +3,11 @@ process.env.JWT_SECRET ||= "refund-workflow-test-secret";
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const mongoose = require("mongoose");
 
 const refundsService = require("../src/services/refunds");
 const bookingRequestsService = require("../src/services/bookingRequests");
+const BookingRequest = require("../src/models/BookingRequest");
 const {
   buildRefundContextFromRecords,
   extractPesapalConfirmationCode
@@ -120,4 +122,22 @@ test("backfills cancellation workflow defaults for older booking requests", () =
   assert.equal(legacyRequest.refund.confirmedRefundedAmount, 0);
   assert.equal(legacyRequest.priceAdjustment.type, "unknown");
   assert.equal(legacyRequest.additionalPayment.status, "not_required");
+});
+
+test("backfilled legacy cancellation requests pass model validation", () => {
+  const legacyRequest = new BookingRequest({
+    requestReference: "BRQ-LEGACY-VALIDATION",
+    booking: new mongoose.Types.ObjectId(),
+    type: "cancel_booking"
+  });
+
+  ensureRequestWorkflowDefaults(legacyRequest, {
+    amount: 1,
+    currency: "USD",
+    bokunBookingId: "BOKUN-123",
+    bokunConfirmationCode: "CONF-123"
+  });
+
+  assert.equal(legacyRequest.customerReason, "Customer requested cancellation");
+  assert.ifError(legacyRequest.validateSync());
 });
