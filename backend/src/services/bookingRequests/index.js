@@ -48,10 +48,14 @@ const recordAudit = async ({ action, request, booking, auth = null, requestId = 
   });
 
 const queueRequestEmail = ({ booking, request, templateKey }) => {
-  if (!booking?.customer?.email) return;
+  if (!booking?.customer?.email || !request?._id) return;
   request.lastEmailTemplate = templateKey;
-  void request.save().catch(() => null);
-  void emailService.sendBookingRequestEmailOnce({ booking, request, templateKey }).catch(() => null);
+  const emailRequest = typeof request.toObject === "function"
+    ? request.toObject()
+    : { ...request };
+  emailRequest.lastEmailTemplate = templateKey;
+  void BookingRequest.updateOne({ _id: request._id }, { $set: { lastEmailTemplate: templateKey } }).catch(() => null);
+  void emailService.sendBookingRequestEmailOnce({ booking, request: emailRequest, templateKey }).catch(() => null);
 };
 
 const assertCustomerOwnership = ({ booking, customerEmail }) => {
