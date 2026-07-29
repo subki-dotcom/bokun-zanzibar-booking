@@ -4,6 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import { fetchBookingByReference } from "../../api/bookingsApi";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
+import CancellationPolicyPanel from "../../components/cancellation/CancellationPolicyPanel";
 import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
 
 const BookingConfirmationPage = () => {
@@ -63,8 +64,15 @@ const BookingConfirmationPage = () => {
               <strong>Date:</strong> {booking.travelDate} at {booking.startTime}
             </p>
             <p className="mb-3">
-              <strong>Total:</strong> {formatCurrency(booking.pricingSnapshot?.finalPayable || 0, "USD")}
+              <strong>Total:</strong> {formatCurrency(booking.pricingSnapshot?.finalPayable || 0, booking.currency || booking.pricingSnapshot?.currency || "USD")}
             </p>
+
+            <CancellationPolicyPanel
+              policy={booking.cancellationPolicy}
+              currency={booking.currency || booking.pricingSnapshot?.currency || "USD"}
+              compact
+              className="mb-3"
+            />
 
             <Link to={`/my-booking/${booking.bookingReference}`} className="btn premium-btn text-white">
               Open My Booking

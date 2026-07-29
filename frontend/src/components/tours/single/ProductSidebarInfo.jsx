@@ -1,6 +1,7 @@
 import { BsCarFront, BsCheckCircleFill, BsGeoAlt, BsShieldCheck, BsStarFill, BsXCircleFill } from "react-icons/bs";
 import { toTextList } from "./singleTour.helpers";
 import { usePaymentProviders } from "../../../context/PaymentProvidersContext";
+import CancellationPolicyPanel from "../../cancellation/CancellationPolicyPanel";
 
 const SidebarCard = ({ title, children, className = "" }) => (
   <section className={`product-sidebar-card ${className}`.trim()}>
@@ -27,17 +28,27 @@ const ProductSidebarInfo = ({ tour = {} }) => {
   const importantInformation = toTextList(tour.importantInformation);
   const hasMeeting = Boolean(tour.meetingInfo || tour.pickupInfo);
   const hasRating = Number(tour.rating) > 0 || Number(tour.reviewCount) > 0;
-  const supportsCancellation = /free cancellation|full refund|cancel.{0,40}advance/i.test(tour.cancellationPolicy || "");
+  const productCancellationPolicy = tour.cancellationPolicy
+    ? {
+        policyAvailable: true,
+        policySummary: tour.cancellationPolicy,
+        policyDescription: tour.cancellationPolicy,
+        requiresManualReview: false
+      }
+    : null;
 
   return (
     <div className="product-sidebar-info-stack">
       <SidebarCard title="Why book with us?" className="product-benefits-card">
-        {supportsCancellation ? (
-          <div className="product-benefit-row"><BsCheckCircleFill /><span><strong>Free cancellation</strong>{tour.cancellationPolicy}</span></div>
-        ) : null}
         <div className="product-benefit-row"><BsShieldCheck /><span><strong>Secure payments</strong>Your payment information is protected.</span></div>
         <div className="product-benefit-row"><BsCheckCircleFill /><span><strong>Live availability</strong>Availability is checked with the supplier.</span></div>
       </SidebarCard>
+
+      {productCancellationPolicy ? (
+        <SidebarCard title="Cancellation policy">
+          <CancellationPolicyPanel policy={productCancellationPolicy} compact className="is-sidebar" />
+        </SidebarCard>
+      ) : null}
 
       {hasRating ? (
         <SidebarCard title="Guest rating" className="product-rating-card">

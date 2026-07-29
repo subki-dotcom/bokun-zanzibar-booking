@@ -14,6 +14,8 @@ import {
   respondToBookingRequest,
   submitBookingRequest
 } from "../../api/bookingRequestsApi";
+import CancellationPolicyPanel from "../cancellation/CancellationPolicyPanel";
+import { buildCancellationTimeline, resolveCancellationActionLabel } from "../../utils/cancellationPolicy";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 
 const statusVariant = (status = "") => {
@@ -56,6 +58,7 @@ const ManageBookingCard = ({ booking }) => {
   const [loadingEstimate, setLoadingEstimate] = useState(false);
 
   const currency = booking.pricingSnapshot?.currency || booking.currency || "USD";
+  const amountPaid = Number(booking.invoiceSnapshot?.amountPaid || 0);
   const canManage = booking.paymentStatus === "paid" && booking.bookingStatus !== "cancelled";
   const activeRequests = useMemo(
     () => requests.filter((request) => !["completed", "rejected", "cancelled_by_customer", "failed"].includes(request.status)),
@@ -204,7 +207,7 @@ const ManageBookingCard = ({ booking }) => {
         <div className="manage-booking-actions">
           <Button variant="outline-success" disabled={!customerEmail.trim()} onClick={() => openRequestModal("reschedule")}><BsCalendar2Date /> Change Date</Button>
           <Button variant="outline-success" disabled={!customerEmail.trim()} onClick={() => openRequestModal("change_travelers")}><BsPeople /> Change Travelers</Button>
-          <Button variant="outline-danger" disabled={!customerEmail.trim()} onClick={() => openRequestModal("cancel_booking")}><BsXCircle /> Cancel Booking</Button>
+          <Button variant="outline-danger" disabled={!customerEmail.trim()} onClick={() => openRequestModal("cancel_booking")}><BsXCircle /> {resolveCancellationActionLabel(booking.cancellationPolicy)}</Button>
         </div>
 
         {requests.length ? (
@@ -226,6 +229,19 @@ const ManageBookingCard = ({ booking }) => {
                   {request.additionalPayment?.required ? <span>Additional payment required</span> : null}
                 </div>
                 {request.refund?.estimatedAmount > 0 ? <small>Estimated refund: {formatCurrency(request.refund.estimatedAmount, currency)}</small> : null}
+                {request.type === "cancel_booking" ? (
+                  <div className="cancellation-status-timeline">
+                    {buildCancellationTimeline(request, currency).map((step) => (
+                      <div className={`cancellation-status-step ${step.done ? "is-done" : ""} ${step.active ? "is-active" : ""}`} key={step.label}>
+                        <span />
+                        <div>
+                          <strong>{step.label}</strong>
+                          <small>{step.text}</small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
                 {request.status === "awaiting_customer_information" ? (
                   <div className="manage-booking-response">
                     <Form.Control value={responseNotes[request.id] || ""} onChange={(event) => setResponseNotes((current) => ({ ...current, [request.id]: event.target.value }))} placeholder="Provide the requested information" />
@@ -268,12 +284,18 @@ const ManageBookingCard = ({ booking }) => {
             ) : null}
             {modalType === "cancel_booking" ? (
               <>
-                <div className="request-cancellation-summary">
-                  <span>Booking total <strong>{formatCurrency(booking.amount || booking.pricingSnapshot?.finalPayable || 0, currency)}</strong></span>
-                  <span>Amount paid <strong>{formatCurrency(booking.invoiceSnapshot?.amountPaid || 0, currency)}</strong></span>
-                  <span>Estimated refund <strong>{loadingEstimate ? "Calculating..." : cancellationEstimate ? formatCurrency(cancellationEstimate.estimatedRefundAmount || 0, currency) : "Verify booking email"}</strong></span>
+                <div className="request-current-details">
+                  {booking.productTitle} - {formatDate(booking.travelDate)} {booking.startTime ? `at ${booking.startTime}` : ""}
                 </div>
-                {cancellationEstimate?.policyReason ? <small className="text-muted d-block mb-3">{cancellationEstimate.policyReason}</small> : <small className="text-muted d-block mb-3">The final refund is calculated from the booking policy and verified payment records.</small>}
+                <CancellationPolicyPanel
+                  policy={cancellationEstimate || booking.cancellationPolicy}
+                  currency={currency}
+                  amountPaid={amountPaid}
+                  showAmounts
+                  compact
+                />
+                {loadingEstimate ? <small className="text-muted d-block mb-3">Confirming policy and verified payment records...</small> : null}
+                <small className="text-muted d-block mb-3">Cancellation cannot be undone after supplier confirmation. Refund processing is tracked separately.</small>
                 <Form.Group><Form.Label>Cancellation reason</Form.Label><Form.Select value={form.cancellationReason} onChange={(event) => updateForm("cancellationReason", event.target.value)}><option value="change_of_plans">Change of plans</option><option value="flight_cancellation">Flight cancellation</option><option value="flight_delay">Flight delay</option><option value="medical_reason">Medical reason</option><option value="weather_concern">Weather concern</option><option value="booked_by_mistake">Booked by mistake</option><option value="duplicate_booking">Duplicate booking</option><option value="other">Other</option></Form.Select></Form.Group>
               </>
             ) : null}
@@ -283,7 +305,7 @@ const ManageBookingCard = ({ booking }) => {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="outline-secondary" onClick={() => setModalType("")} disabled={submitting}>Close</Button>
-            <Button type="submit" variant={modalType === "cancel_booking" ? "danger" : "success"} disabled={submitting}>{submitting ? <Spinner size="sm" /> : <BsReceipt />} Submit Request</Button>
+            <Button type="submit" variant={modalType === "cancel_booking" ? "danger" : "success"} disabled={submitting || (modalType === "cancel_booking" && loadingEstimate)}>{submitting ? <Spinner size="sm" /> : <BsReceipt />} {modalType === "cancel_booking" ? "Confirm Cancellation" : "Submit Request"}</Button>
           </Modal.Footer>
         </Form>
       </Modal>

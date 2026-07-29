@@ -16,6 +16,7 @@ import { formatCurrency, formatDate } from "../../utils/formatters";
 import ChangeTripDetailsAction from "./ChangeTripDetailsAction";
 import CheckoutPaymentSummaryCard from "./CheckoutPaymentSummaryCard";
 import ConfirmActionRow from "./ConfirmActionRow";
+import CancellationPolicyPanel from "../cancellation/CancellationPolicyPanel";
 
 const toSafeNumber = (value) => {
   const parsed = Number(value || 0);
@@ -172,6 +173,15 @@ const BookingSummarySidebar = ({
       </Card>
 
       {showPaymentSummary ? <CheckoutPaymentSummaryCard flowState={flowState} /> : null}
+
+      {quote?.cancellationPolicy ? (
+        <CancellationPolicyPanel
+          policy={quote.cancellationPolicy}
+          currency={quoteCurrency}
+          compact
+          className="checkout-cancellation-panel"
+        />
+      ) : null}
 
       {showHelp ? (
         <Card className="surface-card checkout-help-card">

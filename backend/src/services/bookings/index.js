@@ -17,6 +17,7 @@ const commissionsService = require("../commissions");
 const paymentsService = require("../payments");
 const bokunSyncService = require("../webhooks");
 const notificationsService = require("../notifications");
+const { calculateCancellationPolicy } = require("../cancellations/policy");
 const legacyBokunRecoveryService = require("./legacyBokunRecovery.service");
 
 const normalizeTicketCategory = (value = "") => {
@@ -1163,6 +1164,21 @@ const quoteBooking = async ({ payload, auth, requestId }) => {
   const effectivePriceCatalogId = selectedPriceCatalog?.catalogId || String(payload.priceCatalogId || "");
   const liveQuote = await getLiveQuote({ ...payload, priceCatalogId: effectivePriceCatalogId, requestId });
   const paxSummary = buildPaxSummary(payload.pax, liveQuote.selectedParticipants);
+  const cancellationPolicy = calculateCancellationPolicy({
+    booking: {
+      bokunProductId: product.bokunProductId,
+      bokunOptionId: option.bokunOptionId,
+      productTitle: product.title,
+      optionTitle: option.name,
+      travelDate: payload.travelDate,
+      startTime: liveQuote.availability.selectedStartTime || payload.startTime || "",
+      priceCatalog: liveQuote.selectedPriceCatalog || selectedPriceCatalog || null,
+      pricingSnapshot: liveQuote.pricing,
+      currency: liveQuote.pricing.currency || product.currency || "USD"
+    },
+    productSnapshot: product,
+    amountPaid: 0
+  });
 
   const quoteSign = signQuoteToken({
     productId: payload.productId,
@@ -1208,7 +1224,8 @@ const quoteBooking = async ({ payload, auth, requestId }) => {
       slots: liveQuote.availability.slots,
       selectedStartTimeId: liveQuote.availability.selectedStartTimeId || "",
       available: liveQuote.availability.available
-    }
+    },
+    cancellationPolicy
   };
 };
 
@@ -1570,6 +1587,87 @@ const toBookingResponsePayload = ({
     : null
 });
 
+const toPublicCancellationPolicy = (policy = {}) => {
+  const {
+    bokunProductId,
+    bokunOptionId,
+    bokunBookingId,
+    rawPolicy,
+    ...safePolicy
+  } = policy || {};
+  return safePolicy;
+};
+
+const toPublicBookingDetails = ({ booking, productSnapshot = null }) => {
+  const cancellationPolicy = calculateCancellationPolicy({
+    booking,
+    productSnapshot,
+    amountPaid: booking?.invoiceSnapshot?.amountPaid ?? booking?.pricingSnapshot?.amountPaid ?? 0
+  });
+  const total = Number(booking?.pricingSnapshot?.finalPayable ?? booking?.amount ?? 0);
+  const amountPaid = Number(booking?.invoiceSnapshot?.amountPaid || 0);
+
+  return {
+    _id: booking._id,
+    bookingReference: booking.bookingReference,
+    confirmationCode: booking.bokunConfirmationCode || "",
+    productTitle: booking.productTitle,
+    optionTitle: booking.optionTitle,
+    travelDate: booking.travelDate,
+    startTime: booking.startTime || "",
+    priceCatalog: booking.priceCatalog || null,
+    paxSummary: booking.paxSummary || {},
+    pricingSnapshot: booking.pricingSnapshot || {},
+    amount: booking.amount,
+    currency: booking.currency || booking.pricingSnapshot?.currency || "USD",
+    paymentStatus: booking.paymentStatus,
+    paymentMethod: booking.paymentMethod,
+    bookingStatus: booking.bookingStatus,
+    supplierStatus: booking.supplierStatus || "awaiting_payment",
+    pendingCheckout: {
+      finalizationPending: Boolean(
+        booking.pendingCheckout?.finalizationPending ||
+          ["pending", "processing"].includes(String(booking.pendingCheckout?.finalization?.status || ""))
+      )
+    },
+    invoiceSnapshot: {
+      invoiceNumber: booking.invoiceSnapshot?.invoiceNumber || "",
+      subtotal: Number(booking.invoiceSnapshot?.subtotal ?? total),
+      total: Number(booking.invoiceSnapshot?.total ?? total),
+      amountPaid,
+      balanceDue: Number(booking.invoiceSnapshot?.balanceDue ?? Math.max(0, total - amountPaid)),
+      paymentStatus: booking.invoiceSnapshot?.paymentStatus || booking.paymentStatus || "",
+      pickupLocation: booking.invoiceSnapshot?.pickupLocation || booking.customer?.hotelName || ""
+    },
+    customer: {
+      firstName: booking.customer?.firstName || "",
+      lastName: booking.customer?.lastName || "",
+      email: booking.customer?.email || "",
+      phone: booking.customer?.phone || "",
+      country: booking.customer?.country || "",
+      hotelName: booking.customer?.hotelName || "",
+      pickupPlaceId: booking.customer?.pickupPlaceId || ""
+    },
+    cancellation: {
+      cancelledAt: booking.cancellation?.cancelledAt || null
+    },
+    cancellationPolicy: toPublicCancellationPolicy(cancellationPolicy),
+    createdAt: booking.createdAt,
+    updatedAt: booking.updatedAt
+  };
+};
+
+const isBokunCancellationConfirmed = (response = {}) => {
+  const status = String(
+    response?.status ||
+      response?.booking?.status ||
+      response?.data?.status ||
+      response?.result?.status ||
+      ""
+  ).toLowerCase();
+  return response?.success === true || status.includes("cancel");
+};
+
 const persistBookingRecord = async ({
   context,
   bokunBooking = null,
@@ -1604,6 +1702,25 @@ const persistBookingRecord = async ({
   };
   const paxSummary = buildPaxSummary(payloadWithCatalog.pax, liveQuote.selectedParticipants);
   const bookingQuestionsSnapshot = mapBookingQuestionsSnapshot(payloadWithCatalog.bookingQuestions || []);
+  const cancellationPolicySnapshot = calculateCancellationPolicy({
+    booking: {
+      bokunProductId: payloadWithCatalog.productId,
+      bokunOptionId: payloadWithCatalog.optionId,
+      bokunBookingId: String(bokunBooking?.bokunBookingId || bokunBooking?.id || existingBooking?.bokunBookingId || ""),
+      productTitle: product.title,
+      optionTitle: option.name,
+      travelDate: payloadWithCatalog.travelDate,
+      startTime: payloadWithCatalog.startTime || "",
+      priceCatalog: mapPriceCatalogSnapshot({ selectedPriceCatalog, liveQuote }),
+      pricingSnapshot,
+      invoiceSnapshot: existingBooking?.invoiceSnapshot || null,
+      currency: liveQuote.pricing.currency || "USD"
+    },
+    productSnapshot: product,
+    amountPaid: markAmountPaid
+      ? payableAmount
+      : existingBooking?.invoiceSnapshot?.amountPaid ?? existingBooking?.pricingSnapshot?.amountPaid ?? 0
+  });
 
   const bookingPatch = {
     bookingReference,
@@ -1654,6 +1771,7 @@ const persistBookingRecord = async ({
     createdByRole: sourceContext.createdByRole,
     createdByUser: sourceContext.createdByUser,
     agentId: sourceContext.agentId,
+    cancellationPolicySnapshot,
     rawBokunResponse: bokunBooking?.raw || existingBooking?.rawBokunResponse || null
   };
 
@@ -2444,7 +2562,8 @@ const getBookingByReference = async (reference) => {
     throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
   }
 
-  return booking;
+  const productSnapshot = await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean();
+  return toPublicBookingDetails({ booking, productSnapshot });
 };
 
 const listRecentBookings = async (auth) => {
@@ -2509,7 +2628,21 @@ const cancelBooking = async ({ id, reason, auth, requestId }) => {
   }
 
   if (booking.bokunBookingId) {
-    await bokunService.cancelBooking(booking.bokunBookingId, { reason }, requestId);
+    const supplierResponse = await bokunService.cancelBooking(
+      booking.bokunBookingId,
+      {
+        reason,
+        confirmationCode: booking.bokunConfirmationCode || ""
+      },
+      requestId
+    );
+    if (!isBokunCancellationConfirmed(supplierResponse)) {
+      throw new AppError(
+        "Supplier did not confirm the cancellation. Please retry or review in Bokun.",
+        502,
+        "BOKUN_CANCELLATION_NOT_CONFIRMED"
+      );
+    }
   }
 
   const before = {

@@ -146,6 +146,7 @@ const bookingSchema = new mongoose.Schema(
       cancelledAt: Date,
       cancelledBy: { type: String, default: "" }
     },
+    cancellationPolicySnapshot: mongoose.Schema.Types.Mixed,
     editRequests: [
       {
         requestedAt: { type: Date, default: Date.now },

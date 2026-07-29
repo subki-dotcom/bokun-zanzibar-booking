@@ -5300,6 +5300,8 @@ textarea.form-control {
 .my-booking-hero,
 .my-booking-card,
 .my-booking-help-card {
+  box-sizing: border-box;
+  max-width: 100%;
   border: 1px solid #e5ebf2;
   border-radius: 8px;
   background: #ffffff;
@@ -5695,6 +5697,157 @@ textarea.form-control {
   color: #0f172a;
   font-size: 0.93rem;
   margin-top: 0.2rem;
+}
+
+.cancellation-policy-panel {
+  border: 1px solid #dbe7e2;
+  border-radius: 8px;
+  background: #fbfefd;
+  padding: 0.9rem;
+}
+
+.cancellation-policy-panel.is-compact {
+  padding: 0.75rem;
+}
+
+.cancellation-policy-main,
+.cancellation-policy-deadline,
+.cancellation-policy-amounts,
+.cancellation-status-step {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cancellation-policy-main {
+  align-items: flex-start;
+}
+
+.cancellation-policy-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: #047857;
+  background: #dcfce7;
+}
+
+.cancellation-policy-panel h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.cancellation-policy-panel p {
+  margin: 0.25rem 0 0;
+  color: #475569;
+  font-size: 0.88rem;
+}
+
+.cancellation-policy-deadline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 0.75rem;
+  padding: 0.7rem;
+  border-radius: 8px;
+  background: #f0fdfa;
+}
+
+.cancellation-policy-deadline span,
+.cancellation-policy-deadline small,
+.cancellation-policy-summary {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.cancellation-policy-deadline span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 800;
+}
+
+.cancellation-policy-deadline strong {
+  color: #0f172a;
+  overflow-wrap: anywhere;
+}
+
+.cancellation-policy-summary {
+  border-top: 1px solid #e2e8f0;
+  margin-top: 0.75rem !important;
+  padding-top: 0.75rem;
+}
+
+.cancellation-policy-amounts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.75rem;
+}
+
+.cancellation-policy-amounts span {
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 0.65rem;
+  color: #64748b;
+  font-size: 0.78rem;
+  min-width: 0;
+}
+
+.cancellation-policy-amounts strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: #0f172a;
+  font-size: 0.93rem;
+  overflow-wrap: anywhere;
+}
+
+.cancellation-policy-action {
+  margin-top: 0.8rem;
+}
+
+.cancellation-status-timeline {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.cancellation-status-step {
+  align-items: flex-start;
+}
+
+.cancellation-status-step > span {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  margin-top: 0.25rem;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+
+.cancellation-status-step.is-active > span {
+  background: #f59e0b;
+}
+
+.cancellation-status-step.is-done > span {
+  background: #059669;
+}
+
+.cancellation-status-step strong,
+.cancellation-status-step small {
+  display: block;
+}
+
+.cancellation-status-step strong {
+  color: #0f172a;
+  font-size: 0.82rem;
+}
+
+.cancellation-status-step small {
+  color: #64748b;
+  font-size: 0.78rem;
 }
 
 .my-booking-side-stack {
@@ -8173,6 +8326,11 @@ textarea.form-control {
     grid-template-columns: 1fr;
   }
 
+  .my-booking-search .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .my-booking-total-panel {
     text-align: left;
   }
@@ -8301,6 +8459,14 @@ textarea.form-control {
   .my-booking-card .card-body,
   .my-booking-help-card .card-body {
     padding: 1rem;
+  }
+
+  .my-booking-search-band,
+  .my-booking-hero,
+  .my-booking-card,
+  .my-booking-help-card {
+    width: 100%;
+    min-width: 0;
   }
 
   .my-booking-info-grid {
@@ -12951,14 +13117,30 @@ textarea.form-control {
   .manage-booking-verify,
   .request-field-grid,
   .request-traveler-grid,
-  .request-cancellation-summary {
+  .request-cancellation-summary,
+  .cancellation-policy-amounts {
     grid-template-columns: 1fr;
   }
 
   .manage-booking-verify .btn,
   .manage-booking-actions .btn,
-  .manage-booking-response .btn {
+  .manage-booking-response .btn,
+  .cancellation-policy-action {
     width: 100%;
+  }
+
+  .cancellation-policy-panel {
+    padding: 0.75rem;
+  }
+
+  .cancellation-policy-main {
+    gap: 0.6rem;
+  }
+
+  .cancellation-policy-icon {
+    flex-basis: 32px;
+    width: 32px;
+    height: 32px;
   }
 
   .booking-request-filterbar,

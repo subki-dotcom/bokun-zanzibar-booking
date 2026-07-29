@@ -19,6 +19,7 @@ import { fetchBookingByReference } from "../../api/bookingsApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import ManageBookingCard from "../../components/bookingRequests/ManageBookingCard";
+import CancellationPolicyPanel from "../../components/cancellation/CancellationPolicyPanel";
 import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
 
 const formatDate = (value = "") => {
@@ -142,6 +143,17 @@ const BookingDetails = ({ booking }) => {
                   <BsFileEarmarkText /> View Invoice
                 </Button>
               </div>
+            </Card.Body>
+          </Card>
+
+          <Card className="my-booking-card">
+            <Card.Body>
+              <CancellationPolicyPanel
+                policy={booking.cancellationPolicy}
+                currency={currency}
+                amountPaid={amountPaid}
+                showAmounts
+              />
             </Card.Body>
           </Card>
 

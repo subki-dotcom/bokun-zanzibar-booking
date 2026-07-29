@@ -26,6 +26,12 @@ const normalizeEmail = (value = "") => String(value || "").trim().toLowerCase();
 const number = (value = 0) => (Number.isFinite(Number(value)) ? Number(value) : 0);
 const travelerTotal = (travelers = {}) => number(travelers.adults) + number(travelers.children) + number(travelers.infants);
 
+const toPublicCancellationPolicy = (policy = {}) => {
+  if (!policy) return null;
+  const { bokunProductId, bokunOptionId, bokunBookingId, rawPolicy, ...safePolicy } = policy;
+  return safePolicy;
+};
+
 const recordAudit = async ({ action, request, booking, auth = null, requestId = "", reason = "", before = null, after = null, metadata = {} }) =>
   AuditLog.create({
     actorId: auth?.id || null,
@@ -89,7 +95,7 @@ const publicRequest = (request) => ({
   requestedChanges: request.requestedChanges,
   customerReason: request.customerReason,
   customerNotes: request.customerNotes,
-  cancellationPolicySnapshot: request.cancellationPolicySnapshot,
+  cancellationPolicySnapshot: toPublicCancellationPolicy(request.cancellationPolicySnapshot),
   priceAdjustment: request.priceAdjustment,
   refund: {
     required: request.refund?.required,
@@ -178,7 +184,20 @@ const submitRequest = async ({ bookingId, customerEmail, payload, requestId = ""
   const verifiedPaidAmount = isCancellation
     ? await paymentsService.getVerifiedPaidAmountByBookingReference({ bookingReference: booking.bookingReference })
     : 0;
-  const policy = isCancellation ? calculateCancellationPolicy({ booking, amountPaid: verifiedPaidAmount }) : null;
+  const productSnapshot = isCancellation
+    ? await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean()
+    : null;
+  const policy = isCancellation
+    ? calculateCancellationPolicy({ booking, productSnapshot, amountPaid: verifiedPaidAmount })
+    : null;
+  const estimatedRefundAmount = policy?.estimatedRefundAmount;
+  const refundStatus = !isCancellation
+    ? "not_required"
+    : estimatedRefundAmount === null || policy.requiresManualReview
+      ? "manual_review"
+      : Number(estimatedRefundAmount || 0) > 0
+        ? "pending_approval"
+        : "not_required";
   let request;
   try {
     request = await BookingRequest.create({
@@ -194,8 +213,8 @@ const submitRequest = async ({ bookingId, customerEmail, payload, requestId = ""
       attachments: payload.attachments || [],
       cancellationPolicySnapshot: policy,
       priceAdjustment: { originalAmount: number(booking.amount || booking.pricingSnapshot?.finalPayable), type: "unknown" },
-      refund: isCancellation ? { required: policy.estimatedRefundAmount > 0, estimatedAmount: policy.estimatedRefundAmount, status: policy.estimatedRefundAmount > 0 ? "pending_approval" : "not_required" } : undefined,
-      bokunSync: { status: isCancellation ? "pending" : "awaiting_availability_check", idempotencyKey: syncKey(), bokunBookingId: booking.bokunBookingId || "", bokunConfirmationCode: booking.bokunConfirmationCode || "" }
+      refund: isCancellation ? { required: Number(estimatedRefundAmount || 0) > 0, estimatedAmount: number(estimatedRefundAmount || 0), status: refundStatus } : undefined,
+      bokunSync: { status: "pending", idempotencyKey: syncKey(), bokunBookingId: booking.bokunBookingId || "", bokunConfirmationCode: booking.bokunConfirmationCode || "" }
     });
   } catch (error) {
     if (error?.code === 11000) {
@@ -205,6 +224,43 @@ const submitRequest = async ({ bookingId, customerEmail, payload, requestId = ""
   }
   await recordAudit({ action: "booking_request_submitted", request, booking, requestId, reason: request.customerReason });
   queueRequestEmail({ booking, request, templateKey: "request_received" });
+  if (isCancellation && policy?.automaticCancellationAllowed) {
+    request.status = "approved";
+    request.adminDecision = {
+      decision: "approved",
+      customerFacingReason: "Free cancellation was available at the time of request.",
+      internalNote: "Automatically approved by verified cancellation policy.",
+      decidedBy: null,
+      decidedAt: new Date()
+    };
+    await request.save();
+    await recordAudit({
+      action: "booking_request_auto_approved",
+      request,
+      booking,
+      requestId,
+      metadata: { deadline: policy.deadline, refundAmount: policy.estimatedRefundAmount }
+    });
+    const finalized = await finalizeApprovedRequest({
+      request,
+      booking,
+      auth: { role: "system", id: null },
+      requestId
+    });
+    if (finalized.synced && Number(policy.estimatedRefundAmount || 0) > 0) {
+      await createRefundRecord({
+        request,
+        booking,
+        amount: policy.estimatedRefundAmount,
+        provider: booking.paymentMethod,
+        reason: request.customerReason,
+        auth: { role: "system", id: null },
+        initialStatus: "manual_review"
+      });
+      queueRequestEmail({ booking, request, templateKey: "refund_processing" });
+    }
+    return publicRequest(await BookingRequest.findById(request._id));
+  }
   return publicRequest(request);
 };
 
@@ -217,7 +273,8 @@ const listCustomerRequests = async ({ bookingId, customerEmail }) => {
 const getCancellationEstimate = async ({ bookingId, customerEmail }) => {
   const booking = await findBookingForCustomer({ bookingId, customerEmail });
   const amountPaid = await paymentsService.getVerifiedPaidAmountByBookingReference({ bookingReference: booking.bookingReference });
-  return calculateCancellationPolicy({ booking, amountPaid });
+  const productSnapshot = await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean();
+  return toPublicCancellationPolicy(calculateCancellationPolicy({ booking, productSnapshot, amountPaid }));
 };
 
 const getCustomerRequest = async ({ requestId, customerEmail }) => {
@@ -340,6 +397,17 @@ const checkAvailabilityAndPrice = async ({ request, booking, requestId = "" }) =
   return { available, pricing: availability?.pricing || null, request };
 };
 
+const isBokunCancellationConfirmed = (response = {}) => {
+  const status = String(
+    response?.status ||
+      response?.booking?.status ||
+      response?.data?.status ||
+      response?.result?.status ||
+      ""
+  ).toLowerCase();
+  return response?.success === true || status.includes("cancel");
+};
+
 const performBokunSync = async ({ request, booking, requestId = "" }) => {
   if (request.bokunSync.status === "synced") return { synced: true, request };
   if (!booking.bokunBookingId) {
@@ -359,8 +427,16 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
       response = await bokunService.cancelBooking(booking.bokunBookingId, {
         reason: request.customerReason,
         note: request.adminDecision?.customerFacingReason || "",
+        confirmationCode: booking.bokunConfirmationCode || "",
         idempotencyKey: request.bokunSync.idempotencyKey
       }, requestId);
+      if (!isBokunCancellationConfirmed(response)) {
+        request.bokunSync.status = "manual_action_required";
+        request.bokunSync.lastError = "Supplier response did not confirm cancellation.";
+        request.bokunSync.responseSnapshot = response;
+        await request.save();
+        return { synced: false, manual: true, request };
+      }
       booking.bookingStatus = "cancelled";
       booking.cancellation = { reason: request.customerReason, cancelledAt: new Date(), cancelledBy: "admin_request_workflow" };
       await booking.save();
@@ -404,7 +480,7 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
   }
 };
 
-const createRefundRecord = async ({ request, booking, amount, provider = "other", reason, auth }) => {
+const createRefundRecord = async ({ request, booking, amount, provider = "other", reason, auth, initialStatus = "approved" }) => {
   const safeAmount = Math.max(0, number(amount));
   if (!safeAmount) return null;
   const completedRows = await Refund.aggregate([{ $match: { bookingId: booking._id, status: { $in: ["refunded", "partially_refunded"] } } }, { $group: { _id: null, amount: { $sum: "$amount" } } }]);
@@ -415,6 +491,9 @@ const createRefundRecord = async ({ request, booking, amount, provider = "other"
   if (existing) return existing;
   const latestPayment = await Payment.findOne({ bookingReference: booking.bookingReference, status: "paid" }).sort({ createdAt: -1 });
   const invoice = await Invoice.findOne({ bookingReference: booking.bookingReference });
+  const refundStatus = ["approved", "processing", "manual_review", "pending_approval"].includes(initialStatus)
+    ? initialStatus
+    : "approved";
   const refund = await Refund.create({
     refundReference: refundReference(),
     bookingId: booking._id,
@@ -427,11 +506,11 @@ const createRefundRecord = async ({ request, booking, amount, provider = "other"
     amount: safeAmount,
     currency: booking.currency || "USD",
     reason: reason || request.customerReason,
-    status: "approved",
-    approvedAt: new Date(),
+    status: refundStatus,
+    approvedAt: refundStatus === "approved" || refundStatus === "processing" ? new Date() : undefined,
     approvedBy: auth?.id || null
   });
-  request.refund = { required: true, estimatedAmount: safeAmount, refundId: refund._id, status: "approved" };
+  request.refund = { required: true, estimatedAmount: safeAmount, refundId: refund._id, status: refundStatus };
   await request.save();
   return refund;
 };
@@ -479,6 +558,14 @@ const approveRequest = async ({ requestId, auth, payload = {}, traceId = "" }) =
     const before = { status: request.status, bokunSync: request.bokunSync.status };
     request.adminDecision = { decision: "approved", customerFacingReason: String(payload.customerFacingReason || "").trim(), internalNote: String(payload.internalNote || "").trim(), decidedBy: auth?.id || null, decidedAt: new Date() };
     request.status = "approved";
+    if (request.type === "cancel_booking") {
+      const amountPaid = await paymentsService.getVerifiedPaidAmountByBookingReference({ bookingReference: booking.bookingReference });
+      const productSnapshot = await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean();
+      request.cancellationPolicySnapshot = calculateCancellationPolicy({ booking, productSnapshot, amountPaid });
+      if (request.cancellationPolicySnapshot?.requiresManualReview && payload.refundAmount === undefined) {
+        request.refund = { required: false, estimatedAmount: 0, status: "manual_review" };
+      }
+    }
     if (request.type !== "cancel_booking") {
       const availability = await checkAvailabilityAndPrice({ request, booking, requestId: traceId });
       if (!availability.available) {
@@ -505,10 +592,15 @@ const approveRequest = async ({ requestId, auth, payload = {}, traceId = "" }) =
       refundPlan.amount = payload.refundAmount !== undefined
         ? number(payload.refundAmount)
         : number(request.cancellationPolicySnapshot?.estimatedRefundAmount);
+      const cancellationRefundStatus = request.cancellationPolicySnapshot?.requiresManualReview && payload.refundAmount === undefined
+        ? "manual_review"
+        : refundPlan.amount > 0
+          ? "pending_approval"
+          : "not_required";
       request.refund = {
         required: refundPlan.amount > 0,
         estimatedAmount: refundPlan.amount,
-        status: refundPlan.amount > 0 ? "pending_approval" : "not_required"
+        status: cancellationRefundStatus
       };
     } else if (difference > 0) {
       await createAdjustmentRecord({ request, booking, amount: difference, provider: payload.paymentProvider || booking.paymentMethod });
@@ -572,8 +664,14 @@ const recalculateRequest = async ({ requestId, auth, traceId = "" }) =>
     const booking = await Booking.findById(request.booking);
     if (request.type === "cancel_booking") {
       const amountPaid = await paymentsService.getVerifiedPaidAmountByBookingReference({ bookingReference: booking.bookingReference });
-      request.cancellationPolicySnapshot = calculateCancellationPolicy({ booking, amountPaid });
-      request.refund.estimatedAmount = request.cancellationPolicySnapshot.estimatedRefundAmount;
+      const productSnapshot = await ProductSnapshot.findOne({ bokunProductId: booking.bokunProductId }).lean();
+      request.cancellationPolicySnapshot = calculateCancellationPolicy({ booking, productSnapshot, amountPaid });
+      request.refund.estimatedAmount = number(request.cancellationPolicySnapshot.estimatedRefundAmount || 0);
+      request.refund.status = request.cancellationPolicySnapshot.requiresManualReview
+        ? "manual_review"
+        : request.refund.estimatedAmount > 0
+          ? "pending_approval"
+          : "not_required";
       await request.save();
       return request;
     }

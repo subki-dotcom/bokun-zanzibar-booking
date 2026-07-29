@@ -13,6 +13,7 @@ import {
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { resolveCheckoutPricing } from "./CheckoutPaymentSummaryCard";
 import ConfirmActionRow from "./ConfirmActionRow";
+import CancellationPolicyPanel from "../cancellation/CancellationPolicyPanel";
 
 const toSafeNumber = (value) => {
   const parsed = Number(value || 0);
@@ -110,6 +111,15 @@ const ReviewOrderSummarySidebar = ({
           </div>
         </Card.Body>
       </Card>
+
+      {flowState.quote?.cancellationPolicy ? (
+        <CancellationPolicyPanel
+          policy={flowState.quote.cancellationPolicy}
+          currency={pricing.currency}
+          compact
+          className="checkout-cancellation-panel"
+        />
+      ) : null}
 
       {paymentMethodSelector}
 

@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { fetchBookingByReference } from "../../api/bookingsApi";
 import { createDpoPayment, createPaypalPayment, createPesapalPayment } from "../../api/paymentsApi";
 import PaymentMethodSelector from "../../components/booking/PaymentMethodSelector";
+import CancellationPolicyPanel from "../../components/cancellation/CancellationPolicyPanel";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import { formatCurrency, formatDate } from "../../utils/formatters";
@@ -157,6 +158,13 @@ const PaymentCheckoutPage = () => {
                   </div>
                 </div>
               </div>
+
+              <CancellationPolicyPanel
+                policy={booking.cancellationPolicy}
+                currency={currency}
+                compact
+                className="payment-checkout-cancellation"
+              />
 
               <PaymentMethodSelector
                 className="payment-checkout-methods"

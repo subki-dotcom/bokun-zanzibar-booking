@@ -227,7 +227,7 @@ const mockRouter = async ({ method, path, payload }) => {
     };
   }
 
-  if (method === "post" && path.endsWith("/cancel")) {
+  if (method === "post" && (path.endsWith("/cancel") || path.startsWith("/booking.json/cancel-booking/"))) {
     return { success: true, status: "CANCELLED" };
   }
 

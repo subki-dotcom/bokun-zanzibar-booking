@@ -5,6 +5,7 @@ const { env } = require("../../config/env");
 const logger = require("../../config/logger");
 const AppError = require("../../utils/AppError");
 const { allCountries } = require("country-telephone-data");
+const { calculateCancellationPolicy } = require("../cancellations/policy");
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
 const BOKUN_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -735,7 +736,17 @@ const fetchProductBookingConfig = async (productId, options = {}, requestId) => 
     startingFromPrice,
     rateOptions,
     defaultPricingCategories: pricingCategories,
-    pricingCategories
+    pricingCategories,
+    cancellationPolicy: calculateCancellationPolicy({
+      booking: {
+        bokunProductId: mappedProduct.bokunProductId,
+        travelDate: "",
+        startTime: "",
+        currency: mappedProduct.currency || env.DEFAULT_CURRENCY
+      },
+      productSnapshot: mappedProduct,
+      amountPaid: 0
+    })
   };
 
   return setCacheEntry(bookingConfigCache, cacheKey, response);
@@ -834,7 +845,19 @@ const fetchProductLiveQuote = async (productId, payload = {}, requestId) => {
     })),
     selectedOptionId: String(selectedOption?.optionId || ""),
     rateId: selectedRateId,
-    passengers: passengerMix.passengers
+    passengers: passengerMix.passengers,
+    cancellationPolicy: calculateCancellationPolicy({
+      booking: {
+        bokunProductId: bookingConfig.productId,
+        bokunOptionId: String(selectedOption?.optionId || ""),
+        travelDate: date,
+        startTime: quoteAvailability?.startTime || payload?.startTime || "",
+        priceCatalog: { catalogId: selectedRateId },
+        currency: payload?.currency || bookingConfig.currency || env.DEFAULT_CURRENCY
+      },
+      productSnapshot: mappedProduct,
+      amountPaid: 0
+    })
   };
 };
 
@@ -2269,10 +2292,26 @@ const lookupBooking = async (reference, requestId) => {
 };
 
 const cancelBooking = async (bookingId, payload, requestId) => {
+  const confirmationCode = String(
+    payload?.confirmationCode ||
+      payload?.bookingConfirmationCode ||
+      payload?.bokunConfirmationCode ||
+      ""
+  ).trim();
+  const cancellationPayload = {
+    reason: payload?.reason || payload?.note || "Customer requested cancellation",
+    note: payload?.note || payload?.reason || "",
+    notify: payload?.notify !== false,
+    idempotencyKey: payload?.idempotencyKey || undefined
+  };
+  const path = confirmationCode
+    ? `/booking.json/cancel-booking/${encodeURIComponent(confirmationCode)}`
+    : `/bookings/${bookingId}/cancel`;
+
   return bokunClient.request({
     method: "post",
-    path: `/bookings/${bookingId}/cancel`,
-    payload,
+    path,
+    payload: cancellationPayload,
     requestId
   });
 };
