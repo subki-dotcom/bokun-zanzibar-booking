@@ -12,8 +12,42 @@ const money = (value) => {
   return parsed === null ? null : Number(parsed.toFixed(2));
 };
 
+const POLICY_TEXT_KEYS = [
+  "policyDescription",
+  "description",
+  "summary",
+  "text",
+  "terms",
+  "cancellationTerms",
+  "label",
+  "title",
+  "name"
+];
+
+const extractPolicyText = (value, depth = 0, seen = new Set()) => {
+  if (value === null || value === undefined || depth > 5) return "";
+  if (typeof value === "string" || typeof value === "number") {
+    const text = String(value).trim();
+    return /^\[object(?:\s+\w+)?\]$/i.test(text) ? "" : text;
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => extractPolicyText(item, depth + 1, seen))
+      .filter(Boolean)
+      .join(" ");
+  }
+  if (!isObject(value) || seen.has(value)) return "";
+
+  seen.add(value);
+  for (const key of POLICY_TEXT_KEYS) {
+    const text = extractPolicyText(value[key], depth + 1, seen);
+    if (text) return text;
+  }
+  return "";
+};
+
 const stripHtml = (value = "") =>
-  String(value || "")
+  extractPolicyText(value)
     .replace(/<br\s*\/?>/gi, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
@@ -26,7 +60,9 @@ const stripHtml = (value = "") =>
     .trim();
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
-const isObject = (value) => value && typeof value === "object" && !Array.isArray(value);
+function isObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value);
+}
 
 const normalizeUnit = (value = "") => {
   const unit = String(value || "").toLowerCase();
@@ -183,7 +219,7 @@ const extractPolicyCandidate = (value, source = "unknown", booking = {}, depth =
     value.refundTerms ||
     value.policy;
   if (directPolicy && directPolicy !== value) {
-    const nested = extractPolicyCandidate(directPolicy, source, booking, depth + 1);
+    const nested = extractPolicyCandidate(directPolicy, `${source}_policy`, booking, depth + 1);
     if (nested) return nested;
   }
 
@@ -193,7 +229,7 @@ const extractPolicyCandidate = (value, source = "unknown", booking = {}, depth =
     if (nested) return nested;
   }
 
-  if (candidateHasPolicySignal(value)) {
+  if (candidateHasPolicySignal(value) || /cancel|refund|policy|terms/i.test(source)) {
     return {
       source,
       rawPolicy: value,

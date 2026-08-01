@@ -17,7 +17,7 @@ import {
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import { formatCurrency, formatDate } from "../../utils/formatters";
-import { formatCancellationDeadline, hasKnownRefundAmount } from "../../utils/cancellationPolicy";
+import { cancellationDisplayText, formatCancellationDeadline, hasKnownRefundAmount } from "../../utils/cancellationPolicy";
 
 const label = (value = "") => String(value || "-").replaceAll("_", " ");
 const statusVariant = (value = "") => (["completed", "approved", "synced", "refunded", "paid", "eligible"].includes(value) ? "success" : ["rejected", "failed", "cancelled", "unavailable"].includes(value) ? "danger" : "warning");
@@ -38,6 +38,9 @@ const formatMaybeMoney = (value, currency, fallback = "Manual review") =>
 const AdminCancellationPolicyCard = ({ policy = null, currency = "USD" }) => {
   if (!policy) return null;
   const deadline = formatCancellationDeadline(policy) || "Not confirmed";
+  const policyMessage = cancellationDisplayText(policy.reviewReason) ||
+    cancellationDisplayText(policy.policySummary) ||
+    "Policy snapshot captured from supplier data.";
   return (
     <Card className="surface-card mb-3">
       <Card.Body>
@@ -50,7 +53,7 @@ const AdminCancellationPolicyCard = ({ policy = null, currency = "USD" }) => {
           <DetailRow label="Cancellation fee" value={formatMaybeMoney(policy.estimatedCancellationFee, currency)} />
           <DetailRow label="Eligible refund" value={formatMaybeMoney(policy.estimatedRefundAmount, currency)} />
         </div>
-        <p className="text-muted mb-0 mt-2">{policy.reviewReason || policy.policySummary || "Policy snapshot captured from supplier data."}</p>
+        <p className="text-muted mb-0 mt-2">{policyMessage}</p>
       </Card.Body>
     </Card>
   );

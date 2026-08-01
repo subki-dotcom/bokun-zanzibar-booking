@@ -1,5 +1,33 @@
 const ZANZIBAR_TZ = "Africa/Dar_es_Salaam";
 
+const CANCELLATION_TEXT_KEYS = [
+  "policyDescription",
+  "description",
+  "summary",
+  "text",
+  "terms",
+  "label",
+  "title",
+  "name"
+];
+
+export const cancellationDisplayText = (value, depth = 0) => {
+  if (value === null || value === undefined || depth > 4) return "";
+  if (typeof value === "string" || typeof value === "number") {
+    const text = String(value).trim();
+    return /^\[object(?:\s+\w+)?\]$/i.test(text) ? "" : text;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => cancellationDisplayText(item, depth + 1)).filter(Boolean).join(" ");
+  }
+  if (typeof value !== "object") return "";
+  for (const key of CANCELLATION_TEXT_KEYS) {
+    const text = cancellationDisplayText(value[key], depth + 1);
+    if (text) return text;
+  }
+  return "";
+};
+
 export const hasKnownRefundAmount = (value) => value !== null && value !== undefined && Number.isFinite(Number(value));
 
 export const formatCancellationDeadline = (policy = {}) => {
@@ -41,9 +69,9 @@ export const resolveCancellationCopy = (policy = {}) => {
     return `Free cancellation period ended on ${deadline}. Cancellation may now be non-refundable or subject to review.`;
   }
   if (policy.requiresManualReview) {
-    return policy.reviewReason || "This booking requires cancellation review. Please contact our support team.";
+    return cancellationDisplayText(policy.reviewReason) || "This booking requires cancellation review. Please contact our support team.";
   }
-  return policy.policySummary || "Cancellation terms are shown from the supplier policy.";
+  return cancellationDisplayText(policy.policySummary) || "Cancellation terms are shown from the supplier policy.";
 };
 
 export const resolveCancellationActionLabel = (policy = {}) => {

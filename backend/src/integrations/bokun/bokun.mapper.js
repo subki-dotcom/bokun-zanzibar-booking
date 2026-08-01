@@ -176,8 +176,42 @@ const decodeEntities = (value = "") =>
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">");
 
+const STRUCTURED_TEXT_KEYS = [
+  "policyDescription",
+  "description",
+  "summary",
+  "text",
+  "terms",
+  "cancellationTerms",
+  "label",
+  "title",
+  "name"
+];
+
+const extractStructuredText = (value, depth = 0, seen = new Set()) => {
+  if (value === null || value === undefined || depth > 5) return "";
+  if (typeof value === "string" || typeof value === "number") {
+    const text = String(value).trim();
+    return /^\[object(?:\s+\w+)?\]$/i.test(text) ? "" : text;
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => extractStructuredText(item, depth + 1, seen))
+      .filter(Boolean)
+      .join(" ");
+  }
+  if (typeof value !== "object" || seen.has(value)) return "";
+
+  seen.add(value);
+  for (const key of STRUCTURED_TEXT_KEYS) {
+    const text = extractStructuredText(value[key], depth + 1, seen);
+    if (text) return text;
+  }
+  return "";
+};
+
 const stripHtml = (value = "") => {
-  const text = String(value)
+  const text = extractStructuredText(value)
     .replace(/<br\s*\/?>/gi, " ")
     .replace(/<[^>]+>/g, " ");
 

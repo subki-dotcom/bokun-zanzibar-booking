@@ -2,6 +2,7 @@ import { Button } from "react-bootstrap";
 import { BsArrowRepeat, BsClockHistory, BsShieldCheck, BsXCircle } from "react-icons/bs";
 import { formatCurrency } from "../../utils/formatters";
 import {
+  cancellationDisplayText,
   formatCancellationDeadline,
   hasKnownRefundAmount,
   resolveCancellationActionLabel,
@@ -32,6 +33,7 @@ const CancellationPolicyPanel = ({
   const feeKnown = hasKnownRefundAmount(resolvedPolicy.estimatedCancellationFee);
   const refundKnown = hasKnownRefundAmount(resolvedPolicy.estimatedRefundAmount);
   const paidKnown = hasKnownRefundAmount(amountPaid ?? resolvedPolicy.amountPaid);
+  const policySummary = cancellationDisplayText(resolvedPolicy.policySummary);
 
   return (
     <section className={`cancellation-policy-panel ${compact ? "is-compact" : ""} ${className}`.trim()}>
@@ -53,8 +55,8 @@ const CancellationPolicyPanel = ({
         </div>
       ) : null}
 
-      {resolvedPolicy.policySummary ? (
-        <p className="cancellation-policy-summary">{resolvedPolicy.policySummary}</p>
+      {policySummary ? (
+        <p className="cancellation-policy-summary">{policySummary}</p>
       ) : null}
 
       {showAmounts ? (
