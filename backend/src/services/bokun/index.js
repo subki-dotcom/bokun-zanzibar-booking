@@ -1952,6 +1952,16 @@ const findCustomerAnswerForQuestion = (question = {}, customer = {}) => {
   return "";
 };
 
+const findSystemAnswerForQuestion = (question = {}) => {
+  const questionId = String(question.questionId || "").trim().toLowerCase();
+
+  // This is a Bokun checkout setting, not customer-supplied tour information.
+  // Keep booking notifications enabled whenever Bokun exposes it as required.
+  if (questionId === "sendnotificationtomaincontact") return "true";
+
+  return "";
+};
+
 const findProvidedAnswer = (answers = [], question = {}) => {
   const matched = (Array.isArray(answers) ? answers : []).find((answer = {}) => {
     const sameId = String(answer.questionId || answer.id || "").trim() === question.questionId;
@@ -2046,8 +2056,9 @@ const resolveBookingQuestions = async (payload = {}, requestId) => {
 
   questions.forEach((question) => {
     const provided = findProvidedAnswer(payload.bookingQuestions || payload.answers, question);
+    const systemAnswer = findSystemAnswerForQuestion(question);
     const derived = question.scope === "passenger" ? "" : findCustomerAnswerForQuestion(question, customer);
-    const value = provided || question.defaultValue || derived;
+    const value = provided || question.defaultValue || systemAnswer || derived;
     const answer = normalizeAnswerValues(value);
 
     // The public checkout intentionally collects one primary customer only.

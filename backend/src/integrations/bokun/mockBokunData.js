@@ -176,6 +176,14 @@ const mockAvailability = ({ optionId, travelDate, pax, priceCatalogId }) => {
 const mockQuestions = ({ optionId }) => {
   const common = [
     {
+      id: "sendNotificationToMainContact",
+      label: "Send notification to main contact",
+      type: "boolean",
+      scope: "booking",
+      required: true,
+      options: []
+    },
+    {
       id: "pickup_location",
       label: "Pickup hotel/location",
       type: "text",

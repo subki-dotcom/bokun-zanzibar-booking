@@ -73,6 +73,19 @@ test("does not treat a display time as a Bókun start-time identifier", () => {
   assert.equal(Object.hasOwn(checkoutPayload.directBooking.activityBookings[0], "startTimeId"), false);
 });
 
+test("answers Bokun main-contact notification settings without customer input", async () => {
+  const resolved = await bokunService.resolveBookingQuestions(basePayload, "test_booking_answers");
+  const notificationAnswer = resolved.bookingQuestions.find(
+    (question) => question.questionId === "sendNotificationToMainContact"
+  );
+
+  assert.equal(notificationAnswer?.answer, "true");
+  assert.equal(
+    resolved.missing.some((question) => question.questionId === "sendNotificationToMainContact"),
+    false
+  );
+});
+
 test("preserves the live Bokun startTimeId when availability uses a nested start-time object", () => {
   const availability = mapActivityAvailability({
     payload: {

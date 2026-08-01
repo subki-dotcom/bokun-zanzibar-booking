@@ -27,6 +27,7 @@ import ConfirmationStep from "../../components/booking/ConfirmationStep";
 import SmartCheckoutInitializer from "../../components/booking/SmartCheckoutInitializer";
 import PaymentMethodSelector from "../../components/booking/PaymentMethodSelector";
 import { isCustomerSummaryValid } from "../../components/booking/CustomerSummaryCard";
+import { getMissingRequiredQuestionLabels } from "../../utils/bookingQuestions";
 import { getPaymentMethodLabel } from "../../utils/paymentMethods";
 import { buildPesapalProcessingPath } from "../../utils/pesapalProcessing";
 import { usePaymentProviders } from "../../context/PaymentProvidersContext";
@@ -729,6 +730,17 @@ const BookingFlowInner = ({ portal = "public" }) => {
       return;
     }
 
+    const missingQuestionLabels = getMissingRequiredQuestionLabels({
+      questions: state.questions,
+      answers: state.answers,
+      customer: state.customer
+    });
+    if (missingQuestionLabels.length > 0) {
+      setError(`Please complete: ${missingQuestionLabels.join(", ")}.`);
+      setCurrentStepId(STEP_IDS.CUSTOMER);
+      return;
+    }
+
     const quote = await refreshLiveQuote();
     if (!quote) {
       return;
@@ -854,6 +866,23 @@ const BookingFlowInner = ({ portal = "public" }) => {
         throw new Error(`${selectedPaymentLabel} payment URL was not returned.`);
       }
     } catch (err) {
+      if (err.code === "BOKUN_REQUIRED_ANSWERS") {
+        const requiredQuestions = Array.isArray(err.details?.questions) ? err.details.questions : [];
+        const missingQuestions = Array.isArray(err.details?.missingQuestions) ? err.details.missingQuestions : [];
+        if (requiredQuestions.length > 0) {
+          updateFlow({ questions: requiredQuestions });
+        }
+        const labels = missingQuestions
+          .map((question) => String(question?.label || "").trim())
+          .filter(Boolean);
+        setCurrentStepId(STEP_IDS.CUSTOMER);
+        setError(labels.length > 0
+          ? `Please complete: ${labels.join(", ")}.`
+          : "Please complete the additional information required for this tour.");
+        setFallbackPaymentMethod("");
+        setSubmitLoading(false);
+        return;
+      }
       setError(err.message || `${selectedPaymentLabel} payment could not be initialized`);
       const fallback = availableProviders.find((provider) => provider.id !== selectedPaymentMethod)?.id || "";
       setFallbackPaymentMethod(fallback);

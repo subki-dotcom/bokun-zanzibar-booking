@@ -10,6 +10,13 @@ import {
   getDialCodeFromCountries,
   resolveDefaultCountryCode
 } from "../../utils/phoneCodes";
+import {
+  findQuestionAnswer,
+  getMissingRequiredQuestionLabels,
+  isCustomerManagedQuestion,
+  isSystemManagedQuestion,
+  normalizeQuestionScope
+} from "../../utils/bookingQuestions";
 
 const formatPickupPlaceLabel = (place = {}) =>
   [place.title, place.address]
@@ -21,33 +28,6 @@ const findCountry = (countryCode = "", countries = []) =>
   countries.find(
     (country = {}) => String(country.code || "").toUpperCase() === String(countryCode || "").toUpperCase()
   );
-
-const normalizeQuestionScope = (value = "") => {
-  const token = String(value || "booking").toLowerCase();
-  if (token.includes("pickup")) return "pickup";
-  if (token.includes("passenger") || token.includes("participant")) return "passenger";
-  return "booking";
-};
-
-const answerFromCustomer = (question = {}, customer = {}) => {
-  const token = `${question.label || ""} ${question.help || ""} ${question.placeholder || ""}`.toLowerCase();
-
-  if (/pickup|hotel|accommodation|meeting point/.test(token)) return customer.hotelName;
-  if (/first\s*name|given\s*name/.test(token)) return customer.firstName;
-  if (/last\s*name|family\s*name|surname/.test(token)) return customer.lastName;
-  if (/full\s*name|customer\s*name/.test(token)) return [customer.firstName, customer.lastName].filter(Boolean).join(" ");
-  if (/e-?mail/.test(token)) return customer.email;
-  if (/phone|mobile|whatsapp|telephone/.test(token)) return customer.phone;
-  if (/country|nationality/.test(token)) return customer.country;
-  if (/special request|comment|note/.test(token)) return customer.notes;
-
-  return "";
-};
-
-const isCustomerManagedQuestion = (question = {}) => {
-  const token = `${question.label || ""} ${question.help || ""} ${question.placeholder || ""}`.toLowerCase();
-  return /pickup|hotel|accommodation|meeting point|first\s*name|given\s*name|last\s*name|family\s*name|surname|full\s*name|customer\s*name|e-?mail|phone|mobile|whatsapp|telephone|country|nationality|special request|comment|note/.test(token);
-};
 
 const CustomerStep = ({
   customer = {},
@@ -82,33 +62,18 @@ const CustomerStep = ({
     () =>
       (Array.isArray(questions) ? questions : []).filter((question) => {
         const scope = normalizeQuestionScope(question.scope);
-        if (!question?.required || scope === "passenger") return false;
+        if (!question?.required || scope === "passenger" || isSystemManagedQuestion(question)) return false;
 
         return !isCustomerManagedQuestion(question);
       }),
     [questions]
   );
-  const answerForQuestion = (question = {}) =>
-    (Array.isArray(answers) ? answers : []).find(
-      (answer = {}) =>
-        String(answer.questionId || "") === String(question.questionId || question.id || "") &&
-        normalizeQuestionScope(answer.scope) === normalizeQuestionScope(question.scope)
-    );
-  const missingAdditionalQuestions = additionalQuestions
-    .filter((question) => {
-      const answer = answerForQuestion(question)?.answer;
-      return Array.isArray(answer) ? answer.length === 0 : !String(answer || "").trim();
-    })
-    .map((question) => question.label || "Required tour information");
-  const missingCustomerManagedQuestions = (Array.isArray(questions) ? questions : [])
-    .filter((question) => question?.required && normalizeQuestionScope(question.scope) !== "passenger")
-    .filter((question) => isCustomerManagedQuestion(question))
-    .filter((question) => !String(answerFromCustomer(question, customer) || "").trim())
-    .map((question) => question.label || "Required tour information");
+  const answerForQuestion = (question = {}) => findQuestionAnswer(answers, question);
+  const missingQuestionLabels = getMissingRequiredQuestionLabels({ questions, answers, customer });
   const missingFields = requiredFields
     .filter(([field]) => !String(customer[field] || "").trim())
     .map(([, label]) => label)
-    .concat(missingAdditionalQuestions, missingCustomerManagedQuestions)
+    .concat(missingQuestionLabels)
     .filter((label, index, all) => all.indexOf(label) === index);
   const isValid = missingFields.length === 0;
   const hasPickupPlaces = Array.isArray(pickupPlaces) && pickupPlaces.length > 0;
