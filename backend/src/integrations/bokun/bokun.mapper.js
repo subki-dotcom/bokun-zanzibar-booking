@@ -218,6 +218,36 @@ const stripHtml = (value = "") => {
   return decodeEntities(text).replace(/\s+/g, " ").trim();
 };
 
+const formatCancellationPolicy = (value = "") => {
+  const title = stripHtml(value);
+  if (!value || typeof value !== "object" || Array.isArray(value)) return title;
+
+  const penaltyRules = ensureArray(value.penaltyRules || value.cancellationRules)
+    .map((rule = {}) => {
+      const cutoffHours = Number(rule.cutoffHours ?? rule.hoursBefore ?? rule.cutoffValue);
+      const chargeType = String(rule.chargeType || "").toLowerCase();
+      const penaltyPercentage = Number(
+        rule.penaltyPercentage ??
+        rule.percentage ??
+        (chargeType.includes("percent") ? rule.charge : NaN)
+      );
+      return {
+        cutoffHours: Number.isFinite(cutoffHours) ? cutoffHours : null,
+        penaltyPercentage: Number.isFinite(penaltyPercentage) ? penaltyPercentage : null
+      };
+    })
+    .filter((rule) => rule.cutoffHours !== null && Number(rule.penaltyPercentage || 0) > 0);
+  if (!penaltyRules.length) return title;
+
+  const firstPenaltyWindow = Math.max(...penaltyRules.map((rule) => rule.cutoffHours));
+  const firstPenalty = penaltyRules.find((rule) => rule.cutoffHours === firstPenaltyWindow);
+  const cutoffLabel = firstPenaltyWindow >= 48 && firstPenaltyWindow % 24 === 0
+    ? `${firstPenaltyWindow / 24} days`
+    : `${firstPenaltyWindow} ${firstPenaltyWindow === 1 ? "hour" : "hours"}`;
+  const prefix = title ? `${title}. ` : "";
+  return `${prefix}Free cancellation is available until ${cutoffLabel} before departure. ${firstPenalty.penaltyPercentage}% cancellation fee applies when cancelled less than ${cutoffLabel} before departure.`;
+};
+
 const splitHtmlLines = (value = "") => {
   const normalized = String(value)
     .replace(/<\/p>/gi, "\n")
@@ -1157,7 +1187,7 @@ const mapProduct = (rawProduct = {}, options = {}) => {
     categories,
     languages: mapProductLanguages(root, liveTourGuide),
     groupSize: mapGroupSize(root),
-    cancellationPolicy: stripHtml(root.cancellationPolicy || root.cancellationTerms || ""),
+    cancellationPolicy: formatCancellationPolicy(root.cancellationPolicy || root.cancellationTerms || ""),
     bestSeller: Boolean(root.bestSeller || root.isBestSeller || ensureArray(root.flags).some((flag) => /best.?seller/i.test(String(flag || "")))),
     destination: root.destination || root.location?.name || "Zanzibar",
     status: root.status || (root.active === false ? "inactive" : "active"),

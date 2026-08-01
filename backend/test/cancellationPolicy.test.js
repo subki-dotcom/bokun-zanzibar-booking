@@ -122,3 +122,58 @@ test("maps structured Bokun cancellation policy to customer-readable text", () =
 
   assert.equal(product.cancellationPolicy, "Cancel up to 24 hours before departure for a full refund.");
 });
+
+test("calculates the real advanced Bokun penalty-rule policy", () => {
+  const advancedPolicy = {
+    bokunProductId: "1001",
+    cancellationPolicy: "Standard Viator policy",
+    rawBokunProduct: {
+      cancellationPolicy: {
+        title: "Standard Viator policy",
+        policyType: "ADVANCED",
+        penaltyRules: [
+          { cutoffHours: 24, charge: 100, chargeType: "percentage", percentage: 100 },
+          { cutoffHours: 24000, charge: 0, chargeType: "percentage", percentage: 0 }
+        ]
+      }
+    }
+  };
+  const outsidePenaltyWindow = calculateCancellationPolicy({
+    booking,
+    productSnapshot: advancedPolicy,
+    amountPaid: 150,
+    now: new Date("2026-08-10T04:59:59.000Z")
+  });
+  const insidePenaltyWindow = calculateCancellationPolicy({
+    booking,
+    productSnapshot: advancedPolicy,
+    amountPaid: 150,
+    now: new Date("2026-08-11T17:00:00.000Z")
+  });
+
+  assert.equal(outsidePenaltyWindow.deadline, "2026-08-11T08:00:00+03:00");
+  assert.equal(outsidePenaltyWindow.isFreeCancellationAvailable, true);
+  assert.equal(outsidePenaltyWindow.estimatedRefundAmount, 150);
+  assert.match(outsidePenaltyWindow.policySummary, /24 hours before departure/i);
+  assert.equal(insidePenaltyWindow.isFreeCancellationAvailable, false);
+  assert.equal(insidePenaltyWindow.estimatedCancellationFee, 150);
+  assert.equal(insidePenaltyWindow.estimatedRefundAmount, 0);
+});
+
+test("maps advanced Bokun rules into customer-readable product policy text", () => {
+  const product = mapProduct({
+    id: 1001,
+    title: "Zanzibar Transfers",
+    cancellationPolicy: {
+      title: "Standard Viator policy",
+      policyType: "ADVANCED",
+      penaltyRules: [
+        { cutoffHours: 24, charge: 100, chargeType: "percentage", percentage: 100 },
+        { cutoffHours: 24000, charge: 0, chargeType: "percentage", percentage: 0 }
+      ]
+    }
+  });
+
+  assert.match(product.cancellationPolicy, /Free cancellation is available until 24 hours before departure/i);
+  assert.match(product.cancellationPolicy, /100% cancellation fee/i);
+});

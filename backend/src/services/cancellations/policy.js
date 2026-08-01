@@ -3,6 +3,7 @@ const POLICY_UNAVAILABLE_MESSAGE =
   "This booking requires cancellation review. Please contact our support team.";
 
 const number = (value) => {
+  if (value === null || value === undefined || value === "" || typeof value === "boolean") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 };
@@ -300,6 +301,7 @@ const normalizeRule = (rule = {}) => {
   const cutoffValue = firstNumber(
     rule.cutoffValue,
     rule.cutoff,
+    rule.cutoffHours,
     rule.hoursBefore,
     rule.hoursBeforeDeparture,
     rule.deadlineHours,
@@ -308,9 +310,22 @@ const normalizeRule = (rule = {}) => {
   );
   const cutoffUnit = rule.daysBefore !== undefined ? "days" : normalizeUnit(rule.cutoffUnit || rule.unit || "hours") || "hours";
   const cutoffHours = toHours(cutoffValue, cutoffUnit);
+  const chargeType = String(rule.chargeType || rule.feeType || "").trim().toLowerCase();
   const refundPercentage = firstNumber(rule.refundPercentage, rule.refundPercent, rule.refundablePercentage);
-  const penaltyPercentage = firstNumber(rule.penaltyPercentage, rule.penaltyPercent, rule.feePercentage, rule.chargePercentage);
-  const feeAmount = firstNumber(rule.feeAmount, rule.cancellationFee, rule.penaltyAmount);
+  const penaltyPercentage = firstNumber(
+    rule.penaltyPercentage,
+    rule.penaltyPercent,
+    rule.feePercentage,
+    rule.chargePercentage,
+    rule.percentage,
+    chargeType.includes("percent") ? rule.charge : undefined
+  );
+  const feeAmount = firstNumber(
+    rule.feeAmount,
+    rule.cancellationFee,
+    rule.penaltyAmount,
+    chargeType && !chargeType.includes("percent") ? rule.charge : undefined
+  );
   const description = pickString(rule.description, rule.text, rule.label, rule.name);
 
   if (cutoffHours === null && refundPercentage === null && penaltyPercentage === null && feeAmount === null && !description) {
@@ -325,6 +340,30 @@ const normalizeRule = (rule = {}) => {
     penaltyPercentage,
     feeAmount,
     description
+  };
+};
+
+const deriveCutoffFromPenaltyRules = (rules = []) => {
+  const penalizedRules = ensureArray(rules).filter((rule) => {
+    if (rule.cutoffHours === null || rule.cutoffHours === undefined) return false;
+    if (rule.penaltyPercentage !== null && rule.penaltyPercentage !== undefined) {
+      return Number(rule.penaltyPercentage) > 0;
+    }
+    if (rule.feeAmount !== null && rule.feeAmount !== undefined) return Number(rule.feeAmount) > 0;
+    if (rule.refundPercentage !== null && rule.refundPercentage !== undefined) {
+      return Number(rule.refundPercentage) < 100;
+    }
+    return false;
+  });
+  if (!penalizedRules.length) return null;
+
+  const firstPenaltyWindow = penalizedRules.reduce((selected, rule) =>
+    !selected || Number(rule.cutoffHours) > Number(selected.cutoffHours) ? rule : selected, null);
+  return {
+    value: Number(firstPenaltyWindow.cutoffHours),
+    unit: "hours",
+    derivedFromText: false,
+    derivedFromPenaltyRules: true
   };
 };
 
@@ -397,8 +436,9 @@ const normalizePolicySource = ({ booking = {}, productSnapshot = null } = {}) =>
   );
   const textCutoff = parseCutoffFromText(description);
   const structuredCutoff = extractStructuredCutoff(rawPolicy);
-  const cutoff = structuredCutoff || textCutoff;
   const normalizedRules = collectRuleArrays(rawPolicy).map(normalizeRule).filter(Boolean);
+  const ruleCutoff = deriveCutoffFromPenaltyRules(normalizedRules);
+  const cutoff = structuredCutoff || textCutoff || ruleCutoff;
   const policyType = String(selected.policyType || rawPolicy?.type || rawPolicy?.policyType || "").toLowerCase();
   const scopedNoRefund = /no refunds?\s+(within|inside|after|before|less than)/i.test(description);
   const nonRefundable =
@@ -419,15 +459,45 @@ const normalizePolicySource = ({ booking = {}, productSnapshot = null } = {}) =>
     cutoff,
     penaltyRules: normalizedRules,
     refundable: nonRefundable ? false : null,
-    derivedFromPolicyText: Boolean(cutoff?.derivedFromText)
+    derivedFromPolicyText: Boolean(cutoff?.derivedFromText),
+    derivedFromPenaltyRules: Boolean(cutoff?.derivedFromPenaltyRules)
   };
 };
 
 const pickRefundRule = ({ policy, hoursUntilTravel }) => {
   const rules = ensureArray(policy.penaltyRules)
     .filter((rule) => rule.cutoffHours !== null && rule.cutoffHours !== undefined)
-    .sort((a, b) => Number(b.cutoffHours || 0) - Number(a.cutoffHours || 0));
-  return rules.find((rule) => hoursUntilTravel >= Number(rule.cutoffHours || 0)) || null;
+    .sort((a, b) => Number(a.cutoffHours || 0) - Number(b.cutoffHours || 0));
+  return rules.find((rule) => hoursUntilTravel < Number(rule.cutoffHours || 0)) || null;
+};
+
+const formatCutoffLabel = (cutoff = {}) => {
+  const hours = toHours(cutoff.value, cutoff.unit);
+  if (hours === null) return "";
+  if (hours >= 48 && hours % 24 === 0) {
+    const days = hours / 24;
+    return `${days} ${days === 1 ? "day" : "days"}`;
+  }
+  return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+};
+
+const buildPolicySummary = (policy = {}) => {
+  if (!policy.derivedFromPenaltyRules || !policy.cutoff) {
+    return policy.policyDescription ||
+      (policy.cutoff
+        ? `Free cancellation until ${policy.cutoff.value} ${policy.cutoff.unit} before departure`
+        : POLICY_UNAVAILABLE_MESSAGE);
+  }
+
+  const cutoffLabel = formatCutoffLabel(policy.cutoff);
+  const firstPenaltyRule = ensureArray(policy.penaltyRules)
+    .filter((rule) => Number(rule.cutoffHours) === Number(policy.cutoff.value))
+    .find((rule) => Number(rule.penaltyPercentage || 0) > 0 || Number(rule.feeAmount || 0) > 0);
+  const penaltyLabel = firstPenaltyRule?.penaltyPercentage !== null && firstPenaltyRule?.penaltyPercentage !== undefined
+    ? `${Number(firstPenaltyRule.penaltyPercentage)}% cancellation fee`
+    : "a cancellation fee";
+  const title = policy.policyDescription ? `${policy.policyDescription}. ` : "";
+  return `${title}Free cancellation is available until ${cutoffLabel} before departure. ${penaltyLabel} applies when cancelled less than ${cutoffLabel} before departure.`;
 };
 
 const buildTimeRemainingLabel = (deadline, now) => {
@@ -537,10 +607,7 @@ const calculateCancellationPolicy = ({
     estimatedCancellationFee === null && estimatedRefundAmount !== null
       ? money(amount - estimatedRefundAmount)
       : estimatedCancellationFee;
-  const policySummary = policy.policyDescription ||
-    (policy.cutoff
-      ? `Free cancellation until ${policy.cutoff.value} ${policy.cutoff.unit} before departure`
-      : POLICY_UNAVAILABLE_MESSAGE);
+  const policySummary = buildPolicySummary(policy);
 
   return publicPolicy({
     ...policy,
