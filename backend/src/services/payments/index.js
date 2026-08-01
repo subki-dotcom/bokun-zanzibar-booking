@@ -94,7 +94,7 @@ const buildTransactionHistoryPush = ({
 });
 
 const canReplacePaidStatus = (nextStatus = "") =>
-  ["reversed", "refunded", "partially_refunded"].includes(normalizeToken(nextStatus));
+  ["reversed"].includes(normalizeToken(nextStatus));
 
 const appendPaymentEvent = (update, event) => {
   update.$push = {
@@ -539,5 +539,9 @@ module.exports = {
   markPaymentReviewed,
   listPaymentReconciliation,
   listPayments,
-  getPublicPaymentProviders
+  getPublicPaymentProviders,
+  __testables: {
+    calculateVerifiedPaidAmount,
+    canReplacePaidStatus
+  }
 };

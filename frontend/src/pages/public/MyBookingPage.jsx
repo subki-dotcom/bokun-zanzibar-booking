@@ -125,6 +125,7 @@ const BookingDetails = ({ booking }) => {
   const total = Number(booking.pricingSnapshot?.finalPayable || booking.amount || 0);
   const amountPaid = Number(booking.invoiceSnapshot?.amountPaid || 0);
   const amountRefunded = Number(booking.invoiceSnapshot?.amountRefunded || booking.cancellationRequest?.refund?.confirmedRefundedAmount || 0);
+  const netPaid = Number(booking.invoiceSnapshot?.netAmountPaid ?? Math.max(0, amountPaid - amountRefunded));
   const balanceDue = Number(booking.invoiceSnapshot?.balanceDue ?? Math.max(0, total - amountPaid));
   const hasPendingSupplier =
     booking.paymentStatus === "paid" &&
@@ -212,6 +213,12 @@ const BookingDetails = ({ booking }) => {
                   <div>
                     <span>Amount Refunded</span>
                     <strong>{formatCurrency(amountRefunded, currency)}</strong>
+                  </div>
+                ) : null}
+                {amountRefunded > 0 || booking.cancellationRequest ? (
+                  <div>
+                    <span>Net Paid</span>
+                    <strong>{formatCurrency(netPaid, currency)}</strong>
                   </div>
                 ) : null}
                 <div className="is-total">

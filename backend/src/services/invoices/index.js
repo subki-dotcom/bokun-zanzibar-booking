@@ -4,6 +4,40 @@ const Refund = require("../../models/Refund");
 const { env } = require("../../config/env");
 const paymentsService = require("../payments");
 
+const roundMoney = (value = 0) => Number((Number(value || 0)).toFixed(2));
+
+const resolveInvoiceAccounting = ({
+  bookingStatus = "",
+  bookingPaymentStatus = "",
+  total = 0,
+  verifiedPaidAmount = 0,
+  confirmedRefundedAmount = 0
+} = {}) => {
+  const amountPaid = roundMoney(Math.max(0, verifiedPaidAmount));
+  const amountRefunded = roundMoney(Math.min(amountPaid, Math.max(0, confirmedRefundedAmount)));
+  const netAmountPaid = roundMoney(Math.max(0, amountPaid - amountRefunded));
+  const invoiceTotal = roundMoney(Math.max(0, total));
+  const isCancelled = String(bookingStatus || "").toLowerCase() === "cancelled";
+  const normalizedBookingPaymentStatus = String(bookingPaymentStatus || "").toLowerCase();
+  const balanceDue = isCancelled ? 0 : roundMoney(Math.max(0, invoiceTotal - netAmountPaid));
+  const paymentStatus =
+    amountPaid <= 0
+      ? (normalizedBookingPaymentStatus === "failed" ? "failed" : "pending")
+      : amountPaid > invoiceTotal + 0.009
+        ? "overpaid"
+        : amountPaid + 0.009 >= invoiceTotal
+          ? "paid"
+          : "partial";
+
+  return {
+    paymentStatus,
+    amountPaid,
+    amountRefunded,
+    netAmountPaid,
+    balanceDue
+  };
+};
+
 const nextInvoiceNumber = async () => {
   const datePart = dayjs().format("YYYYMMDD");
   const prefix = `INV-${datePart}`;
@@ -32,22 +66,19 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
     },
     { $group: { _id: null, amount: { $sum: { $ifNull: ["$confirmedRefundedAmount", "$amount"] } } } }
   ]);
-  const amountPaid = Number(Math.max(0, verifiedPaidAmount).toFixed(2));
-  const amountRefunded = Number(Math.min(amountPaid, Number(refundRows[0]?.amount || 0)).toFixed(2));
-  const netAmountPaid = Number(Math.max(0, amountPaid - amountRefunded).toFixed(2));
-  const balanceDue = Number(Math.max(0, total - netAmountPaid).toFixed(2));
-  const paymentStatus =
-    amountPaid <= 0
-      ? (booking.paymentStatus === "failed" ? "failed" : "pending")
-      : amountRefunded >= amountPaid
-        ? "refunded"
-        : amountRefunded > 0
-          ? "partially_refunded"
-          : netAmountPaid > total + 0.009
-            ? "overpaid"
-            : netAmountPaid >= total
-              ? "paid"
-              : "partial";
+  const {
+    paymentStatus,
+    amountPaid,
+    amountRefunded,
+    netAmountPaid,
+    balanceDue
+  } = resolveInvoiceAccounting({
+    bookingStatus: booking.bookingStatus,
+    bookingPaymentStatus: booking.paymentStatus,
+    total,
+    verifiedPaidAmount,
+    confirmedRefundedAmount: Number(refundRows[0]?.amount || 0)
+  });
 
   const snapshot = {
     invoiceNumber,
@@ -164,5 +195,8 @@ module.exports = {
   persistInvoiceFromSnapshot,
   upsertInvoiceFromSnapshot,
   getInvoiceByBookingReference,
-  getInvoiceByNumber
+  getInvoiceByNumber,
+  __testables: {
+    resolveInvoiceAccounting
+  }
 };

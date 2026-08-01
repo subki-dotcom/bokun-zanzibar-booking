@@ -412,7 +412,7 @@ const adminGetRequest = async ({ requestId }) => {
       refundContext = await refundsService.resolveRefundContext({
         booking: request.booking,
         eligibleRefundAmount: request.refund?.eligibleAmount ?? request.refund?.estimatedAmount ?? request.cancellationPolicySnapshot?.estimatedRefundAmount ?? null,
-        approvedRefundAmount: request.refund?.approvedAmount ?? null
+        approvedRefundAmount: request.refund?.approvedAmount ?? request.refund?.refundId?.amount ?? null
       });
     } catch (error) {
       refundContext = {
@@ -657,17 +657,20 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
       return { synced: true, request };
     }
     if (request.type === "cancel_booking" && isBokunNotConfirmedCancellationError(error)) {
-      await markCancellationSyncedLocally({
-        request,
-        booking,
-        response: {
-          recoveredFromSupplierState: true,
-          supplierTerminalState: "not_confirmed",
-          message: "Bokun reported this booking is not confirmed, so no active confirmed supplier booking remains to cancel."
-        }
-      });
-      await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId, reason: "Booking request synchronized after supplier not-confirmed response" });
-      return { synced: true, request };
+      const supplierState = await lookupCancelledSupplierState({ booking, requestId });
+      if (supplierState) {
+        await markCancellationSyncedLocally({ request, booking, response: supplierState });
+        await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId, reason: "Booking request synchronized after supplier cancellation lookup" });
+        return { synced: true, request };
+      }
+      request.bokunSync.status = "manual_action_required";
+      request.bokunSync.lastError = "Bokun reported this booking is not confirmed. Verify the supplier booking state before enabling refund processing.";
+      request.bokunSync.responseSnapshot = {
+        supplierTerminalState: "not_confirmed",
+        message: "Bokun reported this booking is not confirmed, but did not confirm cancellation."
+      };
+      await request.save();
+      return { synced: false, manual: true, request, error };
     }
     if (request.type === "cancel_booking") {
       const supplierState = await lookupCancelledSupplierState({ booking, requestId });
@@ -687,14 +690,54 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
 const createRefundRecord = async ({ request, booking, amount, reason, auth, initialStatus = "approved", refundContext = null }) => {
   const safeAmount = Math.max(0, number(amount));
   if (!safeAmount) return null;
-  const existing = request.refund?.refundId ? await Refund.findById(request.refund.refundId) : null;
-  if (existing) return existing;
   const context = refundContext || await refundsService.resolveRefundContext({
     booking,
     eligibleRefundAmount: request.refund?.eligibleAmount ?? request.refund?.estimatedAmount ?? safeAmount,
     approvedRefundAmount: safeAmount
   });
-  refundsService.assertRefundAmountAllowed({ amount: safeAmount, context });
+  if (safeAmount > 0 && !context.requiresManualReview) {
+    refundsService.assertRefundAmountAllowed({ amount: safeAmount, context });
+  }
+  const existing = request.refund?.refundId ? await Refund.findById(request.refund.refundId) : null;
+  if (existing) {
+    const existingStatus = String(existing.status || "").toLowerCase();
+    if (!["processing", "refunded", "partially_refunded"].includes(existingStatus) && context.providerKnown && context.selectedPaymentId) {
+      const latestPayment = await Payment.findById(context.selectedPaymentId);
+      const invoice = await Invoice.findOne({ bookingReference: booking.bookingReference });
+      existing.paymentId = latestPayment?._id || existing.paymentId || null;
+      existing.invoiceId = invoice?._id || existing.invoiceId || null;
+      existing.provider = context.provider;
+      existing.originalTransactionReference = refundsService.extractOriginalTransactionReference(latestPayment || {});
+      existing.idempotencyKey = `${context.provider}-${existing.refundReference}`;
+      existing.amount = safeAmount;
+      existing.requestedAmount = safeAmount;
+      existing.eligibleRefundAmount = context.eligibleRefundAmount;
+      existing.cancellationFee = request.refund?.cancellationFee ?? request.cancellationPolicySnapshot?.estimatedCancellationFee ?? existing.cancellationFee ?? null;
+      existing.currency = booking.currency || existing.currency || "USD";
+      existing.status = existingStatus === "manual_review" || existingStatus === "manual_refund_required" || existingStatus === "failed"
+        ? "approved"
+        : existing.status || "approved";
+      existing.metadata = {
+        ...(existing.metadata || {}),
+        providerResolution: context,
+        originalTransactionReferenceMasked: refundsService.maskReference(refundsService.extractOriginalTransactionReference(latestPayment || {})),
+        repairedProviderFromSuccessfulPayment: true
+      };
+      await existing.save();
+      request.refund = {
+        ...(request.refund || {}),
+        refundId: existing._id,
+        status: existing.status,
+        requestedAmount: existing.requestedAmount || existing.amount,
+        approvedAmount: existing.amount,
+        confirmedRefundedAmount: existing.confirmedRefundedAmount || 0,
+        provider: existing.provider,
+        providerLabel: refundsService.providerLabel(existing.provider)
+      };
+      await request.save();
+    }
+    return existing;
+  }
   if (!context.providerKnown || !context.selectedPaymentId) {
     throw new AppError(context.manualReviewReason || "Refund provider requires manual review.", 422, "REFUND_PROVIDER_REQUIRES_REVIEW");
   }

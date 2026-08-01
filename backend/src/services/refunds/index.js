@@ -317,6 +317,12 @@ const updateRequestRefundStatus = async ({ request, refund }) => {
   await request.save();
 };
 
+const canRepairProviderBeforeProcessing = (currentProvider = "", resolvedProvider = "") => {
+  const current = normalizeProvider(currentProvider);
+  const resolved = normalizeProvider(resolvedProvider);
+  return Boolean(resolved) && (!current || current === "other" || current === "manual_review");
+};
+
 const processProviderRefund = async ({ refund, request, booking, payment, auth, traceId, notes = "" }) => {
   const amount = fromMinor(toMinor(refund.amount));
   const currency = normalizeCurrency(refund.currency);
@@ -423,7 +429,12 @@ const processRefund = async ({ refundId, auth, traceId = "", notes = "" } = {}) 
       approvedRefundAmount: refund.amount
     });
     assertRefundAmountAllowed({ amount: refund.amount, context });
-    if (!context.providerKnown || normalizeProvider(refund.provider) !== context.provider) {
+    if (context.providerKnown && context.selectedPaymentId && canRepairProviderBeforeProcessing(locked.provider, context.provider)) {
+      locked.provider = context.provider;
+      locked.paymentId = context.selectedPaymentId;
+      locked.idempotencyKey = `${context.provider}-${locked.refundReference}`;
+    }
+    if (!context.providerKnown || normalizeProvider(locked.provider) !== context.provider) {
       locked.status = "manual_refund_required";
       locked.providerResponseSnapshot = { reason: context.manualReviewReason || "Original payment provider could not be verified." };
       locked.metadata = { ...(locked.metadata || {}), processing: false };
@@ -434,6 +445,7 @@ const processRefund = async ({ refundId, auth, traceId = "", notes = "" } = {}) 
     }
 
     const payment = await Payment.findById(context.selectedPaymentId);
+    locked.originalTransactionReference = extractOriginalTransactionReference(payment || {});
     const result = await processProviderRefund({ refund: locked, request, booking, payment, auth, traceId, notes });
     const providerStatus = String(result.status || "").toLowerCase();
     const confirmedAmount = fromMinor(toMinor(result.confirmedAmount || 0));
@@ -496,6 +508,7 @@ module.exports = {
   toMinor,
   __testables: {
     buildRefundContextFromRecords,
+    canRepairProviderBeforeProcessing,
     dedupeSuccessfulPayments,
     extractPaypalCaptureId,
     extractPesapalConfirmationCode,

@@ -7,11 +7,16 @@ const mongoose = require("mongoose");
 
 const refundsService = require("../src/services/refunds");
 const bookingRequestsService = require("../src/services/bookingRequests");
+const invoicesService = require("../src/services/invoices");
+const paymentsService = require("../src/services/payments");
 const BookingRequest = require("../src/models/BookingRequest");
 const {
   buildRefundContextFromRecords,
+  canRepairProviderBeforeProcessing,
   extractPesapalConfirmationCode
 } = refundsService.__testables;
+const { resolveInvoiceAccounting } = invoicesService.__testables;
+const { canReplacePaidStatus } = paymentsService.__testables;
 const {
   ensureRequestWorkflowDefaults,
   isBokunAlreadyCancelledError,
@@ -94,6 +99,34 @@ test("rejects approved refund amounts above eligibility or remaining captured am
   );
 });
 
+test("keeps invoice payment status paid while tracking confirmed refunds separately", () => {
+  const accounting = resolveInvoiceAccounting({
+    bookingStatus: "cancelled",
+    bookingPaymentStatus: "paid",
+    total: 1,
+    verifiedPaidAmount: 1,
+    confirmedRefundedAmount: 1
+  });
+
+  assert.equal(accounting.paymentStatus, "paid");
+  assert.equal(accounting.amountPaid, 1);
+  assert.equal(accounting.amountRefunded, 1);
+  assert.equal(accounting.netAmountPaid, 0);
+  assert.equal(accounting.balanceDue, 0);
+});
+
+test("does not let refund statuses replace a permanent paid payment status", () => {
+  assert.equal(canReplacePaidStatus("refunded"), false);
+  assert.equal(canReplacePaidStatus("partially_refunded"), false);
+  assert.equal(canReplacePaidStatus("reversed"), true);
+});
+
+test("allows stale other refund provider to be repaired before provider processing", () => {
+  assert.equal(canRepairProviderBeforeProcessing("other", "paypal"), true);
+  assert.equal(canRepairProviderBeforeProcessing("", "paypal"), true);
+  assert.equal(canRepairProviderBeforeProcessing("pesapal", "paypal"), false);
+});
+
 test("extracts Pesapal confirmation code required by refund request", () => {
   const code = extractPesapalConfirmationCode({
     provider: "pesapal",
@@ -161,7 +194,7 @@ test("detects already-cancelled Bokun errors for idempotent retry recovery", () 
   );
 });
 
-test("detects Bokun not-confirmed cancellation errors as terminal supplier state", () => {
+test("detects Bokun not-confirmed cancellation errors for manual supplier review", () => {
   assert.equal(
     isBokunNotConfirmedCancellationError({ details: { message: "Booking is not confirmed." } }),
     true

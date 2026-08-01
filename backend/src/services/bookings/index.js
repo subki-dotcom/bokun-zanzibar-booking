@@ -1673,6 +1673,7 @@ const toPublicBookingDetails = ({ booking, productSnapshot = null, cancellationR
       total: Number(booking.invoiceSnapshot?.total ?? total),
       amountPaid,
       amountRefunded: Number(booking.invoiceSnapshot?.amountRefunded || 0),
+      netAmountPaid: Number(booking.invoiceSnapshot?.netAmountPaid ?? Math.max(0, amountPaid - Number(booking.invoiceSnapshot?.amountRefunded || 0))),
       balanceDue: Number(booking.invoiceSnapshot?.balanceDue ?? Math.max(0, total - amountPaid)),
       paymentStatus: booking.invoiceSnapshot?.paymentStatus || booking.paymentStatus || "",
       pickupLocation: booking.invoiceSnapshot?.pickupLocation || booking.customer?.hotelName || ""
@@ -2596,6 +2597,8 @@ const syncInvoiceForBookingReference = async ({
       bookingReference: booking.bookingReference,
       paymentStatus: invoiceSnapshot.paymentStatus,
       amountPaid: invoiceSnapshot.amountPaid,
+      amountRefunded: invoiceSnapshot.amountRefunded,
+      netAmountPaid: invoiceSnapshot.netAmountPaid,
       balanceDue: invoiceSnapshot.balanceDue
     }
   });
