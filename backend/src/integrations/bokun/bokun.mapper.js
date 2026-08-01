@@ -938,6 +938,18 @@ const normalizePricingCategory = (passenger = {}) => {
   };
 };
 
+const normalizePassengerCategoryRow = (passenger = {}) => {
+  const category = normalizePricingCategory(passenger);
+  if (!category) return null;
+  return {
+    categoryId: category.id,
+    title: category.label,
+    ticketCategory: category.ticketCategory,
+    minQuantity: category.min,
+    maxQuantity: category.max
+  };
+};
+
 const getCategoryWeight = (category = {}) => {
   const token = `${category?.ticketCategory || ""} ${category?.label || ""}`.toLowerCase();
   if (token.includes("adult")) return 1;
