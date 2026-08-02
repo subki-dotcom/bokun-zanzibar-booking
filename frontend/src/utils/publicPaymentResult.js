@@ -22,6 +22,15 @@ export const buildPaymentResultQuery = ({ orderTrackingId = "", orderMerchantRef
   return params.toString();
 };
 
+export const shouldPollPaymentResult = (result = {}) => {
+  if (result?.isTerminal || result?.reconciliationRequired) {
+    return false;
+  }
+
+  const status = resolvePublicPaymentStatus(result);
+  return !["CONFIRMED", "FAILED", "CANCELLED"].includes(status);
+};
+
 export const resolvePublicPaymentStatus = (result = {}) => {
   const backendStatus = String(result?.publicStatus || "").trim().toUpperCase();
   if (PUBLIC_PAYMENT_MESSAGES[backendStatus]) {

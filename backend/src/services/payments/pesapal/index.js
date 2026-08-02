@@ -1150,6 +1150,66 @@ const resolveBookingByIdentifiers = async ({
   return null;
 };
 
+const buildUnmatchedPesapalCallbackResult = ({
+  verification = {},
+  orderMerchantReference = ""
+} = {}) => {
+  const callbackMerchantReference = String(orderMerchantReference || "").trim();
+  const providerMerchantReference = String(verification?.merchantReference || "").trim();
+
+  if (
+    callbackMerchantReference &&
+    providerMerchantReference &&
+    callbackMerchantReference !== providerMerchantReference
+  ) {
+    throw new AppError(
+      "Pesapal merchant reference does not match this payment callback",
+      409,
+      "PESAPAL_MERCHANT_REFERENCE_MISMATCH"
+    );
+  }
+
+  const paymentState = resolvePesapalPaymentState(
+    verification?.raw || verification,
+    verification?.status
+  );
+  const bookingReference = providerMerchantReference || callbackMerchantReference;
+  const isPaid = paymentState === "paid";
+  const isPending = ["processing", "verification_error"].includes(paymentState);
+  const isCancelled = paymentState === "cancelled";
+  const publicStatus = isPaid
+    ? "PAID"
+    : isCancelled
+      ? "CANCELLED"
+      : isPending
+        ? "PENDING"
+        : "FAILED";
+
+  return {
+    status: isPaid ? "paid_manual_review" : paymentState,
+    message: isPaid
+      ? "Payment was confirmed by Pesapal. This checkout requires support reconciliation before its booking can be displayed here."
+      : isPending
+        ? "Pesapal is still processing this payment. This checkout requires support reconciliation."
+        : isCancelled
+          ? "Pesapal confirmed that this payment was cancelled."
+          : "Pesapal did not confirm this payment as successful.",
+    publicStatus,
+    publicMessage: resolvePublicPaymentMessage(publicStatus),
+    paymentStatus: isPaid ? "paid" : isPending ? "processing" : paymentState,
+    bookingStatus: isPaid ? "manual_review_required" : isPending ? "payment_pending" : paymentState,
+    bokunSyncStatus: "manual_review_required",
+    invoiceStatus: isPaid ? "verification_required" : "unpaid",
+    amountPaid: null,
+    currency: "",
+    bookingReference,
+    paymentMethod: "Pesapal",
+    reconciliationRequired: true,
+    bookingUnavailable: true,
+    isTerminal: true
+  };
+};
+
 const createPayment = async ({ payload, auth, requestId, checkoutOrigin = "" }) => {
   ensurePesapalConfiguration({ checkoutOrigin });
 
@@ -1272,7 +1332,28 @@ const verifyAndProcessPesapalPayment = async ({
     orderMerchantReference
   });
   if (!booking) {
-    throw new AppError("Booking not found for this payment callback", 404, "BOOKING_PAYMENT_REFERENCE_NOT_FOUND");
+    const trackingId = String(orderTrackingId || "").trim();
+    if (!trackingId) {
+      throw new AppError("Booking not found for this payment callback", 404, "BOOKING_PAYMENT_REFERENCE_NOT_FOUND");
+    }
+
+    const verification = await verifyOrderWithPesapal({
+      orderTrackingId: trackingId,
+      requestId
+    });
+    const result = buildUnmatchedPesapalCallbackResult({
+      verification,
+      orderMerchantReference
+    });
+
+    logger.warn("Pesapal callback verified without a matching local booking", {
+      requestId,
+      source,
+      paymentState: result.paymentStatus,
+      reconciliationRequired: true
+    });
+
+    return result;
   }
 
   if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
@@ -1860,6 +1941,7 @@ module.exports = {
     findPesapalCallbackOriginMismatch,
     inferPesapalMobileMoneyCurrency,
     isPlausibleInferredPesapalConversion,
+    buildUnmatchedPesapalCallbackResult,
     resolvePublicPaymentStatus,
     resolvePublicPaymentMessage
   }

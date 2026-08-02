@@ -17,7 +17,8 @@ import {
 import {
   buildPaymentResultQuery,
   getPaymentResultPresentation,
-  publicPaymentRefreshError
+  publicPaymentRefreshError,
+  shouldPollPaymentResult
 } from "../../utils/publicPaymentResult";
 
 const readParam = (searchParams, ...keys) => {
@@ -75,15 +76,6 @@ const PaymentSuccessPage = () => {
     const maxAttempts = 24;
     setPollingTimedOut(false);
 
-    const shouldPoll = (data) => {
-      const presentation = getPaymentResultPresentation(data);
-      if (["CONFIRMED", "FAILED", "CANCELLED"].includes(presentation.publicStatus)) {
-        return false;
-      }
-
-      return true;
-    };
-
     const verify = async () => {
       if (!orderTrackingId && !orderMerchantReference && !transactionToken && !paypalOrderId) {
         if (isActive) {
@@ -108,9 +100,9 @@ const PaymentSuccessPage = () => {
         setError("");
 
         attempts += 1;
-        if (shouldPoll(data) && attempts < maxAttempts) {
+        if (shouldPollPaymentResult(data) && attempts < maxAttempts) {
           retryTimer = window.setTimeout(verify, 5000);
-        } else if (shouldPoll(data)) {
+        } else if (shouldPollPaymentResult(data)) {
           setPollingTimedOut(true);
         }
       } catch (err) {
@@ -183,6 +175,7 @@ const PaymentSuccessPage = () => {
       0
   );
   const currency = booking?.currency || booking?.invoiceSnapshot?.currency || result?.currency || "USD";
+  const requiresReconciliation = Boolean(result?.reconciliationRequired);
 
   return (
     <Container className="py-4">
@@ -208,6 +201,12 @@ const PaymentSuccessPage = () => {
             </div>
           ) : null}
 
+          {requiresReconciliation ? (
+            <div className="payment-polling-notice" role="status">
+              This payment was returned from a different checkout environment. Our support team must reconcile it before the booking can be displayed here. Do not pay again.
+            </div>
+          ) : null}
+
           {bookingReference || booking ? (
             <div className="payment-result-grid">
               <div>
@@ -226,7 +225,7 @@ const PaymentSuccessPage = () => {
                 <span>Payment method</span>
                 <strong>{result?.paymentMethod || booking?.paymentMethod || "Pesapal"}</strong>
               </div>
-              {presentation.isPaid ? (
+              {presentation.isPaid && paidAmount > 0 ? (
                 <div>
                   <span>Amount paid</span>
                   <strong>{currency} {paidAmount.toFixed(2)}</strong>
@@ -254,27 +253,27 @@ const PaymentSuccessPage = () => {
           ) : null}
 
           <div className="d-flex flex-wrap gap-2 mt-4">
-            {canCheckAgain ? (
+            {canCheckAgain && !requiresReconciliation ? (
               <Button variant="outline-primary" onClick={() => setRefreshKey((current) => current + 1)}>
                 Check status now
               </Button>
             ) : null}
-            {canRetry && retryPaymentPath ? (
+            {canRetry && retryPaymentPath && !requiresReconciliation ? (
               <Button as={Link} to={retryPaymentPath} className="premium-btn text-white">
                 Try Again
               </Button>
             ) : null}
-            {bookingPath ? (
+            {bookingPath && !requiresReconciliation ? (
               <Button as={Link} to={bookingPath} className="premium-btn text-white">
                 View Booking
               </Button>
             ) : null}
-            {paymentStatusPath && canCheckAgain ? (
+            {paymentStatusPath && canCheckAgain && !requiresReconciliation ? (
               <Button as={Link} to={paymentStatusPath} variant="outline-primary">
                 Track payment status
               </Button>
             ) : null}
-            {bookingReference && presentation.isPaid ? (
+            {bookingReference && presentation.isPaid && !requiresReconciliation ? (
               <Button as={Link} to={`/invoice/${bookingReference}`} variant="outline-secondary">
                 Download receipt
               </Button>

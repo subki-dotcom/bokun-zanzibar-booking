@@ -256,3 +256,36 @@ test("detects checkout and Pesapal callback origins from different environments"
   assert.equal(mismatch.mismatches.length, 2);
   assert.deepEqual(matching.mismatches, []);
 });
+
+test("returns a terminal reconciliation result for a verified callback without a local booking", () => {
+  const result = __testables.buildUnmatchedPesapalCallbackResult({
+    orderMerchantReference: "ZNZ-ORPHAN-1",
+    verification: {
+      status: "COMPLETED",
+      merchantReference: "ZNZ-ORPHAN-1",
+      raw: { status_code: 1 }
+    }
+  });
+
+  assert.equal(result.status, "paid_manual_review");
+  assert.equal(result.publicStatus, "PAID");
+  assert.equal(result.paymentStatus, "paid");
+  assert.equal(result.bookingReference, "ZNZ-ORPHAN-1");
+  assert.equal(result.reconciliationRequired, true);
+  assert.equal(result.isTerminal, true);
+  assert.equal(result.amountPaid, null);
+});
+
+test("rejects a mismatched merchant reference for an unmatched callback", () => {
+  assert.throws(
+    () => __testables.buildUnmatchedPesapalCallbackResult({
+      orderMerchantReference: "ZNZ-CALLBACK",
+      verification: {
+        status: "COMPLETED",
+        merchantReference: "ZNZ-PROVIDER",
+        raw: { status_code: 1 }
+      }
+    }),
+    (error) => error.code === "PESAPAL_MERCHANT_REFERENCE_MISMATCH"
+  );
+});
