@@ -64,6 +64,7 @@ test("normalizes a confirmed Bokun booking for payment-safe local recovery", () 
               title: "Zanzibar Transfers",
               rateId: 2493894,
               rateTitle: "Nungwi transfer",
+              dateString: "Sat, August 29 2026 - 9:30 AM",
               date: Date.parse("2026-08-29T00:00:00Z"),
               startTime: "09:30",
               product: { id: 956388, title: "Zanzibar Transfers" },

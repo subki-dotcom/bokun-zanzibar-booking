@@ -2677,7 +2677,9 @@ const normalizeBokunRecoverySnapshot = ({ bokunBooking = {}, expectedBookingRefe
   const confirmationCode = String(supplierBooking?.confirmationCode || bokunBooking?.confirmationCode || "").trim();
   const bokunProductId = String(activity?.productId || product?.id || productDetails?.id || "").trim();
   const bokunOptionId = String(activity?.rateId || "").trim();
-  const travelDate = toRecoveredTravelDate(activity?.dateString || activity?.date || activity?.startDateTime);
+  const travelDate = [activity?.dateString, activity?.date, activity?.startDateTime]
+    .map((candidate) => toRecoveredTravelDate(candidate))
+    .find(Boolean) || "";
   const customerEmail = String(supplierCustomer?.email || "").trim().toLowerCase();
 
   if (
