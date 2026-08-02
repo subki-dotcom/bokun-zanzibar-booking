@@ -23,6 +23,7 @@ import ManageBookingCard from "../../components/bookingRequests/ManageBookingCar
 import CancellationPolicyPanel from "../../components/cancellation/CancellationPolicyPanel";
 import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
 import { buildCancellationTimeline } from "../../utils/cancellationPolicy";
+import { isSupplierConfirmationPending } from "../../utils/bookingStatus";
 
 const formatDate = (value = "") => {
   if (!value) return "-";
@@ -127,9 +128,7 @@ const BookingDetails = ({ booking }) => {
   const amountRefunded = Number(booking.invoiceSnapshot?.amountRefunded || booking.cancellationRequest?.refund?.confirmedRefundedAmount || 0);
   const netPaid = Number(booking.invoiceSnapshot?.netAmountPaid ?? Math.max(0, amountPaid - amountRefunded));
   const balanceDue = Number(booking.invoiceSnapshot?.balanceDue ?? Math.max(0, total - amountPaid));
-  const hasPendingSupplier =
-    booking.paymentStatus === "paid" &&
-    (Boolean(booking.pendingCheckout?.finalizationPending) || !booking.bokunBookingId);
+  const hasPendingSupplier = isSupplierConfirmationPending(booking);
   const isCancelled = booking.bookingStatus === "cancelled" || Boolean(booking.cancellation?.cancelledAt);
   const hasCancellationRequest = Boolean(booking.cancellationRequest);
   const travelerName = `${booking.customer?.firstName || ""} ${booking.customer?.lastName || ""}`.trim();
