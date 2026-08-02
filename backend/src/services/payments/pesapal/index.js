@@ -4,6 +4,7 @@ const logger = require("../../../config/logger");
 const { env, isPesapalConfigured } = require("../../../config/env");
 const AppError = require("../../../utils/AppError");
 const bookingsService = require("../../bookings");
+const bokunService = require("../../bokun");
 const paymentsService = require("..");
 const notificationsService = require("../../notifications");
 const {
@@ -1327,33 +1328,92 @@ const verifyAndProcessPesapalPayment = async ({
 }) => {
   ensurePesapalConfiguration();
 
-  const booking = await resolveBookingByIdentifiers({
+  let booking = await resolveBookingByIdentifiers({
     orderTrackingId,
     orderMerchantReference
   });
+  let preverifiedVerification = null;
   if (!booking) {
     const trackingId = String(orderTrackingId || "").trim();
     if (!trackingId) {
       throw new AppError("Booking not found for this payment callback", 404, "BOOKING_PAYMENT_REFERENCE_NOT_FOUND");
     }
 
-    const verification = await verifyOrderWithPesapal({
+    preverifiedVerification = await verifyOrderWithPesapal({
       orderTrackingId: trackingId,
       requestId
     });
     const result = buildUnmatchedPesapalCallbackResult({
-      verification,
+      verification: preverifiedVerification,
       orderMerchantReference
     });
 
-    logger.warn("Pesapal callback verified without a matching local booking", {
-      requestId,
-      source,
-      paymentState: result.paymentStatus,
-      reconciliationRequired: true
-    });
+    if (result.paymentStatus === "paid" && result.bookingReference) {
+      try {
+        const bokunBooking = await bokunService.findBookingByExternalReference(
+          result.bookingReference,
+          requestId
+        );
 
-    return result;
+        if (bokunBooking) {
+          const recoverySnapshot = bookingsService.normalizeBokunRecoverySnapshot({
+            bokunBooking,
+            expectedBookingReference: result.bookingReference
+          });
+          validatePesapalVerification({
+            booking: {
+              bookingReference: recoverySnapshot.bookingReference,
+              paymentTransactionId: trackingId,
+              amount: recoverySnapshot.amount,
+              currency: recoverySnapshot.currency,
+              pendingCheckout: {
+                pesapalMerchantReference: recoverySnapshot.bookingReference,
+                pesapalRequestedAmount: recoverySnapshot.amount,
+                pesapalRequestedCurrency: recoverySnapshot.currency
+              }
+            },
+            verification: preverifiedVerification,
+            orderTrackingId: trackingId,
+            orderMerchantReference: result.bookingReference
+          });
+          const recovered = await bookingsService.recoverPaidBookingFromBokun({
+            recoverySnapshot,
+            orderTrackingId: trackingId,
+            requestId,
+            source
+          });
+          booking = recovered.booking;
+
+          logger.warn("Recovered missing local booking from verified Pesapal and Bokun records", {
+            requestId,
+            source,
+            created: recovered.created,
+            bookingReference: booking.bookingReference,
+            bokunBookingId: booking.bokunBookingId
+          });
+        }
+      } catch (error) {
+        logger.warn("Automatic cross-environment booking recovery requires review", {
+          requestId,
+          source,
+          code: error?.code || "BOKUN_RECOVERY_FAILED",
+          statusCode: Number(error?.statusCode || 0) || null
+        });
+      }
+    }
+
+    if (booking) {
+      // Continue through the normal payment and invoice reconciliation path.
+    } else {
+      logger.warn("Pesapal callback verified without a matching local booking", {
+        requestId,
+        source,
+        paymentState: result.paymentStatus,
+        reconciliationRequired: true
+      });
+
+      return result;
+    }
   }
 
   if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
@@ -1403,11 +1463,11 @@ const verifyAndProcessPesapalPayment = async ({
     };
   }
 
-  let verification = null;
+  let verification = preverifiedVerification;
 
   try {
     const trackingId = String(orderTrackingId || booking.paymentTransactionId || "").trim();
-    verification = await verifyOrderWithPesapal({
+    verification ||= await verifyOrderWithPesapal({
       orderTrackingId: trackingId,
       requestId
     });

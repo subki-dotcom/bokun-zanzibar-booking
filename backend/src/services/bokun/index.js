@@ -2291,15 +2291,61 @@ const createBooking = async (payload, requestId) => {
   return mapper.mapBookingResponse(confirmedResponse);
 };
 
+const normalizeBookingSearchItems = (response = {}) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.items)) return response.items;
+  if (Array.isArray(response?.results)) return response.results;
+  return [];
+};
+
+const findExactExternalBookingSearchMatch = (response = {}, externalBookingReference = "") => {
+  const reference = String(externalBookingReference || "").trim();
+  if (!reference) return null;
+
+  const exactMatches = normalizeBookingSearchItems(response).filter(
+    (item = {}) => String(item.externalBookingReference || "").trim() === reference
+  );
+
+  if (exactMatches.length > 1) {
+    throw new AppError(
+      "Multiple Bokun bookings use this external booking reference.",
+      409,
+      "BOKUN_EXTERNAL_REFERENCE_AMBIGUOUS"
+    );
+  }
+
+  return exactMatches[0] || null;
+};
+
 const lookupBooking = async (reference, requestId) => {
   const response = await bokunClient.request({
     method: "get",
-    path: `/bookings/${reference}`,
+    path: `/booking.json/booking/${encodeURIComponent(String(reference || "").trim())}`,
     requestId,
     expectedNotFound: true
   });
 
   return mapper.mapBookingResponse(response);
+};
+
+const findBookingByExternalReference = async (externalBookingReference, requestId) => {
+  const reference = String(externalBookingReference || "").trim();
+  if (!reference) return null;
+
+  const response = await bokunClient.request({
+    method: "post",
+    path: "/booking.json/booking-search",
+    payload: {
+      externalBookingReference: reference,
+      page: 1,
+      pageSize: 100
+    },
+    requestId
+  });
+  const match = findExactExternalBookingSearchMatch(response, reference);
+  if (!match) return null;
+
+  return lookupBooking(match.confirmationCode || match.id, requestId);
 };
 
 const cancelBooking = async (bookingId, payload, requestId) => {
@@ -2352,6 +2398,11 @@ module.exports = {
   buildCheckoutPayload,
   createBooking,
   lookupBooking,
+  findBookingByExternalReference,
   cancelBooking,
-  editBooking
+  editBooking,
+  __testables: {
+    normalizeBookingSearchItems,
+    findExactExternalBookingSearchMatch
+  }
 };

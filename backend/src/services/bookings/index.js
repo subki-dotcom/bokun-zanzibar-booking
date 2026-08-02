@@ -2618,6 +2618,284 @@ const createBooking = async () => {
   );
 };
 
+const toRecoveredSupplierText = (value, fallback = "") => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value).trim() || fallback;
+  }
+  if (typeof value === "object") {
+    return String(value.isoCode || value.code || value.title || value.name || fallback).trim();
+  }
+  return fallback;
+};
+
+const toRecoveredTravelDate = (value) => {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+    return value.trim();
+  }
+
+  const numeric = Number(value);
+  const parsed = Number.isFinite(numeric) && numeric > 0 ? new Date(numeric) : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+};
+
+const normalizeBokunRecoverySnapshot = ({ bokunBooking = {}, expectedBookingReference = "" } = {}) => {
+  const raw = bokunBooking?.raw || bokunBooking || {};
+  const supplierBooking = raw?.booking || raw;
+  const bookingReference = String(
+    supplierBooking?.externalBookingReference || bokunBooking?.bookingReference || ""
+  ).trim();
+  const expectedReference = String(expectedBookingReference || "").trim();
+
+  if (!bookingReference || (expectedReference && bookingReference !== expectedReference)) {
+    throw new AppError(
+      "Bokun returned a different external booking reference.",
+      409,
+      "BOKUN_EXTERNAL_REFERENCE_MISMATCH"
+    );
+  }
+
+  const supplierStatus = String(supplierBooking?.status || bokunBooking?.status || "").trim().toUpperCase();
+  if (supplierStatus !== "CONFIRMED") {
+    throw new AppError(
+      "Bokun booking is not confirmed and cannot be recovered automatically.",
+      409,
+      "BOKUN_RECOVERY_NOT_CONFIRMED"
+    );
+  }
+
+  const activity = (Array.isArray(supplierBooking?.activityBookings)
+    ? supplierBooking.activityBookings
+    : [])[0] || {};
+  const supplierCustomer = supplierBooking?.customer || {};
+  const product = activity?.product || activity?.activity || {};
+  const productDetails = activity?.activity || product;
+  const amount = Number(supplierBooking?.totalPrice ?? supplierBooking?.totalPaid ?? 0);
+  const amountPaid = Number(supplierBooking?.totalPaid ?? amount);
+  const currency = String(supplierBooking?.currency || "USD").trim().toUpperCase();
+  const bokunBookingId = String(supplierBooking?.bookingId || supplierBooking?.id || bokunBooking?.bokunBookingId || "").trim();
+  const confirmationCode = String(supplierBooking?.confirmationCode || bokunBooking?.confirmationCode || "").trim();
+  const bokunProductId = String(activity?.productId || product?.id || productDetails?.id || "").trim();
+  const bokunOptionId = String(activity?.rateId || "").trim();
+  const travelDate = toRecoveredTravelDate(activity?.dateString || activity?.date || activity?.startDateTime);
+  const customerEmail = String(supplierCustomer?.email || "").trim().toLowerCase();
+
+  if (
+    !bokunBookingId ||
+    !confirmationCode ||
+    !bokunProductId ||
+    !bokunOptionId ||
+    !travelDate ||
+    !customerEmail.includes("@") ||
+    !Number.isFinite(amount) ||
+    amount <= 0 ||
+    !Number.isFinite(amountPaid) ||
+    amountPaid <= 0
+  ) {
+    throw new AppError(
+      "Bokun booking is missing information required for automatic recovery.",
+      422,
+      "BOKUN_RECOVERY_SNAPSHOT_INCOMPLETE"
+    );
+  }
+
+  const priceCategoryParticipants = (Array.isArray(activity?.pricingCategoryBookings)
+    ? activity.pricingCategoryBookings
+    : [])
+    .map((row = {}) => {
+      const category = row?.pricingCategory || {};
+      return {
+        categoryId: String(row?.pricingCategoryId || category?.id || "").trim(),
+        title: String(row?.bookedTitle || category?.title || category?.name || "Passenger").trim(),
+        ticketCategory: String(category?.ticketCategory || "").trim(),
+        quantity: Math.max(0, Number(row?.quantity || row?.occupancy || 0))
+      };
+    })
+    .filter((row) => row.categoryId && row.quantity > 0);
+  const paxSummary = buildPaxSummary({}, priceCategoryParticipants);
+  const productTitle = String(activity?.title || product?.title || productDetails?.title || "Bokun experience").trim();
+  const optionTitle = String(activity?.rateTitle || "Booked option").trim();
+  const pickupPlace = activity?.pickupPlace || {};
+  const customer = {
+    firstName: String(supplierCustomer?.firstName || "Guest").trim() || "Guest",
+    lastName: String(supplierCustomer?.lastName || "Customer").trim() || "Customer",
+    email: customerEmail,
+    phone: String(supplierCustomer?.phoneNumber || supplierCustomer?.phone || "").trim(),
+    country: toRecoveredSupplierText(supplierCustomer?.country || supplierCustomer?.nationality),
+    hotelName: String(activity?.pickupPlaceDescription || pickupPlace?.title || "").trim(),
+    pickupPlaceId: String(pickupPlace?.id || "").trim()
+  };
+  const pricingSnapshot = {
+    currency,
+    baseAmount: amount,
+    extraAmount: 0,
+    grossAmount: amount,
+    discountAmount: 0,
+    subsidyAmount: 0,
+    finalPayable: amount,
+    amountPaid: 0,
+    lineItems: [{ label: optionTitle, amount }]
+  };
+  const cancellationPolicySource =
+    activity?.cancellationPolicy || product?.cancellationPolicy || productDetails?.cancellationPolicy || null;
+  const productSnapshot = {
+    bokunProductId,
+    title: productTitle,
+    cancellationPolicy: cancellationPolicySource,
+    rawBokunProduct: productDetails
+  };
+  const cancellationPolicySnapshot = calculateCancellationPolicy({
+    booking: {
+      bokunProductId,
+      bokunOptionId,
+      bokunBookingId,
+      productTitle,
+      optionTitle,
+      travelDate,
+      startTime: String(activity?.startTime || "").trim(),
+      pricingSnapshot,
+      currency
+    },
+    productSnapshot,
+    amountPaid
+  });
+
+  return {
+    bookingReference,
+    bokunBookingId,
+    confirmationCode,
+    bokunProductId,
+    bokunOptionId,
+    productTitle,
+    optionTitle,
+    travelDate,
+    startTime: String(activity?.startTime || "").trim(),
+    priceCatalog: {
+      activityPriceCatalogId: "",
+      catalogId: "",
+      title: optionTitle
+    },
+    paxSummary,
+    priceCategoryParticipants,
+    pricingSnapshot,
+    cancellationPolicySnapshot,
+    customer,
+    amount,
+    amountPaid,
+    currency,
+    rawBokunResponse: raw
+  };
+};
+
+const recoverPaidBookingFromBokun = async ({
+  recoverySnapshot,
+  orderTrackingId = "",
+  requestId = "",
+  source = "pesapal_callback_recovery"
+} = {}) => {
+  if (!recoverySnapshot?.bookingReference) {
+    throw new AppError("A verified Bokun recovery snapshot is required.", 422, "BOKUN_RECOVERY_SNAPSHOT_REQUIRED");
+  }
+
+  const existing = await Booking.findOne({
+    $or: [
+      { bookingReference: recoverySnapshot.bookingReference },
+      { bokunBookingId: recoverySnapshot.bokunBookingId },
+      ...(orderTrackingId ? [{ paymentTransactionId: String(orderTrackingId) }] : [])
+    ]
+  });
+  if (existing) return { booking: existing, created: false };
+
+  const customer = await upsertCustomer(recoverySnapshot.customer);
+  const bookingPatch = {
+    bookingReference: recoverySnapshot.bookingReference,
+    bokunBookingId: recoverySnapshot.bokunBookingId,
+    bokunConfirmationCode: recoverySnapshot.confirmationCode,
+    bokunProductId: recoverySnapshot.bokunProductId,
+    bokunOptionId: recoverySnapshot.bokunOptionId,
+    productTitle: recoverySnapshot.productTitle,
+    optionTitle: recoverySnapshot.optionTitle,
+    travelDate: recoverySnapshot.travelDate,
+    startTime: recoverySnapshot.startTime,
+    priceCatalog: recoverySnapshot.priceCatalog,
+    paxSummary: recoverySnapshot.paxSummary,
+    priceCategoryParticipants: recoverySnapshot.priceCategoryParticipants,
+    pricingSnapshot: recoverySnapshot.pricingSnapshot,
+    customer: {
+      customerId: customer._id,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      email: customer.email,
+      phone: customer.phone,
+      country: customer.country,
+      hotelName: customer.hotelName,
+      pickupPlaceId: customer.pickupPlaceId
+    },
+    paymentStatus: "processing",
+    paymentMethod: "pesapal",
+    paymentTransactionId: String(orderTrackingId || "").trim() || undefined,
+    dpoTransactionToken: String(orderTrackingId || "").trim() || undefined,
+    bookingStatus: "confirmed",
+    supplierStatus: "confirmed",
+    supplierStatusUpdatedAt: new Date(),
+    amount: recoverySnapshot.amount,
+    currency: recoverySnapshot.currency,
+    sourceChannel: "direct_website",
+    createdByRole: "payment_recovery",
+    createdByUser: { id: null, name: "Verified provider recovery" },
+    cancellationPolicySnapshot: recoverySnapshot.cancellationPolicySnapshot,
+    pendingCheckout: {
+      processing: false,
+      paymentProvider: "pesapal",
+      paymentMethod: "pesapal",
+      paymentTransactionId: String(orderTrackingId || "").trim(),
+      pesapalOrderTrackingId: String(orderTrackingId || "").trim(),
+      pesapalMerchantReference: recoverySnapshot.bookingReference,
+      pesapalRequestedAmount: recoverySnapshot.amount,
+      pesapalRequestedCurrency: recoverySnapshot.currency,
+      finalization: {
+        status: "confirmed",
+        finalizationPending: false,
+        recoveredFromSupplier: true
+      }
+    },
+    rawBokunResponse: recoverySnapshot.rawBokunResponse
+  };
+
+  let booking;
+  try {
+    booking = await Booking.create(bookingPatch);
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+    booking = await Booking.findOne({ bookingReference: recoverySnapshot.bookingReference });
+    if (!booking) throw error;
+    return { booking, created: false };
+  }
+
+  if (!(customer.bookings || []).some((id) => String(id) === String(booking._id))) {
+    customer.bookings.push(booking._id);
+    await customer.save();
+  }
+
+  await AuditLog.create({
+    actorId: null,
+    actorRole: "payment_gateway",
+    action: "booking_recovered_from_verified_providers",
+    entityType: "Booking",
+    entityId: booking._id.toString(),
+    reason: "Recovered a missing local record from matching Pesapal and confirmed Bokun transactions.",
+    requestId,
+    metadata: {
+      source,
+      bookingReference: booking.bookingReference,
+      bokunBookingId: booking.bokunBookingId,
+      paymentProvider: "pesapal"
+    }
+  });
+
+  return { booking, created: true };
+};
+
 const getBookingByReference = async (reference) => {
   const booking = await Booking.findOne({ bookingReference: reference }).lean();
 
@@ -3132,6 +3410,8 @@ module.exports = {
   markBookingPaymentState,
   markBookingPaymentVerified,
   markBookingPaymentFailed,
+  normalizeBokunRecoverySnapshot,
+  recoverPaidBookingFromBokun,
   syncInvoiceForBookingReference,
   listPendingFinalizations,
   retryBookingFinalization,
