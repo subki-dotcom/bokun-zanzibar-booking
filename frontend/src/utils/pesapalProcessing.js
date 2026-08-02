@@ -1,6 +1,25 @@
 const STORAGE_PREFIX = "riser_pesapal_checkout:";
+export const PESAPAL_FRAME_RETURN_MESSAGE = "riser:pesapal-frame-return";
 
 const asText = (value = "") => String(value || "").trim();
+
+export const shouldStartPesapalStatusPolling = ({ gatewayReturned = false, hasGatewayReturnParams = false } = {}) =>
+  Boolean(gatewayReturned || hasGatewayReturnParams);
+
+export const notifyPesapalFrameReturn = (outcome = "returned") => {
+  if (typeof window === "undefined" || window.parent === window) return false;
+
+  // The parent already owns the payment references. Do not expose them in a
+  // cross-window message; only announce that the provider callback completed.
+  window.parent.postMessage(
+    {
+      type: PESAPAL_FRAME_RETURN_MESSAGE,
+      outcome: asText(outcome) || "returned"
+    },
+    "*"
+  );
+  return true;
+};
 
 const resolveCheckoutKey = (result = {}) =>
   asText(result.orderTrackingId) ||

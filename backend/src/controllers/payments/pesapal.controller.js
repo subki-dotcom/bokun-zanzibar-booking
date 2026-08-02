@@ -6,7 +6,8 @@ const create = asyncHandler(async (req, res) => {
   const data = await pesapalService.createPayment({
     payload: req.validated.body,
     auth: req.auth || null,
-    requestId: req.requestId
+    requestId: req.requestId,
+    checkoutOrigin: req.get("origin") || ""
   });
 
   return successResponse(res, {

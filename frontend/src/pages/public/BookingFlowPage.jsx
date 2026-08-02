@@ -29,6 +29,7 @@ import PaymentMethodSelector from "../../components/booking/PaymentMethodSelecto
 import { isCustomerSummaryValid } from "../../components/booking/CustomerSummaryCard";
 import { getMissingRequiredQuestionLabels } from "../../utils/bookingQuestions";
 import { getPaymentMethodLabel } from "../../utils/paymentMethods";
+import { validatePhoneNumber } from "../../utils/phoneCodes";
 import { buildPesapalProcessingPath } from "../../utils/pesapalProcessing";
 import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 import {
@@ -728,6 +729,26 @@ const BookingFlowInner = ({ portal = "public" }) => {
     if (missingCustomerFields.length > 0) {
       setError("Please complete customer name, email, phone, and country before continuing.");
       return;
+    }
+
+    const phoneValidation = validatePhoneNumber(
+      state.customer?.phone,
+      state.customer?.country,
+      countries
+    );
+    if (!phoneValidation.isValid) {
+      setError(phoneValidation.message);
+      setCurrentStepId(STEP_IDS.CUSTOMER);
+      return;
+    }
+
+    if (phoneValidation.normalized !== state.customer.phone) {
+      updateFlow({
+        customer: {
+          ...state.customer,
+          phone: phoneValidation.normalized
+        }
+      });
     }
 
     const missingQuestionLabels = getMissingRequiredQuestionLabels({

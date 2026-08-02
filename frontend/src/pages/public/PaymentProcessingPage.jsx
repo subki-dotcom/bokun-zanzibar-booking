@@ -1,18 +1,23 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, Container } from "react-bootstrap";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, Card, Container } from "react-bootstrap";
 import {
   BsArrowRepeat,
-  BsBoxArrowUpRight,
+  BsCalendarCheck,
   BsCheckCircle,
   BsClockHistory,
   BsCreditCard,
   BsExclamationTriangle,
+  BsLock,
   BsShieldCheck
 } from "react-icons/bs";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fetchPesapalPaymentStatus } from "../../api/paymentsApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { readPesapalProcessingState } from "../../utils/pesapalProcessing";
+import {
+  PESAPAL_FRAME_RETURN_MESSAGE,
+  readPesapalProcessingState,
+  shouldStartPesapalStatusPolling
+} from "../../utils/pesapalProcessing";
 import {
   buildPaymentResultQuery,
   getPaymentResultPresentation,
@@ -63,11 +68,11 @@ const resolveStatusMeta = ({ statusResult = null, timedOut = false, error = "" }
   }
 
   return {
-    badge: presentation.badge,
-    badgeVariant: presentation.badgeVariant,
+    badge: "Payment required",
+    badgeVariant: "warning",
     icon: <BsCreditCard />,
-    title: presentation.title,
-    copy: presentation.message
+    title: "Complete your payment",
+    copy: "Complete payment to confirm your booking."
   };
 };
 
@@ -80,6 +85,8 @@ const PaymentProcessingPage = () => {
   const [pollingTimedOut, setPollingTimedOut] = useState(false);
   const [frameLoaded, setFrameLoaded] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [gatewayReturned, setGatewayReturned] = useState(false);
+  const paymentFrameRef = useRef(null);
 
   const resultQuery = buildPaymentResultQuery({
     orderTrackingId: checkout.orderTrackingId,
@@ -91,15 +98,17 @@ const PaymentProcessingPage = () => {
   );
 
   const checkStatus = useCallback(
-    async ({ redirectOnTerminal = false } = {}) => {
+    async ({ redirectOnTerminal = false, silent = false } = {}) => {
       if (!checkout.orderTrackingId && !checkout.orderMerchantReference) {
-        setError(publicPaymentRefreshError);
-        return;
+        if (!silent) setError(publicPaymentRefreshError);
+        return "UNKNOWN";
       }
 
-      setChecking(true);
-      setError("");
-      setPollingTimedOut(false);
+      if (!silent) {
+        setChecking(true);
+        setError("");
+        setPollingTimedOut(false);
+      }
 
       try {
         const data = await fetchPesapalPaymentStatus({
@@ -116,24 +125,79 @@ const PaymentProcessingPage = () => {
         if (redirectOnTerminal && terminal) {
           navigate(`/payment-success${resultQuery ? `?${resultQuery}` : ""}`, { replace: true });
         }
+
+        return presentation.publicStatus;
       } catch (err) {
-        setError(publicPaymentRefreshError);
+        if (!silent) setError(publicPaymentRefreshError);
+        return "UNKNOWN";
       } finally {
-        setChecking(false);
+        if (!silent) setChecking(false);
       }
     },
     [checkout.orderTrackingId, checkout.orderMerchantReference, navigate, resultQuery]
   );
 
   useEffect(() => {
-    if (!hasGatewayReturnParams) {
-      return;
-    }
+    const handleGatewayReturn = (event) => {
+      if (event.source !== paymentFrameRef.current?.contentWindow) return;
+      if (event.data?.type !== PESAPAL_FRAME_RETURN_MESSAGE) return;
+      setGatewayReturned(true);
+    };
+
+    window.addEventListener("message", handleGatewayReturn);
+    return () => window.removeEventListener("message", handleGatewayReturn);
+  }, []);
+
+  useEffect(() => {
+    const shouldPoll = shouldStartPesapalStatusPolling({
+      gatewayReturned,
+      hasGatewayReturnParams
+    });
+    if (!shouldPoll || (!checkout.orderTrackingId && !checkout.orderMerchantReference)) return undefined;
+
+    let active = true;
+    let timer = null;
+    let elapsedMs = 0;
+    const intervalMs = 5000;
+    const timeoutMs = 180000;
 
     setPollingTimedOut(false);
 
-    checkStatus({ redirectOnTerminal: true });
-  }, [checkStatus, hasGatewayReturnParams]);
+    const poll = async () => {
+      if (!active) return;
+      const publicStatus = await checkStatus({ redirectOnTerminal: true, silent: true });
+      if (["PAID", "CONFIRMED", "FAILED", "CANCELLED"].includes(publicStatus)) {
+        active = false;
+        if (timer) window.clearInterval(timer);
+      }
+    };
+
+    void poll();
+
+    timer = window.setInterval(() => {
+      elapsedMs += intervalMs;
+
+      if (elapsedMs >= timeoutMs) {
+        active = false;
+        window.clearInterval(timer);
+        setPollingTimedOut(true);
+        return;
+      }
+
+      void poll();
+    }, intervalMs);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [
+    checkStatus,
+    checkout.orderMerchantReference,
+    checkout.orderTrackingId,
+    gatewayReturned,
+    hasGatewayReturnParams
+  ]);
 
   const statusMeta = resolveStatusMeta({
     statusResult,
@@ -141,8 +205,15 @@ const PaymentProcessingPage = () => {
     error
   });
   const presentation = getPaymentResultPresentation(statusResult);
-  const latestMessage = statusMeta.copy;
   const bookingReference = statusResult?.booking?.bookingReference || checkout.bookingReference || "";
+  const paymentLabel =
+    !statusResult || presentation.publicStatus === "PENDING"
+      ? "Awaiting payment"
+      : presentation.paymentLabel;
+  const bookingLabel =
+    !statusResult || presentation.publicStatus === "PENDING"
+      ? "Not confirmed"
+      : presentation.bookingLabel;
   const isAgentBooking =
     Boolean(statusResult?.booking?.isAgentBooking) ||
     String(statusResult?.booking?.sourceChannel || "").toLowerCase() === "agent_portal";
@@ -161,45 +232,25 @@ const PaymentProcessingPage = () => {
       <Container className="payment-processing-shell">
         <ErrorAlert error={error} className="mb-3" />
 
-        <div className="payment-processing-head">
-          <div>
-            <div className="payment-status-eyebrow">Riser Secure Payment</div>
-            <h1>{statusMeta.title}</h1>
-            <p>{latestMessage}</p>
-          </div>
-          <Badge bg={statusMeta.badgeVariant}>{statusMeta.badge}</Badge>
-        </div>
-
         <div className="payment-processing-grid">
           <Card className="payment-processing-frame-card">
             <Card.Body>
-              <div className="payment-processing-frame-head">
-                <div>
-                  <strong>Pesapal checkout</strong>
-                  <span>{frameLoaded ? "Gateway loaded" : "Loading gateway"}</span>
-                </div>
-                {checkout.redirectUrl ? (
-                  <Button
-                    as="a"
-                    href={checkout.redirectUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variant="outline-primary"
-                    size="sm"
-                  >
-                    <BsBoxArrowUpRight /> Open
-                  </Button>
-                ) : null}
-              </div>
-
               {checkout.redirectUrl ? (
-                <iframe
-                  className="payment-processing-iframe"
-                  src={checkout.redirectUrl}
-                  title="Pesapal secure payment"
-                  onLoad={() => setFrameLoaded(true)}
-                  allow="payment *"
-                />
+                <>
+                  {!frameLoaded ? (
+                    <div className="payment-processing-frame-loading" role="status">
+                      <span /> Loading secure payment...
+                    </div>
+                  ) : null}
+                  <iframe
+                    ref={paymentFrameRef}
+                    className="payment-processing-iframe"
+                    src={checkout.redirectUrl}
+                    title="Pesapal secure payment"
+                    onLoad={() => setFrameLoaded(true)}
+                    allow="payment *"
+                  />
+                </>
               ) : (
                 <div className="payment-processing-empty">
                   <BsExclamationTriangle />
@@ -212,24 +263,34 @@ const PaymentProcessingPage = () => {
 
           <Card className="payment-processing-status-card">
             <Card.Body>
-              <div className={`payment-processing-icon is-${statusMeta.badgeVariant}`}>
-                {statusMeta.icon}
+              <div className={`payment-processing-badge is-${statusMeta.badgeVariant}`}>
+                {presentation.publicStatus === "PENDING" ? <BsLock /> : statusMeta.icon}
+                <span>{statusMeta.badge}</span>
               </div>
+
               <h2>{statusMeta.title}</h2>
-              <p>{latestMessage}</p>
+              <p>{statusMeta.copy}</p>
 
               <div className="payment-processing-details">
-                <div>
-                  <span>Booking</span>
-                  <strong>{bookingReference || "-"}</strong>
+                <div className="payment-processing-reference">
+                  <span>Order reference</span>
+                  <strong>{bookingReference || "Unavailable"}</strong>
                 </div>
-                <div>
+
+                <div className="payment-processing-state-row">
+                  <span className={`payment-processing-state-icon is-${statusMeta.badgeVariant}`}>
+                    {statusMeta.icon}
+                  </span>
                   <span>Payment</span>
-                  <strong>{presentation.paymentLabel}</strong>
+                  <strong>{paymentLabel}</strong>
                 </div>
-                <div>
-                  <span>Booking confirmation</span>
-                  <strong>{presentation.bookingLabel}</strong>
+
+                <div className="payment-processing-state-row">
+                  <span className="payment-processing-state-icon is-neutral">
+                    <BsCalendarCheck />
+                  </span>
+                  <span>Booking</span>
+                  <strong>{bookingLabel}</strong>
                 </div>
               </div>
 
@@ -240,23 +301,30 @@ const PaymentProcessingPage = () => {
               ) : null}
 
               <div className="payment-processing-actions">
-                <Button
-                  variant="outline-primary"
-                  disabled={checking}
-                  onClick={() => checkStatus({ redirectOnTerminal: true })}
-                >
-                  <BsArrowRepeat /> {checking ? "Checking..." : "Check now"}
-                </Button>
-                {trackStatusPath ? (
+                {gatewayReturned || hasGatewayReturnParams || pollingTimedOut ? (
+                  <Button
+                    variant="link"
+                    disabled={checking}
+                    onClick={() => checkStatus({ redirectOnTerminal: true })}
+                  >
+                    <BsArrowRepeat /> {checking ? "Checking..." : "Check payment status"}
+                  </Button>
+                ) : null}
+                {pollingTimedOut && trackStatusPath ? (
                   <Button as={Link} to={trackStatusPath} variant="outline-secondary">
                     <BsShieldCheck /> Track status
                   </Button>
                 ) : null}
-                {bookingPath ? (
+                {presentation.isConfirmed && bookingPath ? (
                   <Button as={Link} to={bookingPath} variant="outline-secondary">
                     View booking
                   </Button>
                 ) : null}
+              </div>
+
+              <div className="payment-processing-secure-note">
+                <BsShieldCheck />
+                <span>Secure payment via Pesapal</span>
               </div>
             </Card.Body>
           </Card>

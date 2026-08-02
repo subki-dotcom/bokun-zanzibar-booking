@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const { customerSchema } = require("../customer.validation");
 
 const paxSchema = z.object({
   adults: z.number().int().min(0),
@@ -19,17 +20,6 @@ const bookingQuestionAnswerSchema = z.object({
   scope: z.enum(["booking", "pickup", "dropoff", "passenger"]).default("booking"),
   passengerIndex: z.number().int().min(0).nullable().optional(),
   answer: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])
-});
-
-const customerSchema = z.object({
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(6),
-  country: z.string().optional(),
-  hotelName: z.string().optional(),
-  pickupPlaceId: z.string().optional(),
-  notes: z.string().optional()
 });
 
 const marketingSchema = z.object({ referralCode: z.string().max(64).optional(), utmSource: z.string().max(180).optional(), utmMedium: z.string().max(180).optional(), utmCampaign: z.string().max(180).optional(), utmTerm: z.string().max(180).optional(), utmContent: z.string().max(180).optional(), landingPage: z.string().max(400).optional(), referrer: z.string().max(400).optional() });

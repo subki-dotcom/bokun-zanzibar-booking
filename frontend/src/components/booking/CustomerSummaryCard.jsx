@@ -1,9 +1,11 @@
 import Card from "react-bootstrap/Card";
+import { isValidInternationalPhoneNumber } from "../../utils/phoneCodes";
 
 const requiredCustomerFields = ["firstName", "lastName", "email", "phone"];
 
 export const isCustomerSummaryValid = (customer = {}) =>
-  requiredCustomerFields.every((field) => String(customer?.[field] || "").trim().length > 0);
+  requiredCustomerFields.every((field) => String(customer?.[field] || "").trim().length > 0) &&
+  isValidInternationalPhoneNumber(customer.phone);
 
 const CustomerSummaryCard = ({ customer = {} }) => {
   const valid = isCustomerSummaryValid(customer);
@@ -45,4 +47,3 @@ const CustomerSummaryCard = ({ customer = {} }) => {
 };
 
 export default CustomerSummaryCard;
-

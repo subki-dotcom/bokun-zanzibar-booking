@@ -6,6 +6,7 @@ import ErrorAlert from "../../components/common/ErrorAlert";
 import { cancelDpoPayment, cancelPaypalPayment, cancelPesapalPayment } from "../../api/paymentsApi";
 import { BRAND } from "../../config/brand";
 import { publicPaymentRefreshError } from "../../utils/publicPaymentResult";
+import { notifyPesapalFrameReturn } from "../../utils/pesapalProcessing";
 
 const PaymentFailurePage = () => {
   const [searchParams] = useSearchParams();
@@ -78,6 +79,11 @@ const PaymentFailurePage = () => {
 
     cancel();
   }, [orderTrackingId, orderMerchantReference, transactionToken, paypalOrderId, bookingId]);
+
+  useEffect(() => {
+    if (!result || (!orderTrackingId && !orderMerchantReference)) return;
+    notifyPesapalFrameReturn("failure");
+  }, [orderMerchantReference, orderTrackingId, result]);
 
   if (loading) {
     return (

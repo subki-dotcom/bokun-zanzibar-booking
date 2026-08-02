@@ -9,7 +9,7 @@ import AnalyticsTracker from "../components/common/AnalyticsTracker";
 
 const PublicLayout = () => {
   const location = useLocation();
-  const isCheckoutRoute = /^(\/booking\/|\/payment\/checkout\/|\/payment-(success|failure)\/|\/payment-status\/)/.test(
+  const isCheckoutRoute = /^(\/booking\/|\/payment\/checkout\/|\/payment-(success|failure|processing)(?:\/|$)|\/payment-status\/)/.test(
     location.pathname
   );
 

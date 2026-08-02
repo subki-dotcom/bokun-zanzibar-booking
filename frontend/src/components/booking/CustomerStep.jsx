@@ -8,7 +8,10 @@ import {
   countryCodeToFlagEmoji,
   getCountryFlagUrl,
   getDialCodeFromCountries,
-  resolveDefaultCountryCode
+  getPhoneFormatExample,
+  replacePhoneDialCode,
+  resolveDefaultCountryCode,
+  validatePhoneNumber
 } from "../../utils/phoneCodes";
 import {
   findQuestionAnswer,
@@ -43,6 +46,7 @@ const CustomerStep = ({
   onNext
 }) => {
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [phoneTouched, setPhoneTouched] = useState(false);
 
   const updateCustomer = (field, value) => {
     setCustomer((prev) => ({ ...prev, [field]: value }));
@@ -83,6 +87,12 @@ const CustomerStep = ({
   const selectedCountryCode = String(customer.country || "TZ").toUpperCase();
   const selectedCountry = findCountry(selectedCountryCode, countries);
   const selectedFlagUrl = getCountryFlagUrl(selectedCountryCode, 40);
+  const phoneExample = getPhoneFormatExample(selectedCountryCode, countries);
+  const phoneValidation = validatePhoneNumber(customer.phone, customer.country, countries);
+  const showPhoneError = (attemptedSubmit || phoneTouched) && !phoneValidation.isValid;
+  const validationLabels = phoneValidation.isValid || missingFields.includes("Phone Number")
+    ? missingFields
+    : [...missingFields, "Phone Number"];
   const notesValue = String(customer.notes || "");
   const notesCount = Math.min(250, notesValue.length);
 
@@ -115,7 +125,7 @@ const CustomerStep = ({
     setCustomer((prev) => ({
       ...prev,
       country: countryCode,
-      phone: applyDialCodeToPhone(prev.phone, countryCode, countries)
+      phone: replacePhoneDialCode(prev.phone, prev.country, countryCode, countries)
     }));
   };
 
@@ -156,8 +166,12 @@ const CustomerStep = ({
   const handleContinue = () => {
     setAttemptedSubmit(true);
 
-    if (!isValid) {
+    if (!isValid || !phoneValidation.isValid) {
       return;
+    }
+
+    if (phoneValidation.normalized !== customer.phone) {
+      updateCustomer("phone", phoneValidation.normalized);
     }
 
     onNext?.();
@@ -202,7 +216,7 @@ const CustomerStep = ({
 
           <Form.Group>
             <Form.Label>Phone Number <span>*</span></Form.Label>
-            <div className="checkout-phone-field customer-phone-field">
+            <div className={`checkout-phone-field customer-phone-field${showPhoneError ? " is-invalid" : ""}`}>
               <span className="checkout-phone-country" title={selectedCountry?.title || selectedCountryCode}>
                 {selectedFlagUrl ? (
                   <img src={selectedFlagUrl} alt={`${selectedCountryCode} flag`} loading="lazy" />
@@ -211,11 +225,23 @@ const CustomerStep = ({
                 )}
               </span>
               <Form.Control
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={20}
                 value={customer.phone || ""}
-                placeholder={selectedDialCode ? `${selectedDialCode} 778 775 044` : "+255 778 775 044"}
+                placeholder={phoneExample}
+                aria-invalid={showPhoneError}
+                aria-describedby={showPhoneError ? "customer-phone-error" : undefined}
                 onChange={(e) => updateCustomer("phone", applyDialCodeToPhone(e.target.value, customer.country, countries))}
+                onBlur={() => setPhoneTouched(true)}
               />
             </div>
+            {showPhoneError ? (
+              <Form.Control.Feedback id="customer-phone-error" type="invalid" className="d-block">
+                {phoneValidation.message}
+              </Form.Control.Feedback>
+            ) : null}
           </Form.Group>
 
           <Form.Group>
@@ -333,9 +359,9 @@ const CustomerStep = ({
           </Form.Group>
         </div>
 
-        {attemptedSubmit && !isValid ? (
+        {attemptedSubmit && (!isValid || !phoneValidation.isValid) ? (
           <div className="customer-step-validation">
-            Please complete: {missingFields.join(", ")}.
+            Please complete: {validationLabels.join(", ")}.
           </div>
         ) : null}
 

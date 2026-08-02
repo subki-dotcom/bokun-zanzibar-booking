@@ -45,10 +45,55 @@ export const formatCancellationDeadline = (policy = {}) => {
   }).format(parsed)} (Zanzibar time)`;
 };
 
+export const formatCancellationDeadlineParts = (policy = {}) => {
+  if (!policy?.deadline) return null;
+  const parsed = new Date(policy.deadline);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const timeZone = policy.timezone || ZANZIBAR_TZ;
+
+  return {
+    date: new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    }).format(parsed),
+    time: new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    }).format(parsed).toUpperCase(),
+    timezoneLabel: "Zanzibar time"
+  };
+};
+
+export const splitCancellationTimeRemaining = (deadline, referenceTime = Date.now()) => {
+  const deadlineTime = new Date(deadline).getTime();
+  const referenceTimestamp = referenceTime instanceof Date
+    ? referenceTime.getTime()
+    : Number(referenceTime);
+
+  if (!Number.isFinite(deadlineTime) || !Number.isFinite(referenceTimestamp)) return null;
+
+  const difference = deadlineTime - referenceTimestamp;
+  const totalSeconds = Math.max(0, Math.floor(difference / 1000));
+
+  return {
+    expired: difference < 0,
+    totalSeconds,
+    days: Math.floor(totalSeconds / 86400),
+    hours: Math.floor((totalSeconds % 86400) / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    seconds: totalSeconds % 60
+  };
+};
+
 export const resolveCancellationHeadline = (policy = {}) => {
   if (!policy?.policyAvailable) return "Cancellation review required";
   if (policy.refundable === false) return "Non-refundable booking";
-  if (policy.isFreeCancellationAvailable) return "Free cancellation available";
+  if (policy.isFreeCancellationAvailable) return "Free cancellation";
   if (policy.freeCancellationExpired) return "Free cancellation period ended";
   if (policy.requiresManualReview) return "Cancellation review required";
   return "Cancellation policy";

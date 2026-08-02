@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const { customerSchema } = require("./customer.validation");
 
 const paxSchema = z.object({
   adults: z.number().int().min(0),
@@ -97,16 +98,7 @@ const createBookingSchema = z.object({
       .optional(),
     promoCode: z.string().optional(),
     marketing: marketingSchema.optional(),
-    customer: z.object({
-      firstName: z.string().min(2),
-      lastName: z.string().min(2),
-      email: z.string().email(),
-      phone: z.string().min(6),
-      country: z.string().optional(),
-      hotelName: z.string().optional(),
-      pickupPlaceId: z.string().optional(),
-      notes: z.string().optional()
-    }),
+    customer: customerSchema,
     bookingQuestions: z.array(bookingQuestionAnswerSchema).default([]),
     commissionManualPercent: z.number().min(0).max(100).optional(),
     paymentMethod: z.string().optional()

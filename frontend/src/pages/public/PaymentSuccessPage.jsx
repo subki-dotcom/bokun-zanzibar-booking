@@ -10,6 +10,7 @@ import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import { BRAND } from "../../config/brand";
 import {
+  notifyPesapalFrameReturn,
   readPesapalProcessingState,
   storePesapalProcessingState
 } from "../../utils/pesapalProcessing";
@@ -136,6 +137,11 @@ const PaymentSuccessPage = () => {
       }
     };
   }, [orderTrackingId, orderMerchantReference, transactionToken, paypalOrderId, refreshKey]);
+
+  useEffect(() => {
+    if (!result || (!orderTrackingId && !orderMerchantReference)) return;
+    notifyPesapalFrameReturn("success");
+  }, [orderMerchantReference, orderTrackingId, result]);
 
   if (loading) {
     return (

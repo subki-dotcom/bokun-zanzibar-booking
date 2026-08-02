@@ -45,9 +45,7 @@ const ProductSidebarInfo = ({ tour = {} }) => {
       </SidebarCard>
 
       {productCancellationPolicy ? (
-        <SidebarCard title="Cancellation policy">
-          <CancellationPolicyPanel policy={productCancellationPolicy} compact className="is-sidebar" />
-        </SidebarCard>
+        <CancellationPolicyPanel policy={productCancellationPolicy} compact className="is-sidebar" />
       ) : null}
 
       {hasRating ? (

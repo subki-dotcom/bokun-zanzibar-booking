@@ -146,3 +146,113 @@ test("accounts for the original order currency when Pesapal completes a converte
     currencyConverted: true
   });
 });
+
+test("recognizes a Tanzania mobile-money conversion when Pesapal reports the order currency", () => {
+  const result = __testables.validatePesapalVerification({
+    booking: {
+      bookingReference: "ZNZ-TEST-TIGO",
+      paymentTransactionId: "tracking-tigo",
+      amount: 1,
+      currency: "USD",
+      pendingCheckout: {
+        pesapalMerchantReference: "ZNZ-TEST-TIGO",
+        pesapalRequestedAmount: 1,
+        pesapalRequestedCurrency: "USD"
+      }
+    },
+    orderTrackingId: "tracking-tigo",
+    orderMerchantReference: "ZNZ-TEST-TIGO",
+    verification: {
+      isPaid: true,
+      providerOrderTrackingId: "tracking-tigo",
+      merchantReference: "ZNZ-TEST-TIGO",
+      amount: 2643,
+      currency: "USD",
+      raw: { payment_method: "TIGOTZ" }
+    }
+  });
+
+  assert.deepEqual(result, {
+    accountingAmount: 1,
+    accountingCurrency: "USD",
+    providerAmount: 2643,
+    providerCurrency: "TZS",
+    currencyConverted: true
+  });
+});
+
+test("does not treat an ordinary card amount mismatch as currency conversion", () => {
+  assert.throws(
+    () => __testables.validatePesapalVerification({
+      booking: {
+        bookingReference: "ZNZ-TEST-CARD",
+        paymentTransactionId: "tracking-card",
+        amount: 1,
+        currency: "USD",
+        pendingCheckout: {
+          pesapalMerchantReference: "ZNZ-TEST-CARD",
+          pesapalRequestedAmount: 1,
+          pesapalRequestedCurrency: "USD"
+        }
+      },
+      orderTrackingId: "tracking-card",
+      orderMerchantReference: "ZNZ-TEST-CARD",
+      verification: {
+        isPaid: true,
+        providerOrderTrackingId: "tracking-card",
+        merchantReference: "ZNZ-TEST-CARD",
+        amount: 2643,
+        currency: "USD",
+        raw: { payment_method: "VISA" }
+      }
+    }),
+    (error) => error.code === "PESAPAL_VERIFIED_AMOUNT_MISMATCH"
+  );
+});
+
+test("does not accept an implausible mobile-money conversion amount", () => {
+  assert.throws(
+    () => __testables.validatePesapalVerification({
+      booking: {
+        bookingReference: "ZNZ-TEST-TIGO-BAD-RATE",
+        paymentTransactionId: "tracking-tigo-bad-rate",
+        amount: 70,
+        currency: "USD",
+        pendingCheckout: {
+          pesapalMerchantReference: "ZNZ-TEST-TIGO-BAD-RATE",
+          pesapalRequestedAmount: 70,
+          pesapalRequestedCurrency: "USD"
+        }
+      },
+      orderTrackingId: "tracking-tigo-bad-rate",
+      orderMerchantReference: "ZNZ-TEST-TIGO-BAD-RATE",
+      verification: {
+        isPaid: true,
+        providerOrderTrackingId: "tracking-tigo-bad-rate",
+        merchantReference: "ZNZ-TEST-TIGO-BAD-RATE",
+        amount: 2643,
+        currency: "USD",
+        raw: { payment_method: "TIGOTZ" }
+      }
+    }),
+    (error) => error.code === "PESAPAL_VERIFIED_AMOUNT_MISMATCH"
+  );
+});
+
+test("detects checkout and Pesapal callback origins from different environments", () => {
+  const mismatch = __testables.findPesapalCallbackOriginMismatch({
+    checkoutOrigin: "http://127.0.0.1:5173",
+    frontendOrigins: ["http://127.0.0.1:5173", "https://example.vercel.app"],
+    successUrl: "https://example.vercel.app/payment-success",
+    cancelUrl: "https://example.vercel.app/payment-failure"
+  });
+  const matching = __testables.findPesapalCallbackOriginMismatch({
+    checkoutOrigin: "https://example.vercel.app",
+    frontendOrigins: ["https://example.vercel.app"],
+    successUrl: "https://example.vercel.app/payment-success",
+    cancelUrl: "https://example.vercel.app/payment-failure"
+  });
+
+  assert.equal(mismatch.mismatches.length, 2);
+  assert.deepEqual(matching.mismatches, []);
+});

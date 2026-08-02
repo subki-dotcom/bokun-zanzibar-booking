@@ -75,40 +75,59 @@ const resolveFrontendOrigins = () =>
     .map((url) => resolveUrlOrigin(url))
     .filter(Boolean);
 
-const ensurePesapalCallbackOriginsMatchFrontend = () => {
-  const frontendOrigins = resolveFrontendOrigins();
-  if (!frontendOrigins.length) {
-    return;
-  }
-
+const findPesapalCallbackOriginMismatch = ({
+  checkoutOrigin = "",
+  frontendOrigins = resolveFrontendOrigins(),
+  successUrl = env.PESAPAL_SUCCESS_URL,
+  cancelUrl = env.PESAPAL_CANCEL_URL
+} = {}) => {
+  const normalizedCheckoutOrigin = resolveUrlOrigin(checkoutOrigin);
+  const allowedFrontendOrigins = (Array.isArray(frontendOrigins) ? frontendOrigins : [])
+    .map((origin) => resolveUrlOrigin(origin) || String(origin || "").trim())
+    .filter(Boolean);
   const callbackOrigins = [
-    {
-      key: "PESAPAL_SUCCESS_URL",
-      origin: resolveUrlOrigin(env.PESAPAL_SUCCESS_URL)
-    },
-    {
-      key: "PESAPAL_CANCEL_URL",
-      origin: resolveUrlOrigin(env.PESAPAL_CANCEL_URL)
-    }
+    { key: "PESAPAL_SUCCESS_URL", origin: resolveUrlOrigin(successUrl) },
+    { key: "PESAPAL_CANCEL_URL", origin: resolveUrlOrigin(cancelUrl) }
   ].filter(({ origin }) => origin);
 
-  const mismatches = callbackOrigins.filter(({ origin }) => !frontendOrigins.includes(origin));
+  const outsideFrontendAllowlist = allowedFrontendOrigins.length
+    ? callbackOrigins.filter(({ origin }) => !allowedFrontendOrigins.includes(origin))
+    : [];
+  const differentFromCheckout = normalizedCheckoutOrigin
+    ? callbackOrigins.filter(({ origin }) => origin !== normalizedCheckoutOrigin)
+    : [];
+
+  return {
+    checkoutOrigin: normalizedCheckoutOrigin,
+    callbackOrigins,
+    mismatches: [...outsideFrontendAllowlist, ...differentFromCheckout].filter(
+      (item, index, all) => all.findIndex((candidate) => candidate.key === item.key) === index
+    )
+  };
+};
+
+const ensurePesapalCallbackOriginsMatchFrontend = (checkoutOrigin = "") => {
+  const frontendOrigins = resolveFrontendOrigins();
+  const { callbackOrigins, mismatches, checkoutOrigin: normalizedCheckoutOrigin } =
+    findPesapalCallbackOriginMismatch({ checkoutOrigin, frontendOrigins });
   if (!mismatches.length) {
     return;
   }
 
   throw new AppError(
-    "Pesapal callback URLs must point to the same frontend origin that started checkout.",
-    503,
+    "Payment callback URLs point to a different site than this checkout. Please contact support.",
+    422,
     "PESAPAL_CALLBACK_ORIGIN_MISMATCH",
     {
+      checkoutOrigin: normalizedCheckoutOrigin,
       frontendOrigins,
-      callbackOrigins: mismatches
+      callbackOrigins,
+      mismatches
     }
   );
 };
 
-const ensurePesapalConfiguration = () => {
+const ensurePesapalConfiguration = ({ checkoutOrigin = "" } = {}) => {
   if (shouldMock) {
     return;
   }
@@ -141,7 +160,7 @@ const ensurePesapalConfiguration = () => {
     );
   }
 
-  ensurePesapalCallbackOriginsMatchFrontend();
+  ensurePesapalCallbackOriginsMatchFrontend(checkoutOrigin);
 };
 
 const requestPesapal = async ({
@@ -548,6 +567,37 @@ const isFinalizationRetryDue = (booking = {}) => {
   return !Number.isFinite(nextRetryAt) || nextRetryAt <= Date.now();
 };
 
+const inferPesapalMobileMoneyCurrency = (verification = {}) => {
+  const paymentMethod = String(
+    verification?.raw?.payment_method || verification?.paymentMethod || ""
+  ).trim().toUpperCase();
+  const isMobileMoney = /(AIRTEL|HALO|MPESA|M-PESA|MIX|MOBILE|MTN|TIGO|VODACOM|WALLET|YAS)/.test(paymentMethod);
+
+  if (!isMobileMoney) return "";
+  if (/(?:TZ|TANZANIA)$/.test(paymentMethod)) return "TZS";
+  if (/(?:UG|UGANDA)$/.test(paymentMethod)) return "UGX";
+  if (/(?:KE|KENYA)$/.test(paymentMethod)) return "KES";
+  return "";
+};
+
+const isPlausibleInferredPesapalConversion = ({
+  expectedAmount = 0,
+  expectedCurrency = "",
+  providerAmount = 0,
+  providerCurrency = ""
+} = {}) => {
+  const sourceAmount = toMoneyAmount(expectedAmount);
+  const convertedAmount = toMoneyAmount(providerAmount);
+  const pair = `${normalizeCurrency(expectedCurrency)}:${normalizeCurrency(providerCurrency)}`;
+  if (sourceAmount <= 0 || convertedAmount <= 0) return false;
+
+  const ratio = convertedAmount / sourceAmount;
+  if (pair === "USD:TZS") return ratio >= 500 && ratio <= 10000;
+  if (pair === "USD:UGX") return ratio >= 500 && ratio <= 15000;
+  if (pair === "USD:KES") return ratio >= 20 && ratio <= 500;
+  return false;
+};
+
 const validatePesapalVerification = ({ booking, verification, orderTrackingId = "", orderMerchantReference = "" }) => {
   const expectedTrackingId = String(booking?.paymentTransactionId || booking?.dpoTransactionToken || "").trim();
   const returnedTrackingId = String(verification?.providerOrderTrackingId || verification?.orderTrackingId || "").trim();
@@ -565,10 +615,29 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
   );
   const orderQuoteMatchesBooking =
     Math.abs(submittedAmount - expectedAmount) <= 0.009 && submittedCurrency === expectedCurrency;
+  const inferredMobileMoneyCurrencyCandidate =
+    Boolean(verification?.isPaid) &&
+    returnedAmount > 0 &&
+    Math.abs(returnedAmount - expectedAmount) > 0.009 &&
+    orderQuoteMatchesBooking
+      ? inferPesapalMobileMoneyCurrency(verification)
+      : "";
+  const inferredMobileMoneyCurrency = isPlausibleInferredPesapalConversion({
+    expectedAmount,
+    expectedCurrency,
+    providerAmount: returnedAmount,
+    providerCurrency: inferredMobileMoneyCurrencyCandidate
+  })
+    ? inferredMobileMoneyCurrencyCandidate
+    : "";
+  const providerCurrency =
+    inferredMobileMoneyCurrency && inferredMobileMoneyCurrency !== expectedCurrency
+      ? inferredMobileMoneyCurrency
+      : returnedCurrency;
   const isCurrencyConvertedPayment =
     Boolean(verification?.isPaid) &&
     returnedAmount > 0 &&
-    returnedCurrency !== expectedCurrency &&
+    providerCurrency !== expectedCurrency &&
     orderQuoteMatchesBooking;
 
   if (expectedTrackingId && orderTrackingId && expectedTrackingId !== String(orderTrackingId).trim()) {
@@ -587,7 +656,7 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
     Math.abs(returnedAmount - expectedAmount) > 0.009
   ) {
     throw new AppError(
-      `Pesapal verified ${returnedCurrency} ${returnedAmount.toFixed(2)}, but this booking expects ${expectedCurrency} ${expectedAmount.toFixed(2)}.`,
+      `Pesapal verified ${providerCurrency} ${returnedAmount.toFixed(2)}, but this booking expects ${expectedCurrency} ${expectedAmount.toFixed(2)}.`,
       409,
       "PESAPAL_VERIFIED_AMOUNT_MISMATCH",
       {
@@ -595,18 +664,18 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
       expectedAmount,
       verifiedAmount: returnedAmount,
       expectedCurrency,
-      verifiedCurrency: returnedCurrency,
+      verifiedCurrency: providerCurrency,
       orderTrackingId: expectedTrackingId || returnedTrackingId || ""
       }
     );
   }
-  if (verification?.isPaid && returnedCurrency !== expectedCurrency && !isCurrencyConvertedPayment) {
+  if (verification?.isPaid && providerCurrency !== expectedCurrency && !isCurrencyConvertedPayment) {
     throw new AppError("Pesapal verified currency does not match this booking", 409, "PESAPAL_VERIFIED_CURRENCY_MISMATCH", {
       bookingReference: booking?.bookingReference || "",
       expectedAmount,
       verifiedAmount: returnedAmount,
       expectedCurrency,
-      verifiedCurrency: returnedCurrency,
+      verifiedCurrency: providerCurrency,
       orderTrackingId: expectedTrackingId || returnedTrackingId || ""
     });
   }
@@ -615,7 +684,7 @@ const validatePesapalVerification = ({ booking, verification, orderTrackingId = 
     accountingAmount: expectedAmount,
     accountingCurrency: expectedCurrency,
     providerAmount: returnedAmount,
-    providerCurrency: returnedCurrency,
+    providerCurrency,
     currencyConverted: isCurrencyConvertedPayment
   };
 };
@@ -1063,14 +1132,26 @@ const resolveBookingByIdentifiers = async ({
 
   const merchantReference = String(orderMerchantReference || "").trim();
   if (merchantReference) {
-    return Booking.findOne({ bookingReference: merchantReference });
+    const byMerchantReference = await Booking.findOne({ bookingReference: merchantReference });
+    if (byMerchantReference) {
+      return byMerchantReference;
+    }
+  }
+
+  const payment = await paymentsService.findPaymentByGatewayIdentifiers({
+    provider: "pesapal",
+    orderTrackingId: trackingToken,
+    merchantReference
+  });
+  if (payment?.bookingReference) {
+    return Booking.findOne({ bookingReference: payment.bookingReference });
   }
 
   return null;
 };
 
-const createPayment = async ({ payload, auth, requestId }) => {
-  ensurePesapalConfiguration();
+const createPayment = async ({ payload, auth, requestId, checkoutOrigin = "" }) => {
+  ensurePesapalConfiguration({ checkoutOrigin });
 
   const booking = await resolveOrCreatePendingBooking({
     payload,
@@ -1776,6 +1857,9 @@ module.exports = {
   __testables: {
     toPaymentCallbackBooking,
     validatePesapalVerification,
+    findPesapalCallbackOriginMismatch,
+    inferPesapalMobileMoneyCurrency,
+    isPlausibleInferredPesapalConversion,
     resolvePublicPaymentStatus,
     resolvePublicPaymentMessage
   }
