@@ -957,7 +957,7 @@ const requestRefund = async ({
       confirmedAmount: 0,
       currency: "",
       requiresMerchantApproval: true,
-      providerMessage: "Pesapal accepted the refund request. Merchant confirmation is required before final completion.",
+      providerMessage: "Refund request sent to Pesapal. Merchant approval is required. Confirm the Pesapal refund approval email; the system will automatically verify and finalize the refund afterward.",
       request: payload,
       response: {
         status: "200",
@@ -990,7 +990,7 @@ const requestRefund = async ({
     currency: "",
     requiresMerchantApproval: accepted,
     providerMessage: accepted
-      ? "Pesapal accepted the refund request. Merchant confirmation is required before final completion."
+      ? "Refund request sent to Pesapal. Merchant approval is required. Confirm the Pesapal refund approval email; the system will automatically verify and finalize the refund afterward."
       : String(response?.message || "Pesapal rejected the refund request."),
     request: payload,
     response

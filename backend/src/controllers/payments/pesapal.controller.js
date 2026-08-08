@@ -1,6 +1,7 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const { successResponse } = require("../../utils/apiResponse");
 const pesapalService = require("../../services/payments/pesapal");
+const refundsService = require("../../services/refunds");
 
 const create = asyncHandler(async (req, res) => {
   const data = await pesapalService.createPayment({
@@ -94,10 +95,38 @@ const ipn = asyncHandler(async (req, res) => {
     requestId: req.requestId,
     source: "ipn"
   });
+  let refundReconciliation;
+  try {
+    refundReconciliation = await refundsService.reconcilePesapalRefundsForTransaction({
+      orderTrackingId:
+        payload.OrderTrackingId ||
+        payload.orderTrackingId ||
+        "",
+      orderMerchantReference:
+        payload.OrderMerchantReference ||
+        payload.orderMerchantReference ||
+        "",
+      ipnPayload: payload,
+      requestId: req.requestId,
+      source: "pesapal_ipn_reconciliation"
+    });
+  } catch (error) {
+    refundReconciliation = {
+      summary: { errors: 1 },
+      results: [],
+      error: {
+        code: error.code || "PESAPAL_REFUND_IPN_RECONCILIATION_FAILED",
+        message: error.message
+      }
+    };
+  }
 
   return successResponse(res, {
     message: data.status === "paid" ? "Pesapal IPN verified" : "Pesapal IPN handled",
-    data
+    data: {
+      ...data,
+      refundReconciliation
+    }
   });
 });
 

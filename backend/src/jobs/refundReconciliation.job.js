@@ -39,7 +39,10 @@ const startRefundReconciliationPoller = () => {
 
   if (refundTimer) return;
 
-  const intervalMs = Math.max(60, Number(env.REFUND_RECONCILIATION_INTERVAL_SECONDS || 300)) * 1000;
+  const configuredSeconds = Number(env.REFUND_RECONCILIATION_INTERVAL_SECONDS || 0);
+  const configuredMinutes = Number(env.REFUND_RECONCILIATION_INTERVAL_MINUTES || 10);
+  const intervalSeconds = configuredSeconds > 0 ? configuredSeconds : configuredMinutes * 60;
+  const intervalMs = Math.max(60, intervalSeconds) * 1000;
 
   logger.info("Refund reconciliation poller started", {
     intervalSeconds: intervalMs / 1000,

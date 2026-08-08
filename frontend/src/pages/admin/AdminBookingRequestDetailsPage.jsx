@@ -96,6 +96,7 @@ const CancellationRefundCard = ({ request, booking, invoice, payments, refundCon
   const normalizedStatus = refundSummary?.status || refund?.status || request.refund?.status || "not_requested";
   const providerRefundRequestReference = refundSummary?.providerRefundRequestReference || refund?.providerRefundRequestReference || request.refund?.providerRefundRequestReference;
   const providerRefundReference = refundSummary?.providerRefundReference || refund?.providerRefundReference || request.refund?.providerRefundReference;
+  const providerMessage = refundSummary?.message || refundSummary?.providerMessage;
 
   return (
     <Card className="surface-card mb-3 cancellation-refund-card">
@@ -122,7 +123,7 @@ const CancellationRefundCard = ({ request, booking, invoice, payments, refundCon
           <DetailRow label="Provider refund reference" value={maskReference(providerRefundReference)} />
           <DetailRow label="Confirmed amount refunded" value={formatCurrency(previousRefunded, currency)} />
         </div>
-        {refundSummary?.providerMessage ? <Alert variant="info" className="mt-3 mb-0">{refundSummary.providerMessage}</Alert> : null}
+        {providerMessage ? <Alert variant={normalizedStatus === "awaiting_merchant_approval" ? "warning" : "info"} className="mt-3 mb-0">{providerMessage}</Alert> : null}
         {refundContext?.manualReviewReason ? <Alert variant="warning" className="mt-3 mb-0">{refundContext.manualReviewReason}</Alert> : null}
         {payments.length ? (
           <div className="booking-request-payments mt-3">
@@ -256,7 +257,8 @@ const AdminBookingRequestDetailsPage = () => {
                 <DetailRow label="Refundable balance" value={formatCurrency(refundSummary?.refundableBalance ?? 0, refundSummary?.currency || refund.currency || currency)} />
                 <DetailRow label="Provider request reference" value={maskReference(refundSummary?.providerRefundRequestReference || refund.providerRefundRequestReference)} />
                 <DetailRow label="Provider refund reference" value={maskReference(refundSummary?.providerRefundReference || refund.providerRefundReference)} />
-                {refundSummary?.providerMessage ? <Alert variant={refundSummary.status === "awaiting_merchant_approval" ? "warning" : "info"} className="mt-3 mb-0">{refundSummary.providerMessage}</Alert> : null}
+                {providerMessage ? <Alert variant={refundSummary.status === "awaiting_merchant_approval" ? "warning" : "info"} className="mt-3 mb-0">{providerMessage}</Alert> : null}
+                {refundSummary?.automaticVerificationEnabled ? <small className="text-muted d-block mt-2">Automatic verification is enabled; the system will keep checking Pesapal after merchant approval.</small> : null}
                 <Button
                   className="w-100 mt-3"
                   variant="success"

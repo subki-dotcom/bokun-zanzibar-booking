@@ -44,6 +44,10 @@ const PENDING_PROVIDER_REFUND_STATUSES = new Set(["awaiting_merchant_approval", 
 const FAILED_PROVIDER_REFUND_STATUSES = new Set(["failed", "cancelled", "canceled", "denied"]);
 const INTERMEDIATE_REFUND_STATUSES = ["requested", "approved", "awaiting_merchant_approval", "processing", "verification_required"];
 const RECONCILABLE_REFUND_STATUSES = ["approved", "awaiting_merchant_approval", "processing", "verification_required"];
+const PESAPAL_AWAITING_APPROVAL_MESSAGE =
+  "Refund request sent to Pesapal. Merchant approval is required. Confirm the Pesapal refund approval email; the system will automatically verify and finalize the refund afterward.";
+const PESAPAL_PENDING_VERIFICATION_MESSAGE =
+  "Pesapal accepted the refund request, but final completion has not yet been verified. Merchant approval may still be pending or the refund may still be processing.";
 
 const normalizeProvider = (value = "") => {
   const provider = String(value || "").trim().toLowerCase();
@@ -284,6 +288,17 @@ const normalizeRefundResult = ({ booking, payment, refund, totalRefunded = 0, cu
     !providerReferences.providerRefundReference
       ? "awaiting_merchant_approval"
       : workflowStatus;
+  const automaticVerificationEnabled = provider === "pesapal" && !isFinalRefundStatus(normalizedStatus);
+  const canVerifyNow = Boolean(refund?._id) && (
+    provider === "pesapal" ||
+    Boolean(providerReferences.providerRefundReference)
+  ) && !isFinalRefundStatus(normalizedStatus);
+  const providerMessage = refund?.metadata?.providerMessage ||
+    (provider === "pesapal" && normalizedStatus === "awaiting_merchant_approval"
+      ? PESAPAL_AWAITING_APPROVAL_MESSAGE
+      : provider === "pesapal" && ["processing", "verification_required"].includes(String(normalizedStatus || ""))
+        ? PESAPAL_PENDING_VERIFICATION_MESSAGE
+        : "");
   return {
     status: normalizedStatus === "not_required" ? "not_requested" : normalizedStatus,
     amountPaid,
@@ -297,13 +312,13 @@ const normalizeRefundResult = ({ booking, payment, refund, totalRefunded = 0, cu
     providerRefundReference: providerReferences.providerRefundReference,
     refundedAt: refund?.completedAt || payment?.refundedAt || null,
     lastVerifiedAt: refund?.lastRefundSyncAt || null,
-    requiresMerchantApproval: normalizeProvider(refund?.provider || payment?.provider || "") === "pesapal" &&
+    requiresMerchantApproval: provider === "pesapal" &&
       ["awaiting_merchant_approval", "processing", "verification_required"].includes(String(normalizedStatus || "")),
-    canVerify: Boolean(refund?._id) && (
-      normalizeProvider(refund?.provider || payment?.provider || "") === "pesapal" ||
-      Boolean(refund?.providerRefundReference)
-    ) && !FINAL_REFUND_STATUSES.includes(String(normalizedStatus || "")),
-    providerMessage: refund?.metadata?.providerMessage || "",
+    automaticVerificationEnabled,
+    canVerifyNow,
+    canVerify: canVerifyNow,
+    providerMessage,
+    message: providerMessage,
     bookingStatus: booking?.bookingStatus || "",
     paymentStatus: payment?.status || payment?.paymentStatus || "",
     refundReference: refund?.refundReference || "",
@@ -349,6 +364,17 @@ const buildRefundSummaryFromRecords = ({ booking, payments = [], invoice = null,
       ? "awaiting_merchant_approval"
       : accountingStatus;
   const status = normalizedAccountingStatus === "not_required" ? "not_requested" : normalizedAccountingStatus;
+  const automaticVerificationEnabled = provider === "pesapal" && !isFinalRefundStatus(status);
+  const canVerifyNow = Boolean(refundRecord?._id) && (
+    provider === "pesapal" ||
+    Boolean(providerReferences.providerRefundReference)
+  ) && !isFinalRefundStatus(status);
+  const providerMessage = refundRecord?.metadata?.providerMessage ||
+    (provider === "pesapal" && status === "awaiting_merchant_approval"
+      ? PESAPAL_AWAITING_APPROVAL_MESSAGE
+      : provider === "pesapal" && ["processing", "verification_required"].includes(String(status || ""))
+        ? PESAPAL_PENDING_VERIFICATION_MESSAGE
+        : "");
   const warnings = [];
   const bookingRefundStatus = String(booking?.refundStatus || "").trim();
   if (bookingRefundStatus && bookingRefundStatus !== "not_requested" && bookingRefundStatus !== status) {
@@ -382,14 +408,11 @@ const buildRefundSummaryFromRecords = ({ booking, payments = [], invoice = null,
     lastVerifiedAt: refundRecord?.lastRefundSyncAt || null,
     requiresMerchantApproval: provider === "pesapal" &&
       ["awaiting_merchant_approval", "processing", "verification_required"].includes(String(status || "")),
-    canVerify: Boolean(refundRecord?._id) && (
-      provider === "pesapal" ||
-      Boolean(providerReferences.providerRefundReference)
-    ) && !FINAL_REFUND_STATUSES.includes(String(status || "")),
-    providerMessage: refundRecord?.metadata?.providerMessage ||
-      (provider === "pesapal" && status === "awaiting_merchant_approval"
-        ? "Pesapal accepted the refund request. Merchant confirmation is required before final completion."
-        : ""),
+    automaticVerificationEnabled,
+    canVerifyNow,
+    canVerify: canVerifyNow,
+    providerMessage,
+    message: providerMessage,
     paymentStatus: payment?.status || booking?.paymentStatus || "",
     bookingStatus: booking?.bookingStatus || "",
     refundReference: refundRecord?.refundReference || "",
@@ -1064,7 +1087,7 @@ const determinePesapalRefundVerification = ({ booking, payment, refund, verifica
     return {
       finalizable: false,
       status: "awaiting_merchant_approval",
-      providerMessage: "Pesapal refund request was accepted but final refund completion has not yet been verified. Confirm the merchant approval email and verify again later.",
+      providerMessage: PESAPAL_PENDING_VERIFICATION_MESSAGE,
       evidence
     };
   }
@@ -1405,7 +1428,7 @@ const updateRefundProviderState = async ({ refund, request, booking, status, fai
   });
 };
 
-const verifyRefundStatus = async ({ refundId, auth, traceId = "" } = {}) => {
+const verifyRefundStatus = async ({ refundId, auth, traceId = "", source = "admin_provider_verify" } = {}) => {
   const refund = await Refund.findById(refundId);
   if (!refund) throw new AppError("Refund not found", 404, "REFUND_NOT_FOUND");
   const booking = await Booking.findById(refund.bookingId);
@@ -1462,13 +1485,16 @@ const verifyRefundStatus = async ({ refundId, auth, traceId = "" } = {}) => {
         refundedAt: new Date(),
         rawProviderResponse: {
           source: "pesapal_get_transaction_status",
+          verificationSource: source,
           verification: verification.raw || verification,
           decision
         },
         auth,
         requestId: traceId,
-        source: "admin_provider_verify",
-        reason: "Admin verified completed Pesapal refund from transaction reversal evidence",
+        source,
+        reason: source === "admin_provider_verify"
+          ? "Admin verified completed Pesapal refund from transaction reversal evidence"
+          : "Automatically verified completed Pesapal refund from transaction reversal evidence",
         markBookingCancelled: request?.type === "cancel_booking"
       });
     }
@@ -1484,6 +1510,7 @@ const verifyRefundStatus = async ({ refundId, auth, traceId = "" } = {}) => {
       traceId,
       providerResponse: {
         source: "pesapal_get_transaction_status",
+        verificationSource: source,
         verification: verification.raw || verification,
         decision
       }
@@ -1570,6 +1597,118 @@ const verifyRefundStatus = async ({ refundId, auth, traceId = "" } = {}) => {
   );
 };
 
+const reconcilePesapalRefundsForTransaction = async ({
+  orderTrackingId = "",
+  orderMerchantReference = "",
+  ipnPayload = null,
+  requestId = "",
+  source = "pesapal_ipn_reconciliation"
+} = {}) => {
+  const trackingId = String(orderTrackingId || "").trim();
+  const merchantReference = String(orderMerchantReference || "").trim();
+  const summary = {
+    matchedPayments: 0,
+    matchedRefunds: 0,
+    finalized: 0,
+    awaitingMerchantApproval: 0,
+    processing: 0,
+    failed: 0,
+    verificationRequired: 0,
+    errors: 0
+  };
+  const results = [];
+
+  if (!trackingId && !merchantReference) {
+    return {
+      summary,
+      results,
+      message: "Pesapal IPN did not include an OrderTrackingId or merchant reference for refund reconciliation."
+    };
+  }
+
+  const paymentOr = [];
+  if (trackingId) {
+    paymentOr.push({ orderTrackingId: trackingId }, { providerTransactionId: trackingId });
+  }
+  if (merchantReference) {
+    paymentOr.push({ merchantReference }, { bookingReference: merchantReference });
+  }
+  const payments = paymentOr.length
+    ? await Payment.find({ provider: "pesapal", $or: paymentOr }).sort({ paidAt: -1, updatedAt: -1, createdAt: -1 }).limit(10)
+    : [];
+  summary.matchedPayments = payments.length;
+
+  const paymentIds = payments.map((payment) => payment._id);
+  const bookingReferences = new Set(payments.map((payment) => String(payment.bookingReference || "").trim()).filter(Boolean));
+  if (merchantReference) bookingReferences.add(merchantReference);
+  const bookings = bookingReferences.size
+    ? await Booking.find({ bookingReference: { $in: Array.from(bookingReferences) } }).select("_id bookingReference")
+    : [];
+  const bookingIds = bookings.map((booking) => booking._id);
+
+  const refundOr = [];
+  if (paymentIds.length) refundOr.push({ paymentId: { $in: paymentIds } });
+  if (bookingIds.length) refundOr.push({ bookingId: { $in: bookingIds } });
+  if (trackingId) refundOr.push({ originalProviderTransactionId: trackingId });
+
+  if (!refundOr.length) {
+    return {
+      summary,
+      results,
+      message: "No local Pesapal payment/refund records matched this IPN transaction."
+    };
+  }
+
+  const refunds = await Refund.find({
+    provider: "pesapal",
+    status: { $in: RECONCILABLE_REFUND_STATUSES },
+    $or: refundOr
+  }).sort({ lastRefundSyncAt: 1, updatedAt: 1 }).limit(20);
+  summary.matchedRefunds = refunds.length;
+
+  for (const refund of refunds) {
+    try {
+      refund.metadata = {
+        ...(refund.metadata || {}),
+        lastPesapalIpnAt: new Date().toISOString(),
+        lastPesapalIpn: safeProviderSnapshot(ipnPayload || {})
+      };
+      await refund.save();
+
+      const result = await verifyRefundStatus({
+        refundId: refund._id,
+        auth: { role: "system" },
+        traceId: `${requestId || source}-${refund._id}`,
+        source
+      });
+
+      if (FINAL_REFUND_STATUSES.includes(result?.status)) summary.finalized += 1;
+      else if (result?.status === "awaiting_merchant_approval") summary.awaitingMerchantApproval += 1;
+      else if (result?.status === "processing") summary.processing += 1;
+      else if (result?.status === "failed") summary.failed += 1;
+      else summary.verificationRequired += 1;
+      results.push({ refundId: refund._id, status: result?.status || "", result });
+    } catch (error) {
+      summary.errors += 1;
+      const refreshed = await Refund.findById(refund._id);
+      if (refreshed) {
+        refreshed.lastRefundSyncAt = new Date();
+        refreshed.failureReason = String(error.message || "Pesapal IPN refund reconciliation failed.").slice(0, 1000);
+        refreshed.metadata = {
+          ...(refreshed.metadata || {}),
+          lastPesapalIpnAt: new Date().toISOString(),
+          lastPesapalIpn: safeProviderSnapshot(ipnPayload || {}),
+          lastPesapalIpnReconciliationError: compactError(error)
+        };
+        await refreshed.save();
+      }
+      results.push({ refundId: refund._id, status: "error", error: compactError(error) });
+    }
+  }
+
+  return { summary, results };
+};
+
 const reconcilePendingRefunds = async ({
   limit = 20,
   minAgeMs = 5 * 60 * 1000,
@@ -1616,7 +1755,8 @@ const reconcilePendingRefunds = async ({
       const result = await verifyRefundStatus({
         refundId: refund._id,
         auth: { role: "system" },
-        traceId: `${requestId || source}-${refund._id}`
+        traceId: `${requestId || source}-${refund._id}`,
+        source
       });
       if (FINAL_REFUND_STATUSES.includes(result?.status)) summary.finalized += 1;
       else if (result?.status === "processing") summary.processing += 1;
@@ -1662,6 +1802,7 @@ module.exports = {
   normalizeRefundResult,
   processRefund,
   providerLabel,
+  reconcilePesapalRefundsForTransaction,
   reconcilePendingRefunds,
   resolveRefundContext,
   toMinor,
@@ -1679,6 +1820,7 @@ module.exports = {
     isPesapalMobileMoney,
     maskReference,
     normalizeRefundResult,
+    normalizeProviderRefundReferences,
     refundStatusFromTotals,
     sumSuccessfulRefunds,
     toMinor,

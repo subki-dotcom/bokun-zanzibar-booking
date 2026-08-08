@@ -51,6 +51,7 @@ test("Pesapal RefundRequest 200 stays awaiting merchant approval instead of refu
   assert.equal(result.providerRefundReference, "");
   assert.equal(result.confirmedAmount, 0);
   assert.equal(result.requiresMerchantApproval, true);
+  assert.match(result.providerMessage, /automatically verify and finalize/i);
 });
 
 test("admin refund eligibility prefers policy amount over stale zero request defaults", () => {
@@ -260,6 +261,9 @@ test("admin refund summary treats legacy Pesapal confirmation code as request re
   assert.equal(summary.amountRefunded, 0);
   assert.equal(summary.requiresMerchantApproval, true);
   assert.equal(summary.canVerify, true);
+  assert.equal(summary.automaticVerificationEnabled, true);
+  assert.equal(summary.canVerifyNow, true);
+  assert.match(summary.message, /automatically verify and finalize/i);
 });
 
 test("Pesapal completed transaction verification remains awaiting merchant approval", () => {
