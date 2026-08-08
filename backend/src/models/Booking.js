@@ -12,11 +12,22 @@ const bookingQuestionAnswerSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const bokunOperationalDateSchema = new mongoose.Schema(
+  {
+    raw: { type: String, default: "" },
+    normalizedAt: { type: Date, default: null },
+    localDate: { type: String, default: "" },
+    localTime: { type: String, default: "" }
+  },
+  { _id: false }
+);
+
 const bookingSchema = new mongoose.Schema(
   {
     bookingReference: { type: String, required: true, unique: true, index: true },
     bokunBookingId: { type: String, default: "", index: true },
     bokunConfirmationCode: { type: String, default: "" },
+    bokunExternalBookingReference: { type: String, default: "", index: true },
     bokunProductId: { type: String, required: true },
     bokunOptionId: { type: String, required: true },
     productTitle: { type: String, required: true },
@@ -72,6 +83,72 @@ const bookingSchema = new mongoose.Schema(
       pickupPlaceId: String
     },
     sourceChannel: { type: String, default: "direct_website" },
+    rawChannelSource: { type: String, default: "" },
+    externalChannelReference: { type: String, default: "", index: true },
+    operationalSource: {
+      type: String,
+      enum: ["LOCAL", "BOKUN"],
+      default: "LOCAL",
+      index: true
+    },
+    salesChannel: {
+      type: String,
+      enum: [
+        "DIRECT_WEBSITE",
+        "VIATOR",
+        "GETYOURGUIDE",
+        "BOKUN_MARKETPLACE",
+        "AGENT",
+        "B2B",
+        "HOTEL",
+        "WHATSAPP",
+        "WALK_IN",
+        "TOURHQ",
+        "AIRBNB",
+        "OTHER"
+      ],
+      default: "DIRECT_WEBSITE",
+      index: true
+    },
+    bokunStatus: {
+      raw: { type: String, default: "" },
+      normalized: {
+        type: String,
+        enum: ["unknown", "pending", "confirmed", "cancelled", "rejected", "timeout"],
+        default: "unknown",
+        index: true
+      },
+      sourceField: { type: String, default: "" },
+      mappedAt: { type: Date, default: null }
+    },
+    bokunOperationalDates: {
+      timezone: { type: String, default: "Africa/Dar_es_Salaam" },
+      bookingCreatedAtBokun: { type: bokunOperationalDateSchema, default: () => ({}) },
+      bookingConfirmedAtBokun: { type: bokunOperationalDateSchema, default: () => ({}) },
+      travelDate: { type: bokunOperationalDateSchema, default: () => ({}) },
+      activityDate: { type: bokunOperationalDateSchema, default: () => ({}) },
+      activityStartTime: { type: bokunOperationalDateSchema, default: () => ({}) },
+      pickupDate: { type: bokunOperationalDateSchema, default: () => ({}) },
+      pickupTime: { type: bokunOperationalDateSchema, default: () => ({}) },
+      endTime: { type: bokunOperationalDateSchema, default: () => ({}) },
+      cancellationDate: { type: bokunOperationalDateSchema, default: () => ({}) },
+      amendmentDate: { type: bokunOperationalDateSchema, default: () => ({}) },
+      rescheduleDate: { type: bokunOperationalDateSchema, default: () => ({}) },
+      bokunLastModifiedAt: { type: bokunOperationalDateSchema, default: () => ({}) },
+      mappedAt: { type: Date, default: null }
+    },
+    bokunImport: {
+      firstImportedAt: { type: Date, default: null },
+      lastImportedAt: { type: Date, default: null },
+      lastSyncedAt: { type: Date, default: null },
+      lastSyncSource: { type: String, default: "" },
+      lastSyncRequestId: { type: String, default: "" },
+      lastChangeType: { type: String, default: "" },
+      lastError: { type: String, default: "" },
+      snapshotHash: { type: String, default: "" },
+      rawSalesChannel: { type: String, default: "" },
+      salesChannelSourceField: { type: String, default: "" }
+    },
     createdByRole: { type: String, default: "customer" },
     createdByUser: {
       id: { type: String, default: null },
@@ -227,5 +304,11 @@ bookingSchema.index({
   supplierStatus: 1,
   "legacyBokunRecovery.status": 1
 });
+bookingSchema.index({ operationalSource: 1, salesChannel: 1, bookingStatus: 1, travelDate: 1 });
+bookingSchema.index({ bokunBookingId: 1, bokunConfirmationCode: 1, "bokunStatus.normalized": 1 });
+bookingSchema.index({ "bokunImport.lastSyncedAt": 1, "bokunImport.lastChangeType": 1 });
+bookingSchema.index({ bokunBookingId: 1, bokunExternalBookingReference: 1, operationalSource: 1 });
+bookingSchema.index({ "bokunOperationalDates.travelDate.localDate": 1, salesChannel: 1 });
+bookingSchema.index({ "bokunOperationalDates.bokunLastModifiedAt.normalizedAt": 1 });
 
 module.exports = mongoose.model("Booking", bookingSchema);

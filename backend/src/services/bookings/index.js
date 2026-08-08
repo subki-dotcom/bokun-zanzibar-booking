@@ -21,6 +21,8 @@ const notificationsService = require("../notifications");
 const { calculateCancellationPolicy } = require("../cancellations/policy");
 const legacyBokunRecoveryService = require("./legacyBokunRecovery.service");
 const { decimalString, equalsWithin, normalizeCurrency } = require("../../utils/money");
+const { normalizeBokunBookingStatus } = require("../../integrations/bokun/bookingStatus.adapter");
+const { mapBokunSalesChannel } = require("../../integrations/bokun/salesChannel.adapter");
 
 const normalizeTicketCategory = (value = "") => {
   const token = String(value).toLowerCase();
@@ -1756,6 +1758,9 @@ const persistBookingRecord = async ({
 }) => {
   const { payloadWithCatalog, product, option, selectedPriceCatalog, sourceContext, liveQuote } = context;
   const customer = await upsertCustomer(payloadWithCatalog.customer);
+  const nowDate = new Date();
+  const bokunStatus = bokunBooking ? normalizeBokunBookingStatus(bokunBooking.raw || bokunBooking) : null;
+  const bokunChannel = mapBokunSalesChannel(bokunBooking?.raw || {}, sourceContext.sourceChannel);
 
   const bookingReference =
     existingBooking?.bookingReference ||
@@ -1834,12 +1839,35 @@ const persistBookingRecord = async ({
     amount: payableAmount,
     currency: liveQuote.pricing.currency || "USD",
     sourceChannel: sourceContext.sourceChannel,
+    operationalSource: bokunBooking ? "BOKUN" : existingBooking?.operationalSource || "LOCAL",
+    salesChannel: existingBooking?.salesChannel || bokunChannel.salesChannel,
     createdByRole: sourceContext.createdByRole,
     createdByUser: sourceContext.createdByUser,
     agentId: sourceContext.agentId,
     cancellationPolicySnapshot,
     rawBokunResponse: bokunBooking?.raw || existingBooking?.rawBokunResponse || null
   };
+
+  if (bokunStatus) {
+    bookingPatch.bokunStatus = {
+      raw: bokunStatus.rawStatus,
+      normalized: bokunStatus.normalizedStatus,
+      sourceField: bokunStatus.sourceField,
+      mappedAt: nowDate
+    };
+    bookingPatch.bokunImport = {
+      ...(existingBooking?.bokunImport || {}),
+      firstImportedAt: existingBooking?.bokunImport?.firstImportedAt || nowDate,
+      lastImportedAt: existingBooking?.bokunImport?.lastImportedAt || nowDate,
+      lastSyncedAt: nowDate,
+      lastSyncSource: "direct_website_finalization",
+      lastSyncRequestId: requestId,
+      lastChangeType: existingBooking ? "updated" : "imported",
+      lastError: "",
+      rawSalesChannel: bokunChannel.rawChannel || "",
+      salesChannelSourceField: bokunChannel.sourceField || ""
+    };
+  }
 
   const resolvedTransactionId =
     paymentTransactionId !== undefined && paymentTransactionId !== null

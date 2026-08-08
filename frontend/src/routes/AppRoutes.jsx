@@ -1,6 +1,7 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import PublicLayout from "../layouts/PublicLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
+import AdminLayout from "../layouts/admin/AdminLayout";
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import HomePage from "../pages/public/HomePage";
 import ToursPage from "../pages/public/ToursPage";
@@ -25,6 +26,7 @@ import SyncLogsPage from "../pages/admin/SyncLogsPage";
 import AdminBookingRequestsPage from "../pages/admin/AdminBookingRequestsPage";
 import AdminBookingRequestDetailsPage from "../pages/admin/AdminBookingRequestDetailsPage";
 import AdminOperationsPage from "../pages/admin/AdminOperationsPage";
+import AdminUnavailablePage from "../components/admin/AdminUnavailablePage";
 import AgentDashboardPage from "../pages/agent/AgentDashboardPage";
 import AgentProductsPage from "../pages/agent/AgentProductsPage";
 import AgentNewBookingPage from "../pages/agent/AgentNewBookingPage";
@@ -46,8 +48,12 @@ import AgentReportsPage from "../pages/agent/AgentReportsPage";
 import AgentDraftsPage from "../pages/agent/AgentDraftsPage";
 import LegalPage from "../pages/public/LegalPage";
 
-const AdminLayout = () => <DashboardLayout portal="admin" />;
 const AgentLayout = () => <DashboardLayout portal="agent" />;
+
+const LegacyBookingRequestRedirect = () => {
+  const { requestId } = useParams();
+  return <Navigate to={`/admin/operations/booking-requests/${requestId}`} replace />;
+};
 
 const AppRoutes = () => {
   return (
@@ -80,14 +86,39 @@ const AppRoutes = () => {
         }
       >
         <Route path="/admin" element={<AdminDashboardPage />} />
-        <Route path="/admin/bookings" element={<AdminBookingsPage />} />
-        <Route path="/admin/agents" element={<AdminAgentsPage />} />
-        <Route path="/admin/payments" element={<AdminPaymentsPage />} />
-        <Route path="/admin/booking-requests" element={<AdminBookingRequestsPage />} />
-        <Route path="/admin/booking-requests/:requestId" element={<AdminBookingRequestDetailsPage />} />
-        <Route path="/admin/recovery" element={<AdminRecoveryPage />} />
-        <Route path="/admin/sync-logs" element={<SyncLogsPage />} />
-        <Route path="/admin/operations" element={<AdminOperationsPage />} />
+        <Route path="/admin/operations/dashboard" element={<AdminUnavailablePage module="Operations" title="Operations Dashboard" />} />
+        <Route path="/admin/operations/bookings" element={<AdminBookingsPage />} />
+        <Route path="/admin/operations/booking-requests" element={<AdminBookingRequestsPage />} />
+        <Route path="/admin/operations/booking-requests/:requestId" element={<AdminBookingRequestDetailsPage />} />
+        <Route path="/admin/operations/tour-operations" element={<AdminOperationsPage />} />
+        <Route path="/admin/operations/recovery" element={<AdminRecoveryPage />} />
+        <Route path="/admin/operations/agents" element={<AdminAgentsPage />} />
+        <Route path="/admin/operations/bokun-sync/sync-logs" element={<SyncLogsPage />} />
+        <Route path="/admin/operations/bokun-sync/confirmed-import" element={<AdminUnavailablePage module="Bokun Sync" title="Confirmed Booking Import" />} />
+        <Route path="/admin/operations/bokun-sync/manual" element={<AdminUnavailablePage module="Bokun Sync" title="Manual Sync" />} />
+        <Route path="/admin/operations/bokun-sync/single-booking" element={<AdminUnavailablePage module="Bokun Sync" title="Single Booking Sync" />} />
+        <Route path="/admin/booking-accounting/dashboard" element={<AdminUnavailablePage module="Booking Accounting" title="Booking Accounting Dashboard" />} />
+        <Route path="/admin/booking-accounting/invoices" element={<AdminUnavailablePage module="Booking Accounting" title="Invoices" />} />
+        <Route path="/admin/booking-accounting/payments" element={<AdminPaymentsPage />} />
+        <Route path="/admin/booking-accounting/refunds" element={<AdminUnavailablePage module="Booking Accounting" title="Refunds" />} />
+        <Route path="/admin/booking-accounting/expenses" element={<AdminUnavailablePage module="Booking Accounting" title="Booking Expenses" />} />
+        <Route path="/admin/booking-accounting/cost-templates" element={<AdminUnavailablePage module="Booking Accounting" title="Product Cost Templates" />} />
+        <Route path="/admin/booking-accounting/profitability" element={<AdminUnavailablePage module="Booking Accounting" title="Booking Profitability" />} />
+        <Route path="/admin/booking-accounting/reconciliation" element={<AdminUnavailablePage module="Booking Accounting" title="Reconciliation" />} />
+        <Route path="/admin/business-accounting" element={<AdminUnavailablePage module="Business Accounting" title="Business Accounting" />} />
+        <Route path="/admin/business-intelligence" element={<AdminUnavailablePage module="Business Intelligence" title="Business Intelligence" />} />
+        <Route path="/admin/report-center" element={<AdminUnavailablePage module="Report Center" title="Report Center" />} />
+        <Route path="/admin/audit-control" element={<AdminUnavailablePage module="Audit & Control" title="Audit & Control" />} />
+        <Route path="/admin/settings" element={<AdminUnavailablePage module="Settings" title="Settings" />} />
+
+        <Route path="/admin/bookings" element={<Navigate to="/admin/operations/bookings" replace />} />
+        <Route path="/admin/agents" element={<Navigate to="/admin/operations/agents" replace />} />
+        <Route path="/admin/payments" element={<Navigate to="/admin/booking-accounting/payments" replace />} />
+        <Route path="/admin/booking-requests" element={<Navigate to="/admin/operations/booking-requests" replace />} />
+        <Route path="/admin/booking-requests/:requestId" element={<LegacyBookingRequestRedirect />} />
+        <Route path="/admin/recovery" element={<Navigate to="/admin/operations/recovery" replace />} />
+        <Route path="/admin/sync-logs" element={<Navigate to="/admin/operations/bokun-sync/sync-logs" replace />} />
+        <Route path="/admin/operations" element={<Navigate to="/admin/operations/tour-operations" replace />} />
       </Route>
 
       <Route

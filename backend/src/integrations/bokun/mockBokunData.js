@@ -305,10 +305,78 @@ const mockBookingCreate = ({
   };
 };
 
+const mockConfirmedBooking = ({
+  reference = "MOCK-BOKUN-CONFIRMED",
+  status = "CONFIRMED",
+  channel = { title: "Direct Website" }
+} = {}) => ({
+  booking: {
+    bookingId: `mock_${reference}`,
+    id: `mock_${reference}`,
+    confirmationCode: reference,
+    externalBookingReference: reference,
+    status,
+    currency: "USD",
+    totalPrice: 85,
+    totalPaid: 85,
+    paidType: "PAID",
+    channel,
+    customer: {
+      firstName: "Mock",
+      lastName: "Traveler",
+      email: `mock-${String(reference).toLowerCase()}@example.com`,
+      phoneNumber: "+255700000000",
+      country: "TZ"
+    },
+    activityBookings: [
+      {
+        id: `activity_${reference}`,
+        productId: "bk_prod_znz_dolphin",
+        title: "Mnemba Atoll Dolphin & Snorkeling Adventure",
+        rateId: "bk_opt_znz_dolphin_shared",
+        rateTitle: "Shared Speedboat",
+        date: dayjs().add(14, "day").format("YYYY-MM-DD"),
+        startTime: "08:00",
+        product: {
+          id: "bk_prod_znz_dolphin",
+          title: "Mnemba Atoll Dolphin & Snorkeling Adventure"
+        },
+        pricingCategoryBookings: [
+          {
+            pricingCategoryId: "adult",
+            quantity: 1,
+            pricingCategory: { id: "adult", title: "Adult", ticketCategory: "ADULT" }
+          }
+        ]
+      }
+    ]
+  }
+});
+
+const mockBookingSearch = ({ page = 1, pageSize = 20 } = {}) => {
+  const items = page > 1
+    ? []
+    : [
+        mockConfirmedBooking({
+          reference: "MOCK-BOKUN-CONFIRMED",
+          channel: { title: "Direct Website" }
+        }).booking
+      ];
+
+  return {
+    page,
+    pageSize,
+    totalCount: 1,
+    items
+  };
+};
+
 module.exports = {
   mockProducts,
   mockAvailability,
   mockPriceList,
   mockQuestions,
-  mockBookingCreate
+  mockBookingCreate,
+  mockConfirmedBooking,
+  mockBookingSearch
 };

@@ -6,6 +6,7 @@ const logger = require("../../config/logger");
 const AppError = require("../../utils/AppError");
 const { allCountries } = require("country-telephone-data");
 const { calculateCancellationPolicy } = require("../cancellations/policy");
+const { extractTotalCount } = require("../../integrations/bokun/confirmedBooking.mapper");
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
 const BOKUN_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -2295,7 +2296,81 @@ const normalizeBookingSearchItems = (response = {}) => {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.items)) return response.items;
   if (Array.isArray(response?.results)) return response.results;
+  if (Array.isArray(response?.bookings)) return response.bookings;
+  if (Array.isArray(response?.content)) return response.content;
+  if (Array.isArray(response?.data)) return response.data;
   return [];
+};
+
+const BOOKING_SEARCH_DATE_RANGE_FIELDS = new Set([
+  "creationDateRange",
+  "startDateRange",
+  "lastModifiedDateRange",
+  "cancellationDateRange"
+]);
+
+const buildDateRangeFilter = ({ from = "", to = "" } = {}) => {
+  const range = {};
+  if (from) {
+    range.from = from;
+    range.includeLower = true;
+  }
+  if (to) {
+    range.to = to;
+    range.includeUpper = true;
+  }
+  return Object.keys(range).length ? range : null;
+};
+
+const buildBookingSearchPayload = ({
+  page = 1,
+  pageSize = 50,
+  bookingStatuses = [],
+  dateRangeField = "",
+  fromDate = "",
+  toDate = "",
+  filters = {}
+} = {}) => {
+  const payload = {
+    ...(filters && typeof filters === "object" ? filters : {}),
+    page: Math.max(1, Number(page || 1)),
+    pageSize: Math.max(1, Math.min(100, Number(pageSize || 50)))
+  };
+
+  const statuses = (Array.isArray(bookingStatuses) ? bookingStatuses : String(bookingStatuses || "").split(","))
+    .map((status) => String(status || "").trim())
+    .filter(Boolean);
+  if (statuses.length) {
+    payload.bookingStatuses = statuses;
+  }
+
+  if (dateRangeField && BOOKING_SEARCH_DATE_RANGE_FIELDS.has(dateRangeField)) {
+    const range = buildDateRangeFilter({ from: fromDate, to: toDate });
+    if (range) {
+      payload[dateRangeField] = range;
+    }
+  }
+
+  return payload;
+};
+
+const searchBookings = async (options = {}, requestId = "") => {
+  const payload = buildBookingSearchPayload(options);
+  const response = await bokunClient.request({
+    method: "post",
+    path: "/booking.json/booking-search",
+    payload,
+    requestId
+  });
+
+  return {
+    page: payload.page,
+    pageSize: payload.pageSize,
+    items: normalizeBookingSearchItems(response),
+    totalCount: extractTotalCount(response),
+    raw: response,
+    payload
+  };
 };
 
 const findExactExternalBookingSearchMatch = (response = {}, externalBookingReference = "") => {
@@ -2397,12 +2472,14 @@ module.exports = {
   resolveBookingQuestions,
   buildCheckoutPayload,
   createBooking,
+  searchBookings,
   lookupBooking,
   findBookingByExternalReference,
   cancelBooking,
   editBooking,
   __testables: {
     normalizeBookingSearchItems,
-    findExactExternalBookingSearchMatch
+    findExactExternalBookingSearchMatch,
+    buildBookingSearchPayload
   }
 };

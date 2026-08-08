@@ -410,6 +410,12 @@ const getOperationsOverview = async () => {
         label: "Bokun booking sync fallback",
         enabled: Boolean(env.BOKUN_BOOKING_SYNC_ENABLED),
         intervalSeconds: Number(env.BOKUN_BOOKING_SYNC_INTERVAL_SECONDS)
+      },
+      {
+        id: "bokun_confirmed_booking_import",
+        label: "Bokun confirmed booking import",
+        enabled: Boolean(env.BOKUN_CONFIRMED_BOOKING_IMPORT_ENABLED),
+        intervalSeconds: Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_INTERVAL_SECONDS)
       }
     ],
     queue: {

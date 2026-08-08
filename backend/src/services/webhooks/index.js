@@ -10,6 +10,8 @@ const { env } = require("../../config/env");
 const { BOOKING_STATUS } = require("../../config/constants");
 const bokunService = require("../../integrations/bokun");
 const invoicesService = require("../invoices");
+const { normalizeBokunBookingStatus } = require("../../integrations/bokun/bookingStatus.adapter");
+const { mapBokunSalesChannel } = require("../../integrations/bokun/salesChannel.adapter");
 
 const INTERNAL_REQUEST_PREFIX = "bokun_sync";
 const ACTIVE_BOOKING_STATUSES = [
@@ -204,7 +206,9 @@ const applyBokunSnapshotToBooking = async ({
   };
 
   const resolvedStatus = bokunBooking?.status || statusHint || "";
-  const mappedStatus = mapBokunStatusToLocal(resolvedStatus);
+  const strictStatus = normalizeBokunBookingStatus(bokunBooking?.raw || bokunBooking || { status: resolvedStatus });
+  const mappedStatus = strictStatus.known ? strictStatus.localBookingStatus : mapBokunStatusToLocal(resolvedStatus);
+  const mappedChannel = mapBokunSalesChannel(bokunBooking?.raw || bokunBooking || {}, bookingDoc.sourceChannel || "");
   let businessChanged = false;
 
   const assignIfChanged = (key, value) => {
@@ -253,6 +257,29 @@ const applyBokunSnapshotToBooking = async ({
       bookingDoc.rawBokunResponse = bokunBooking.raw;
       businessChanged = true;
     }
+  }
+
+  if (bokunBooking || resolvedStatus) {
+    bookingDoc.operationalSource = "BOKUN";
+    bookingDoc.salesChannel = bookingDoc.salesChannel || mappedChannel.salesChannel;
+    bookingDoc.bokunStatus = {
+      raw: strictStatus.rawStatus,
+      normalized: strictStatus.normalizedStatus,
+      sourceField: strictStatus.sourceField,
+      mappedAt: new Date()
+    };
+    bookingDoc.bokunImport = {
+      ...(bookingDoc.bokunImport || {}),
+      firstImportedAt: bookingDoc.bokunImport?.firstImportedAt || null,
+      lastImportedAt: bookingDoc.bokunImport?.lastImportedAt || null,
+      lastSyncedAt: new Date(),
+      lastSyncSource: source,
+      lastSyncRequestId: requestId,
+      lastChangeType: businessChanged ? "updated" : "unchanged",
+      lastError: "",
+      rawSalesChannel: mappedChannel.rawChannel || bookingDoc.bokunImport?.rawSalesChannel || "",
+      salesChannelSourceField: mappedChannel.sourceField || bookingDoc.bokunImport?.salesChannelSourceField || ""
+    };
   }
 
   setSyncState(bookingDoc, {
