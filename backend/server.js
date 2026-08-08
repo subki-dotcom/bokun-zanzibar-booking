@@ -9,6 +9,10 @@ const {
   startBookingFinalizationPoller,
   stopBookingFinalizationPoller
 } = require("./src/jobs/bookingFinalization.job");
+const {
+  startRefundReconciliationPoller,
+  stopRefundReconciliationPoller
+} = require("./src/jobs/refundReconciliation.job");
 
 const bootstrap = async () => {
   await connectDB();
@@ -27,17 +31,20 @@ const bootstrap = async () => {
     });
     startBookingSyncPoller();
     startBookingFinalizationPoller();
+    startRefundReconciliationPoller();
   });
 };
 
 process.on("SIGINT", () => {
   stopBookingSyncPoller();
   stopBookingFinalizationPoller();
+  stopRefundReconciliationPoller();
 });
 
 process.on("SIGTERM", () => {
   stopBookingSyncPoller();
   stopBookingFinalizationPoller();
+  stopRefundReconciliationPoller();
 });
 
 bootstrap();

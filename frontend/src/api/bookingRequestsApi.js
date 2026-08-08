@@ -68,6 +68,11 @@ export const processBookingRequestRefund = async (refundId, payload = {}) => {
   return response.data.data;
 };
 
+export const verifyBookingRequestRefund = async (refundId) => {
+  const response = await axiosClient.post(`/admin/refunds/${refundId}/verify`, {});
+  return response.data.data;
+};
+
 export const recordVerifiedAdjustmentPayment = async (adjustmentId, payload = {}) => {
   const response = await axiosClient.post(`/admin/payment-adjustments/${adjustmentId}/mark-paid`, payload);
   return response.data.data;

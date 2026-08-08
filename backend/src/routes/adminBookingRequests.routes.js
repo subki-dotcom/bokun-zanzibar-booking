@@ -18,5 +18,6 @@ router.post("/booking-requests/:id/send-email", validateRequest(schemas.adminReq
 router.post("/payment-adjustments/:id/mark-paid", validateRequest(schemas.adjustmentPaidSchema), controller.markAdjustmentPaid);
 router.post("/refunds/:id/status", authorize("super_admin", "admin"), validateRequest(schemas.refundStatusSchema), controller.updateRefund);
 router.post("/refunds/:id/process", authorize("super_admin", "admin"), validateRequest(schemas.refundProcessSchema), controller.processRefund);
+router.post("/refunds/:id/verify", authorize("super_admin", "admin"), validateRequest(schemas.refundVerifySchema), controller.verifyRefund);
 
 module.exports = router;

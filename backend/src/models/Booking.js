@@ -98,6 +98,31 @@ const bookingSchema = new mongoose.Schema(
     amount: { type: Number, default: 0 },
     currency: { type: String, default: "USD" },
     paymentMethod: { type: String, default: "pending" },
+    refundStatus: {
+      type: String,
+      enum: [
+        "not_requested",
+        "not_required",
+        "requested",
+        "eligible",
+        "pending_approval",
+        "approved",
+        "awaiting_merchant_approval",
+        "processing",
+        "verification_required",
+        "partially_refunded",
+        "refunded",
+        "failed",
+        "rejected",
+        "cancelled",
+        "manual_review",
+        "manual_refund_required"
+      ],
+      default: "not_requested",
+      index: true
+    },
+    amountRefunded: { type: Number, default: 0 },
+    refundedAt: { type: Date, default: null },
     bookingStatus: {
       type: String,
       enum: Object.values(BOOKING_STATUS),

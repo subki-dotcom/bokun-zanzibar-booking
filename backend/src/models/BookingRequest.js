@@ -16,9 +16,11 @@ const requestStatusValues = [
 
 const refundStatusValues = [
   "not_required",
+  "requested",
   "eligible",
   "pending_approval",
   "approved",
+  "awaiting_merchant_approval",
   "processing",
   "verification_required",
   "partially_refunded",
@@ -120,6 +122,8 @@ const bookingRequestSchema = new mongoose.Schema(
       cancellationFee: { type: Number, default: null },
       provider: { type: String, default: "" },
       providerLabel: { type: String, default: "" },
+      providerRefundRequestReference: { type: String, default: "" },
+      providerRefundReference: { type: String, default: "" },
       providerResolution: mongoose.Schema.Types.Mixed,
       refundId: { type: mongoose.Schema.Types.ObjectId, ref: "Refund", default: null },
       status: { type: String, enum: refundStatusValues, default: "not_required" }

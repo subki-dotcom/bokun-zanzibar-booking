@@ -3,8 +3,9 @@ const Invoice = require("../../models/Invoice");
 const Refund = require("../../models/Refund");
 const { env } = require("../../config/env");
 const paymentsService = require("../payments");
+const { Decimal, decimalString, normalizeCurrency, toDecimal } = require("../../utils/money");
 
-const roundMoney = (value = 0) => Number((Number(value || 0)).toFixed(2));
+const roundMoney = (value = 0) => Number(toDecimal(value).toDecimalPlaces(2).toFixed(2));
 
 const resolveInvoiceAccounting = ({
   bookingStatus = "",
@@ -13,13 +14,24 @@ const resolveInvoiceAccounting = ({
   verifiedPaidAmount = 0,
   confirmedRefundedAmount = 0
 } = {}) => {
-  const amountPaid = roundMoney(Math.max(0, verifiedPaidAmount));
-  const amountRefunded = roundMoney(Math.min(amountPaid, Math.max(0, confirmedRefundedAmount)));
-  const netAmountPaid = roundMoney(Math.max(0, amountPaid - amountRefunded));
-  const invoiceTotal = roundMoney(Math.max(0, total));
+  const zero = new Decimal(0);
+  const amountPaidDecimal = Decimal.max(zero, toDecimal(verifiedPaidAmount)).toDecimalPlaces(2);
+  const amountRefundedDecimal = Decimal.min(
+    amountPaidDecimal,
+    Decimal.max(zero, toDecimal(confirmedRefundedAmount))
+  ).toDecimalPlaces(2);
+  const netAmountPaidDecimal = Decimal.max(zero, amountPaidDecimal.minus(amountRefundedDecimal)).toDecimalPlaces(2);
+  const invoiceTotalDecimal = Decimal.max(zero, toDecimal(total)).toDecimalPlaces(2);
+  const amountPaid = Number(amountPaidDecimal.toFixed(2));
+  const amountRefunded = Number(amountRefundedDecimal.toFixed(2));
+  const netAmountPaid = Number(netAmountPaidDecimal.toFixed(2));
+  const invoiceTotal = Number(invoiceTotalDecimal.toFixed(2));
   const isCancelled = String(bookingStatus || "").toLowerCase() === "cancelled";
   const normalizedBookingPaymentStatus = String(bookingPaymentStatus || "").toLowerCase();
-  const balanceDue = isCancelled ? 0 : roundMoney(Math.max(0, invoiceTotal - netAmountPaid));
+  const balanceDueDecimal = isCancelled
+    ? zero
+    : Decimal.max(zero, invoiceTotalDecimal.minus(netAmountPaidDecimal)).toDecimalPlaces(2);
+  const balanceDue = Number(balanceDueDecimal.toFixed(2));
   const paymentStatus =
     amountPaid <= 0
       ? (normalizedBookingPaymentStatus === "failed" ? "failed" : "pending")
@@ -34,7 +46,14 @@ const resolveInvoiceAccounting = ({
     amountPaid,
     amountRefunded,
     netAmountPaid,
-    balanceDue
+    balanceDue,
+    canonical: {
+      totalAmount: invoiceTotalDecimal.toFixed(2),
+      paidAccountingAmount: amountPaidDecimal.toFixed(2),
+      refundedAccountingAmount: amountRefundedDecimal.toFixed(2),
+      netAccountingAmount: netAmountPaidDecimal.toFixed(2),
+      balanceDueAmount: balanceDueDecimal.toFixed(2)
+    }
   };
 };
 
@@ -50,13 +69,28 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
     .select("invoiceNumber")
     .lean();
   const invoiceNumber = existingInvoice?.invoiceNumber || (booking.invoiceSnapshot?.invoiceNumber) || await nextInvoiceNumber();
-  const subtotal = Number(booking.pricingSnapshot.grossAmount || 0);
-  const discount = Number(booking.pricingSnapshot.discountAmount || 0);
-  const tax = Number(((subtotal - discount) * env.TAX_PERCENT) / 100);
-  const total = Number((subtotal - discount + tax).toFixed(2));
-  const verifiedPaidAmount = await paymentsService.getVerifiedPaidAmountByBookingReference({
-    bookingReference: booking.bookingReference
+  const subtotalDecimal = toDecimal(booking.pricingSnapshot.grossAmount || 0);
+  const discountDecimal = toDecimal(booking.pricingSnapshot.discountAmount || 0);
+  const taxDecimal = subtotalDecimal
+    .minus(discountDecimal)
+    .times(toDecimal(env.TAX_PERCENT || 0))
+    .dividedBy(100);
+  const totalDecimal = subtotalDecimal.minus(discountDecimal).plus(taxDecimal).toDecimalPlaces(2);
+  const subtotal = Number(subtotalDecimal.toFixed(2));
+  const discount = Number(discountDecimal.toFixed(2));
+  const tax = Number(taxDecimal.toFixed(2));
+  const total = Number(totalDecimal.toFixed(2));
+  const invoiceCurrency = normalizeCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD");
+  const paidSummary = await paymentsService.getVerifiedAccountingSummary({
+    bookingReference: booking.bookingReference,
+    fallbackCurrency: invoiceCurrency
   });
+  if (paidSummary.currency && paidSummary.currency !== invoiceCurrency) {
+    const error = new Error("Verified payment accounting currency does not match the invoice");
+    error.code = "INVOICE_ACCOUNTING_CURRENCY_MISMATCH";
+    throw error;
+  }
+  const verifiedPaidAmount = paidSummary.amount;
   const refundRows = await Refund.aggregate([
     {
       $match: {
@@ -71,7 +105,8 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
     amountPaid,
     amountRefunded,
     netAmountPaid,
-    balanceDue
+    balanceDue,
+    canonical
   } = resolveInvoiceAccounting({
     bookingStatus: booking.bookingStatus,
     bookingPaymentStatus: booking.paymentStatus,
@@ -120,6 +155,12 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
     amountRefunded,
     netAmountPaid,
     balanceDue,
+    accountingCurrency: invoiceCurrency,
+    totalAmount: canonical.totalAmount,
+    paidAccountingAmount: canonical.paidAccountingAmount,
+    refundedAccountingAmount: canonical.refundedAccountingAmount,
+    netAccountingAmount: canonical.netAccountingAmount,
+    balanceDueAmount: canonical.balanceDueAmount,
     paymentMethod: booking.paymentMethod || "pending",
     notes: "Thank you for booking with Zanzibar premium experiences.",
     cancellationPolicy:
@@ -173,6 +214,12 @@ const upsertInvoiceFromSnapshot = async (invoiceSnapshot) => {
   existing.amountRefunded = invoiceSnapshot.amountRefunded;
   existing.netAmountPaid = invoiceSnapshot.netAmountPaid;
   existing.balanceDue = invoiceSnapshot.balanceDue;
+  existing.accountingCurrency = invoiceSnapshot.accountingCurrency;
+  existing.totalAmount = invoiceSnapshot.totalAmount;
+  existing.paidAccountingAmount = invoiceSnapshot.paidAccountingAmount;
+  existing.refundedAccountingAmount = invoiceSnapshot.refundedAccountingAmount;
+  existing.netAccountingAmount = invoiceSnapshot.netAccountingAmount;
+  existing.balanceDueAmount = invoiceSnapshot.balanceDueAmount;
   existing.paymentMethod = invoiceSnapshot.paymentMethod;
   existing.notes = invoiceSnapshot.notes;
   existing.cancellationPolicy = invoiceSnapshot.cancellationPolicy;

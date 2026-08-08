@@ -6,6 +6,15 @@ const AppError = require("../../../utils/AppError");
 const bookingsService = require("../../bookings");
 const paymentsService = require("..");
 const notificationsService = require("../../notifications");
+const { normalizeDpoPayment } = require("../providerNormalization");
+const {
+  decimalString,
+  decimalToApi,
+  divide,
+  equalsWithin,
+  isPositive,
+  normalizeCurrency
+} = require("../../../utils/money");
 const {
   buildCreateTokenXml,
   buildVerifyTokenXml,
@@ -28,6 +37,69 @@ const dpoClient = axios.create({
 });
 
 const shouldMock = Boolean(env.DPO_MOCK_MODE);
+
+const approvedDpoCurrencies = () =>
+  new Set(
+    String(env.DPO_APPROVED_CURRENCIES || "USD")
+      .split(",")
+      .map((value) => normalizeCurrency(value))
+      .filter(Boolean)
+  );
+
+const validateDpoVerification = ({ booking, payment = null, verification, transactionToken = "" }) => {
+  const normalized = normalizeDpoPayment({ ...verification, isPaid: isPaidTransaction(verification) });
+  const expectedToken = String(
+    payment?.dpoTransactionToken || payment?.orderTrackingId || booking?.dpoTransactionToken || ""
+  ).trim();
+  const returnedToken = String(verification?.transactionToken || transactionToken || "").trim();
+  const expectedReference = String(payment?.merchantReference || booking?.bookingReference || "").trim();
+  const returnedReference = String(verification?.transactionRef || "").trim();
+  const orderAmount = decimalToApi(payment?.orderAmount) || decimalString(
+    booking?.amount ?? booking?.pricingSnapshot?.finalPayable ?? 0,
+    { allowNegative: false, field: "orderAmount" }
+  );
+  const orderCurrency = normalizeCurrency(payment?.orderCurrency || booking?.currency || booking?.pricingSnapshot?.currency);
+
+  if (!expectedToken || !returnedToken || expectedToken !== returnedToken) {
+    throw new AppError("DPO transaction token does not match this payment attempt", 409, "DPO_REFERENCE_MISMATCH");
+  }
+  if (!expectedReference || !returnedReference || expectedReference !== returnedReference) {
+    throw new AppError("DPO transaction reference does not match this payment attempt", 409, "DPO_REFERENCE_MISMATCH");
+  }
+
+  let verificationStatus = "verified";
+  let verificationReason = "DPO verifyToken matched the immutable payment attempt";
+  if (!orderCurrency || !isPositive(orderAmount)) {
+    verificationStatus = "manual_review";
+    verificationReason = "Immutable DPO order amount or currency is invalid";
+  } else if (!normalized.hasValidChargedMoney) {
+    verificationStatus = normalized.chargedCurrency ? "amount_mismatch" : "currency_review_required";
+    verificationReason = "DPO did not return a valid final charged amount and currency";
+  } else if (
+    normalized.chargedCurrency === orderCurrency &&
+    !equalsWithin(normalized.chargedAmount, orderAmount, env.PAYMENT_SAME_CURRENCY_TOLERANCE)
+  ) {
+    verificationStatus = "amount_mismatch";
+    verificationReason = `DPO charged amount does not match the ${orderCurrency} order amount`;
+  }
+
+  const currencyConverted = Boolean(
+    verificationStatus === "verified" && normalized.chargedCurrency !== orderCurrency
+  );
+  return {
+    normalized,
+    accountingAmount: orderAmount,
+    accountingCurrency: orderCurrency,
+    providerAmount: normalized.chargedAmount,
+    providerCurrency: normalized.chargedCurrency,
+    currencyConverted,
+    fxRate: currencyConverted ? divide(normalized.chargedAmount, orderAmount) : null,
+    fxSource: currencyConverted ? "dpo_derived" : "none",
+    verificationStatus,
+    verificationReason,
+    canAllocate: verificationStatus === "verified"
+  };
+};
 
 const areLiveRedirectsLocal = () =>
   isLocalOrPrivateRedirectUrl(env.DPO_SUCCESS_URL) ||
@@ -178,9 +250,21 @@ const resolveOrCreatePendingBooking = async ({ payload, auth, requestId }) => {
 };
 
 const createTokenWithDpo = async ({ booking, requestId }) => {
-  const amount = Number(booking.amount || booking.pricingSnapshot?.finalPayable || 0);
-  const currency = String(booking.currency || booking.pricingSnapshot?.currency || "USD");
+  const amount = decimalString(booking.amount || booking.pricingSnapshot?.finalPayable || 0, {
+    allowNegative: false,
+    field: "orderAmount"
+  });
+  const currency = normalizeCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD");
   const normalizedServiceType = normalizeServiceType(env.DPO_SERVICE_TYPE);
+
+  if (!currency || !approvedDpoCurrencies().has(currency)) {
+    throw new AppError(
+      "This currency is not enabled for the configured DPO merchant account.",
+      422,
+      "DPO_CURRENCY_NOT_APPROVED",
+      { currency: currency || String(booking.currency || "") }
+    );
+  }
 
   if (shouldMock) {
     const transactionToken = `MOCKDPO-${buildDpoRequestId(booking.bookingReference)}`;
@@ -237,20 +321,31 @@ const createTokenWithDpo = async ({ booking, requestId }) => {
   return parsed;
 };
 
-const verifyTokenWithDpo = async ({ transactionToken, requestId }) => {
+const verifyTokenWithDpo = async ({ transactionToken, requestId, booking = null } = {}) => {
   if (!transactionToken) {
     throw new AppError("Transaction token is required", 400, "DPO_TOKEN_REQUIRED");
   }
 
   if (shouldMock) {
+    const amount = booking
+      ? decimalString(booking.amount || booking.pricingSnapshot?.finalPayable || 0, {
+          allowNegative: false,
+          field: "orderAmount"
+        })
+      : "0";
+    const currency = booking
+      ? normalizeCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD")
+      : "USD";
     return {
       resultCode: "000",
       resultExplanation: "Mock payment verified",
       transactionToken,
-      transactionRef: "",
+      transactionRef: booking?.bookingReference || "",
       transactionStatus: "PAID",
-      transactionAmount: 0,
-      transactionCurrency: "USD",
+      transactionFinalAmount: amount,
+      transactionFinalCurrency: currency,
+      transactionAmount: amount,
+      transactionCurrency: currency,
       transactionDate: new Date().toISOString(),
       rawXml: "<mock />"
     };
@@ -276,7 +371,7 @@ const updatePaymentLogForCreate = async ({ booking, tokenResponse }) => {
     provider: "dpo"
   });
 
-  if (latestPayment?.intentId) {
+  if (latestPayment?.intentId && !["failed", "reversed", "refunded"].includes(String(latestPayment.status || "").toLowerCase())) {
     await paymentsService.updatePaymentStatus({
       intentId: latestPayment.intentId,
       status: "pending",
@@ -284,7 +379,15 @@ const updatePaymentLogForCreate = async ({ booking, tokenResponse }) => {
       orderTrackingId: tokenResponse.transactionToken,
       merchantReference: tokenResponse.transactionRef || booking.bookingReference,
       rawResponse: tokenResponse,
-      providerResponse
+      providerResponse,
+      orderAmount: booking.amount || booking.pricingSnapshot?.finalPayable || 0,
+      orderCurrency: booking.currency || booking.pricingSnapshot?.currency || "USD",
+      dpoTransactionToken: tokenResponse.transactionToken,
+      dpoTransactionRef: tokenResponse.transactionRef || booking.bookingReference,
+      providerStatus: "TOKEN_CREATED",
+      verificationStatus: "pending",
+      verificationReason: "Awaiting DPO verifyToken response",
+      accountingAllocationStatus: "pending"
     });
     return latestPayment;
   }
@@ -309,7 +412,15 @@ const updatePaymentLogForCreate = async ({ booking, tokenResponse }) => {
       orderTrackingId: tokenResponse.transactionToken,
       merchantReference: tokenResponse.transactionRef || booking.bookingReference,
       rawResponse: tokenResponse,
-      providerResponse
+      providerResponse,
+      orderAmount: booking.amount || booking.pricingSnapshot?.finalPayable || 0,
+      orderCurrency: booking.currency || booking.pricingSnapshot?.currency || "USD",
+      dpoTransactionToken: tokenResponse.transactionToken,
+      dpoTransactionRef: tokenResponse.transactionRef || booking.bookingReference,
+      providerStatus: "TOKEN_CREATED",
+      verificationStatus: "pending",
+      verificationReason: "Awaiting DPO verifyToken response",
+      accountingAllocationStatus: "pending"
     });
 
     return updated || createdIntent;
@@ -322,20 +433,40 @@ const updatePaymentLogForVerification = async ({
   bookingReference,
   isPaid,
   amount,
-  verification
+  verification,
+  paymentVerification = null
 }) =>
   paymentsService.updatePaymentByBookingReference({
     bookingReference,
     provider: "dpo",
     status: isPaid ? "paid" : "failed",
-    paidAmount: isPaid ? Number(amount || 0) : 0,
-    amountPaid: isPaid ? Number(amount || 0) : 0,
+    paidAmount: isPaid && paymentVerification?.canAllocate ? Number(amount || 0) : 0,
+    amountPaid: isPaid && paymentVerification?.canAllocate ? Number(amount || 0) : 0,
     providerTransactionId: verification.transactionToken || "",
     orderTrackingId: verification.transactionToken || "",
     merchantReference: verification.transactionRef || bookingReference,
     paidAt: isPaid ? new Date() : undefined,
     lastVerifiedAt: new Date(),
     rawResponse: verification,
+    chargedAmount: paymentVerification?.providerAmount,
+    chargedCurrency: paymentVerification?.providerCurrency,
+    accountingAmount: paymentVerification?.accountingAmount,
+    accountingCurrency: paymentVerification?.accountingCurrency,
+    settlementAmount: paymentVerification?.normalized?.settlementAmount,
+    settlementCurrency: paymentVerification?.normalized?.settlementCurrency || undefined,
+    settledAt: paymentVerification?.normalized?.settledAt,
+    paymentMethod: paymentVerification?.normalized?.paymentMethod || undefined,
+    dpoTransactionToken: verification.transactionToken || undefined,
+    dpoTransactionRef: verification.transactionRef || undefined,
+    providerStatus: paymentVerification?.normalized?.providerStatus || verification.transactionStatus || verification.resultCode,
+    verificationStatus: paymentVerification?.verificationStatus || (isPaid ? "manual_review" : "pending"),
+    verificationReason: paymentVerification?.verificationReason || verification.resultExplanation || "Awaiting final DPO status",
+    accountingAllocationStatus: isPaid ? (paymentVerification?.canAllocate ? "pending" : "blocked") : "pending",
+    fxRate: paymentVerification?.fxRate ?? null,
+    fxSourceCurrency: paymentVerification?.currencyConverted ? paymentVerification.accountingCurrency : "",
+    fxTargetCurrency: paymentVerification?.currencyConverted ? paymentVerification.providerCurrency : "",
+    fxSource: paymentVerification?.fxSource || "none",
+    bokunSyncStatus: "not_started",
     providerResponse: {
       stage: "verify_token",
       response: verification
@@ -380,6 +511,10 @@ const createPayment = async ({ payload, auth, requestId }) => {
   booking.pendingCheckout = {
     ...(booking.pendingCheckout || {}),
     dpoInitializedAt: new Date().toISOString(),
+    dpoRequestedAmount: decimalString(booking.amount || booking.pricingSnapshot?.finalPayable || 0),
+    dpoRequestedCurrency: normalizeCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD"),
+    dpoTransactionToken: tokenResponse.transactionToken,
+    dpoTransactionRef: tokenResponse.transactionRef || booking.bookingReference,
     dpoCreateTokenResult: {
       resultCode: tokenResponse.resultCode,
       resultExplanation: tokenResponse.resultExplanation
@@ -484,9 +619,11 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
   try {
     const verification = await verifyTokenWithDpo({
       transactionToken,
+      booking,
       requestId
     });
     const paid = isPaidTransaction(verification);
+    verification.isPaid = paid;
 
     if (!paid) {
       await bookingsService.markBookingPaymentFailed({
@@ -522,12 +659,55 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
       };
     }
 
-    const paidAmount = Number(booking.amount || verification.transactionAmount || 0);
-    await updatePaymentLogForVerification({
+    const paymentAttempt = await paymentsService.findPaymentByGatewayIdentifiers({
+      provider: "dpo",
+      bookingReference: booking.bookingReference,
+      orderTrackingId: transactionToken,
+      merchantReference: verification.transactionRef || booking.bookingReference
+    });
+    const paymentVerification = validateDpoVerification({
+      booking,
+      payment: paymentAttempt,
+      verification,
+      transactionToken
+    });
+    const paidAmount = paymentVerification.accountingAmount;
+    const verifiedPayment = await updatePaymentLogForVerification({
       bookingReference: booking.bookingReference,
       isPaid: true,
       amount: paidAmount,
-      verification
+      verification,
+      paymentVerification
+    });
+
+    if (!paymentVerification.canAllocate) {
+      await Booking.findByIdAndUpdate(booking._id, {
+        $set: {
+          paymentStatus: "processing",
+          supplierStatus: "awaiting_payment",
+          supplierStatusUpdatedAt: new Date(),
+          "pendingCheckout.paymentReview.status": paymentVerification.verificationStatus,
+          "pendingCheckout.paymentReview.reason": paymentVerification.verificationReason,
+          "pendingCheckout.paymentReview.updatedAt": new Date().toISOString()
+        }
+      });
+      return {
+        status: "paid_manual_review",
+        reconciliationRequired: true,
+        message: "Payment was received and is being reconciled. Please do not pay again.",
+        booking: {
+          bookingId: booking._id,
+          bookingReference: booking.bookingReference,
+          paymentStatus: "processing",
+          bookingStatus: booking.bookingStatus
+        }
+      };
+    }
+
+    await paymentsService.applyVerifiedPaymentAllocation({
+      paymentId: verifiedPayment?._id,
+      bookingReference: booking.bookingReference,
+      metadata: { provider: "dpo", source: "dpo_callback", requestId }
     });
 
     const paidBooking = await bookingsService.markBookingPaymentVerified({
@@ -537,7 +717,7 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
       paymentMethod: "dpo",
       paymentProvider: "dpo",
       amountPaid: paidAmount,
-      currency: verification.transactionCurrency || booking.currency || "USD",
+      currency: paymentVerification.accountingCurrency,
       reason: "DPO payment verified before Bokun finalization"
     });
 
@@ -562,6 +742,14 @@ const handlePaymentSuccess = async ({ transactionToken, requestId }) => {
       booking: finalized.response || paidBooking
     };
   } catch (error) {
+    if (String(error?.code || "") === "DPO_REFERENCE_MISMATCH") {
+      logger.warn("DPO verification rejected because references do not match", {
+        requestId,
+        bookingId: booking._id.toString(),
+        bookingReference: booking.bookingReference
+      });
+      throw error;
+    }
     const finalizationMeta = extractBokunFinalizationErrorMeta(error);
     const isPendingFinalization = isBokunFinalizationPendingError(error);
     const bookingAfterError = await Booking.findById(booking._id);
@@ -721,5 +909,9 @@ const handlePaymentCancel = async ({ transactionToken = "", bookingId = "", requ
 module.exports = {
   createPayment,
   handlePaymentSuccess,
-  handlePaymentCancel
+  handlePaymentCancel,
+  __testables: {
+    approvedDpoCurrencies,
+    validateDpoVerification
+  }
 };

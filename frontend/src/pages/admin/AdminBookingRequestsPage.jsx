@@ -8,7 +8,7 @@ import Loader from "../../components/common/Loader";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 
 const statusVariant = (value = "") => {
-  if (["completed", "approved", "synced", "refunded"].includes(value)) return "success";
+  if (["completed", "approved", "synced", "refunded", "partially_refunded"].includes(value)) return "success";
   if (["rejected", "failed", "cancelled_by_customer", "unavailable"].includes(value)) return "danger";
   return "warning";
 };

@@ -13,5 +13,6 @@ const retryEmail = asyncHandler(async (req, res) => successResponse(res, { messa
 const markAdjustmentPaid = asyncHandler(async (req, res) => successResponse(res, { message: "Additional payment recorded", data: await service.markAdjustmentPaid({ adjustmentId: req.validated.params.id, auth: req.auth, paymentReference: req.validated.body.paymentReference, traceId: req.requestId }) }));
 const updateRefund = asyncHandler(async (req, res) => successResponse(res, { message: "Refund status updated", data: await service.updateRefundStatus({ refundId: req.validated.params.id, auth: req.auth, ...req.validated.body, traceId: req.requestId }) }));
 const processRefund = asyncHandler(async (req, res) => successResponse(res, { message: "Refund processing requested", data: await service.processRefund({ refundId: req.validated.params.id, auth: req.auth, notes: req.validated.body.notes, traceId: req.requestId }) }));
+const verifyRefund = asyncHandler(async (req, res) => successResponse(res, { message: "Refund status verified", data: await service.verifyRefundStatus({ refundId: req.validated.params.id, auth: req.auth, traceId: req.requestId }) }));
 
-module.exports = { list, get, approve, reject, requestInformation, recalculate, retryBokun, retryEmail, markAdjustmentPaid, updateRefund, processRefund };
+module.exports = { list, get, approve, reject, requestInformation, recalculate, retryBokun, retryEmail, markAdjustmentPaid, updateRefund, processRefund, verifyRefund };

@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { moneyString } = require("../../utils/money");
 
 const escapeXml = (value = "") =>
   String(value ?? "")
@@ -27,12 +28,11 @@ const getTagValue = (xml = "", tag = "") => {
 };
 
 const toMoneyAmount = (value = 0) => {
-  const numeric = Number(value || 0);
-  if (!Number.isFinite(numeric)) {
+  try {
+    return moneyString(value, 2);
+  } catch (error) {
     return "0.00";
   }
-
-  return numeric.toFixed(2);
 };
 
 const toDpoServiceDateTime = (value = new Date()) => {
@@ -139,11 +139,18 @@ const parseVerifyTokenResponse = (xml = "") => {
       getTagValue(xml, "CompanyRef") ||
       "",
     transactionStatus: String(rawStatus || "").toUpperCase(),
-    transactionAmount: Number(
+    transactionFinalAmount:
+      getTagValue(xml, "TransactionFinalAmount") ||
+      getTagValue(xml, "FinalAmount") ||
+      "",
+    transactionFinalCurrency:
+      getTagValue(xml, "TransactionFinalCurrency") ||
+      getTagValue(xml, "FinalCurrency") ||
+      "",
+    transactionAmount:
       getTagValue(xml, "TransactionAmount") ||
-        getTagValue(xml, "Amount") ||
-        0
-    ),
+      getTagValue(xml, "Amount") ||
+      "",
     transactionCurrency:
       getTagValue(xml, "TransactionCurrency") ||
       getTagValue(xml, "Currency") ||
@@ -151,6 +158,21 @@ const parseVerifyTokenResponse = (xml = "") => {
     transactionDate:
       getTagValue(xml, "TransactionStatusDate") ||
       getTagValue(xml, "TransactionDate") ||
+      "",
+    transactionNetAmount:
+      getTagValue(xml, "TransactionNetAmount") ||
+      getTagValue(xml, "NetAmount") ||
+      "",
+    transactionSettlementDate:
+      getTagValue(xml, "TransactionSettlementDate") ||
+      getTagValue(xml, "SettlementDate") ||
+      "",
+    settlementCurrency:
+      getTagValue(xml, "SettlementCurrency") ||
+      "",
+    paymentMethod:
+      getTagValue(xml, "PaymentType") ||
+      getTagValue(xml, "PaymentMethod") ||
       "",
     rawXml: xml
   };
