@@ -38,16 +38,20 @@ const formatMaybeMoney = (value, currency, fallback = "Manual review") =>
 
 const resolveEligibleRefundAmount = (request = {}, refundContext = null) => {
   if (hasKnownRefundAmount(refundContext?.eligibleRefundAmount)) return refundContext.eligibleRefundAmount;
+  const approvedAmount = request.refund?.approvedAmount ?? request.refund?.refundId?.amount;
+  const approved = hasKnownRefundAmount(approvedAmount) && Number(approvedAmount) > 0 ? approvedAmount : null;
   const policyAmount = request.cancellationPolicySnapshot?.estimatedRefundAmount;
-  if (hasKnownRefundAmount(policyAmount)) return policyAmount;
-  if (request.cancellationPolicySnapshot && policyAmount === null) return null;
+  if (hasKnownRefundAmount(policyAmount)) return Number(policyAmount) > 0 ? policyAmount : approved ?? policyAmount;
+  if (request.cancellationPolicySnapshot && policyAmount === null) return approved;
   if (hasKnownRefundAmount(request.refund?.eligibleAmount)) {
     const status = String(request.refund?.status || "");
+    if (Number(request.refund.eligibleAmount) === 0 && approved !== null) return approved;
     if (Number(request.refund.eligibleAmount) === 0 && ["manual_review", "manual_refund_required"].includes(status)) return null;
     return request.refund.eligibleAmount;
   }
   if (hasKnownRefundAmount(request.refund?.estimatedAmount)) {
     const status = String(request.refund?.status || "");
+    if (Number(request.refund.estimatedAmount) === 0 && approved !== null) return approved;
     if (Number(request.refund.estimatedAmount) === 0 && ["manual_review", "manual_refund_required"].includes(status)) return null;
     return request.refund.estimatedAmount;
   }
@@ -90,6 +94,8 @@ const CancellationRefundCard = ({ request, booking, invoice, payments, refundCon
   const approved = request.refund?.approvedAmount ?? refund?.amount ?? refundContext?.defaultApprovedRefundAmount;
   const provider = refundContext?.providerKnown ? refundContext.providerLabel : request.refund?.providerLabel || providerLabel(request.refund?.provider);
   const normalizedStatus = refundSummary?.status || refund?.status || request.refund?.status || "not_requested";
+  const providerRefundRequestReference = refundSummary?.providerRefundRequestReference || refund?.providerRefundRequestReference || request.refund?.providerRefundRequestReference;
+  const providerRefundReference = refundSummary?.providerRefundReference || refund?.providerRefundReference || request.refund?.providerRefundReference;
 
   return (
     <Card className="surface-card mb-3 cancellation-refund-card">
@@ -112,7 +118,8 @@ const CancellationRefundCard = ({ request, booking, invoice, payments, refundCon
           <DetailRow label="Approved refund amount" value={formatMaybeMoney(approved, currency, "Not approved yet")} />
           <DetailRow label="Refund destination" value={refundContext?.providerKnown ? `${provider} - original payment method` : "Manual review required"} />
           <DetailRow label="Refund status" value={label(normalizedStatus)} />
-          <DetailRow label="Provider refund reference" value={maskReference(refundSummary?.providerRefundReference || refund?.providerRefundReference)} />
+          <DetailRow label="Provider request reference" value={maskReference(providerRefundRequestReference)} />
+          <DetailRow label="Provider refund reference" value={maskReference(providerRefundReference)} />
           <DetailRow label="Confirmed amount refunded" value={formatCurrency(previousRefunded, currency)} />
         </div>
         {refundSummary?.providerMessage ? <Alert variant="info" className="mt-3 mb-0">{refundSummary.providerMessage}</Alert> : null}

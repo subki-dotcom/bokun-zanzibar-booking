@@ -40,6 +40,7 @@ const number = (value = 0) => (Number.isFinite(Number(value)) ? Number(value) : 
 const asId = (value) => (value ? String(value) : "");
 const requestReference = () => `BRQ-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 const refundReference = () => `RFD-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+const FINAL_REFUND_STATUSES = new Set(["refunded", "partially_refunded"]);
 
 const pickPayment = (payments = []) =>
   payments.find((payment) => String(payment.status || "").toLowerCase() === "paid") || payments[0] || null;
@@ -344,8 +345,24 @@ const run = async () => {
   const provider = evidenceProvider || refundsService.normalizeProvider(existingRefund?.provider || payment?.provider || records.booking.paymentMethod || "");
   const plannedAmount = resolveLocalRefundAmount({ existingRefund, invoice: records.invoice, payment, booking: records.booking });
   const plannedCurrency = resolveLocalRefundCurrency({ existingRefund, invoice: records.invoice, payment, booking: records.booking });
-  const plannedProviderReference = providerRefundReference || existingRefund?.providerRefundReference || "";
-  const plannedProviderRequestReference = existingRefund?.providerRefundRequestReference || payment?.confirmationCode || "";
+  const existingProviderReference = String(existingRefund?.providerRefundReference || "").trim();
+  const existingProviderRequestReference = String(existingRefund?.providerRefundRequestReference || "").trim();
+  const legacyPesapalRequestReference =
+    provider === "pesapal" &&
+    existingProviderReference &&
+    !existingProviderRequestReference &&
+    !providerRefundReference &&
+    (
+      !FINAL_REFUND_STATUSES.has(String(existingRefund?.status || "").toLowerCase()) ||
+      existingProviderReference === String(payment?.confirmationCode || "").trim() ||
+      existingProviderReference === String(existingRefund?.originalTransactionReference || "").trim()
+    );
+  const plannedProviderReference = providerRefundReference || (legacyPesapalRequestReference ? "" : existingProviderReference);
+  const plannedProviderRequestReference =
+    existingProviderRequestReference ||
+    (legacyPesapalRequestReference ? existingProviderReference : "") ||
+    payment?.confirmationCode ||
+    "";
   const providerEvidence = provider === "pesapal"
     ? await getPesapalEvidence({
       booking: records.booking,

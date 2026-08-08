@@ -73,6 +73,16 @@ test("admin refund eligibility does not show stale zero when policy requires rev
   assert.equal(resolveRequestEligibleRefundAmount(request), null);
 });
 
+test("admin refund eligibility uses approved refund over stale zero on processing requests", () => {
+  const request = {
+    type: "cancel_booking",
+    cancellationPolicySnapshot: { estimatedRefundAmount: null, requiresManualReview: true },
+    refund: { status: "processing", estimatedAmount: 0, eligibleAmount: 0, approvedAmount: 1 }
+  };
+
+  assert.equal(resolveRequestEligibleRefundAmount(request), 1);
+});
+
 test("selects the successful PayPal capture and ignores initiated Pesapal attempts", () => {
   const context = buildRefundContextFromRecords({
     booking,
@@ -214,6 +224,42 @@ test("admin refund summary prefers confirmed refund accounting over stale reques
   assert.equal(summary.paymentStatus, "paid");
   assert.equal(summary.providerRefundReference, "PAYPAL-RFD-1");
   assert.equal(summary.warnings.length, 1);
+});
+
+test("admin refund summary treats legacy Pesapal confirmation code as request reference", () => {
+  const summary = buildRefundSummaryFromRecords({
+    booking: { bookingReference: "ZNZ-PESA-LEGACY", bookingStatus: "cancelled", paymentStatus: "paid", currency: "USD" },
+    payments: [
+      {
+        _id: "payment-pesa-legacy",
+        provider: "pesapal",
+        status: "paid",
+        amountPaid: 1,
+        paidAmount: 1,
+        currency: "USD",
+        confirmationCode: "26607935178085"
+      }
+    ],
+    invoice: { amountPaid: 1, amountRefunded: 0, accountingCurrency: "USD" },
+    refund: {
+      _id: "refund-pesa-legacy",
+      paymentId: "payment-pesa-legacy",
+      provider: "pesapal",
+      status: "processing",
+      amount: 1,
+      currency: "USD",
+      providerRefundRequestReference: "",
+      providerRefundReference: "26607935178085",
+      originalTransactionReference: "26607935178085"
+    }
+  });
+
+  assert.equal(summary.status, "awaiting_merchant_approval");
+  assert.equal(summary.providerRefundRequestReference, "26607935178085");
+  assert.equal(summary.providerRefundReference, "");
+  assert.equal(summary.amountRefunded, 0);
+  assert.equal(summary.requiresMerchantApproval, true);
+  assert.equal(summary.canVerify, true);
 });
 
 test("Pesapal completed transaction verification remains awaiting merchant approval", () => {

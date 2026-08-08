@@ -65,6 +65,32 @@ const maskReference = (value = "") => {
   return `${text.slice(0, 4)}...${text.slice(-4)}`;
 };
 
+const isFinalRefundStatus = (status = "") => FINAL_REFUND_STATUSES.includes(String(status || "").toLowerCase());
+
+const normalizeProviderRefundReferences = ({ provider = "", status = "", refund = null, payment = null } = {}) => {
+  const normalizedProvider = normalizeProvider(provider || refund?.provider || payment?.provider || "");
+  const requestReference = String(refund?.providerRefundRequestReference || "").trim();
+  const finalReference = String(refund?.providerRefundReference || "").trim();
+  if (normalizedProvider !== "pesapal" || !finalReference || requestReference) {
+    return {
+      providerRefundRequestReference: requestReference,
+      providerRefundReference: finalReference
+    };
+  }
+
+  const originalReference = String(refund?.originalTransactionReference || "").trim();
+  const confirmationCode = String(payment?.confirmationCode || "").trim();
+  const looksLikeRequestReference =
+    !isFinalRefundStatus(status) ||
+    (confirmationCode && finalReference === confirmationCode) ||
+    (originalReference && finalReference === originalReference);
+
+  return {
+    providerRefundRequestReference: looksLikeRequestReference ? finalReference : "",
+    providerRefundReference: looksLikeRequestReference ? "" : finalReference
+  };
+};
+
 const isCanonicalPayment = (payment = {}) =>
   payment?.orderAmount !== null && payment?.orderAmount !== undefined && Boolean(payment?.orderCurrency);
 
@@ -247,26 +273,36 @@ const assertProviderRefundReferenceAvailable = async ({
 const normalizeRefundResult = ({ booking, payment, refund, totalRefunded = 0, currency = "" } = {}) => {
   const amountPaid = Number(toDecimal(payment ? extractPaymentAmountString(payment) : 0).toFixed(2));
   const amountRefunded = Number(toDecimal(totalRefunded).toFixed(2));
-  const status = refund?.status || refundStatusFromTotals({ totalRefunded, amountPaid });
+  const workflowStatus = refund?.status || refundStatusFromTotals({ totalRefunded, amountPaid });
+  const provider = normalizeProvider(refund?.provider || payment?.provider || "");
+  const providerReferences = normalizeProviderRefundReferences({ provider, status: workflowStatus, refund, payment });
+  const normalizedStatus =
+    provider === "pesapal" &&
+    workflowStatus === "processing" &&
+    amountRefunded <= 0 &&
+    providerReferences.providerRefundRequestReference &&
+    !providerReferences.providerRefundReference
+      ? "awaiting_merchant_approval"
+      : workflowStatus;
   return {
-    status: status === "not_required" ? "not_requested" : status,
+    status: normalizedStatus === "not_required" ? "not_requested" : normalizedStatus,
     amountPaid,
     requestedAmount: Number(toDecimal(refund?.amount || 0).toFixed(2)),
     amountRefunded,
     confirmedRefundedAmount: amountRefunded,
     refundableBalance: Number(Decimal.max(0, toDecimal(amountPaid).minus(toDecimal(amountRefunded))).toFixed(2)),
     currency: normalizeCurrency(currency || refund?.accountingRefundCurrency || refund?.currency || extractPaymentCurrency(payment || {}) || booking?.currency || "USD"),
-    provider: normalizeProvider(refund?.provider || payment?.provider || ""),
-    providerRefundRequestReference: refund?.providerRefundRequestReference || "",
-    providerRefundReference: refund?.providerRefundReference || "",
+    provider,
+    providerRefundRequestReference: providerReferences.providerRefundRequestReference,
+    providerRefundReference: providerReferences.providerRefundReference,
     refundedAt: refund?.completedAt || payment?.refundedAt || null,
     lastVerifiedAt: refund?.lastRefundSyncAt || null,
     requiresMerchantApproval: normalizeProvider(refund?.provider || payment?.provider || "") === "pesapal" &&
-      ["awaiting_merchant_approval", "processing", "verification_required"].includes(String(status || "")),
+      ["awaiting_merchant_approval", "processing", "verification_required"].includes(String(normalizedStatus || "")),
     canVerify: Boolean(refund?._id) && (
       normalizeProvider(refund?.provider || payment?.provider || "") === "pesapal" ||
       Boolean(refund?.providerRefundReference)
-    ) && !FINAL_REFUND_STATUSES.includes(String(status || "")),
+    ) && !FINAL_REFUND_STATUSES.includes(String(normalizedStatus || "")),
     providerMessage: refund?.metadata?.providerMessage || "",
     bookingStatus: booking?.bookingStatus || "",
     paymentStatus: payment?.status || payment?.paymentStatus || "",
@@ -298,11 +334,21 @@ const buildRefundSummaryFromRecords = ({ booking, payments = [], invoice = null,
       booking?.amountRefunded ??
       confirmedAmount
   ).toFixed(2));
+  const provider = normalizeProvider(refundRecord?.provider || payment?.provider || request?.refund?.provider || "");
   const workflowStatus = refundRecord?.status || request?.refund?.status || booking?.refundStatus || "not_requested";
+  const providerReferences = normalizeProviderRefundReferences({ provider, status: workflowStatus, refund: refundRecord, payment });
   const accountingStatus = amountRefunded > 0
     ? refundStatusFromTotals({ totalRefunded: amountRefunded, amountPaid })
     : workflowStatus;
-  const status = accountingStatus === "not_required" ? "not_requested" : accountingStatus;
+  const normalizedAccountingStatus =
+    provider === "pesapal" &&
+    accountingStatus === "processing" &&
+    amountRefunded <= 0 &&
+    providerReferences.providerRefundRequestReference &&
+    !providerReferences.providerRefundReference
+      ? "awaiting_merchant_approval"
+      : accountingStatus;
+  const status = normalizedAccountingStatus === "not_required" ? "not_requested" : normalizedAccountingStatus;
   const warnings = [];
   const bookingRefundStatus = String(booking?.refundStatus || "").trim();
   if (bookingRefundStatus && bookingRefundStatus !== "not_requested" && bookingRefundStatus !== status) {
@@ -329,19 +375,19 @@ const buildRefundSummaryFromRecords = ({ booking, payments = [], invoice = null,
         booking?.currency ||
         "USD"
     ),
-    provider: normalizeProvider(refundRecord?.provider || payment?.provider || request?.refund?.provider || ""),
-    providerRefundRequestReference: refundRecord?.providerRefundRequestReference || "",
-    providerRefundReference: refundRecord?.providerRefundReference || "",
+    provider,
+    providerRefundRequestReference: providerReferences.providerRefundRequestReference,
+    providerRefundReference: providerReferences.providerRefundReference,
     refundedAt: refundRecord?.completedAt || payment?.refundedAt || booking?.refundedAt || null,
     lastVerifiedAt: refundRecord?.lastRefundSyncAt || null,
-    requiresMerchantApproval: normalizeProvider(refundRecord?.provider || payment?.provider || request?.refund?.provider || "") === "pesapal" &&
+    requiresMerchantApproval: provider === "pesapal" &&
       ["awaiting_merchant_approval", "processing", "verification_required"].includes(String(status || "")),
     canVerify: Boolean(refundRecord?._id) && (
-      normalizeProvider(refundRecord?.provider || payment?.provider || request?.refund?.provider || "") === "pesapal" ||
-      Boolean(refundRecord?.providerRefundReference)
+      provider === "pesapal" ||
+      Boolean(providerReferences.providerRefundReference)
     ) && !FINAL_REFUND_STATUSES.includes(String(status || "")),
     providerMessage: refundRecord?.metadata?.providerMessage ||
-      (normalizeProvider(refundRecord?.provider || payment?.provider || request?.refund?.provider || "") === "pesapal" && status === "awaiting_merchant_approval"
+      (provider === "pesapal" && status === "awaiting_merchant_approval"
         ? "Pesapal accepted the refund request. Merchant confirmation is required before final completion."
         : ""),
     paymentStatus: payment?.status || booking?.paymentStatus || "",
@@ -741,10 +787,17 @@ const finalizeSuccessfulRefund = async ({
     bookingStatus: booking.bookingStatus
   };
 
+  const providerReferences = normalizeProviderRefundReferences({
+    provider: normalizedProvider,
+    status: refund.status,
+    refund,
+    payment
+  });
+
   refund.paymentId = payment._id;
   refund.provider = normalizedProvider || refund.provider;
-  refund.providerRefundRequestReference = requestReference || refund.providerRefundRequestReference;
-  refund.providerRefundReference = reference || refund.providerRefundReference || "";
+  refund.providerRefundRequestReference = requestReference || providerReferences.providerRefundRequestReference || refund.providerRefundRequestReference;
+  refund.providerRefundReference = reference || providerReferences.providerRefundReference || "";
   refund.originalTransactionReference = refund.originalTransactionReference || extractOriginalTransactionReference(payment);
   refund.originalProviderTransactionId = providerTransactionId || refund.originalProviderTransactionId || String(payment.providerTransactionId || payment.orderTrackingId || "");
   refund.requestedRefundAmount = refund.requestedRefundAmount || decimalOrNull(requestedAmount);

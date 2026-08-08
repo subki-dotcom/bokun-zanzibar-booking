@@ -167,13 +167,16 @@ const ensureRequestWorkflowDefaults = (request, booking = null) => {
 };
 
 const resolveRequestEligibleRefundAmount = (request = {}) => {
+  const approvedAmount = request.refund?.approvedAmount ?? request.refund?.refundId?.amount;
+  const approved = hasKnownAmount(approvedAmount) && number(approvedAmount) > 0 ? number(approvedAmount) : null;
   const policyAmount = request.cancellationPolicySnapshot?.estimatedRefundAmount;
-  if (hasKnownAmount(policyAmount)) return number(policyAmount);
-  if (request.cancellationPolicySnapshot && policyAmount === null) return null;
+  if (hasKnownAmount(policyAmount)) return number(policyAmount) > 0 ? number(policyAmount) : approved ?? number(policyAmount);
+  if (request.cancellationPolicySnapshot && policyAmount === null) return approved;
 
   const eligibleAmount = request.refund?.eligibleAmount;
   if (hasKnownAmount(eligibleAmount)) {
     const status = String(request.refund?.status || "");
+    if (number(eligibleAmount) === 0 && approved !== null) return approved;
     if (number(eligibleAmount) === 0 && ["manual_review", "manual_refund_required"].includes(status)) return null;
     return number(eligibleAmount);
   }
@@ -181,6 +184,7 @@ const resolveRequestEligibleRefundAmount = (request = {}) => {
   const estimatedAmount = request.refund?.estimatedAmount;
   if (hasKnownAmount(estimatedAmount)) {
     const status = String(request.refund?.status || "");
+    if (number(estimatedAmount) === 0 && approved !== null) return approved;
     if (number(estimatedAmount) === 0 && ["manual_review", "manual_refund_required"].includes(status)) return null;
     return number(estimatedAmount);
   }
