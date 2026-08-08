@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/apiResponse");
 const bokunService = require("../services/bokun");
+const bokunConfirmedBookingsService = require("../services/bokunConfirmedBookings");
 
 const products = asyncHandler(async (req, res) => {
   const data = await bokunService.fetchProducts(req.requestId);
@@ -122,6 +123,35 @@ const editBooking = asyncHandler(async (req, res) => {
   });
 });
 
+const importConfirmedBookings = asyncHandler(async (req, res) => {
+  const body = req.validated?.body || {};
+  const data = await bokunConfirmedBookingsService.syncConfirmedBookings({
+    ...body,
+    source: "admin_manual_import",
+    requestId: req.requestId
+  });
+
+  return successResponse(res, {
+    message: body.dryRun ? "Bokun confirmed booking import dry-run completed" : "Bokun confirmed booking import completed",
+    data
+  });
+});
+
+const resyncBooking = asyncHandler(async (req, res) => {
+  const body = req.validated?.body || {};
+  const data = await bokunConfirmedBookingsService.manualResync({
+    reference: req.validated.params.reference,
+    source: "admin_single_resync",
+    requestId: req.requestId,
+    dryRun: Boolean(body.dryRun)
+  });
+
+  return successResponse(res, {
+    message: body.dryRun ? "Bokun booking resync dry-run completed" : "Bokun booking resynced",
+    data
+  });
+});
+
 module.exports = {
   products,
   countries,
@@ -134,5 +164,7 @@ module.exports = {
   createBooking,
   lookupBooking,
   cancelBooking,
-  editBooking
+  editBooking,
+  importConfirmedBookings,
+  resyncBooking
 };

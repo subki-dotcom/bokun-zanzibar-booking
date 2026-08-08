@@ -20,6 +20,9 @@ const bokunSyncService = require("../webhooks");
 const notificationsService = require("../notifications");
 const { calculateCancellationPolicy } = require("../cancellations/policy");
 const legacyBokunRecoveryService = require("./legacyBokunRecovery.service");
+const { decimalString, equalsWithin, normalizeCurrency } = require("../../utils/money");
+const { normalizeBokunBookingStatus } = require("../../integrations/bokun/bookingStatus.adapter");
+const { mapBokunSalesChannel } = require("../../integrations/bokun/salesChannel.adapter");
 
 const normalizeTicketCategory = (value = "") => {
   const token = String(value).toLowerCase();
@@ -1519,6 +1522,10 @@ const syncInvoiceForBooking = async ({ bookingDoc, productSnapshot }) => {
   bookingDoc.invoiceSnapshot = invoiceSnapshot;
   await bookingDoc.save();
   const invoiceRecord = await invoicesService.upsertInvoiceFromSnapshot(invoiceSnapshot);
+  await paymentsService.linkAllocationsToInvoice({
+    bookingReference: bookingDoc.bookingReference,
+    invoiceId: invoiceRecord?._id
+  });
   return { invoiceSnapshot, invoiceRecord };
 };
 
@@ -1751,6 +1758,9 @@ const persistBookingRecord = async ({
 }) => {
   const { payloadWithCatalog, product, option, selectedPriceCatalog, sourceContext, liveQuote } = context;
   const customer = await upsertCustomer(payloadWithCatalog.customer);
+  const nowDate = new Date();
+  const bokunStatus = bokunBooking ? normalizeBokunBookingStatus(bokunBooking.raw || bokunBooking) : null;
+  const bokunChannel = mapBokunSalesChannel(bokunBooking?.raw || {}, sourceContext.sourceChannel);
 
   const bookingReference =
     existingBooking?.bookingReference ||
@@ -1829,12 +1839,35 @@ const persistBookingRecord = async ({
     amount: payableAmount,
     currency: liveQuote.pricing.currency || "USD",
     sourceChannel: sourceContext.sourceChannel,
+    operationalSource: bokunBooking ? "BOKUN" : existingBooking?.operationalSource || "LOCAL",
+    salesChannel: existingBooking?.salesChannel || bokunChannel.salesChannel,
     createdByRole: sourceContext.createdByRole,
     createdByUser: sourceContext.createdByUser,
     agentId: sourceContext.agentId,
     cancellationPolicySnapshot,
     rawBokunResponse: bokunBooking?.raw || existingBooking?.rawBokunResponse || null
   };
+
+  if (bokunStatus) {
+    bookingPatch.bokunStatus = {
+      raw: bokunStatus.rawStatus,
+      normalized: bokunStatus.normalizedStatus,
+      sourceField: bokunStatus.sourceField,
+      mappedAt: nowDate
+    };
+    bookingPatch.bokunImport = {
+      ...(existingBooking?.bokunImport || {}),
+      firstImportedAt: existingBooking?.bokunImport?.firstImportedAt || nowDate,
+      lastImportedAt: existingBooking?.bokunImport?.lastImportedAt || nowDate,
+      lastSyncedAt: nowDate,
+      lastSyncSource: "direct_website_finalization",
+      lastSyncRequestId: requestId,
+      lastChangeType: existingBooking ? "updated" : "imported",
+      lastError: "",
+      rawSalesChannel: bokunChannel.rawChannel || "",
+      salesChannelSourceField: bokunChannel.sourceField || ""
+    };
+  }
 
   const resolvedTransactionId =
     paymentTransactionId !== undefined && paymentTransactionId !== null
@@ -1878,7 +1911,8 @@ const persistBookingRecord = async ({
       amount: payableAmount,
       currency: liveQuote.pricing.currency || "USD",
       provider: paymentProvider,
-      notes: paymentNotes || "Payment intent created for booking checkout"
+      notes: paymentNotes || "Payment intent created for booking checkout",
+      expiresAt: pendingCheckout?.quoteExpiresAt || null
     });
   }
 
@@ -1928,17 +1962,17 @@ const persistBookingRecord = async ({
 
 const preparePendingPaymentBooking = async ({ payload, auth, requestId }) => {
   const context = await buildValidatedCreateContext({ payload, auth, requestId });
-  const expectedAmount = Number(
+  const expectedAmount = decimalString(
     context.liveQuote.pricing.finalPayable || context.liveQuote.pricing.grossAmount || 0
   );
   const requestedAmount =
     payload.amount !== undefined && payload.amount !== null
-      ? Number(payload.amount)
+      ? decimalString(payload.amount)
       : expectedAmount;
-  const expectedCurrency = String(context.liveQuote.pricing.currency || "USD");
-  const requestedCurrency = String(payload.currency || expectedCurrency);
+  const expectedCurrency = normalizeCurrency(context.liveQuote.pricing.currency || "USD");
+  const requestedCurrency = normalizeCurrency(payload.currency || expectedCurrency);
 
-  if (Math.abs(requestedAmount - expectedAmount) > 0.009) {
+  if (!equalsWithin(requestedAmount, expectedAmount, env.PAYMENT_SAME_CURRENCY_TOLERANCE)) {
     throw new AppError("Payment amount mismatch against live quote", 409, "PAYMENT_AMOUNT_MISMATCH");
   }
 
@@ -1948,6 +1982,7 @@ const preparePendingPaymentBooking = async ({ payload, auth, requestId }) => {
 
   const pendingCheckout = {
     quoteToken: payload.quoteToken,
+    quoteExpiresAt: context.quoteCheck?.payload?.expiresAt || null,
     preparedAt: new Date().toISOString(),
     finalization: {
       status: FINALIZATION_STATUS.IDLE,
@@ -2024,9 +2059,10 @@ const finalizePendingBookingAfterPayment = async ({
     );
   }
 
-  const verifiedPaidAmount = await paymentsService.getVerifiedPaidAmountByBookingReference({
+  const financialGate = await paymentsService.assertBokunFinalizationEligibility({
     bookingReference: initialBooking.bookingReference
   });
+  const verifiedPaidAmount = Number(financialGate.amount || 0);
   if (verifiedPaidAmount <= 0) {
     throw new AppError(
       "Verified payment record is required before Bokun finalization",
@@ -2090,6 +2126,10 @@ const finalizePendingBookingAfterPayment = async ({
   const lockToken = lockResult.lockToken;
 
   try {
+    await paymentsService.updatePaymentBokunSyncStatus({
+      bookingReference: booking.bookingReference,
+      status: "syncing"
+    });
     await AuditLog.create({
       actorId: null,
       actorRole: "payment_gateway",
@@ -2117,6 +2157,10 @@ const finalizePendingBookingAfterPayment = async ({
 
       if (reconciliation.found) {
         const reconciledBooking = reconciliation.booking;
+        await paymentsService.updatePaymentBokunSyncStatus({
+          bookingReference: booking.bookingReference,
+          status: "confirmed"
+        });
         await releaseFinalizationLock({
           bookingId: booking._id,
           lockToken,
@@ -2298,6 +2342,11 @@ const finalizePendingBookingAfterPayment = async ({
       paymentProvider
     });
 
+    await paymentsService.updatePaymentBokunSyncStatus({
+      bookingReference: booking.bookingReference,
+      status: "confirmed"
+    });
+
     await notificationsService.notifyBookingConfirmed({
       booking: finalized.bookingDoc,
       provider: paymentProvider,
@@ -2315,6 +2364,11 @@ const finalizePendingBookingAfterPayment = async ({
     const allowRetry = errorMeta.isPendingRetry && attemptCount < maxRetries;
     const status = allowRetry ? FINALIZATION_STATUS.PENDING_RETRY : FINALIZATION_STATUS.FAILED;
     const nextRetryAt = allowRetry ? calculateNextFinalizationRetryAt(attemptCount) : "";
+
+    await paymentsService.updatePaymentBokunSyncStatus({
+      bookingReference: booking.bookingReference,
+      status: allowRetry ? "pending_retry" : "manual_review_required"
+    });
 
     await releaseFinalizationLock({
       bookingId: booking._id,

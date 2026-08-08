@@ -9,6 +9,14 @@ const {
   startBookingFinalizationPoller,
   stopBookingFinalizationPoller
 } = require("./src/jobs/bookingFinalization.job");
+const {
+  startRefundReconciliationPoller,
+  stopRefundReconciliationPoller
+} = require("./src/jobs/refundReconciliation.job");
+const {
+  startBokunConfirmedBookingImportPoller,
+  stopBokunConfirmedBookingImportPoller
+} = require("./src/jobs/bokunConfirmedBookingImport.job");
 
 const bootstrap = async () => {
   await connectDB();
@@ -26,18 +34,24 @@ const bootstrap = async () => {
       }
     });
     startBookingSyncPoller();
+    startBokunConfirmedBookingImportPoller();
     startBookingFinalizationPoller();
+    startRefundReconciliationPoller();
   });
 };
 
 process.on("SIGINT", () => {
   stopBookingSyncPoller();
+  stopBokunConfirmedBookingImportPoller();
   stopBookingFinalizationPoller();
+  stopRefundReconciliationPoller();
 });
 
 process.on("SIGTERM", () => {
   stopBookingSyncPoller();
+  stopBokunConfirmedBookingImportPoller();
   stopBookingFinalizationPoller();
+  stopRefundReconciliationPoller();
 });
 
 bootstrap();

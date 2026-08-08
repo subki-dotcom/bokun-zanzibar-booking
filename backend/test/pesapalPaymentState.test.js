@@ -91,31 +91,32 @@ test("includes paid amount in already processed Pesapal callback bookings", () =
 });
 
 test("keeps amount mismatches blocked and records both values for reconciliation", () => {
-  assert.throws(
-    () =>
-      __testables.validatePesapalVerification({
-        booking: {
-          bookingReference: "ZNZ-TEST-1",
-          paymentTransactionId: "tracking-1",
-          amount: 70,
-          currency: "USD",
-          pendingCheckout: { pesapalMerchantReference: "ZNZ-TEST-1" }
-        },
-        orderTrackingId: "tracking-1",
-        orderMerchantReference: "ZNZ-TEST-1",
-        verification: {
-          isPaid: true,
-          providerOrderTrackingId: "tracking-1",
-          merchantReference: "ZNZ-TEST-1",
-          amount: 80,
-          currency: "USD"
-        }
-      }),
-    (error) =>
-      error.code === "PESAPAL_VERIFIED_AMOUNT_MISMATCH" &&
-      error.details.expectedAmount === 70 &&
-      error.details.verifiedAmount === 80
-  );
+  const result = __testables.validatePesapalVerification({
+    booking: {
+      bookingReference: "ZNZ-TEST-1",
+      paymentTransactionId: "tracking-1",
+      amount: 70,
+      currency: "USD",
+      pendingCheckout: { pesapalMerchantReference: "ZNZ-TEST-1" }
+    },
+    orderTrackingId: "tracking-1",
+    orderMerchantReference: "ZNZ-TEST-1",
+    verification: {
+      isPaid: true,
+      providerOrderTrackingId: "tracking-1",
+      merchantReference: "ZNZ-TEST-1",
+      confirmationCode: "PESAPAL-CONFIRM-1",
+      amount: 80,
+      currency: "USD"
+    }
+  });
+
+  assert.equal(result.accountingAmount, "70");
+  assert.equal(result.providerAmount, "80");
+  assert.equal(result.accountingCurrency, "USD");
+  assert.equal(result.providerCurrency, "USD");
+  assert.equal(result.verificationStatus, "amount_mismatch");
+  assert.equal(result.canAllocate, false);
 });
 
 test("accounts for the original order currency when Pesapal completes a converted payment", () => {
@@ -133,21 +134,23 @@ test("accounts for the original order currency when Pesapal completes a converte
       isPaid: true,
       providerOrderTrackingId: "tracking-2",
       merchantReference: "ZNZ-TEST-2",
+      confirmationCode: "PESAPAL-CONFIRM-2",
       amount: 2626,
       currency: "TZS"
     }
   });
 
-  assert.deepEqual(result, {
-    accountingAmount: 1,
-    accountingCurrency: "USD",
-    providerAmount: 2626,
-    providerCurrency: "TZS",
-    currencyConverted: true
-  });
+  assert.equal(result.accountingAmount, "1");
+  assert.equal(result.accountingCurrency, "USD");
+  assert.equal(result.providerAmount, "2626");
+  assert.equal(result.providerCurrency, "TZS");
+  assert.equal(result.currencyConverted, true);
+  assert.equal(result.fxRate, "2626");
+  assert.equal(result.verificationStatus, "verified");
+  assert.equal(result.canAllocate, true);
 });
 
-test("recognizes a Tanzania mobile-money conversion when Pesapal reports the order currency", () => {
+test("does not infer TZS from a mobile-money method when Pesapal reports USD", () => {
   const result = __testables.validatePesapalVerification({
     booking: {
       bookingReference: "ZNZ-TEST-TIGO",
@@ -166,24 +169,21 @@ test("recognizes a Tanzania mobile-money conversion when Pesapal reports the ord
       isPaid: true,
       providerOrderTrackingId: "tracking-tigo",
       merchantReference: "ZNZ-TEST-TIGO",
+      confirmationCode: "PESAPAL-CONFIRM-TIGO",
       amount: 2643,
       currency: "USD",
       raw: { payment_method: "TIGOTZ" }
     }
   });
 
-  assert.deepEqual(result, {
-    accountingAmount: 1,
-    accountingCurrency: "USD",
-    providerAmount: 2643,
-    providerCurrency: "TZS",
-    currencyConverted: true
-  });
+  assert.equal(result.providerCurrency, "USD");
+  assert.equal(result.currencyConverted, false);
+  assert.equal(result.verificationStatus, "amount_mismatch");
+  assert.equal(result.canAllocate, false);
 });
 
 test("does not treat an ordinary card amount mismatch as currency conversion", () => {
-  assert.throws(
-    () => __testables.validatePesapalVerification({
+  const result = __testables.validatePesapalVerification({
       booking: {
         bookingReference: "ZNZ-TEST-CARD",
         paymentTransactionId: "tracking-card",
@@ -201,18 +201,21 @@ test("does not treat an ordinary card amount mismatch as currency conversion", (
         isPaid: true,
         providerOrderTrackingId: "tracking-card",
         merchantReference: "ZNZ-TEST-CARD",
+        confirmationCode: "PESAPAL-CONFIRM-CARD",
         amount: 2643,
         currency: "USD",
         raw: { payment_method: "VISA" }
       }
-    }),
-    (error) => error.code === "PESAPAL_VERIFIED_AMOUNT_MISMATCH"
-  );
+    });
+
+  assert.equal(result.providerCurrency, "USD");
+  assert.equal(result.currencyConverted, false);
+  assert.equal(result.verificationStatus, "amount_mismatch");
+  assert.equal(result.canAllocate, false);
 });
 
-test("does not accept an implausible mobile-money conversion amount", () => {
-  assert.throws(
-    () => __testables.validatePesapalVerification({
+test("accepts an unusual cross-currency rate when Pesapal returned verified ISO money", () => {
+  const result = __testables.validatePesapalVerification({
       booking: {
         bookingReference: "ZNZ-TEST-TIGO-BAD-RATE",
         paymentTransactionId: "tracking-tigo-bad-rate",
@@ -230,13 +233,44 @@ test("does not accept an implausible mobile-money conversion amount", () => {
         isPaid: true,
         providerOrderTrackingId: "tracking-tigo-bad-rate",
         merchantReference: "ZNZ-TEST-TIGO-BAD-RATE",
+        confirmationCode: "PESAPAL-CONFIRM-UNUSUAL",
         amount: 2643,
-        currency: "USD",
+        currency: "TZS",
         raw: { payment_method: "TIGOTZ" }
       }
-    }),
-    (error) => error.code === "PESAPAL_VERIFIED_AMOUNT_MISMATCH"
-  );
+    });
+
+  assert.equal(result.accountingAmount, "70");
+  assert.equal(result.providerAmount, "2643");
+  assert.equal(result.providerCurrency, "TZS");
+  assert.equal(result.currencyConverted, true);
+  assert.equal(result.verificationStatus, "verified");
+  assert.equal(result.canAllocate, true);
+});
+
+test("blocks a paid response when Pesapal omits the charged currency", () => {
+  const result = __testables.validatePesapalVerification({
+    booking: {
+      bookingReference: "ZNZ-TEST-NO-CURRENCY",
+      paymentTransactionId: "tracking-no-currency",
+      amount: 1,
+      currency: "USD",
+      pendingCheckout: { pesapalMerchantReference: "ZNZ-TEST-NO-CURRENCY" }
+    },
+    orderTrackingId: "tracking-no-currency",
+    orderMerchantReference: "ZNZ-TEST-NO-CURRENCY",
+    verification: {
+      isPaid: true,
+      providerOrderTrackingId: "tracking-no-currency",
+      merchantReference: "ZNZ-TEST-NO-CURRENCY",
+      confirmationCode: "PESAPAL-CONFIRM-NO-CURRENCY",
+      amount: 1,
+      currency: ""
+    }
+  });
+
+  assert.equal(result.verificationStatus, "currency_review_required");
+  assert.equal(result.canAllocate, false);
 });
 
 test("detects checkout and Pesapal callback origins from different environments", () => {

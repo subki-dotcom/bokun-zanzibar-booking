@@ -13,6 +13,7 @@ const bokunService = require("../bokun");
 const paymentsService = require("../payments");
 const bookingsService = require("../bookings");
 const refundsService = require("../refunds");
+const { decimalOrNull } = require("../../utils/money");
 const emailService = require("../email");
 const { env } = require("../../config/env");
 const { ACTIVE_REQUEST_STATUSES, assertTransition } = require("./status");
@@ -25,6 +26,7 @@ const syncKey = () => crypto.randomUUID();
 
 const normalizeEmail = (value = "") => String(value || "").trim().toLowerCase();
 const number = (value = 0) => (Number.isFinite(Number(value)) ? Number(value) : 0);
+const hasKnownAmount = (value) => value !== null && value !== undefined && Number.isFinite(Number(value));
 const travelerTotal = (travelers = {}) => number(travelers.adults) + number(travelers.children) + number(travelers.infants);
 
 const toPublicCancellationPolicy = (policy = {}) => {
@@ -164,6 +166,32 @@ const ensureRequestWorkflowDefaults = (request, booking = null) => {
   return request;
 };
 
+const resolveRequestEligibleRefundAmount = (request = {}) => {
+  const approvedAmount = request.refund?.approvedAmount ?? request.refund?.refundId?.amount;
+  const approved = hasKnownAmount(approvedAmount) && number(approvedAmount) > 0 ? number(approvedAmount) : null;
+  const policyAmount = request.cancellationPolicySnapshot?.estimatedRefundAmount;
+  if (hasKnownAmount(policyAmount)) return number(policyAmount) > 0 ? number(policyAmount) : approved ?? number(policyAmount);
+  if (request.cancellationPolicySnapshot && policyAmount === null) return approved;
+
+  const eligibleAmount = request.refund?.eligibleAmount;
+  if (hasKnownAmount(eligibleAmount)) {
+    const status = String(request.refund?.status || "");
+    if (number(eligibleAmount) === 0 && approved !== null) return approved;
+    if (number(eligibleAmount) === 0 && ["manual_review", "manual_refund_required"].includes(status)) return null;
+    return number(eligibleAmount);
+  }
+
+  const estimatedAmount = request.refund?.estimatedAmount;
+  if (hasKnownAmount(estimatedAmount)) {
+    const status = String(request.refund?.status || "");
+    if (number(estimatedAmount) === 0 && approved !== null) return approved;
+    if (number(estimatedAmount) === 0 && ["manual_review", "manual_refund_required"].includes(status)) return null;
+    return number(estimatedAmount);
+  }
+
+  return null;
+};
+
 const publicRequest = (request) => ({
   id: request._id,
   requestReference: request.requestReference,
@@ -178,7 +206,7 @@ const publicRequest = (request) => ({
   refund: {
     required: request.refund?.required,
     estimatedAmount: request.refund?.estimatedAmount,
-    eligibleAmount: request.refund?.eligibleAmount ?? request.refund?.estimatedAmount,
+    eligibleAmount: resolveRequestEligibleRefundAmount(request),
     approvedAmount: request.refund?.approvedAmount ?? null,
     requestedAmount: request.refund?.requestedAmount ?? 0,
     confirmedRefundedAmount: request.refund?.confirmedRefundedAmount ?? 0,
@@ -411,7 +439,7 @@ const adminGetRequest = async ({ requestId }) => {
     try {
       refundContext = await refundsService.resolveRefundContext({
         booking: request.booking,
-        eligibleRefundAmount: request.refund?.eligibleAmount ?? request.refund?.estimatedAmount ?? request.cancellationPolicySnapshot?.estimatedRefundAmount ?? null,
+        eligibleRefundAmount: resolveRequestEligibleRefundAmount(request),
         approvedRefundAmount: request.refund?.approvedAmount ?? request.refund?.refundId?.amount ?? null
       });
     } catch (error) {
@@ -426,7 +454,17 @@ const adminGetRequest = async ({ requestId }) => {
       };
     }
   }
-  return { request, payments, invoice, audit, refundContext };
+  const refundSummary = request.type === "cancel_booking"
+    ? refundsService.buildRefundSummaryFromRecords({
+      booking: request.booking,
+      payments,
+      invoice,
+      refund: request.refund?.refundId || null,
+      refundContext,
+      request
+    })
+    : null;
+  return { request, payments, invoice, audit, refundContext, refundSummary };
 };
 
 const withAdminLock = async ({ requestId, auth, action, callback }) => {
@@ -708,12 +746,20 @@ const createRefundRecord = async ({ request, booking, amount, reason, auth, init
       existing.invoiceId = invoice?._id || existing.invoiceId || null;
       existing.provider = context.provider;
       existing.originalTransactionReference = refundsService.extractOriginalTransactionReference(latestPayment || {});
+      existing.originalProviderTransactionId = String(latestPayment?.providerTransactionId || "");
+      existing.originalChargedAmount = decimalOrNull(context.originalChargedAmount);
+      existing.originalChargedCurrency = context.originalChargedCurrency;
       existing.idempotencyKey = `${context.provider}-${existing.refundReference}`;
       existing.amount = safeAmount;
       existing.requestedAmount = safeAmount;
       existing.eligibleRefundAmount = context.eligibleRefundAmount;
       existing.cancellationFee = request.refund?.cancellationFee ?? request.cancellationPolicySnapshot?.estimatedCancellationFee ?? existing.cancellationFee ?? null;
       existing.currency = booking.currency || existing.currency || "USD";
+      existing.requestedRefundAmount = decimalOrNull(context.providerRefundAmount);
+      existing.requestedRefundCurrency = context.providerRefundCurrency;
+      existing.accountingRefundAmount = decimalOrNull(safeAmount);
+      existing.accountingRefundCurrency = context.currency;
+      existing.historicalFxRate = decimalOrNull(context.historicalFxRate);
       existing.status = existingStatus === "manual_review" || existingStatus === "manual_refund_required" || existingStatus === "failed"
         ? "approved"
         : existing.status || "approved";
@@ -756,12 +802,20 @@ const createRefundRecord = async ({ request, booking, amount, reason, auth, init
     invoiceId: invoice?._id || null,
     provider: context.provider,
     originalTransactionReference: refundsService.extractOriginalTransactionReference(latestPayment || {}),
+    originalProviderTransactionId: String(latestPayment?.providerTransactionId || ""),
+    originalChargedAmount: decimalOrNull(context.originalChargedAmount),
+    originalChargedCurrency: context.originalChargedCurrency,
     amount: safeAmount,
     requestedAmount: safeAmount,
     confirmedRefundedAmount: 0,
     eligibleRefundAmount: context.eligibleRefundAmount,
     cancellationFee: request.refund?.cancellationFee ?? request.cancellationPolicySnapshot?.estimatedCancellationFee ?? null,
     currency: booking.currency || "USD",
+    requestedRefundAmount: decimalOrNull(context.providerRefundAmount),
+    requestedRefundCurrency: context.providerRefundCurrency,
+    accountingRefundAmount: decimalOrNull(safeAmount),
+    accountingRefundCurrency: context.currency,
+    historicalFxRate: decimalOrNull(context.historicalFxRate),
     reason: reason || request.customerReason,
     status: refundStatus,
     approvedAt: refundStatus === "approved" || refundStatus === "processing" ? new Date() : undefined,
@@ -1033,7 +1087,7 @@ const markAdjustmentPaid = async ({ adjustmentId, auth, paymentReference = "", t
   const booking = await Booking.findById(adjustment.bookingId);
   ensureRequestWorkflowDefaults(request, booking);
   const provider = adjustment.provider === "manual_bank_transfer" ? "manual_bank" : adjustment.provider === "cash" ? "cash_on_arrival" : adjustment.provider;
-  await Payment.findOneAndUpdate(
+  const payment = await Payment.findOneAndUpdate(
     { intentId: `adjustment-${adjustment._id}` },
     {
       $set: {
@@ -1044,17 +1098,45 @@ const markAdjustmentPaid = async ({ adjustmentId, auth, paymentReference = "", t
         orderTrackingId: adjustment.paymentReference || "",
         amount: adjustment.amount,
         currency: adjustment.currency,
+        orderAmount: decimalOrNull(adjustment.amount),
+        orderCurrency: adjustment.currency,
+        chargedAmount: decimalOrNull(adjustment.amount),
+        chargedCurrency: adjustment.currency,
+        accountingAmount: decimalOrNull(adjustment.amount),
+        accountingCurrency: adjustment.currency,
         status: "paid",
+        paymentStatus: "paid",
+        providerStatus: "ADMIN_VERIFIED",
+        verificationStatus: "verified",
+        verificationReason: "Authorized admin verified the additional payment",
+        accountingAllocationStatus: "pending",
+        paymentMethod: provider,
         amountPaid: adjustment.amount,
         paidAmount: adjustment.amount,
         paidAt: adjustment.paidAt,
         lastVerifiedAt: new Date(),
         rawResponse: { source: "admin_verified_adjustment", adjustmentReference: adjustment.adjustmentReference, verifiedBy: auth?.id || "" }
       },
-      $setOnInsert: { intentId: `adjustment-${adjustment._id}` }
+      $setOnInsert: {
+        intentId: `adjustment-${adjustment._id}`,
+        attemptId: `adjustment-${adjustment._id}`,
+        attemptSnapshot: {
+          attemptId: `adjustment-${adjustment._id}`,
+          merchantReference: adjustment.adjustmentReference,
+          provider,
+          orderAmount: decimalOrNull(adjustment.amount),
+          orderCurrency: adjustment.currency,
+          createdAt: adjustment.createdAt || new Date(),
+          status: "paid"
+        }
+      }
     },
     { upsert: true, new: true }
   );
+  await paymentsService.applyVerifiedPaymentAllocation({
+    paymentId: payment._id,
+    metadata: { source: "admin_verified_adjustment", adjustmentReference: adjustment.adjustmentReference }
+  });
   request.additionalPayment.status = "paid";
   request.status = "approved";
   await request.save();
@@ -1064,37 +1146,56 @@ const markAdjustmentPaid = async ({ adjustmentId, auth, paymentReference = "", t
   return { adjustment, request: finalized.request };
 };
 
-const updateRefundStatus = async ({ refundId, auth, status, providerRefundReference = "", failureReason = "", confirmedAmount = undefined, traceId = "" }) => {
+const updateRefundStatus = async ({ refundId, auth, status, providerRefundReference = "", failureReason = "", evidenceNote = "", confirmedAmount = undefined, traceId = "" }) => {
   const refund = await Refund.findById(refundId);
   if (!refund) throw new AppError("Refund not found", 404, "REFUND_NOT_FOUND");
   if (["refunded", "partially_refunded"].includes(refund.status) && status !== refund.status) throw new AppError("Completed refunds cannot be edited.", 409, "REFUND_ALREADY_COMPLETED");
-  const allowed = ["eligible", "approved", "processing", "verification_required", "partially_refunded", "refunded", "failed", "rejected", "cancelled", "manual_review", "manual_refund_required"];
+  const allowed = ["requested", "eligible", "approved", "awaiting_merchant_approval", "processing", "verification_required", "partially_refunded", "refunded", "failed", "rejected", "cancelled", "manual_review", "manual_refund_required"];
   if (!allowed.includes(status)) throw new AppError("Invalid refund status.", 422, "INVALID_REFUND_STATUS");
   const booking = await Booking.findById(refund.bookingId);
   const request = await BookingRequest.findById(refund.bookingRequestId);
+  if (!booking || !request) throw new AppError("Refund booking context is missing.", 404, "REFUND_CONTEXT_NOT_FOUND");
   ensureRequestWorkflowDefaults(request, booking);
   if (["refunded", "partially_refunded"].includes(status)) {
-    const completed = await Refund.aggregate([
-      { $match: { bookingId: booking._id, _id: { $ne: refund._id }, status: { $in: ["refunded", "partially_refunded"] } } },
-      { $group: { _id: null, amount: { $sum: { $ifNull: ["$confirmedRefundedAmount", "$amount"] } } } }
-    ]);
-    const paid = await paymentsService.getVerifiedPaidAmountByBookingReference({ bookingReference: booking.bookingReference });
-    const confirmedRefundAmount = confirmedAmount !== undefined ? number(confirmedAmount) : number(refund.amount);
-    if (confirmedRefundAmount <= 0) throw new AppError("Confirmed refund amount is required.", 422, "CONFIRMED_REFUND_AMOUNT_REQUIRED");
-    if (number(completed[0]?.amount) + confirmedRefundAmount > paid + 0.009) throw new AppError("Completed refunds cannot exceed the verified amount paid.", 422, "REFUND_EXCEEDS_PAID_AMOUNT");
-    refund.confirmedRefundedAmount = confirmedRefundAmount;
-    refund.completedAt = new Date();
-    const payment = refund.paymentId ? await Payment.findById(refund.paymentId) : await Payment.findOne({ bookingReference: booking.bookingReference, status: "paid" }).sort({ createdAt: -1 });
-    if (payment) {
-      payment.refundedAmount = number(completed[0]?.amount) + confirmedRefundAmount;
-      await payment.save();
+    if (refund.provider === "pesapal" && !String(providerRefundReference || refund.providerRefundReference || "").trim() && !String(evidenceNote || "").trim()) {
+      throw new AppError(
+        "Pesapal manual refund completion without a final provider refund reference requires an evidence note.",
+        422,
+        "PESAPAL_MANUAL_REFUND_EVIDENCE_NOTE_REQUIRED"
+      );
     }
+    const finalized = await refundsService.finalizeSuccessfulRefund({
+      bookingId: booking._id,
+      paymentId: refund.paymentId || null,
+      refundId: refund._id,
+      refundAmount: confirmedAmount !== undefined ? number(confirmedAmount) : number(refund.amount),
+      refundCurrency: refund.accountingRefundCurrency || refund.currency || booking.currency,
+      provider: refund.provider,
+      providerRefundReference,
+      providerTransactionId: refund.originalProviderTransactionId || refund.originalTransactionReference || "",
+      refundedAt: new Date(),
+      rawProviderResponse: {
+        source: "admin_manual_status_update",
+        status,
+        providerRefundReference,
+        confirmedAmount,
+        evidenceNote
+      },
+      auth,
+      requestId: traceId,
+      source: "admin_manual_status_update",
+      reason: evidenceNote || "Admin recorded provider-confirmed refund completion",
+      markBookingCancelled: request.type === "cancel_booking"
+    });
+    queueRequestEmail({ booking, request, templateKey: "refund_completed" });
+    return finalized;
   }
   if (status === "processing") refund.processingStartedAt = new Date();
   if (status === "failed") { refund.failedAt = new Date(); refund.failureReason = String(failureReason || "Refund failed").trim(); }
   if (!["refunded", "partially_refunded"].includes(status)) refund.confirmedRefundedAmount = 0;
   refund.status = status;
   if (providerRefundReference) refund.providerRefundReference = String(providerRefundReference).trim();
+  refund.lastRefundSyncAt = new Date();
   refund.processedBy = auth?.id || refund.processedBy;
   await refund.save();
   request.refund.status = status;
@@ -1103,7 +1204,15 @@ const updateRefundStatus = async ({ refundId, auth, status, providerRefundRefere
   request.refund.approvedAmount = refund.amount || request.refund.approvedAmount || null;
   request.refund.provider = refund.provider || request.refund.provider || "";
   request.refund.providerLabel = refundsService.providerLabel(refund.provider || request.refund.provider || "");
+  request.refund.providerRefundRequestReference = refund.providerRefundRequestReference || request.refund.providerRefundRequestReference || "";
+  request.refund.providerRefundReference = refund.providerRefundReference || request.refund.providerRefundReference || "";
   await request.save();
+  booking.refundStatus = status;
+  if (!["requested", "awaiting_merchant_approval", "processing", "verification_required", "failed", "rejected", "cancelled", "manual_review", "manual_refund_required", "approved", "eligible"].includes(status)) {
+    booking.amountRefunded = 0;
+    booking.refundedAt = null;
+  }
+  await booking.save();
   await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId: traceId, reason: "Refund status updated" });
   await recordAudit({ action: "booking_request_refund_updated", request, booking, auth, requestId: traceId, metadata: { refundReference: refund.refundReference, status } });
   queueRequestEmail({ booking, request, templateKey: status === "refunded" || status === "partially_refunded" ? "refund_completed" : status === "failed" ? "refund_failed" : "refund_processing" });
@@ -1112,6 +1221,9 @@ const updateRefundStatus = async ({ refundId, auth, status, providerRefundRefere
 
 const processRefund = async ({ refundId, auth, traceId = "", notes = "" }) =>
   refundsService.processRefund({ refundId, auth, traceId, notes });
+
+const verifyRefundStatus = async ({ refundId, auth, traceId = "" }) =>
+  refundsService.verifyRefundStatus({ refundId, auth, traceId });
 
 const retryRequestEmail = async ({ requestId, auth, traceId = "" }) => {
   const request = await BookingRequest.findById(requestId);
@@ -1140,9 +1252,11 @@ module.exports = {
   markAdjustmentPaid,
   updateRefundStatus,
   processRefund,
+  verifyRefundStatus,
   retryRequestEmail,
   __testables: {
     ensureRequestWorkflowDefaults,
+    resolveRequestEligibleRefundAmount,
     isBokunAlreadyCancelledError,
     isBokunNotConfirmedCancellationError,
     isBokunCancellationConfirmed

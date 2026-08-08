@@ -6,6 +6,15 @@ const AppError = require("../../../utils/AppError");
 const bookingsService = require("../../bookings");
 const paymentsService = require("..");
 const notificationsService = require("../../notifications");
+const { normalizePaypalPayment } = require("../providerNormalization");
+const {
+  decimalString,
+  decimalToApi,
+  equalsWithin,
+  isPositive,
+  moneyString,
+  normalizeCurrency
+} = require("../../../utils/money");
 const { isLocalOrPrivateRedirectUrl } = require("../../../integrations/dpo/dpo.utils");
 
 const paypalClient = axios.create({
@@ -24,8 +33,11 @@ const authTokenCache = {
 };
 
 const toMoneyAmount = (value = 0) => {
-  const numeric = Number(value || 0);
-  return Number.isFinite(numeric) ? numeric.toFixed(2) : "0.00";
+  try {
+    return moneyString(value, 2);
+  } catch (error) {
+    return "0.00";
+  }
 };
 
 const areLiveRedirectsLocal = () =>
@@ -210,19 +222,67 @@ const validateAmountAndCurrency = ({ booking, amount, currency }) => {
     throw new AppError("Booking is required", 400, "BOOKING_REQUIRED");
   }
 
-  const expectedAmount = Number(booking.amount || booking.pricingSnapshot?.finalPayable || 0);
-  const expectedCurrency = String(booking.currency || booking.pricingSnapshot?.currency || "USD");
+  const expectedAmount = decimalString(booking.amount || booking.pricingSnapshot?.finalPayable || 0, {
+    allowNegative: false,
+    field: "orderAmount"
+  });
+  const expectedCurrency = normalizeCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD");
+  if (expectedCurrency !== "USD") {
+    throw new AppError("PayPal checkout supports USD only for this merchant.", 422, "PAYPAL_CURRENCY_NOT_SUPPORTED");
+  }
 
   if (amount !== undefined && amount !== null) {
-    const requestedAmount = Number(amount);
-    if (Math.abs(requestedAmount - expectedAmount) > 0.009) {
+    if (!equalsWithin(amount, expectedAmount, env.PAYMENT_SAME_CURRENCY_TOLERANCE)) {
       throw new AppError("Amount mismatch with booking quote", 409, "PAYMENT_AMOUNT_MISMATCH");
     }
   }
 
-  if (currency && String(currency) !== expectedCurrency) {
+  if (currency && normalizeCurrency(currency) !== expectedCurrency) {
     throw new AppError("Currency mismatch with booking quote", 409, "PAYMENT_CURRENCY_MISMATCH");
   }
+};
+
+const validatePaypalVerification = ({ booking, payment = null, verification }) => {
+  const normalized = normalizePaypalPayment(verification);
+  const expectedOrderId = String(payment?.paypalOrderId || payment?.orderTrackingId || booking?.paymentTransactionId || "").trim();
+  const returnedOrderId = String(normalized.paypalOrderId || verification.orderId || "").trim();
+  const expectedReference = String(payment?.merchantReference || booking?.bookingReference || "").trim();
+  const orderAmount = decimalToApi(payment?.orderAmount) || decimalString(booking?.amount || booking?.pricingSnapshot?.finalPayable || 0);
+  const orderCurrency = normalizeCurrency(payment?.orderCurrency || booking?.currency || booking?.pricingSnapshot?.currency || "USD");
+
+  if (!expectedOrderId || !returnedOrderId || expectedOrderId !== returnedOrderId) {
+    throw new AppError("PayPal order ID does not match this payment attempt", 409, "PAYPAL_REFERENCE_MISMATCH");
+  }
+
+  let verificationStatus = "verified";
+  let verificationReason = "PayPal completed capture matched the immutable USD payment attempt";
+  if (!expectedReference || !normalized.merchantReference || expectedReference !== normalized.merchantReference) {
+    verificationStatus = "reference_mismatch";
+    verificationReason = "PayPal custom/reference ID does not match the booking";
+  } else if (!normalized.confirmationOrCaptureReference) {
+    verificationStatus = "reference_mismatch";
+    verificationReason = "PayPal completed response is missing the capture ID";
+  } else if (orderCurrency !== "USD" || normalized.chargedCurrency !== "USD") {
+    verificationStatus = "currency_review_required";
+    verificationReason = "PayPal capture currency must be USD for this merchant";
+  } else if (!normalized.hasValidChargedMoney || !isPositive(orderAmount)) {
+    verificationStatus = "amount_mismatch";
+    verificationReason = "PayPal capture amount is missing or non-positive";
+  } else if (!equalsWithin(normalized.chargedAmount, orderAmount, env.PAYMENT_SAME_CURRENCY_TOLERANCE)) {
+    verificationStatus = "amount_mismatch";
+    verificationReason = "PayPal captured amount does not match the immutable order amount";
+  }
+
+  return {
+    normalized,
+    accountingAmount: orderAmount,
+    accountingCurrency: orderCurrency,
+    providerAmount: normalized.chargedAmount,
+    providerCurrency: normalized.chargedCurrency,
+    verificationStatus,
+    verificationReason,
+    canAllocate: verificationStatus === "verified"
+  };
 };
 
 const resolveOrCreatePendingBooking = async ({ payload, auth, requestId }) => {
@@ -263,7 +323,10 @@ const resolveOrCreatePendingBooking = async ({ payload, auth, requestId }) => {
 
 const createOrderWithPaypal = async ({ booking, requestId }) => {
   const amount = toMoneyAmount(booking.amount || booking.pricingSnapshot?.finalPayable || 0);
-  const currency = String(booking.currency || booking.pricingSnapshot?.currency || "USD").toUpperCase();
+  const currency = normalizeCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD");
+  if (currency !== "USD") {
+    throw new AppError("PayPal checkout supports USD only for this merchant.", 422, "PAYPAL_CURRENCY_NOT_SUPPORTED");
+  }
 
   if (shouldMock) {
     const orderId = `MOCKPAYPAL-${Date.now()}`;
@@ -332,7 +395,13 @@ const createOrderWithPaypal = async ({ booking, requestId }) => {
   };
 };
 
-const captureOrderWithPaypal = async ({ orderId, bookingReference = "", requestId = "" }) => {
+const captureOrderWithPaypal = async ({
+  orderId,
+  bookingReference = "",
+  orderAmount = 0,
+  orderCurrency = "USD",
+  requestId = ""
+} = {}) => {
   const token = String(orderId || "").trim();
   if (!token) {
     throw new AppError("PayPal order ID is required", 400, "PAYPAL_ORDER_ID_REQUIRED");
@@ -340,16 +409,38 @@ const captureOrderWithPaypal = async ({ orderId, bookingReference = "", requestI
 
   if (shouldMock) {
     const mockPaid = Boolean(env.PAYPAL_MOCK_CONFIRMS_PAYMENT && env.BOKUN_MOCK_MODE);
+    const captureId = mockPaid ? `MOCKCAPTURE-${Date.now()}` : "";
+    const amount = mockPaid ? toMoneyAmount(orderAmount) : "0.00";
+    const currency = normalizeCurrency(orderCurrency || "USD") || "USD";
     return {
       orderId: token,
       status: mockPaid ? "COMPLETED" : "PENDING",
       isPaid: mockPaid,
-      amount: 0,
-      currency: "USD",
-      captureId: mockPaid ? `MOCKCAPTURE-${Date.now()}` : "",
+      amount,
+      currency,
+      captureId,
       raw: {
         id: token,
         status: mockPaid ? "COMPLETED" : "PENDING",
+        purchase_units: [
+          {
+            reference_id: bookingReference,
+            custom_id: bookingReference,
+            payments: {
+              captures: [
+                {
+                  id: captureId,
+                  status: mockPaid ? "COMPLETED" : "PENDING",
+                  amount: {
+                    value: amount,
+                    currency_code: currency
+                  },
+                  create_time: new Date().toISOString()
+                }
+              ]
+            }
+          }
+        ],
         mock: true
       }
     };
@@ -379,8 +470,8 @@ const captureOrderWithPaypal = async ({ orderId, bookingReference = "", requestI
     orderId: token,
     status,
     isPaid: status === "COMPLETED",
-    amount: Number(amount.value || 0),
-    currency: String(amount.currency_code || "USD").toUpperCase(),
+    amount: amount.value ?? "",
+    currency: String(amount.currency_code || "").toUpperCase(),
     captureId: String(capture.id || ""),
     raw: response
   };
@@ -473,6 +564,52 @@ const refundCapturedPayment = async ({
   };
 };
 
+const getRefundDetails = async ({ refundId = "", requestId = "" } = {}) => {
+  ensurePaypalConfiguration();
+  const token = String(refundId || "").trim();
+  if (!token) {
+    throw new AppError("PayPal refund ID is required before verification.", 422, "PAYPAL_REFUND_ID_REQUIRED");
+  }
+
+  if (shouldMock) {
+    return {
+      provider: "paypal",
+      status: "COMPLETED",
+      providerRefundReference: token,
+      confirmedAmount: 0,
+      currency: "USD",
+      refundedAt: new Date().toISOString(),
+      raw: {
+        id: token,
+        status: "COMPLETED",
+        mock: true
+      }
+    };
+  }
+
+  const accessToken = await getPaypalAccessToken(requestId);
+  const response = await requestPaypal({
+    method: "get",
+    path: `/v2/payments/refunds/${encodeURIComponent(token)}`,
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    },
+    requestId
+  });
+  const responseAmount = response?.amount || {};
+
+  return {
+    provider: "paypal",
+    status: String(response?.status || "").toUpperCase(),
+    providerRefundReference: String(response?.id || token).trim(),
+    confirmedAmount: Number(responseAmount.value || 0),
+    currency: String(responseAmount.currency_code || "").toUpperCase(),
+    refundedAt: response?.update_time || response?.create_time || null,
+    failureReason: response?.status_details?.reason || "",
+    raw: response
+  };
+};
+
 const updatePaymentLogForCreate = async ({ booking, orderResponse }) => {
   const providerResponse = {
     stage: "create_order",
@@ -484,7 +621,7 @@ const updatePaymentLogForCreate = async ({ booking, orderResponse }) => {
     provider: "paypal"
   });
 
-  if (latestPayment?.intentId) {
+  if (latestPayment?.intentId && !["failed", "reversed", "refunded"].includes(String(latestPayment.status || "").toLowerCase())) {
     await paymentsService.updatePaymentStatus({
       intentId: latestPayment.intentId,
       status: "pending",
@@ -492,7 +629,14 @@ const updatePaymentLogForCreate = async ({ booking, orderResponse }) => {
       orderTrackingId: orderResponse.orderId,
       merchantReference: booking.bookingReference,
       rawResponse: orderResponse.raw || {},
-      providerResponse
+      providerResponse,
+      orderAmount: booking.amount || booking.pricingSnapshot?.finalPayable || 0,
+      orderCurrency: "USD",
+      paypalOrderId: orderResponse.orderId,
+      providerStatus: "CREATED",
+      verificationStatus: "pending",
+      verificationReason: "Awaiting completed PayPal capture",
+      accountingAllocationStatus: "pending"
     });
     return latestPayment;
   }
@@ -517,7 +661,14 @@ const updatePaymentLogForCreate = async ({ booking, orderResponse }) => {
       orderTrackingId: orderResponse.orderId,
       merchantReference: booking.bookingReference,
       rawResponse: orderResponse.raw || {},
-      providerResponse
+      providerResponse,
+      orderAmount: booking.amount || booking.pricingSnapshot?.finalPayable || 0,
+      orderCurrency: "USD",
+      paypalOrderId: orderResponse.orderId,
+      providerStatus: "CREATED",
+      verificationStatus: "pending",
+      verificationReason: "Awaiting completed PayPal capture",
+      accountingAllocationStatus: "pending"
     });
 
     return updated || createdIntent;
@@ -531,10 +682,12 @@ const updatePaymentLogForVerification = async ({
   isPaid,
   amount,
   verification,
-  localStatus = ""
+  localStatus = "",
+  paymentVerification = null
 }) => {
   const status = localStatus || (isPaid ? "paid" : "failed");
-  const paidAmount = isPaid ? Number(amount || 0) : 0;
+  const canAllocate = Boolean(isPaid && paymentVerification?.canAllocate);
+  const paidAmount = canAllocate ? Number(amount || 0) : 0;
   const paymentUpdate = {
     bookingReference,
     provider: "paypal",
@@ -547,6 +700,30 @@ const updatePaymentLogForVerification = async ({
     paidAt: isPaid ? new Date() : undefined,
     lastVerifiedAt: new Date(),
     rawResponse: verification.raw || verification,
+    chargedAmount: paymentVerification?.providerAmount,
+    chargedCurrency: paymentVerification?.providerCurrency,
+    accountingAmount: paymentVerification?.accountingAmount,
+    accountingCurrency: paymentVerification?.accountingCurrency,
+    settlementAmount: paymentVerification?.normalized?.settlementAmount,
+    settlementCurrency: paymentVerification?.normalized?.settlementCurrency || undefined,
+    providerFeeAmount: paymentVerification?.normalized?.providerFeeAmount,
+    providerFeeCurrency: paymentVerification?.normalized?.providerFeeCurrency || undefined,
+    paymentMethod: paymentVerification?.normalized?.paymentMethod || "PayPal",
+    paypalOrderId: verification.orderId || undefined,
+    paypalCaptureId: verification.captureId || undefined,
+    providerStatus: paymentVerification?.normalized?.providerStatus || verification.status || undefined,
+    verificationStatus: paymentVerification?.verificationStatus || (isPaid ? "manual_review" : "pending"),
+    verificationReason: paymentVerification?.verificationReason || "Awaiting completed PayPal capture",
+    accountingAllocationStatus: isPaid ? (canAllocate ? "pending" : "blocked") : "pending",
+    settlementFx: paymentVerification?.normalized?.reportedExchangeRate
+      ? {
+          rate: paymentVerification.normalized.reportedExchangeRate,
+          sourceCurrency: paymentVerification.providerCurrency,
+          targetCurrency: paymentVerification.normalized.settlementCurrency,
+          source: "paypal_reported"
+        }
+      : undefined,
+    bokunSyncStatus: "not_started",
     ipnEvent: {
       source: "callback",
       orderTrackingId: verification.orderId || "",
@@ -568,8 +745,10 @@ const updatePaymentLogForVerification = async ({
   const created = await paymentsService.createPaymentIntent({
     bookingReference,
     customerId: null,
-    amount: Number(amount || verification.amount || 0),
-    currency: verification.currency || "USD",
+    amount: Number(amount || 0),
+    currency: paymentVerification?.accountingCurrency || "USD",
+    orderAmount: paymentVerification?.accountingAmount || amount || 0,
+    orderCurrency: paymentVerification?.accountingCurrency || "USD",
     provider: "paypal",
     providerTransactionId: verification.captureId || verification.orderId || "",
     orderTrackingId: verification.orderId || "",
@@ -635,6 +814,8 @@ const createPayment = async ({ payload, auth, requestId }) => {
     ...(booking.pendingCheckout || {}),
     paypalInitializedAt: new Date().toISOString(),
     paypalOrderId: orderResponse.orderId,
+    paypalRequestedAmount: decimalString(booking.amount || booking.pricingSnapshot?.finalPayable || 0),
+    paypalRequestedCurrency: "USD",
     paypalCreateOrderResult: orderResponse.raw || {}
   };
   await booking.save();
@@ -771,6 +952,8 @@ const handlePaymentSuccess = async ({ orderId = "", requestId = "" } = {}) => {
     const verification = await captureOrderWithPaypal({
       orderId,
       bookingReference: booking.bookingReference,
+      orderAmount: booking.amount || booking.pricingSnapshot?.finalPayable || 0,
+      orderCurrency: booking.currency || booking.pricingSnapshot?.currency || "USD",
       requestId
     });
 
@@ -797,12 +980,56 @@ const handlePaymentSuccess = async ({ orderId = "", requestId = "" } = {}) => {
       };
     }
 
-    const paidAmount = Number(booking.amount || verification.amount || 0);
-    await updatePaymentLogForVerification({
+    const paymentAttempt = await paymentsService.findPaymentByGatewayIdentifiers({
+      provider: "paypal",
+      bookingReference: booking.bookingReference,
+      orderTrackingId: orderId,
+      merchantReference: booking.bookingReference
+    });
+    const paymentVerification = validatePaypalVerification({
+      booking,
+      payment: paymentAttempt,
+      verification
+    });
+    const paidAmount = paymentVerification.accountingAmount;
+    const verifiedPayment = await updatePaymentLogForVerification({
       bookingReference: booking.bookingReference,
       isPaid: true,
       amount: paidAmount,
-      verification
+      verification,
+      paymentVerification
+    });
+
+    if (!paymentVerification.canAllocate) {
+      await Booking.findByIdAndUpdate(booking._id, {
+        $set: {
+          paymentStatus: "processing",
+          supplierStatus: "awaiting_payment",
+          supplierStatusUpdatedAt: new Date(),
+          "pendingCheckout.paymentReview.status": paymentVerification.verificationStatus,
+          "pendingCheckout.paymentReview.reason": paymentVerification.verificationReason,
+          "pendingCheckout.paymentReview.updatedAt": new Date().toISOString()
+        }
+      });
+      return {
+        status: "paid_manual_review",
+        reconciliationRequired: true,
+        message: "Payment was captured and is being reconciled. Please do not pay again.",
+        booking: {
+          bookingId: booking._id,
+          bookingReference: booking.bookingReference,
+          paymentStatus: "processing",
+          bookingStatus: booking.bookingStatus,
+          sourceChannel: booking.sourceChannel || "direct_website",
+          isAgentBooking: Boolean(booking.agentId)
+        }
+      };
+    }
+
+    await paymentsService.applyVerifiedPaymentAllocation({
+      paymentId: verifiedPayment?._id,
+      bookingReference: booking.bookingReference,
+      metadata: { provider: "paypal", source: "paypal_capture", requestId }
     });
 
     const paidBooking = await bookingsService.markBookingPaymentVerified({
@@ -812,7 +1039,7 @@ const handlePaymentSuccess = async ({ orderId = "", requestId = "" } = {}) => {
       paymentMethod: "paypal",
       paymentProvider: "paypal",
       amountPaid: paidAmount,
-      currency: verification.currency || booking.currency || "USD",
+      currency: paymentVerification.accountingCurrency,
       reason: "PayPal payment captured before Bokun finalization"
     });
 
@@ -838,6 +1065,14 @@ const handlePaymentSuccess = async ({ orderId = "", requestId = "" } = {}) => {
     };
   } catch (error) {
     const code = String(error?.code || "UNKNOWN_ERROR");
+    if (code === "PAYPAL_REFERENCE_MISMATCH") {
+      logger.warn("PayPal capture rejected because references do not match", {
+        requestId,
+        bookingId: booking._id.toString(),
+        bookingReference: booking.bookingReference
+      });
+      throw error;
+    }
     const isPendingFinalization = code === "BOKUN_FINALIZATION_PENDING" || code === "BOKUN_REQUEST_FAILED";
     const bookingAfterError = await Booking.findById(booking._id);
 
@@ -1007,5 +1242,9 @@ module.exports = {
   handlePaymentSuccess,
   handlePaymentCancel,
   handleWebhookEvent,
-  refundCapturedPayment
+  refundCapturedPayment,
+  getRefundDetails,
+  __testables: {
+    validatePaypalVerification
+  }
 };

@@ -5,7 +5,7 @@ const syncLogSchema = new mongoose.Schema(
     source: { type: String, default: "bokun" },
     operation: {
       type: String,
-      enum: ["products_sync", "booking_sync", "webhook_update"],
+      enum: ["products_sync", "booking_sync", "webhook_update", "confirmed_booking_import", "confirmed_booking_resync"],
       required: true
     },
     status: { type: String, enum: ["started", "success", "failed"], required: true },

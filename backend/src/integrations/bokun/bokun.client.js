@@ -9,7 +9,9 @@ const {
   mockAvailability,
   mockPriceList,
   mockQuestions,
-  mockBookingCreate
+  mockBookingCreate,
+  mockConfirmedBooking,
+  mockBookingSearch
 } = require("./mockBokunData");
 
 const pad = (value) => String(value).padStart(2, "0");
@@ -216,6 +218,15 @@ const mockRouter = async ({ method, path, payload }) => {
         totalDue: 0
       }
     };
+  }
+
+  if (method === "post" && path === "/booking.json/booking-search") {
+    return mockBookingSearch(payload || {});
+  }
+
+  if (method === "get" && path.startsWith("/booking.json/booking/")) {
+    const reference = decodeURIComponent(path.split("/").pop() || "");
+    return mockConfirmedBooking({ reference });
   }
 
   if (method === "get" && path.startsWith("/bookings/")) {
