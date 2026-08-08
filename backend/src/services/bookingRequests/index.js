@@ -26,6 +26,7 @@ const syncKey = () => crypto.randomUUID();
 
 const normalizeEmail = (value = "") => String(value || "").trim().toLowerCase();
 const number = (value = 0) => (Number.isFinite(Number(value)) ? Number(value) : 0);
+const hasKnownAmount = (value) => value !== null && value !== undefined && Number.isFinite(Number(value));
 const travelerTotal = (travelers = {}) => number(travelers.adults) + number(travelers.children) + number(travelers.infants);
 
 const toPublicCancellationPolicy = (policy = {}) => {
@@ -165,6 +166,28 @@ const ensureRequestWorkflowDefaults = (request, booking = null) => {
   return request;
 };
 
+const resolveRequestEligibleRefundAmount = (request = {}) => {
+  const policyAmount = request.cancellationPolicySnapshot?.estimatedRefundAmount;
+  if (hasKnownAmount(policyAmount)) return number(policyAmount);
+  if (request.cancellationPolicySnapshot && policyAmount === null) return null;
+
+  const eligibleAmount = request.refund?.eligibleAmount;
+  if (hasKnownAmount(eligibleAmount)) {
+    const status = String(request.refund?.status || "");
+    if (number(eligibleAmount) === 0 && ["manual_review", "manual_refund_required"].includes(status)) return null;
+    return number(eligibleAmount);
+  }
+
+  const estimatedAmount = request.refund?.estimatedAmount;
+  if (hasKnownAmount(estimatedAmount)) {
+    const status = String(request.refund?.status || "");
+    if (number(estimatedAmount) === 0 && ["manual_review", "manual_refund_required"].includes(status)) return null;
+    return number(estimatedAmount);
+  }
+
+  return null;
+};
+
 const publicRequest = (request) => ({
   id: request._id,
   requestReference: request.requestReference,
@@ -179,7 +202,7 @@ const publicRequest = (request) => ({
   refund: {
     required: request.refund?.required,
     estimatedAmount: request.refund?.estimatedAmount,
-    eligibleAmount: request.refund?.eligibleAmount ?? request.refund?.estimatedAmount,
+    eligibleAmount: resolveRequestEligibleRefundAmount(request),
     approvedAmount: request.refund?.approvedAmount ?? null,
     requestedAmount: request.refund?.requestedAmount ?? 0,
     confirmedRefundedAmount: request.refund?.confirmedRefundedAmount ?? 0,
@@ -412,7 +435,7 @@ const adminGetRequest = async ({ requestId }) => {
     try {
       refundContext = await refundsService.resolveRefundContext({
         booking: request.booking,
-        eligibleRefundAmount: request.refund?.eligibleAmount ?? request.refund?.estimatedAmount ?? request.cancellationPolicySnapshot?.estimatedRefundAmount ?? null,
+        eligibleRefundAmount: resolveRequestEligibleRefundAmount(request),
         approvedRefundAmount: request.refund?.approvedAmount ?? request.refund?.refundId?.amount ?? null
       });
     } catch (error) {
@@ -1229,6 +1252,7 @@ module.exports = {
   retryRequestEmail,
   __testables: {
     ensureRequestWorkflowDefaults,
+    resolveRequestEligibleRefundAmount,
     isBokunAlreadyCancelledError,
     isBokunNotConfirmedCancellationError,
     isBokunCancellationConfirmed

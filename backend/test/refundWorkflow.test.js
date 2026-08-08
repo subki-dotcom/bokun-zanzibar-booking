@@ -25,6 +25,7 @@ const { resolveInvoiceAccounting } = invoicesService.__testables;
 const { canReplacePaidStatus } = paymentsService.__testables;
 const {
   ensureRequestWorkflowDefaults,
+  resolveRequestEligibleRefundAmount,
   isBokunAlreadyCancelledError,
   isBokunNotConfirmedCancellationError,
   isBokunCancellationConfirmed
@@ -50,6 +51,26 @@ test("Pesapal RefundRequest 200 stays awaiting merchant approval instead of refu
   assert.equal(result.providerRefundReference, "");
   assert.equal(result.confirmedAmount, 0);
   assert.equal(result.requiresMerchantApproval, true);
+});
+
+test("admin refund eligibility prefers policy amount over stale zero request defaults", () => {
+  const request = {
+    type: "cancel_booking",
+    cancellationPolicySnapshot: { estimatedRefundAmount: 1, requiresManualReview: false },
+    refund: { status: "manual_review", estimatedAmount: 0, eligibleAmount: 0 }
+  };
+
+  assert.equal(resolveRequestEligibleRefundAmount(request), 1);
+});
+
+test("admin refund eligibility does not show stale zero when policy requires review", () => {
+  const request = {
+    type: "cancel_booking",
+    cancellationPolicySnapshot: { estimatedRefundAmount: null, requiresManualReview: true },
+    refund: { status: "manual_review", estimatedAmount: 0, eligibleAmount: 0 }
+  };
+
+  assert.equal(resolveRequestEligibleRefundAmount(request), null);
 });
 
 test("selects the successful PayPal capture and ignores initiated Pesapal attempts", () => {

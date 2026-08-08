@@ -36,6 +36,24 @@ const DetailRow = ({ label: rowLabel, value }) => <div className="booking-reques
 const formatMaybeMoney = (value, currency, fallback = "Manual review") =>
   hasKnownRefundAmount(value) ? formatCurrency(value, currency) : fallback;
 
+const resolveEligibleRefundAmount = (request = {}, refundContext = null) => {
+  if (hasKnownRefundAmount(refundContext?.eligibleRefundAmount)) return refundContext.eligibleRefundAmount;
+  const policyAmount = request.cancellationPolicySnapshot?.estimatedRefundAmount;
+  if (hasKnownRefundAmount(policyAmount)) return policyAmount;
+  if (request.cancellationPolicySnapshot && policyAmount === null) return null;
+  if (hasKnownRefundAmount(request.refund?.eligibleAmount)) {
+    const status = String(request.refund?.status || "");
+    if (Number(request.refund.eligibleAmount) === 0 && ["manual_review", "manual_refund_required"].includes(status)) return null;
+    return request.refund.eligibleAmount;
+  }
+  if (hasKnownRefundAmount(request.refund?.estimatedAmount)) {
+    const status = String(request.refund?.status || "");
+    if (Number(request.refund.estimatedAmount) === 0 && ["manual_review", "manual_refund_required"].includes(status)) return null;
+    return request.refund.estimatedAmount;
+  }
+  return null;
+};
+
 const AdminCancellationPolicyCard = ({ policy = null, currency = "USD" }) => {
   if (!policy) return null;
   const deadline = formatCancellationDeadline(policy) || "Not confirmed";
@@ -68,7 +86,7 @@ const CancellationRefundCard = ({ request, booking, invoice, payments, refundCon
   const previousRefunded = refundSummary?.amountRefunded ?? refundContext?.previouslyRefundedAmount ?? invoice?.amountRefunded ?? 0;
   const remaining = refundSummary?.refundableBalance ?? refundContext?.remainingRefundableAmount ?? Math.max(0, Number(amountPaid || 0) - Number(previousRefunded || 0));
   const netPaid = invoice?.netAmountPaid ?? Math.max(0, Number(amountPaid || 0) - Number(previousRefunded || 0));
-  const eligible = refundContext?.eligibleRefundAmount ?? request.refund?.eligibleAmount ?? policy.estimatedRefundAmount;
+  const eligible = resolveEligibleRefundAmount(request, refundContext);
   const approved = request.refund?.approvedAmount ?? refund?.amount ?? refundContext?.defaultApprovedRefundAmount;
   const provider = refundContext?.providerKnown ? refundContext.providerLabel : request.refund?.providerLabel || providerLabel(request.refund?.provider);
   const normalizedStatus = refundSummary?.status || refund?.status || request.refund?.status || "not_requested";
@@ -139,11 +157,11 @@ const AdminBookingRequestDetailsPage = () => {
 
   useEffect(() => {
     if (!data?.request || data.request.type !== "cancel_booking") return;
+    const eligibleAmount = resolveEligibleRefundAmount(data.request, data.refundContext);
     const nextAmount =
       data.request.refund?.approvedAmount ??
       data.refundContext?.defaultApprovedRefundAmount ??
-      data.request.refund?.eligibleAmount ??
-      data.request.cancellationPolicySnapshot?.estimatedRefundAmount;
+      eligibleAmount;
     setDecision((current) => ({
       ...current,
       refundAmount: current.refundAmount || (hasKnownRefundAmount(nextAmount) ? String(nextAmount) : "")
@@ -164,6 +182,7 @@ const AdminBookingRequestDetailsPage = () => {
   const refund = request.refund?.refundId;
   const adjustment = request.additionalPayment?.paymentAdjustmentId;
   const isCancellation = request.type === "cancel_booking";
+  const eligibleRefundAmount = resolveEligibleRefundAmount(request, refundContext);
   const resolvedRefundProviderLabel = refundContext?.providerKnown ? refundContext.providerLabel : providerLabel(refund?.provider);
   const refundProvider = String(refundSummary?.provider || refund?.provider || request.refund?.provider || "").toLowerCase();
   const approvePayload = {
@@ -207,7 +226,7 @@ const AdminBookingRequestDetailsPage = () => {
 
       <Row className="g-3 align-items-start">
         <Col xl={8}>
-          <Card className="surface-card mb-3"><Card.Body><h5>Request Summary</h5><div className="booking-request-detail-grid"><DetailRow label="Reason" value={request.customerReason} /><DetailRow label="Customer notes" value={request.customerNotes} /><DetailRow label="Original amount" value={formatCurrency(request.originalSnapshot?.totalAmount || 0, currency)} /><DetailRow label="Eligible refund" value={formatMaybeMoney(request.refund?.eligibleAmount ?? request.refund?.estimatedAmount, currency)} /></div></Card.Body></Card>
+          <Card className="surface-card mb-3"><Card.Body><h5>Request Summary</h5><div className="booking-request-detail-grid"><DetailRow label="Reason" value={request.customerReason} /><DetailRow label="Customer notes" value={request.customerNotes} /><DetailRow label="Original amount" value={formatCurrency(request.originalSnapshot?.totalAmount || 0, currency)} /><DetailRow label="Eligible refund" value={formatMaybeMoney(eligibleRefundAmount, currency)} /></div></Card.Body></Card>
           {isCancellation ? <AdminCancellationPolicyCard policy={request.cancellationPolicySnapshot} currency={currency} /> : null}
           {isCancellation ? <CancellationRefundCard request={request} booking={booking} invoice={invoice} payments={payments} refundContext={refundContext} refundSummary={refundSummary} currency={currency} /> : null}
           <Card className="surface-card mb-3"><Card.Body><h5>Booking and Customer</h5><div className="booking-request-detail-grid"><DetailRow label="Booking reference" value={booking.bookingReference} /><DetailRow label="Bokun booking" value={booking.bokunBookingId} /><DetailRow label="Tour" value={booking.productTitle} /><DetailRow label="Option" value={booking.optionTitle} /><DetailRow label="Customer" value={`${booking.customer?.firstName || ""} ${booking.customer?.lastName || ""}`.trim()} /><DetailRow label="Email" value={booking.customer?.email} /><DetailRow label="Phone" value={booking.customer?.phone} /><DetailRow label="Travel date" value={`${formatDate(booking.travelDate)} ${booking.startTime || ""}`} /></div></Card.Body></Card>
@@ -217,7 +236,7 @@ const AdminBookingRequestDetailsPage = () => {
         </Col>
         <Col xl={4}>
           <Card className="surface-card mb-3"><Card.Body><h5>Supplier Synchronization</h5><DetailRow label="Status" value={label(request.bokunSync?.status)} /><DetailRow label="Attempts" value={request.bokunSync?.attempts} /><DetailRow label="Last error" value={request.bokunSync?.lastError || "-"} /><div className="booking-request-admin-actions"><Button variant="outline-primary" disabled={Boolean(busy)} onClick={() => run("recalculate", () => recalculateBookingRequest(request._id), "Availability and price recalculated.")}><BsArrowRepeat /> Recalculate</Button><Button variant="outline-dark" disabled={Boolean(busy)} onClick={() => run("bokun", () => retryBookingRequestBokunSync(request._id), "Supplier sync retried.")}>Retry Bokun Sync</Button><Button variant="outline-secondary" disabled={Boolean(busy)} onClick={() => run("email", () => retryBookingRequestEmail(request._id), "Email delivery retried.")}><BsEnvelope /> Retry Email</Button></div></Card.Body></Card>
-          <Card className="surface-card mb-3"><Card.Body><h5>{isCancellation ? "Cancellation Decision" : "Decision"}</h5><Form.Group className="mb-2"><Form.Label>Customer-facing reason</Form.Label><Form.Control as="textarea" rows={2} value={decision.customerFacingReason} onChange={(event) => setDecision((current) => ({ ...current, customerFacingReason: event.target.value }))} /></Form.Group><Form.Group className="mb-2"><Form.Label>Internal note</Form.Label><Form.Control as="textarea" rows={2} value={decision.internalNote} onChange={(event) => setDecision((current) => ({ ...current, internalNote: event.target.value }))} /></Form.Group>{!isCancellation ? <><Form.Group className="mb-2"><Form.Label>Override price difference (optional)</Form.Label><Form.Control type="number" value={decision.overrideAmount} onChange={(event) => setDecision((current) => ({ ...current, overrideAmount: event.target.value }))} /></Form.Group>{decision.overrideAmount !== "" ? <Form.Group className="mb-3"><Form.Label>Override reason</Form.Label><Form.Control value={decision.overrideReason} onChange={(event) => setDecision((current) => ({ ...current, overrideReason: event.target.value }))} /></Form.Group> : null}</> : null}{isCancellation ? <div className="booking-request-refund-editor"><Form.Group className="mb-2"><Form.Label>Approved refund amount</Form.Label><Form.Control type="number" min="0" step="0.01" value={decision.refundAmount} onChange={(event) => setDecision((current) => ({ ...current, refundAmount: event.target.value }))} placeholder={String(refundContext?.defaultApprovedRefundAmount ?? request.refund?.eligibleAmount ?? "")} /></Form.Group><Form.Group className="mb-3"><Form.Label>Refund destination</Form.Label><Form.Control value={refundContext?.providerKnown ? `${refundContext.providerLabel} - original payment method` : "Manual review required"} readOnly /></Form.Group>{refundContext?.manualReviewReason ? <Alert variant="warning">{refundContext.manualReviewReason}</Alert> : null}</div> : null}<div className="booking-request-admin-actions"><Button variant="success" disabled={Boolean(busy)} onClick={() => { if (isCancellation && !window.confirm("Approve this cancellation and submit it to Bokun? Refund processing will remain separate.")) return; run("approve", () => approveBookingRequest(request._id, approvePayload), isCancellation ? "Cancellation approval processed." : "Approval processed."); }}><BsCheck2Circle /> {isCancellation ? "Approve Cancellation" : "Approve"}</Button><Button variant="outline-warning" disabled={Boolean(busy) || !decision.customerFacingReason.trim()} onClick={() => run("information", () => requestBookingInformation(request._id, { customerFacingReason: decision.customerFacingReason, internalNote: decision.internalNote }), "Customer information requested.")}>Request Info</Button><Button variant="outline-danger" disabled={Boolean(busy) || !decision.customerFacingReason.trim()} onClick={() => run("reject", () => rejectBookingRequest(request._id, { customerFacingReason: decision.customerFacingReason, internalNote: decision.internalNote }), "Request rejected.")}><BsXCircle /> Reject</Button></div></Card.Body></Card>
+          <Card className="surface-card mb-3"><Card.Body><h5>{isCancellation ? "Cancellation Decision" : "Decision"}</h5><Form.Group className="mb-2"><Form.Label>Customer-facing reason</Form.Label><Form.Control as="textarea" rows={2} value={decision.customerFacingReason} onChange={(event) => setDecision((current) => ({ ...current, customerFacingReason: event.target.value }))} /></Form.Group><Form.Group className="mb-2"><Form.Label>Internal note</Form.Label><Form.Control as="textarea" rows={2} value={decision.internalNote} onChange={(event) => setDecision((current) => ({ ...current, internalNote: event.target.value }))} /></Form.Group>{!isCancellation ? <><Form.Group className="mb-2"><Form.Label>Override price difference (optional)</Form.Label><Form.Control type="number" value={decision.overrideAmount} onChange={(event) => setDecision((current) => ({ ...current, overrideAmount: event.target.value }))} /></Form.Group>{decision.overrideAmount !== "" ? <Form.Group className="mb-3"><Form.Label>Override reason</Form.Label><Form.Control value={decision.overrideReason} onChange={(event) => setDecision((current) => ({ ...current, overrideReason: event.target.value }))} /></Form.Group> : null}</> : null}{isCancellation ? <div className="booking-request-refund-editor"><Form.Group className="mb-2"><Form.Label>Approved refund amount</Form.Label><Form.Control type="number" min="0" step="0.01" value={decision.refundAmount} onChange={(event) => setDecision((current) => ({ ...current, refundAmount: event.target.value }))} placeholder={String(refundContext?.defaultApprovedRefundAmount ?? eligibleRefundAmount ?? "")} /></Form.Group><Form.Group className="mb-3"><Form.Label>Refund destination</Form.Label><Form.Control value={refundContext?.providerKnown ? `${refundContext.providerLabel} - original payment method` : "Manual review required"} readOnly /></Form.Group>{refundContext?.manualReviewReason ? <Alert variant="warning">{refundContext.manualReviewReason}</Alert> : null}</div> : null}<div className="booking-request-admin-actions"><Button variant="success" disabled={Boolean(busy)} onClick={() => { if (isCancellation && !window.confirm("Approve this cancellation and submit it to Bokun? Refund processing will remain separate.")) return; run("approve", () => approveBookingRequest(request._id, approvePayload), isCancellation ? "Cancellation approval processed." : "Approval processed."); }}><BsCheck2Circle /> {isCancellation ? "Approve Cancellation" : "Approve"}</Button><Button variant="outline-warning" disabled={Boolean(busy) || !decision.customerFacingReason.trim()} onClick={() => run("information", () => requestBookingInformation(request._id, { customerFacingReason: decision.customerFacingReason, internalNote: decision.internalNote }), "Customer information requested.")}>Request Info</Button><Button variant="outline-danger" disabled={Boolean(busy) || !decision.customerFacingReason.trim()} onClick={() => run("reject", () => rejectBookingRequest(request._id, { customerFacingReason: decision.customerFacingReason, internalNote: decision.internalNote }), "Request rejected.")}><BsXCircle /> Reject</Button></div></Card.Body></Card>
           {refund ? (
             <Card className="surface-card mb-3">
               <Card.Body>
