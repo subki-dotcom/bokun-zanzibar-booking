@@ -92,7 +92,7 @@ const AdminSidebarItem = ({ item, depth = 0, pathname, collapsed, onNavigate, op
 
 const AdminSidebar = ({ user, collapsed, mobileOpen, onNavigate }) => {
   const location = useLocation();
-  const navigation = useMemo(() => filterAdminNavigation(undefined, user?.role), [user?.role]);
+  const navigation = useMemo(() => filterAdminNavigation(undefined, user), [user]);
   const [openSections, setOpenSections] = useState(() => ({
     operations: true,
     "booking-accounting": true,

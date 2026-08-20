@@ -17,6 +17,18 @@ const marketingRoutes = require("./marketing.routes");
 const reviewsRoutes = require("./reviews.routes");
 const bookingRequestsRoutes = require("./bookingRequests.routes");
 const adminBookingRequestsRoutes = require("./adminBookingRequests.routes");
+const analyticsRoutes = require("./analytics.routes");
+const businessAccountingRoutes = require("./businessAccounting.routes");
+const businessExpensesRoutes = require("./businessExpenses.routes");
+const businessIncomeRoutes = require("./businessIncome.routes");
+const reportCenterRoutes = require("./reportCenter.routes");
+const auditControlRoutes = require("./auditControl.routes");
+const dataQualityRoutes = require("./dataQuality.routes");
+const opsControlRoutes = require("./opsControl.routes");
+const disasterRecoveryRoutes = require("./disasterRecovery.routes");
+const systemHealthRoutes = require("./systemHealth.routes");
+const performanceReviewRoutes = require("./performanceReview.routes");
+const productionReadinessRoutes = require("./productionReadiness.routes");
 
 const router = express.Router();
 
@@ -36,6 +48,18 @@ router.use("/webhooks", webhooksRoutes);
 router.use("/reports", reportsRoutes);
 router.use("/marketing", marketingRoutes);
 router.use("/reviews", reviewsRoutes);
+router.use("/admin/analytics", analyticsRoutes);
+router.use("/admin/report-center", reportCenterRoutes);
+router.use("/admin/audit-control", auditControlRoutes);
+router.use("/admin/data-quality", dataQualityRoutes);
+router.use("/admin/ops-control", opsControlRoutes);
+router.use("/admin/disaster-recovery", disasterRecoveryRoutes);
+router.use("/admin/system-health", systemHealthRoutes);
+router.use("/admin/performance-review", performanceReviewRoutes);
+router.use("/admin/production-readiness", productionReadinessRoutes);
+router.use("/admin/business-accounting", businessAccountingRoutes);
+router.use("/admin/business-expenses", businessExpensesRoutes);
+router.use("/admin/business-income", businessIncomeRoutes);
 router.use("/", bookingRequestsRoutes);
 router.use("/admin", adminBookingRequestsRoutes);
 

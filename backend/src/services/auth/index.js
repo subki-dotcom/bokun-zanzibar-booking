@@ -3,6 +3,7 @@ const User = require("../../models/User");
 const Agent = require("../../models/Agent");
 const { env } = require("../../config/env");
 const AppError = require("../../utils/AppError");
+const { getPermissionsForRole } = require("../../security/permissions");
 
 const signToken = ({ id, role, userType }) => {
   return jwt.sign(
@@ -50,7 +51,8 @@ const registerAdmin = async (payload, auth) => {
     id: user._id,
     fullName: user.fullName,
     email: user.email,
-    role: user.role
+    role: user.role,
+    permissions: getPermissionsForRole(user.role)
   };
 };
 
@@ -125,6 +127,7 @@ const login = async (payload) => {
       fullName: account.fullName,
       email: account.email,
       role: account.role,
+      permissions: getPermissionsForRole(account.role),
       userType: isAgentPortal ? "agent" : "user",
       companyName: account.companyName || null,
       approvalStatus: account.approvalStatus || "approved",
@@ -150,6 +153,7 @@ const getProfile = async (auth) => {
     lastName: user.lastName || user.contactLastName,
     email: user.email,
     role: user.role,
+    permissions: getPermissionsForRole(user.role),
     userType: auth.userType,
     companyName: user.companyName || null,
     commissionPercent: user.commissionPercent || null,

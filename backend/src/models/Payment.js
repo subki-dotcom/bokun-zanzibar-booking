@@ -129,7 +129,11 @@ const paymentSchema = new mongoose.Schema(
 paymentSchema.index({ provider: 1, orderTrackingId: 1 });
 paymentSchema.index({ provider: 1, merchantReference: 1 });
 paymentSchema.index({ bookingReference: 1, provider: 1, status: 1, updatedAt: -1 });
+paymentSchema.index({ bookingReference: 1, status: 1, lastVerifiedAt: -1, updatedAt: -1 });
+paymentSchema.index({ status: 1, paidAt: -1, createdAt: -1 });
+paymentSchema.index({ updatedAt: -1, createdAt: -1 });
 paymentSchema.index({ bookingReference: 1, verificationStatus: 1, accountingAllocationStatus: 1 });
+paymentSchema.index({ verificationStatus: 1, accountingAllocationStatus: 1, status: 1 });
 paymentSchema.index(
   { attemptId: 1 },
   {

@@ -17,4 +17,8 @@ const syncLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+syncLogSchema.index({ operation: 1, status: 1, startedAt: -1 });
+syncLogSchema.index({ source: 1, operation: 1, createdAt: -1 });
+syncLogSchema.index({ status: 1, createdAt: -1 });
+
 module.exports = mongoose.model("SyncLog", syncLogSchema);

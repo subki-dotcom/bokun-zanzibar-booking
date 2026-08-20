@@ -3,6 +3,7 @@ import PublicLayout from "../layouts/PublicLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
 import AdminLayout from "../layouts/admin/AdminLayout";
 import ProtectedRoute from "../components/common/ProtectedRoute";
+import { ADMIN_PERMISSIONS } from "../config/adminNavigation";
 import HomePage from "../pages/public/HomePage";
 import ToursPage from "../pages/public/ToursPage";
 import TourDetailsPage from "../pages/public/TourDetailsPage";
@@ -26,6 +27,16 @@ import SyncLogsPage from "../pages/admin/SyncLogsPage";
 import AdminBookingRequestsPage from "../pages/admin/AdminBookingRequestsPage";
 import AdminBookingRequestDetailsPage from "../pages/admin/AdminBookingRequestDetailsPage";
 import AdminOperationsPage from "../pages/admin/AdminOperationsPage";
+import AdminBusinessIntelligencePage from "../pages/admin/AdminBusinessIntelligencePage";
+import AdminDisasterRecoveryPage from "../pages/admin/AdminDisasterRecoveryPage";
+import AdminSystemHealthPage from "../pages/admin/AdminSystemHealthPage";
+import AdminPerformanceReviewPage from "../pages/admin/AdminPerformanceReviewPage";
+import AdminProductionReadinessPage from "../pages/admin/AdminProductionReadinessPage";
+import AdminBusinessAccountingPage from "../pages/admin/AdminBusinessAccountingPage";
+import AdminReportCenterPage from "../pages/admin/AdminReportCenterPage";
+import AdminAuditControlPage from "../pages/admin/AdminAuditControlPage";
+import AdminDataQualityPage from "../pages/admin/AdminDataQualityPage";
+import AdminOpsControlPage from "../pages/admin/AdminOpsControlPage";
 import AdminUnavailablePage from "../components/admin/AdminUnavailablePage";
 import AgentDashboardPage from "../pages/agent/AgentDashboardPage";
 import AgentProductsPage from "../pages/agent/AgentProductsPage";
@@ -105,10 +116,86 @@ const AppRoutes = () => {
         <Route path="/admin/booking-accounting/cost-templates" element={<AdminUnavailablePage module="Booking Accounting" title="Product Cost Templates" />} />
         <Route path="/admin/booking-accounting/profitability" element={<AdminUnavailablePage module="Booking Accounting" title="Booking Profitability" />} />
         <Route path="/admin/booking-accounting/reconciliation" element={<AdminUnavailablePage module="Booking Accounting" title="Reconciliation" />} />
-        <Route path="/admin/business-accounting" element={<AdminUnavailablePage module="Business Accounting" title="Business Accounting" />} />
-        <Route path="/admin/business-intelligence" element={<AdminUnavailablePage module="Business Intelligence" title="Business Intelligence" />} />
-        <Route path="/admin/report-center" element={<AdminUnavailablePage module="Report Center" title="Report Center" />} />
-        <Route path="/admin/audit-control" element={<AdminUnavailablePage module="Audit & Control" title="Audit & Control" />} />
+        <Route
+          path="/admin/business-accounting"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.BUSINESS_ACCOUNTING_READ]}>
+              <AdminBusinessAccountingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/business-intelligence"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.BUSINESS_INTELLIGENCE_READ]}>
+              <AdminBusinessIntelligencePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/report-center"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.REPORT_CENTER_READ]}>
+              <AdminReportCenterPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/audit-control"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.AUDIT_CONTROL_READ]}>
+              <AdminAuditControlPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/audit-control/data-quality"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.DATA_QUALITY_READ]}>
+              <AdminDataQualityPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/audit-control/ops-control"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.OPS_CONTROL_READ]}>
+              <AdminOpsControlPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/disaster-recovery"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.DISASTER_RECOVERY_READ]}>
+              <AdminDisasterRecoveryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/system-health"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.SYSTEM_HEALTH_READ]}>
+              <AdminSystemHealthPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/performance-review"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.PERFORMANCE_REVIEW_READ]}>
+              <AdminPerformanceReviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/production-readiness"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.PRODUCTION_READINESS_READ]}>
+              <AdminProductionReadinessPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/admin/settings" element={<AdminUnavailablePage module="Settings" title="Settings" />} />
 
         <Route path="/admin/bookings" element={<Navigate to="/admin/operations/bookings" replace />} />
@@ -118,6 +205,8 @@ const AppRoutes = () => {
         <Route path="/admin/booking-requests/:requestId" element={<LegacyBookingRequestRedirect />} />
         <Route path="/admin/recovery" element={<Navigate to="/admin/operations/recovery" replace />} />
         <Route path="/admin/sync-logs" element={<Navigate to="/admin/operations/bokun-sync/sync-logs" replace />} />
+        <Route path="/admin/data-quality" element={<Navigate to="/admin/audit-control/data-quality" replace />} />
+        <Route path="/admin/ops-control" element={<Navigate to="/admin/audit-control/ops-control" replace />} />
         <Route path="/admin/operations" element={<Navigate to="/admin/operations/tour-operations" replace />} />
       </Route>
 

@@ -3,10 +3,9 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const hpp = require("hpp");
-const mongoose = require("mongoose");
-
 const { env } = require("./config/env");
 const logger = require("./config/logger");
+const systemHealthService = require("./services/systemHealth");
 const apiRoutes = require("./routes");
 const requestId = require("./middleware/requestId");
 const { globalRateLimiter } = require("./middleware/rateLimiter");
@@ -88,18 +87,11 @@ app.use(
   })
 );
 
-const buildHealthPayload = () => ({
-  status: "ok",
-  timestamp: new Date().toISOString(),
-  environment: env.NODE_ENV,
-  uptimeSeconds: Number(process.uptime().toFixed(2))
-});
-
 app.get("/", (_req, res) => {
   res.json({
     success: true,
     message: "Zanzibar Bokun backend is running",
-    data: buildHealthPayload(),
+    data: systemHealthService.getLiveHealth(),
     meta: {}
   });
 });
@@ -108,7 +100,7 @@ app.get("/health", (_req, res) => {
   res.json({
     success: true,
     message: "API healthy",
-    data: buildHealthPayload(),
+    data: systemHealthService.getLiveHealth(),
     meta: {}
   });
 });
@@ -117,22 +109,26 @@ app.get("/api/health", (_req, res) => {
   res.json({
     success: true,
     message: "API healthy",
-    data: buildHealthPayload(),
+    data: systemHealthService.getLiveHealth(),
+    meta: {}
+  });
+});
+
+app.get("/api/health/live", (_req, res) => {
+  res.json({
+    success: true,
+    message: "API live",
+    data: systemHealthService.getLiveHealth(),
     meta: {}
   });
 });
 
 app.get("/api/health/ready", (_req, res) => {
-  const databaseReady = mongoose.connection.readyState === 1;
-
-  return res.status(databaseReady ? 200 : 503).json({
-    success: databaseReady,
-    message: databaseReady ? "API ready" : "API is waiting for the database connection",
-    data: {
-      status: databaseReady ? "ready" : "not_ready",
-      database: databaseReady ? "connected" : "unavailable",
-      timestamp: new Date().toISOString()
-    },
+  const data = systemHealthService.getReadinessHealth();
+  return res.status(data.ready ? 200 : 503).json({
+    success: data.ready,
+    message: data.ready ? "API ready" : "API is not ready",
+    data,
     meta: {}
   });
 });

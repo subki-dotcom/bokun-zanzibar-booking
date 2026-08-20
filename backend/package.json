@@ -9,6 +9,9 @@
     "seed:admin": "node scripts/seedAdmin.js",
     "migrate:multi-currency": "node scripts/migrateMultiCurrencyPayments.js",
     "migrate:multi-currency:write": "node scripts/migrateMultiCurrencyPayments.js --write",
+    "backup:dry-run": "node scripts/backup-database.js --dry-run",
+    "backup:apply": "node scripts/backup-database.js --apply",
+    "restore:dry-run": "node scripts/restore-database.js --dry-run",
     "test": "node --test",
     "test:smoke": "node scripts/smoke.js"
   },

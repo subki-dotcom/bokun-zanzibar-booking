@@ -13,6 +13,7 @@ import {
   BsCreditCard2Front,
   BsFileEarmarkBarGraph,
   BsGear,
+  BsGraphUpArrow,
   BsGrid1X2,
   BsJournalCheck,
   BsPeople,
@@ -25,6 +26,21 @@ import {
 export const ADMIN_ROLES = {
   ALL: ["super_admin", "admin", "staff"],
   MANAGE: ["super_admin", "admin"]
+};
+
+export const ADMIN_PERMISSIONS = {
+  BUSINESS_ACCOUNTING_READ: "business_accounting.read",
+  BUSINESS_INTELLIGENCE_READ: "business_intelligence.read",
+  REPORT_CENTER_READ: "report_center.read",
+  AUDIT_CONTROL_READ: "audit_control.read",
+  DATA_QUALITY_READ: "data_quality.read",
+  OPS_CONTROL_READ: "ops_control.read",
+  OPS_CONTROL_WRITE: "ops_control.write",
+  DISASTER_RECOVERY_READ: "disaster_recovery.read",
+  DISASTER_RECOVERY_WRITE: "disaster_recovery.write",
+  SYSTEM_HEALTH_READ: "system_health.read",
+  PERFORMANCE_REVIEW_READ: "performance_review.read",
+  PRODUCTION_READINESS_READ: "production_readiness.read"
 };
 
 export const adminNavigation = [
@@ -211,31 +227,98 @@ export const adminNavigation = [
     path: "/admin/business-accounting",
     icon: BsBuilding,
     roles: ADMIN_ROLES.MANAGE,
-    status: "planned"
+    permissions: [ADMIN_PERMISSIONS.BUSINESS_ACCOUNTING_READ],
+    status: "active"
   },
   {
     id: "business-intelligence",
     label: "Business Intelligence",
     path: "/admin/business-intelligence",
     icon: BsBarChartLine,
-    roles: ADMIN_ROLES.ALL,
-    status: "planned"
+    roles: ADMIN_ROLES.MANAGE,
+    permissions: [ADMIN_PERMISSIONS.BUSINESS_INTELLIGENCE_READ],
+    status: "active"
   },
   {
     id: "report-center",
     label: "Report Center",
     path: "/admin/report-center",
     icon: BsFileEarmarkBarGraph,
-    roles: ADMIN_ROLES.ALL,
-    status: "planned"
+    roles: ADMIN_ROLES.MANAGE,
+    permissions: [ADMIN_PERMISSIONS.REPORT_CENTER_READ],
+    status: "active"
   },
   {
     id: "audit-control",
     label: "Audit & Control",
-    path: "/admin/audit-control",
     icon: BsShieldCheck,
     roles: ADMIN_ROLES.MANAGE,
-    status: "planned"
+    permissions: [ADMIN_PERMISSIONS.AUDIT_CONTROL_READ],
+    children: [
+      {
+        id: "audit-control-logs",
+        label: "Audit Logs",
+        path: "/admin/audit-control",
+        icon: BsShieldCheck,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.AUDIT_CONTROL_READ],
+        status: "active"
+      },
+      {
+        id: "audit-control-data-quality",
+        label: "Data Quality",
+        path: "/admin/audit-control/data-quality",
+        icon: BsClipboard2Check,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.DATA_QUALITY_READ],
+        status: "active"
+      },
+      {
+        id: "audit-control-ops-control",
+        label: "Ops Control",
+        path: "/admin/audit-control/ops-control",
+        icon: BsBell,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.OPS_CONTROL_READ],
+        status: "active"
+      }
+    ]
+  },
+  {
+    id: "disaster-recovery",
+    label: "Disaster Recovery",
+    path: "/admin/disaster-recovery",
+    icon: BsArchive,
+    roles: ADMIN_ROLES.MANAGE,
+    permissions: [ADMIN_PERMISSIONS.DISASTER_RECOVERY_READ],
+    status: "active"
+  },
+  {
+    id: "system-health",
+    label: "System Health",
+    path: "/admin/system-health",
+    icon: BsActivity,
+    roles: ADMIN_ROLES.MANAGE,
+    permissions: [ADMIN_PERMISSIONS.SYSTEM_HEALTH_READ],
+    status: "active"
+  },
+  {
+    id: "performance-review",
+    label: "Performance Review",
+    path: "/admin/performance-review",
+    icon: BsGraphUpArrow,
+    roles: ADMIN_ROLES.MANAGE,
+    permissions: [ADMIN_PERMISSIONS.PERFORMANCE_REVIEW_READ],
+    status: "active"
+  },
+  {
+    id: "production-readiness",
+    label: "Production Readiness",
+    path: "/admin/production-readiness",
+    icon: BsClipboard2Check,
+    roles: ADMIN_ROLES.MANAGE,
+    permissions: [ADMIN_PERMISSIONS.PRODUCTION_READINESS_READ],
+    status: "active"
   },
   {
     id: "settings",
@@ -247,17 +330,25 @@ export const adminNavigation = [
   }
 ];
 
-const canViewItem = (item, role) => {
+const actorRole = (actor = "") => (typeof actor === "string" ? actor : actor?.role || "");
+const actorPermissions = (actor = "") => (Array.isArray(actor?.permissions) ? actor.permissions : []);
+
+const canViewItem = (item, actor) => {
+  const role = actorRole(actor);
+  const permissions = actorPermissions(actor);
+  if (item.permissions?.length && permissions.length) {
+    return item.permissions.some((permission) => permissions.includes(permission));
+  }
   if (!item.roles?.length) return true;
   return item.roles.includes(role);
 };
 
-export const filterAdminNavigation = (items = adminNavigation, role = "") =>
+export const filterAdminNavigation = (items = adminNavigation, actor = "") =>
   items
-    .filter((item) => canViewItem(item, role))
+    .filter((item) => canViewItem(item, actor))
     .map((item) => ({
       ...item,
-      children: item.children ? filterAdminNavigation(item.children, role) : undefined
+      children: item.children ? filterAdminNavigation(item.children, actor) : undefined
     }))
     .filter((item) => !item.children || item.children.length > 0);
 

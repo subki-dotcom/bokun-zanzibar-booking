@@ -3,6 +3,7 @@ const { env } = require("../config/env");
 const User = require("../models/User");
 const Agent = require("../models/Agent");
 const AppError = require("../utils/AppError");
+const { getPermissionsForRole } = require("../security/permissions");
 
 const extractToken = (header) => {
   if (!header || !header.startsWith("Bearer ")) {
@@ -33,7 +34,8 @@ const authenticate = async (req, _res, next) => {
       role: user.role,
       userType: payload.userType || "user",
       agentId: user.agentProfileId || null,
-      email: user.email
+      email: user.email,
+      permissions: getPermissionsForRole(user.role)
     };
 
     return next();

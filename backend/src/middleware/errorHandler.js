@@ -50,6 +50,7 @@ const errorHandler = (err, req, res, _next) => {
 
   logger.error("Unhandled request error", {
     requestId: req.requestId,
+    correlationId: req.correlationId || req.requestId,
     path: req.originalUrl,
     method: req.method,
     message: err.message,
@@ -62,7 +63,7 @@ const errorHandler = (err, req, res, _next) => {
       code: err.code || "REQUEST_ERROR",
       message: err.message,
       details: err.details || null,
-      meta: { requestId: req.requestId }
+      meta: { requestId: req.requestId, correlationId: req.correlationId || req.requestId }
     });
   }
 
@@ -70,7 +71,7 @@ const errorHandler = (err, req, res, _next) => {
     statusCode: 500,
     code: "INTERNAL_SERVER_ERROR",
     message: "Something went wrong",
-    meta: { requestId: req.requestId }
+    meta: { requestId: req.requestId, correlationId: req.correlationId || req.requestId }
   });
 };
 

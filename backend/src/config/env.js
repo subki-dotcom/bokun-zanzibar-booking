@@ -89,7 +89,13 @@ const env = cleanEnv(process.env, {
   EMAIL_REPLY_TO: str({ default: "info@risertoursandsafaris.co.tz" }),
   GOOGLE_PLACES_API_KEY: str({ default: "" }),
   GOOGLE_PLACE_ID: str({ default: "" }),
-  GOOGLE_REVIEW_URL: str({ default: "" })
+  GOOGLE_REVIEW_URL: str({ default: "" }),
+  DR_BACKUP_DIRECTORY: str({ default: "backups/mongodb" }),
+  DR_BACKUP_STORAGE_PROVIDER: str({ default: "local_filesystem" }),
+  DR_BACKUP_RETENTION_DAYS: num({ default: 30 }),
+  DR_BACKUP_RPO_HOURS: num({ default: 24 }),
+  DR_BACKUP_RTO_HOURS: num({ default: 4 }),
+  DR_ALLOW_PRODUCTION_RESTORE: bool({ default: false })
 });
 
 const isBokunConfigured =

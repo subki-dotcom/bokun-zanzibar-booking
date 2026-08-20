@@ -5,6 +5,24 @@ const bokunConfirmedBookingsService = require("../services/bokunConfirmedBooking
 let importTimer = null;
 let consecutiveFailures = 0;
 let nextAllowedRunAt = 0;
+const state = {
+  name: "bokun_confirmed_booking_import",
+  enabled: Boolean(env.BOKUN_CONFIRMED_BOOKING_IMPORT_ENABLED),
+  running: false,
+  active: false,
+  intervalSeconds: Math.max(60, Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_INTERVAL_SECONDS || 900)),
+  batchSize: Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_BATCH_SIZE || 50),
+  maxPages: Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_MAX_PAGES || 5),
+  lastRunAt: "",
+  lastSuccessAt: "",
+  lastFailureAt: "",
+  lastError: "",
+  consecutiveFailures: 0,
+  nextAllowedRunAt: "",
+  lastSummary: null
+};
+
+const nowIso = () => new Date().toISOString();
 
 const calculateBackoffMs = () => {
   const minutes = Math.min(30, Math.max(1, 2 ** Math.min(consecutiveFailures, 5)));
@@ -36,6 +54,8 @@ const runConfirmedBookingImportCycle = async (trigger = "interval") => {
     };
   }
 
+  state.running = true;
+  state.lastRunAt = nowIso();
   const range = buildLookbackRange();
   try {
     const result = await bokunConfirmedBookingsService.syncConfirmedBookings({
@@ -49,6 +69,12 @@ const runConfirmedBookingImportCycle = async (trigger = "interval") => {
 
     consecutiveFailures = 0;
     nextAllowedRunAt = 0;
+    state.running = false;
+    state.lastSuccessAt = nowIso();
+    state.lastError = "";
+    state.consecutiveFailures = 0;
+    state.nextAllowedRunAt = "";
+    state.lastSummary = result.summary || null;
     logger.info("Bokun confirmed booking import cycle finished", {
       trigger,
       syncLogId: result.syncLogId,
@@ -58,6 +84,11 @@ const runConfirmedBookingImportCycle = async (trigger = "interval") => {
   } catch (error) {
     consecutiveFailures += 1;
     nextAllowedRunAt = Date.now() + calculateBackoffMs();
+    state.running = false;
+    state.lastFailureAt = nowIso();
+    state.lastError = error.message;
+    state.consecutiveFailures = consecutiveFailures;
+    state.nextAllowedRunAt = new Date(nextAllowedRunAt).toISOString();
     logger.error("Bokun confirmed booking import cycle failed", {
       trigger,
       error: error.message,
@@ -69,7 +100,9 @@ const runConfirmedBookingImportCycle = async (trigger = "interval") => {
 };
 
 const startBokunConfirmedBookingImportPoller = () => {
+  state.enabled = Boolean(env.BOKUN_CONFIRMED_BOOKING_IMPORT_ENABLED);
   if (!env.BOKUN_CONFIRMED_BOOKING_IMPORT_ENABLED) {
+    state.active = false;
     logger.info("Bokun confirmed booking import poller disabled", {
       envFlag: "BOKUN_CONFIRMED_BOOKING_IMPORT_ENABLED=false"
     });
@@ -79,6 +112,9 @@ const startBokunConfirmedBookingImportPoller = () => {
   if (importTimer) return;
 
   const intervalMs = Math.max(60, Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_INTERVAL_SECONDS || 900)) * 1000;
+  state.intervalSeconds = intervalMs / 1000;
+  state.batchSize = Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_BATCH_SIZE || 50);
+  state.maxPages = Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_MAX_PAGES || 5);
 
   logger.info("Bokun confirmed booking import poller started", {
     intervalSeconds: intervalMs / 1000,
@@ -89,6 +125,7 @@ const startBokunConfirmedBookingImportPoller = () => {
   importTimer = setInterval(() => {
     runConfirmedBookingImportCycle("interval");
   }, intervalMs);
+  state.active = true;
 
   if (typeof importTimer.unref === "function") {
     importTimer.unref();
@@ -107,10 +144,20 @@ const stopBokunConfirmedBookingImportPoller = () => {
   if (!importTimer) return;
   clearInterval(importTimer);
   importTimer = null;
+  state.active = false;
   logger.info("Bokun confirmed booking import poller stopped");
 };
 
+const getBokunConfirmedBookingImportWorkerStatus = () => ({
+  ...state,
+  active: Boolean(importTimer),
+  consecutiveFailures,
+  nextAllowedRunAt: nextAllowedRunAt ? new Date(nextAllowedRunAt).toISOString() : "",
+  status: !state.enabled ? "disabled" : importTimer ? consecutiveFailures ? "degraded" : "running" : "stopped"
+});
+
 module.exports = {
+  getBokunConfirmedBookingImportWorkerStatus,
   runConfirmedBookingImportCycle,
   startBokunConfirmedBookingImportPoller,
   stopBokunConfirmedBookingImportPoller,

@@ -1,0 +1,476 @@
+const ReportExport = require("../models/ReportExport");
+const AppError = require("../utils/AppError");
+const { REPORT_EXPORT_FORMAT } = require("./constants");
+const reportCenterService = require("./reportQueryService");
+
+const EXPORT_CONTENT_TYPES = Object.freeze({
+  [REPORT_EXPORT_FORMAT.CSV]: "text/csv; charset=utf-8",
+  [REPORT_EXPORT_FORMAT.EXCEL]: "application/vnd.ms-excel; charset=utf-8",
+  [REPORT_EXPORT_FORMAT.PDF]: "application/pdf",
+  [REPORT_EXPORT_FORMAT.PRINT]: "text/html; charset=utf-8"
+});
+
+const EXPORT_EXTENSIONS = Object.freeze({
+  [REPORT_EXPORT_FORMAT.CSV]: "csv",
+  [REPORT_EXPORT_FORMAT.EXCEL]: "xls",
+  [REPORT_EXPORT_FORMAT.PDF]: "pdf",
+  [REPORT_EXPORT_FORMAT.PRINT]: "html"
+});
+
+const normalizeToken = (value = "") => String(value || "").trim();
+const normalizeUpper = (value = "") => normalizeToken(value).toUpperCase();
+
+const formatDateTime = (value) => {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return normalizeToken(value);
+  return date.toISOString();
+};
+
+const stringifyValue = (value) => {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "value")) {
+    return stringifyValue(value.value);
+  }
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+};
+
+const escapeCsv = (value) => {
+  const text = stringifyValue(value);
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+};
+
+const escapeHtml = (value) =>
+  stringifyValue(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const escapeXml = (value) =>
+  stringifyValue(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const escapePdfText = (value) =>
+  stringifyValue(value)
+    .replace(/[^\x20-\x7E]/g, " ")
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+
+const getPath = (source = {}, path = "") => {
+  if (!path) return undefined;
+  return path.split(".").reduce((current, key) => {
+    if (current === null || current === undefined) return undefined;
+    return current[key];
+  }, source);
+};
+
+const sourceFromRow = (source = "") => {
+  const prefixes = ["rows.", "items.", "products.", "channels.", "trends.combined."];
+  const matched = prefixes.find((prefix) => source.startsWith(prefix));
+  return matched ? source.slice(matched.length) : source;
+};
+
+const inferRows = (data = {}) => {
+  if (Array.isArray(data.rows)) return data.rows;
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.products)) return data.products;
+  if (Array.isArray(data.channels)) return data.channels;
+  if (Array.isArray(data.trends?.combined)) return data.trends.combined;
+
+  const summary = {
+    ...(data.report ? { report: data.report } : {}),
+    ...(data.reportLabel ? { reportLabel: data.reportLabel } : {}),
+    ...(data.profile?.label ? { profile: data.profile.label } : {}),
+    ...(data.totals || {}),
+    ...(data.managementSummary || {}),
+    ...(data.kpis || {}),
+    ...(data.financialBreakdown || {}),
+    ...(data.answers || {})
+  };
+
+  return Object.keys(summary).length ? [summary] : [];
+};
+
+const inferColumns = (reportResult, rows) => {
+  const definitionColumns = reportResult.report?.columns || [];
+  if (definitionColumns.length) {
+    return definitionColumns.map((column) => ({
+      key: column.key,
+      label: column.label || column.key,
+      source: column.source || column.key
+    }));
+  }
+
+  const keys = new Set();
+  rows.forEach((row) => {
+    Object.keys(row || {}).forEach((key) => keys.add(key));
+  });
+
+  return Array.from(keys).map((key) => ({
+    key,
+    label: key,
+    source: key
+  }));
+};
+
+const resolveColumnValue = ({ column, row, data }) => {
+  const source = column.source || column.key;
+  const rowValue = getPath(row, sourceFromRow(source));
+  if (rowValue !== undefined) return rowValue;
+  const dataValue = getPath(data, source);
+  if (dataValue !== undefined) return dataValue;
+  return row?.[column.key];
+};
+
+const buildExportRows = (reportResult) => {
+  const data = reportResult.data || {};
+  const rows = inferRows(data);
+  const columns = inferColumns(reportResult, rows);
+  const matrix = rows.map((row) =>
+    columns.map((column) =>
+      stringifyValue(
+        resolveColumnValue({
+          column,
+          row,
+          data
+        })
+      )
+    )
+  );
+
+  return {
+    columns,
+    rows: matrix,
+    rowCount: rows.length
+  };
+};
+
+const buildMetadataRows = (reportResult) => [
+  ["Report", reportResult.report?.title || reportResult.report?.type || ""],
+  ["Report Type", reportResult.report?.type || ""],
+  ["Generated At", reportResult.generatedAt || ""],
+  ["Generated By", reportResult.generatedBy || ""],
+  ["Period", reportResult.period?.label || reportResult.filters?.period || ""],
+  ["From", reportResult.period?.fromIso || ""],
+  ["To", reportResult.period?.toIso || ""],
+  ["Filters", JSON.stringify(reportResult.filters || {})]
+];
+
+const renderCsv = ({ reportResult, columns, rows }) => {
+  const metadata = buildMetadataRows(reportResult).map((row) => row.map(escapeCsv).join(","));
+  const header = columns.map((column) => escapeCsv(column.label)).join(",");
+  const body = rows.map((row) => row.map(escapeCsv).join(","));
+  return [...metadata, "", header, ...body].join("\r\n");
+};
+
+const renderExcelXml = ({ reportResult, columns, rows }) => {
+  const metadataRows = buildMetadataRows(reportResult)
+    .map(
+      (row) =>
+        `<Row>${row
+          .map((cell) => `<Cell><Data ss:Type="String">${escapeXml(cell)}</Data></Cell>`)
+          .join("")}</Row>`
+    )
+    .join("");
+  const headerRow = `<Row>${columns
+    .map((column) => `<Cell><Data ss:Type="String">${escapeXml(column.label)}</Data></Cell>`)
+    .join("")}</Row>`;
+  const dataRows = rows
+    .map(
+      (row) =>
+        `<Row>${row
+          .map((cell) => `<Cell><Data ss:Type="String">${escapeXml(cell)}</Data></Cell>`)
+          .join("")}</Row>`
+    )
+    .join("");
+
+  return [
+    '<?xml version="1.0"?>',
+    '<?mso-application progid="Excel.Sheet"?>',
+    '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">',
+    `<Worksheet ss:Name="${escapeXml(reportResult.report?.type || "Report")}"><Table>`,
+    metadataRows,
+    "<Row />",
+    headerRow,
+    dataRows,
+    "</Table></Worksheet></Workbook>"
+  ].join("");
+};
+
+const renderPrintHtml = ({ reportResult, columns, rows }) => {
+  const metadataRows = buildMetadataRows(reportResult)
+    .map((row) => `<tr><th>${escapeHtml(row[0])}</th><td>${escapeHtml(row[1])}</td></tr>`)
+    .join("");
+  const headerCells = columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("");
+  const dataRows = rows
+    .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
+    .join("");
+
+  return [
+    "<!doctype html>",
+    '<html lang="en">',
+    "<head>",
+    '<meta charset="utf-8" />',
+    `<title>${escapeHtml(reportResult.report?.title || "Report Export")}</title>`,
+    "<style>",
+    "body{font-family:Arial,sans-serif;color:#111827;margin:24px}",
+    "h1{font-size:20px;margin:0 0 16px}",
+    "table{border-collapse:collapse;width:100%;margin:16px 0}",
+    "th,td{border:1px solid #d1d5db;padding:6px 8px;text-align:left;font-size:12px}",
+    "th{background:#f3f4f6}",
+    "@media print{body{margin:12mm}}",
+    "</style>",
+    "</head>",
+    "<body>",
+    `<h1>${escapeHtml(reportResult.report?.title || reportResult.report?.type || "Report Export")}</h1>`,
+    `<table><tbody>${metadataRows}</tbody></table>`,
+    `<table><thead><tr>${headerCells}</tr></thead><tbody>${dataRows}</tbody></table>`,
+    "</body></html>"
+  ].join("");
+};
+
+const linesForPdf = ({ reportResult, columns, rows }) => {
+  const title = reportResult.report?.title || reportResult.report?.type || "Report Export";
+  const lines = [title, ""];
+  buildMetadataRows(reportResult).forEach((row) => {
+    lines.push(`${row[0]}: ${stringifyValue(row[1])}`);
+  });
+  lines.push("");
+  lines.push(columns.map((column) => column.label).join(" | "));
+  rows.forEach((row) => {
+    lines.push(row.map((cell) => stringifyValue(cell)).join(" | "));
+  });
+  return lines.map((line) => line.slice(0, 118));
+};
+
+const renderPdf = ({ reportResult, columns, rows }) => {
+  const allLines = linesForPdf({ reportResult, columns, rows });
+  const pages = [];
+  for (let index = 0; index < allLines.length; index += 46) {
+    pages.push(allLines.slice(index, index + 46));
+  }
+  if (!pages.length) pages.push(["Report Export"]);
+
+  const maxObjectId = 3 + pages.length * 2;
+  const objects = {};
+  const pageObjectIds = pages.map((_, index) => 4 + index * 2);
+  const contentObjectIds = pages.map((_, index) => 5 + index * 2);
+
+  objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+  objects[2] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pages.length} >>`;
+  objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+
+  pages.forEach((pageLines, index) => {
+    const pageId = pageObjectIds[index];
+    const contentId = contentObjectIds[index];
+    const commands = ["BT", "/F1 9 Tf", "40 760 Td"];
+    pageLines.forEach((line, lineIndex) => {
+      if (lineIndex > 0) commands.push("0 -14 Td");
+      commands.push(`(${escapePdfText(line)}) Tj`);
+    });
+    commands.push("ET");
+    const stream = commands.join("\n");
+    objects[pageId] =
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`;
+    objects[contentId] = `<< /Length ${Buffer.byteLength(stream, "latin1")} >>\nstream\n${stream}\nendstream`;
+  });
+
+  let pdf = "%PDF-1.4\n";
+  const offsets = { 0: 0 };
+  for (let id = 1; id <= maxObjectId; id += 1) {
+    offsets[id] = Buffer.byteLength(pdf, "latin1");
+    pdf += `${id} 0 obj\n${objects[id]}\nendobj\n`;
+  }
+  const xrefOffset = Buffer.byteLength(pdf, "latin1");
+  pdf += `xref\n0 ${maxObjectId + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  for (let id = 1; id <= maxObjectId; id += 1) {
+    pdf += `${String(offsets[id]).padStart(10, "0")} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size ${maxObjectId + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+  return Buffer.from(pdf, "latin1");
+};
+
+const renderExport = ({ format, reportResult, columns, rows }) => {
+  if (format === REPORT_EXPORT_FORMAT.CSV) return renderCsv({ reportResult, columns, rows });
+  if (format === REPORT_EXPORT_FORMAT.EXCEL) return renderExcelXml({ reportResult, columns, rows });
+  if (format === REPORT_EXPORT_FORMAT.PRINT) return renderPrintHtml({ reportResult, columns, rows });
+  if (format === REPORT_EXPORT_FORMAT.PDF) return renderPdf({ reportResult, columns, rows });
+  throw new AppError("Export format is not supported", 422, "REPORT_EXPORT_FORMAT_INVALID", { format });
+};
+
+const safeFilename = ({ reportType, format, generatedAt }) => {
+  const stamp = formatDateTime(generatedAt).replace(/[:.]/g, "-");
+  return `${normalizeUpper(reportType).replace(/[^A-Z0-9_-]/g, "_")}-${stamp}.${EXPORT_EXTENSIONS[format]}`;
+};
+
+const normalizeHistoryRecord = (record = {}) => ({
+  id: normalizeToken(record.id || record._id),
+  reportType: record.reportType || "",
+  format: record.format || "",
+  filters: record.filters || {},
+  status: record.status || "",
+  generatedBy: record.generatedBy || "",
+  generatedAt: formatDateTime(record.generatedAt),
+  requestId: record.requestId || "",
+  rowCount: record.rowCount || 0,
+  contentType: record.contentType || "",
+  bytes: record.bytes || 0,
+  fileReference: record.fileReference || "",
+  retained: Boolean(record.retained),
+  error: record.error || {}
+});
+
+const createReportExportService = ({
+  reportService = reportCenterService,
+  ExportModel = ReportExport,
+  now = () => new Date()
+} = {}) => {
+  const recordHistory = async (payload) => {
+    if (!ExportModel?.create) return null;
+    const record = await ExportModel.create(payload);
+    return normalizeHistoryRecord(record);
+  };
+
+  const exportReport = async ({ reportType, format, filters = {}, auth = {}, requestId = "" } = {}) => {
+    const normalizedFormat = normalizeUpper(format);
+    if (!Object.values(REPORT_EXPORT_FORMAT).includes(normalizedFormat)) {
+      throw new AppError("Export format is not supported", 422, "REPORT_EXPORT_FORMAT_INVALID", { format });
+    }
+
+    const generatedAt = now();
+    try {
+      const reportResult = await reportService.runReport({
+        reportType,
+        filters,
+        auth,
+        requestId
+      });
+      const { columns, rows, rowCount } = buildExportRows(reportResult);
+      const content = renderExport({
+        format: normalizedFormat,
+        reportResult,
+        columns,
+        rows
+      });
+      const contentLength = Buffer.isBuffer(content) ? content.length : Buffer.byteLength(content, "utf8");
+      const contentType = EXPORT_CONTENT_TYPES[normalizedFormat];
+      const history = await recordHistory({
+        reportType: reportResult.report?.type || normalizeUpper(reportType),
+        format: normalizedFormat,
+        filters: reportResult.filters || filters,
+        status: "completed",
+        generatedBy: auth?.id || "",
+        generatedAt,
+        requestId,
+        rowCount,
+        contentType,
+        bytes: contentLength,
+        fileReference: "response_only",
+        retained: false,
+        metadata: {
+          reportTitle: reportResult.report?.title || "",
+          period: reportResult.period || {},
+          usesSameQueryDefinition: true
+        }
+      });
+
+      return {
+        report: reportResult.report,
+        format: normalizedFormat,
+        content,
+        contentType,
+        contentLength,
+        filename: safeFilename({
+          reportType: reportResult.report?.type || reportType,
+          format: normalizedFormat,
+          generatedAt
+        }),
+        disposition: normalizedFormat === REPORT_EXPORT_FORMAT.PRINT ? "inline" : "attachment",
+        rowCount,
+        history,
+        generatedAt: generatedAt.toISOString()
+      };
+    } catch (error) {
+      await recordHistory({
+        reportType: normalizeUpper(reportType),
+        format: normalizedFormat,
+        filters,
+        status: "failed",
+        generatedBy: auth?.id || "",
+        generatedAt,
+        requestId,
+        rowCount: 0,
+        contentType: "",
+        bytes: 0,
+        fileReference: "response_only",
+        retained: false,
+        error: {
+          code: error.code || "REPORT_EXPORT_FAILED",
+          message: error.message || "Report export failed"
+        }
+      });
+      throw error;
+    }
+  };
+
+  const listExportHistory = async ({ reportType = "", format = "", limit = 50 } = {}) => {
+    const query = {};
+    if (reportType) query.reportType = normalizeUpper(reportType);
+    if (format) query.format = normalizeUpper(format);
+
+    if (!ExportModel?.find) {
+      return {
+        items: [],
+        count: 0,
+        retainedFilesSupported: false
+      };
+    }
+
+    const findResult = ExportModel.find(query);
+    let records;
+    if (Array.isArray(findResult)) {
+      records = findResult;
+    } else {
+      const sorted = findResult.sort ? findResult.sort({ generatedAt: -1 }) : findResult;
+      const limited = sorted.limit ? sorted.limit(limit) : sorted;
+      records = limited.lean ? await limited.lean() : await limited;
+    }
+
+    const items = (records || []).slice(0, limit).map(normalizeHistoryRecord);
+    return {
+      items,
+      count: items.length,
+      retainedFilesSupported: false
+    };
+  };
+
+  return {
+    exportReport,
+    listExportHistory
+  };
+};
+
+const service = createReportExportService();
+
+module.exports = {
+  ...service,
+  createReportExportService,
+  __testables: {
+    buildExportRows,
+    inferRows,
+    renderCsv,
+    renderExcelXml,
+    renderPdf,
+    renderPrintHtml
+  }
+};

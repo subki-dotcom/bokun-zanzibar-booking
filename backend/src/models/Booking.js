@@ -305,6 +305,9 @@ bookingSchema.index({
   "legacyBokunRecovery.status": 1
 });
 bookingSchema.index({ operationalSource: 1, salesChannel: 1, bookingStatus: 1, travelDate: 1 });
+bookingSchema.index({ salesChannel: 1, bookingStatus: 1, "bokunOperationalDates.bookingCreatedAtBokun.normalizedAt": 1 });
+bookingSchema.index({ salesChannel: 1, bookingStatus: 1, "bokunOperationalDates.travelDate.normalizedAt": 1 });
+bookingSchema.index({ salesChannel: 1, bookingStatus: 1, createdAt: 1 });
 bookingSchema.index({ bokunBookingId: 1, bokunConfirmationCode: 1, "bokunStatus.normalized": 1 });
 bookingSchema.index({ "bokunImport.lastSyncedAt": 1, "bokunImport.lastChangeType": 1 });
 bookingSchema.index({ bokunBookingId: 1, bokunExternalBookingReference: 1, operationalSource: 1 });

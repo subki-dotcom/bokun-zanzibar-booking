@@ -64,4 +64,8 @@ const invoiceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+invoiceSchema.index({ paymentStatus: 1, issueDate: -1, createdAt: -1 });
+invoiceSchema.index({ bookingReference: 1, paymentStatus: 1 });
+invoiceSchema.index({ bookingStatus: 1, issueDate: -1, createdAt: -1 });
+
 module.exports = mongoose.model("Invoice", invoiceSchema);

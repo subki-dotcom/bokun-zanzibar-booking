@@ -59,5 +59,9 @@ const refundSchema = new mongoose.Schema(
 );
 
 refundSchema.index({ bookingId: 1, status: 1 });
+refundSchema.index({ provider: 1, status: 1, lastRefundSyncAt: 1, updatedAt: 1 });
+refundSchema.index({ paymentId: 1, status: 1 });
+refundSchema.index({ bookingRequestId: 1, status: 1 });
+refundSchema.index({ status: 1, completedAt: -1 });
 
 module.exports = mongoose.model("Refund", refundSchema);
