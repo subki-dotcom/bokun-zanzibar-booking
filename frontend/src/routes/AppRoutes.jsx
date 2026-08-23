@@ -33,6 +33,8 @@ import AdminSystemHealthPage from "../pages/admin/AdminSystemHealthPage";
 import AdminPerformanceReviewPage from "../pages/admin/AdminPerformanceReviewPage";
 import AdminProductionReadinessPage from "../pages/admin/AdminProductionReadinessPage";
 import AdminBusinessAccountingPage from "../pages/admin/AdminBusinessAccountingPage";
+import AdminCrmPage from "../pages/admin/AdminCrmPage";
+import AdminGeneralLedgerPage from "../pages/admin/AdminGeneralLedgerPage";
 import AdminReportCenterPage from "../pages/admin/AdminReportCenterPage";
 import AdminAuditControlPage from "../pages/admin/AdminAuditControlPage";
 import AdminDataQualityPage from "../pages/admin/AdminDataQualityPage";
@@ -124,6 +126,31 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        {[
+          "/admin/business-accounting/chart-of-accounts",
+          "/admin/business-accounting/journal-entries",
+          "/admin/business-accounting/general-ledger",
+          "/admin/business-accounting/trial-balance",
+          "/admin/business-accounting/accounts-receivable",
+          "/admin/business-accounting/accounts-payable",
+          "/admin/business-accounting/cash-bank",
+          "/admin/business-accounting/period-close",
+          "/admin/business-accounting/balance-sheet",
+          "/admin/business-accounting/profit-loss",
+          "/admin/business-accounting/cash-flow",
+          "/admin/business-accounting/fixed-assets",
+          "/admin/business-accounting/accounting-reconciliation"
+        ].map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW]}>
+                <AdminGeneralLedgerPage />
+              </ProtectedRoute>
+            }
+          />
+        ))}
         <Route
           path="/admin/business-intelligence"
           element={
@@ -208,6 +235,92 @@ const AppRoutes = () => {
         <Route path="/admin/data-quality" element={<Navigate to="/admin/audit-control/data-quality" replace />} />
         <Route path="/admin/ops-control" element={<Navigate to="/admin/audit-control/ops-control" replace />} />
         <Route path="/admin/operations" element={<Navigate to="/admin/operations/tour-operations" replace />} />
+        {[
+          "/admin/crm",
+          "/admin/crm/customers",
+          "/admin/crm/leads"
+        ].map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_VIEW]}>
+                <AdminCrmPage />
+              </ProtectedRoute>
+            }
+          />
+        ))}
+        <Route
+          path="/admin/crm/opportunities"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_MANAGE_OPPORTUNITIES]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/crm/pipeline"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_MANAGE_OPPORTUNITIES]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+            }
+          />
+        <Route
+          path="/admin/crm/quotes"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_MANAGE_QUOTES]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/crm/follow-ups"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_MANAGE_FOLLOWUPS]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/crm/tasks"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_MANAGE_FOLLOWUPS]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/crm/duplicates"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_MANAGE_CUSTOMERS]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/crm/b2b-agents"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_MANAGE_B2B]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
+        {[
+          ["/admin/crm/conversations", "Conversations"],
+          ["/admin/crm/lost-opportunities", "Lost Opportunities"],
+          ["/admin/crm/reports", "CRM Reports"]
+        ].map(([path, title]) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_VIEW]}>
+                <AdminUnavailablePage module="CRM" title={title} />
+              </ProtectedRoute>
+            }
+          />
+        ))}
       </Route>
 
       <Route

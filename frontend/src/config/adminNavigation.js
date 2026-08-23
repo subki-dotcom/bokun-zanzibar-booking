@@ -40,7 +40,31 @@ export const ADMIN_PERMISSIONS = {
   DISASTER_RECOVERY_WRITE: "disaster_recovery.write",
   SYSTEM_HEALTH_READ: "system_health.read",
   PERFORMANCE_REVIEW_READ: "performance_review.read",
-  PRODUCTION_READINESS_READ: "production_readiness.read"
+  PRODUCTION_READINESS_READ: "production_readiness.read",
+  CRM_VIEW: "crm.view",
+  CRM_MANAGE_LEADS: "crm.manage_leads",
+  CRM_ASSIGN_LEADS: "crm.assign_leads",
+  CRM_MANAGE_OPPORTUNITIES: "crm.manage_opportunities",
+  CRM_MANAGE_QUOTES: "crm.manage_quotes",
+  CRM_APPROVE_QUOTES: "crm.approve_quotes",
+  CRM_VIEW_CUSTOMERS: "crm.view_customers",
+  CRM_MANAGE_CUSTOMERS: "crm.manage_customers",
+  CRM_MANAGE_FOLLOWUPS: "crm.manage_followups",
+  CRM_VIEW_SALES_ANALYTICS: "crm.view_sales_analytics",
+  CRM_VIEW_CUSTOMER_FINANCIALS: "crm.view_customer_financials",
+  CRM_MANAGE_B2B: "crm.manage_b2b",
+  GL_VIEW: "gl.view",
+  GL_MANAGE_CHART: "gl.manage_chart",
+  GL_CREATE_JOURNAL: "gl.create_journal",
+  GL_APPROVE_JOURNAL: "gl.approve_journal",
+  GL_POST_JOURNAL: "gl.post_journal",
+  GL_REVERSE_JOURNAL: "gl.reverse_journal",
+  GL_CLOSE_PERIOD: "gl.close_period",
+  GL_VIEW_TRIAL_BALANCE: "gl.view_trial_balance",
+  GL_VIEW_BALANCE_SHEET: "gl.view_balance_sheet",
+  GL_VIEW_PROFIT_LOSS: "gl.view_profit_loss",
+  GL_VIEW_CASH_FLOW: "gl.view_cash_flow",
+  GL_EXPORT: "gl.export"
 };
 
 export const adminNavigation = [
@@ -150,6 +174,132 @@ export const adminNavigation = [
     ]
   },
   {
+    id: "crm",
+    label: "CRM",
+    icon: BsPeople,
+    roles: ADMIN_ROLES.MANAGE,
+    permissions: [ADMIN_PERMISSIONS.CRM_VIEW],
+    children: [
+      {
+        id: "crm-dashboard",
+        label: "Dashboard",
+        path: "/admin/crm",
+        icon: BsGrid1X2,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_VIEW],
+        status: "active"
+      },
+      {
+        id: "crm-customers",
+        label: "Customers",
+        path: "/admin/crm/customers",
+        icon: BsPeople,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_VIEW_CUSTOMERS],
+        status: "active"
+      },
+      {
+        id: "crm-duplicates",
+        label: "Duplicate Review",
+        path: "/admin/crm/duplicates",
+        icon: BsShieldCheck,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_CUSTOMERS],
+        status: "active"
+      },
+      {
+        id: "crm-leads",
+        label: "Leads",
+        path: "/admin/crm/leads",
+        icon: BsClipboard2Check,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_LEADS],
+        status: "active"
+      },
+      {
+        id: "crm-opportunities",
+        label: "Opportunities",
+        path: "/admin/crm/opportunities",
+        icon: BsGraphUpArrow,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_OPPORTUNITIES],
+        status: "active"
+      },
+      {
+        id: "crm-quotes",
+        label: "Quotes",
+        path: "/admin/crm/quotes",
+        icon: BsReceipt,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_QUOTES],
+        status: "active"
+      },
+      {
+        id: "crm-follow-ups",
+        label: "Follow-ups",
+        path: "/admin/crm/follow-ups",
+        icon: BsBell,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_FOLLOWUPS],
+        status: "active"
+      },
+      {
+        id: "crm-tasks",
+        label: "Tasks",
+        path: "/admin/crm/tasks",
+        icon: BsJournalCheck,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_FOLLOWUPS],
+        status: "active"
+      },
+      {
+        id: "crm-conversations",
+        label: "Conversations",
+        path: "/admin/crm/conversations",
+        icon: BsArchive,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_VIEW_CUSTOMERS],
+        status: "planned"
+      },
+      {
+        id: "crm-pipeline",
+        label: "Sales Pipeline",
+        path: "/admin/crm/pipeline",
+        icon: BsBarChartLine,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_OPPORTUNITIES],
+        status: "active"
+      },
+      {
+        id: "crm-b2b-agents",
+        label: "B2B / Agents",
+        path: "/admin/crm/b2b-agents",
+        icon: BsBriefcase,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_B2B],
+        status: "active"
+      },
+      {
+        id: "crm-lost-opportunities",
+        label: "Lost Opportunities",
+        path: "/admin/crm/lost-opportunities",
+        icon: BsArchive,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_OPPORTUNITIES],
+        status: "planned"
+      },
+      {
+        id: "crm-reports",
+        label: "CRM Reports",
+        path: "/admin/crm/reports",
+        icon: BsFileEarmarkBarGraph,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_VIEW_SALES_ANALYTICS],
+        status: "planned"
+      }
+    ]
+  },
+  {
     id: "booking-accounting",
     label: "Booking Accounting",
     icon: BsCashCoin,
@@ -224,11 +374,137 @@ export const adminNavigation = [
   {
     id: "business-accounting",
     label: "Business Accounting",
-    path: "/admin/business-accounting",
     icon: BsBuilding,
     roles: ADMIN_ROLES.MANAGE,
-    permissions: [ADMIN_PERMISSIONS.BUSINESS_ACCOUNTING_READ],
-    status: "active"
+    permissions: [ADMIN_PERMISSIONS.BUSINESS_ACCOUNTING_READ, ADMIN_PERMISSIONS.GL_VIEW],
+    children: [
+      {
+        id: "management-accounting",
+        label: "Management Accounting",
+        path: "/admin/business-accounting",
+        icon: BsBuilding,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.BUSINESS_ACCOUNTING_READ],
+        status: "active"
+      },
+      {
+        id: "gl-chart-of-accounts",
+        label: "Chart of Accounts",
+        path: "/admin/business-accounting/chart-of-accounts",
+        icon: BsJournalCheck,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW],
+        status: "active"
+      },
+      {
+        id: "gl-journal-entries",
+        label: "Journal Entries",
+        path: "/admin/business-accounting/journal-entries",
+        icon: BsReceipt,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW],
+        status: "active"
+      },
+      {
+        id: "gl-general-ledger",
+        label: "General Ledger",
+        path: "/admin/business-accounting/general-ledger",
+        icon: BsFileEarmarkBarGraph,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW],
+        status: "active"
+      },
+      {
+        id: "gl-trial-balance",
+        label: "Trial Balance",
+        path: "/admin/business-accounting/trial-balance",
+        icon: BsClipboard2Check,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW_TRIAL_BALANCE],
+        status: "active"
+      },
+      {
+        id: "gl-accounts-receivable",
+        label: "Accounts Receivable",
+        path: "/admin/business-accounting/accounts-receivable",
+        icon: BsCashCoin,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW],
+        status: "active"
+      },
+      {
+        id: "gl-accounts-payable",
+        label: "Accounts Payable",
+        path: "/admin/business-accounting/accounts-payable",
+        icon: BsWallet2,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW],
+        status: "active"
+      },
+      {
+        id: "gl-cash-bank",
+        label: "Cash & Bank",
+        path: "/admin/business-accounting/cash-bank",
+        icon: BsCreditCard2Front,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW],
+        status: "active"
+      },
+      {
+        id: "gl-period-close",
+        label: "Period Close",
+        path: "/admin/business-accounting/period-close",
+        icon: BsCalendar2Check,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_CLOSE_PERIOD],
+        status: "active"
+      },
+      {
+        id: "gl-balance-sheet",
+        label: "Balance Sheet",
+        path: "/admin/business-accounting/balance-sheet",
+        icon: BsArchive,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW_BALANCE_SHEET],
+        status: "active"
+      },
+      {
+        id: "gl-profit-loss",
+        label: "Profit & Loss",
+        path: "/admin/business-accounting/profit-loss",
+        icon: BsGraphUpArrow,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW_PROFIT_LOSS],
+        status: "active"
+      },
+      {
+        id: "gl-cash-flow",
+        label: "Cash Flow",
+        path: "/admin/business-accounting/cash-flow",
+        icon: BsBarChartLine,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW_CASH_FLOW],
+        status: "active"
+      },
+      {
+        id: "gl-fixed-assets",
+        label: "Fixed Assets",
+        path: "/admin/business-accounting/fixed-assets",
+        icon: BsBriefcase,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW],
+        status: "active"
+      },
+      {
+        id: "gl-reconciliation",
+        label: "Accounting Reconciliation",
+        path: "/admin/business-accounting/accounting-reconciliation",
+        icon: BsShieldCheck,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_VIEW],
+        status: "active"
+      }
+    ]
   },
   {
     id: "business-intelligence",

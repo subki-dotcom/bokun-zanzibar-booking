@@ -17,6 +17,12 @@ test("admin roles receive financial and control permissions while staff does not
   assert.equal(hasPermission({ role: "admin" }, PERMISSIONS.REPORT_CENTER_EXPORT), true);
   assert.equal(hasPermission({ role: "admin" }, PERMISSIONS.SYSTEM_HEALTH_READ), true);
   assert.equal(hasPermission({ role: "admin" }, PERMISSIONS.PERFORMANCE_REVIEW_READ), true);
+  assert.equal(hasPermission({ role: "admin" }, PERMISSIONS.CRM_VIEW), true);
+  assert.equal(hasPermission({ role: "admin" }, PERMISSIONS.CRM_MANAGE_CUSTOMERS), true);
+  assert.equal(hasPermission({ role: "admin" }, PERMISSIONS.CRM_MANAGE_QUOTES), true);
+  assert.equal(hasPermission({ role: "admin" }, PERMISSIONS.CRM_APPROVE_QUOTES), true);
+  assert.equal(hasPermission({ role: "admin" }, PERMISSIONS.CRM_MANAGE_FOLLOWUPS), true);
+  assert.equal(hasPermission({ role: "admin" }, PERMISSIONS.CRM_VIEW_CUSTOMER_FINANCIALS), true);
 
   assert.equal(hasPermission({ role: "staff" }, PERMISSIONS.OPERATIONS_READ), true);
   assert.equal(hasPermission({ role: "staff" }, PERMISSIONS.BUSINESS_ACCOUNTING_READ), false);
@@ -24,6 +30,7 @@ test("admin roles receive financial and control permissions while staff does not
   assert.equal(hasPermission({ role: "staff" }, PERMISSIONS.AUDIT_CONTROL_READ), false);
   assert.equal(hasPermission({ role: "staff" }, PERMISSIONS.SYSTEM_HEALTH_READ), false);
   assert.equal(hasPermission({ role: "staff" }, PERMISSIONS.PERFORMANCE_REVIEW_READ), false);
+  assert.equal(hasPermission({ role: "staff" }, PERMISSIONS.CRM_VIEW), false);
 });
 
 test("permission checks can use explicit auth permissions without changing user roles", () => {
