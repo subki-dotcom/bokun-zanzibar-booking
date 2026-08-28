@@ -27,6 +27,7 @@ test("CRM navigation is available to admins with CRM permissions", () => {
       ADMIN_PERMISSIONS.CRM_MANAGE_OPPORTUNITIES,
       ADMIN_PERMISSIONS.CRM_MANAGE_QUOTES,
       ADMIN_PERMISSIONS.CRM_MANAGE_FOLLOWUPS,
+      ADMIN_PERMISSIONS.CRM_VIEW_SALES_ANALYTICS,
       ADMIN_PERMISSIONS.CRM_MANAGE_B2B
     ]
   });
@@ -41,7 +42,12 @@ test("CRM navigation is available to admins with CRM permissions", () => {
   assert.equal(findById(navigation, "crm-quotes")?.status, "active");
   assert.equal(findById(navigation, "crm-follow-ups")?.status, "active");
   assert.equal(findById(navigation, "crm-tasks")?.status, "active");
+  assert.equal(findById(navigation, "crm-conversations")?.status, "active");
   assert.equal(findById(navigation, "crm-b2b-agents")?.status, "active");
+  assert.equal(findById(navigation, "crm-lost-opportunities")?.status, "active");
+  assert.equal(findById(navigation, "crm-reports")?.status, "active");
+  assert.equal(findById(navigation, "crm-controls")?.status, "active");
+  assert.equal(findById(navigation, "crm-imports")?.status, "active");
   assert.equal(getAdminRouteMeta("/admin/crm/customers").label, "Customers");
   assert.equal(getAdminRouteMeta("/admin/crm/leads").label, "Leads");
   assert.equal(getAdminRouteMeta("/admin/crm/opportunities").label, "Opportunities");
@@ -49,7 +55,12 @@ test("CRM navigation is available to admins with CRM permissions", () => {
   assert.equal(getAdminRouteMeta("/admin/crm/quotes").label, "Quotes");
   assert.equal(getAdminRouteMeta("/admin/crm/follow-ups").label, "Follow-ups");
   assert.equal(getAdminRouteMeta("/admin/crm/tasks").label, "Tasks");
+  assert.equal(getAdminRouteMeta("/admin/crm/conversations").label, "Conversations");
   assert.equal(getAdminRouteMeta("/admin/crm/b2b-agents").label, "B2B / Agents");
+  assert.equal(getAdminRouteMeta("/admin/crm/lost-opportunities").label, "Lost Opportunities");
+  assert.equal(getAdminRouteMeta("/admin/crm/reports").label, "CRM Reports");
+  assert.equal(getAdminRouteMeta("/admin/crm/controls").label, "CRM Controls");
+  assert.equal(getAdminRouteMeta("/admin/crm/imports").label, "CRM Imports");
 });
 
 test("CRM navigation stays hidden from staff without CRM permission grants", () => {

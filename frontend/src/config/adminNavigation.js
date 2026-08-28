@@ -259,7 +259,7 @@ export const adminNavigation = [
         icon: BsArchive,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.CRM_VIEW_CUSTOMERS],
-        status: "planned"
+        status: "active"
       },
       {
         id: "crm-pipeline",
@@ -286,7 +286,7 @@ export const adminNavigation = [
         icon: BsArchive,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_OPPORTUNITIES],
-        status: "planned"
+        status: "active"
       },
       {
         id: "crm-reports",
@@ -295,7 +295,29 @@ export const adminNavigation = [
         icon: BsFileEarmarkBarGraph,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.CRM_VIEW_SALES_ANALYTICS],
-        status: "planned"
+        status: "active"
+      },
+      {
+        id: "crm-controls",
+        label: "CRM Controls",
+        path: "/admin/crm/controls",
+        icon: BsShieldCheck,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_VIEW_SALES_ANALYTICS],
+        status: "active"
+      },
+      {
+        id: "crm-imports",
+        label: "CRM Imports",
+        path: "/admin/crm/imports",
+        icon: BsArchive,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [
+          ADMIN_PERMISSIONS.CRM_MANAGE_CUSTOMERS,
+          ADMIN_PERMISSIONS.CRM_MANAGE_LEADS,
+          ADMIN_PERMISSIONS.CRM_MANAGE_B2B
+        ],
+        status: "active"
       }
     ]
   },

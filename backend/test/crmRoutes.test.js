@@ -15,6 +15,11 @@ const crmOpportunitiesService = require("../src/services/crmOpportunities");
 const crmQuotesService = require("../src/services/crmQuotes");
 const crmFollowUpsService = require("../src/services/crmFollowUps");
 const crmB2BPartnersService = require("../src/services/crmB2BPartners");
+const crmAlertsService = require("../src/services/crmAlerts");
+const crmAnalyticsService = require("../src/services/crmAnalytics");
+const crmReportsService = require("../src/services/crmReports");
+const crmControlsService = require("../src/services/crmControls");
+const crmImportsService = require("../src/services/crmImports");
 
 const adminId = "66eeeeeeeeeeeeeeeeeeeeee";
 
@@ -157,6 +162,357 @@ test("staff without CRM permissions cannot access CRM customer route", async () 
     assert.equal(response.status, 403);
     assert.equal(payload.error.code, "FORBIDDEN_PERMISSION");
   } finally {
+    restoreUser();
+    await close(server);
+  }
+});
+
+test("CRM analytics route requires analytics permission and returns forecast guardrails", async () => {
+  const restoreUser = withMockAdmin("admin");
+  const originalAnalytics = crmAnalyticsService.getCrmAnalytics;
+  let receivedFilters = null;
+  crmAnalyticsService.getCrmAnalytics = async (filters = {}) => {
+    receivedFilters = filters;
+    return {
+      step: "7J",
+      module: "CRM_ANALYTICS",
+      filters,
+      totals: { weightedPipelineValue: 50 },
+      sourceOfTruth: {
+        pipelineValueIsForecastOnly: true,
+        actualRevenueSource: "Booking Accounting after Bokun confirmed booking"
+      }
+    };
+  };
+  const server = await listen();
+
+  try {
+    const { port } = server.address();
+    const unauthorized = await fetch(`http://127.0.0.1:${port}/api/admin/crm/analytics?source=WEBSITE`);
+    assert.equal(unauthorized.status, 401);
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/admin/crm/analytics?source=WEBSITE&currency=USD`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.success, true);
+    assert.equal(payload.data.step, "7J");
+    assert.equal(payload.data.sourceOfTruth.pipelineValueIsForecastOnly, true);
+    assert.equal(receivedFilters.source, "WEBSITE");
+    assert.equal(receivedFilters.currency, "USD");
+  } finally {
+    crmAnalyticsService.getCrmAnalytics = originalAnalytics;
+    restoreUser();
+    await close(server);
+  }
+});
+
+test("CRM alerts route returns derived in-app notifications without delivery claims", async () => {
+  const restoreUser = withMockAdmin("admin");
+  const originalAlerts = crmAlertsService.getCrmAlerts;
+  let receivedFilters = null;
+  crmAlertsService.getCrmAlerts = async (filters = {}) => {
+    receivedFilters = filters;
+    return {
+      step: "7M",
+      module: "CRM_ALERTS_NOTIFICATIONS",
+      filters,
+      alerts: {
+        total: 1,
+        items: [{ alertKey: "CRM_ALERT::FOLLOW_UP_OVERDUE::FOLLOW_UP::1", type: "FOLLOW_UP_OVERDUE", severity: "HIGH" }]
+      },
+      notifications: {
+        total: 1,
+        items: [{ notificationKey: "CRM_NOTIFICATION::FOLLOW_UP_DUE::FOLLOW_UP::1", type: "FOLLOW_UP_DUE" }]
+      },
+      sourceOfTruth: {
+        notificationDeliveryTruth: "This endpoint returns in-app notifications derived from CRM records only; it does not claim email, SMS, WhatsApp, or provider delivery."
+      }
+    };
+  };
+  const server = await listen();
+
+  try {
+    const { port } = server.address();
+    const unauthorized = await fetch(`http://127.0.0.1:${port}/api/admin/crm/alerts`);
+    assert.equal(unauthorized.status, 401);
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/admin/crm/alerts?type=FOLLOW_UP_OVERDUE&severity=HIGH&limit=5`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.data.step, "7M");
+    assert.equal(payload.data.alerts.items[0].type, "FOLLOW_UP_OVERDUE");
+    assert.equal(payload.data.notifications.items[0].type, "FOLLOW_UP_DUE");
+    assert.equal(receivedFilters.type, "FOLLOW_UP_OVERDUE");
+    assert.equal(receivedFilters.severity, "HIGH");
+    assert.equal(receivedFilters.limit, 5);
+    assert.match(payload.data.sourceOfTruth.notificationDeliveryTruth, /in-app notifications/);
+
+    const invalid = await fetch(`http://127.0.0.1:${port}/api/admin/crm/alerts?severity=LOW`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    assert.equal(invalid.status, 422);
+  } finally {
+    crmAlertsService.getCrmAlerts = originalAlerts;
+    restoreUser();
+    await close(server);
+  }
+});
+
+test("CRM controls route requires analytics permission and returns audit/data-quality posture", async () => {
+  const restoreUser = withMockAdmin("admin");
+  const originalControls = crmControlsService.getCrmControls;
+  let receivedFilters = null;
+  crmControlsService.getCrmControls = async (filters = {}) => {
+    receivedFilters = filters;
+    return {
+      step: "7N",
+      module: "CRM_AUDIT_PERMISSIONS_DATA_QUALITY",
+      filters,
+      dataQuality: {
+        totalDetected: 1,
+        total: 1,
+        items: [{ issueKey: "issue-1", code: "LEAD_MISSING_OWNER", severity: "WARNING" }]
+      },
+      auditCoverage: { totalRequirements: 11, items: [] },
+      permissions: { requiredCount: 12, declaredCount: 12, staffSensitiveAccessDenied: true },
+      privacy: { customerFinancials: { status: "CONFIGURED" } },
+      duplicateProtection: { quoteConversion: { status: "CONFIGURED" } }
+    };
+  };
+  const server = await listen();
+
+  try {
+    const { port } = server.address();
+    const unauthorized = await fetch(`http://127.0.0.1:${port}/api/admin/crm/controls`);
+    assert.equal(unauthorized.status, 401);
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/admin/crm/controls?severity=WARNING&code=LEAD_MISSING_OWNER&issueLimit=5`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.data.step, "7N");
+    assert.equal(payload.data.dataQuality.items[0].code, "LEAD_MISSING_OWNER");
+    assert.equal(receivedFilters.severity, "WARNING");
+    assert.equal(receivedFilters.code, "LEAD_MISSING_OWNER");
+    assert.equal(receivedFilters.issueLimit, 5);
+
+    const invalid = await fetch(`http://127.0.0.1:${port}/api/admin/crm/controls?severity=LOW`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    assert.equal(invalid.status, 422);
+  } finally {
+    crmControlsService.getCrmControls = originalControls;
+    restoreUser();
+    await close(server);
+  }
+});
+
+test("staff without analytics permission cannot access CRM controls route", async () => {
+  const restoreUser = withMockAdmin("staff");
+  const server = await listen();
+
+  try {
+    const { port } = server.address();
+    const response = await fetch(`http://127.0.0.1:${port}/api/admin/crm/controls`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 403);
+    assert.equal(payload.error.code, "FORBIDDEN_PERMISSION");
+  } finally {
+    restoreUser();
+    await close(server);
+  }
+});
+
+test("CRM imports route validates dry-run batches and requires import permissions", async () => {
+  const restoreUser = withMockAdmin("admin");
+  const originalRunImport = crmImportsService.runCrmImport;
+  let receivedPayload = null;
+  crmImportsService.runCrmImport = async (payload) => {
+    receivedPayload = payload;
+    return {
+      step: "7O",
+      module: "CRM_IMPORT_FOUNDATION",
+      importType: payload.importType,
+      dryRun: payload.dryRun,
+      validation: { createCount: 1, skipExistingCount: 0, reviewRequiredCount: 0, invalidCount: 0 },
+      plan: [{ rowNumber: 1, status: "CREATE" }],
+      applied: { createdCount: 0, skippedCount: 0, failedCount: 0, items: [] }
+    };
+  };
+  const server = await listen();
+
+  try {
+    const { port } = server.address();
+    const unauthorized = await fetch(`http://127.0.0.1:${port}/api/admin/crm/imports`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ importType: "CUSTOMERS", records: [{ firstName: "Asha" }] })
+    });
+    assert.equal(unauthorized.status, 401);
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/admin/crm/imports`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${adminToken()}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        importType: "HISTORICAL_LEADS",
+        dryRun: true,
+        source: "legacy_csv",
+        records: [{ firstName: "Asha", lastName: "Traveler", email: "asha@example.test" }]
+      })
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.data.step, "7O");
+    assert.equal(receivedPayload.importType, "HISTORICAL_LEADS");
+    assert.equal(receivedPayload.dryRun, true);
+    assert.equal(receivedPayload.source, "legacy_csv");
+
+    const invalid = await fetch(`http://127.0.0.1:${port}/api/admin/crm/imports`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${adminToken()}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ importType: "MADE_UP", records: [] })
+    });
+    assert.equal(invalid.status, 422);
+  } finally {
+    crmImportsService.runCrmImport = originalRunImport;
+    restoreUser();
+    await close(server);
+  }
+});
+
+test("staff without CRM import permissions cannot apply CRM imports", async () => {
+  const restoreUser = withMockAdmin("staff");
+  const server = await listen();
+
+  try {
+    const { port } = server.address();
+    const response = await fetch(`http://127.0.0.1:${port}/api/admin/crm/imports`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${adminToken()}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        importType: "CUSTOMERS",
+        dryRun: true,
+        records: [{ firstName: "Asha", lastName: "Traveler", email: "asha@example.test" }]
+      })
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 403);
+    assert.equal(payload.error.code, "FORBIDDEN_PERMISSION");
+  } finally {
+    restoreUser();
+    await close(server);
+  }
+});
+
+test("CRM report routes expose catalog and generated reports with analytics permission", async () => {
+  const restoreUser = withMockAdmin("admin");
+  const originalCatalog = crmReportsService.listCatalog;
+  const originalRunReport = crmReportsService.runCrmReport;
+  let receivedRun = null;
+  crmReportsService.listCatalog = () => ({
+    step: "7K",
+    module: "CRM_REPORTS",
+    reports: [{ type: "CRM_PIPELINE_FORECAST", title: "CRM Pipeline Forecast", supportedExports: ["CSV"] }]
+  });
+  crmReportsService.runCrmReport = async ({ reportType, filters = {} }) => {
+    receivedRun = { reportType, filters };
+    return {
+      step: "7K",
+      module: "CRM_REPORTS",
+      report: { type: reportType, title: "CRM Pipeline Forecast" },
+      rows: [{ stage: "NEGOTIATION", weightedValue: 50, forecastOnly: true }],
+      sourceOfTruth: { pipelineValueIsForecastOnly: true }
+    };
+  };
+  const server = await listen();
+
+  try {
+    const { port } = server.address();
+    const unauthorized = await fetch(`http://127.0.0.1:${port}/api/admin/crm/reports/catalog`);
+    assert.equal(unauthorized.status, 401);
+
+    const catalogResponse = await fetch(`http://127.0.0.1:${port}/api/admin/crm/reports/catalog`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    const catalogPayload = await catalogResponse.json();
+    assert.equal(catalogResponse.status, 200);
+    assert.equal(catalogPayload.data.step, "7K");
+    assert.equal(catalogPayload.data.reports[0].type, "CRM_PIPELINE_FORECAST");
+
+    const reportResponse = await fetch(`http://127.0.0.1:${port}/api/admin/crm/reports/CRM_PIPELINE_FORECAST?source=WEBSITE&currency=USD`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    const reportPayload = await reportResponse.json();
+    assert.equal(reportResponse.status, 200);
+    assert.equal(reportPayload.data.report.type, "CRM_PIPELINE_FORECAST");
+    assert.equal(reportPayload.data.rows[0].forecastOnly, true);
+    assert.equal(receivedRun.reportType, "CRM_PIPELINE_FORECAST");
+    assert.equal(receivedRun.filters.source, "WEBSITE");
+    assert.equal(receivedRun.filters.currency, "USD");
+  } finally {
+    crmReportsService.listCatalog = originalCatalog;
+    crmReportsService.runCrmReport = originalRunReport;
+    restoreUser();
+    await close(server);
+  }
+});
+
+test("CRM report export route returns downloadable CSV", async () => {
+  const restoreUser = withMockAdmin("admin");
+  const originalExport = crmReportsService.exportCrmReport;
+  let receivedExport = null;
+  crmReportsService.exportCrmReport = async ({ reportType, format, filters = {} }) => {
+    receivedExport = { reportType, format, filters };
+    return {
+      report: { report: { type: reportType } },
+      format: "CSV",
+      content: "Stage,Weighted Forecast\r\nNEGOTIATION,50",
+      contentType: "text/csv; charset=utf-8",
+      contentLength: 39,
+      disposition: "attachment",
+      filename: "crm_pipeline_forecast-2026-08-16.csv"
+    };
+  };
+  const server = await listen();
+
+  try {
+    const { port } = server.address();
+    const response = await fetch(`http://127.0.0.1:${port}/api/admin/crm/reports/CRM_PIPELINE_FORECAST/export?format=CSV&source=WEBSITE`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    const body = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /text\/csv/);
+    assert.match(response.headers.get("content-disposition"), /crm_pipeline_forecast-2026-08-16\.csv/);
+    assert.equal(response.headers.get("x-crm-report-export-format"), "CSV");
+    assert.equal(response.headers.get("x-crm-report-type"), "CRM_PIPELINE_FORECAST");
+    assert.match(body, /NEGOTIATION,50/);
+    assert.equal(receivedExport.reportType, "CRM_PIPELINE_FORECAST");
+    assert.equal(receivedExport.format, "CSV");
+    assert.equal(receivedExport.filters.source, "WEBSITE");
+  } finally {
+    crmReportsService.exportCrmReport = originalExport;
     restoreUser();
     await close(server);
   }

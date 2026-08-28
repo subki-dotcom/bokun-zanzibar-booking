@@ -6,7 +6,31 @@ const crmOpportunitiesService = require("../services/crmOpportunities");
 const crmQuotesService = require("../services/crmQuotes");
 const crmFollowUpsService = require("../services/crmFollowUps");
 const crmB2BPartnersService = require("../services/crmB2BPartners");
+const crmAnalyticsService = require("../services/crmAnalytics");
+const crmAlertsService = require("../services/crmAlerts");
+const crmReportsService = require("../services/crmReports");
+const crmControlsService = require("../services/crmControls");
+const crmImportsService = require("../services/crmImports");
+const AppError = require("../utils/AppError");
+const { CRM_IMPORT_TYPE } = require("../crm/constants");
 const { hasPermission, PERMISSIONS } = require("../security/permissions");
+
+const CRM_IMPORT_PERMISSION_BY_TYPE = Object.freeze({
+  [CRM_IMPORT_TYPE.CUSTOMERS]: PERMISSIONS.CRM_MANAGE_CUSTOMERS,
+  [CRM_IMPORT_TYPE.HISTORICAL_LEADS]: PERMISSIONS.CRM_MANAGE_LEADS,
+  [CRM_IMPORT_TYPE.B2B_CONTACTS]: PERMISSIONS.CRM_MANAGE_B2B
+});
+
+const assertCrmImportPermission = (auth = {}, importType = "") => {
+  const permission = CRM_IMPORT_PERMISSION_BY_TYPE[importType];
+  if (!permission || !hasPermission(auth, permission)) {
+    throw new AppError("Forbidden", 403, "FORBIDDEN_PERMISSION", {
+      requiredPermission: permission,
+      importType,
+      role: auth.role
+    });
+  }
+};
 
 const dashboard = asyncHandler(async (_req, res) => {
   const [customerFoundation, leadMetrics, opportunityMetrics, quoteMetrics, followUpMetrics, b2bMetrics] = await Promise.all([
@@ -35,11 +59,26 @@ const dashboard = asyncHandler(async (_req, res) => {
         "QUOTES",
         "FOLLOW_UPS",
         "TASKS",
-        "B2B_PARTNERS"
+        "B2B_PARTNERS",
+        "CRM_ANALYTICS",
+        "CRM_ALERTS_NOTIFICATIONS",
+        "CRM_CONTROLS",
+        "CRM_IMPORT_FOUNDATION"
       ])
     ],
     plannedModules: (customerFoundation.plannedModules || []).filter(
-      (moduleName) => !["LEADS", "OPPORTUNITIES", "QUOTES", "FOLLOW_UPS", "TASKS", "B2B_PARTNERS"].includes(moduleName)
+      (moduleName) => ![
+        "LEADS",
+        "OPPORTUNITIES",
+        "QUOTES",
+        "FOLLOW_UPS",
+        "TASKS",
+        "B2B_PARTNERS",
+        "CRM_ANALYTICS",
+        "CRM_ALERTS_NOTIFICATIONS",
+        "CRM_CONTROLS",
+        "CRM_IMPORT_FOUNDATION"
+      ].includes(moduleName)
     )
   };
   return successResponse(res, {
@@ -506,11 +545,89 @@ const updateB2BPartner = asyncHandler(async (req, res) => {
   });
 });
 
+const analytics = asyncHandler(async (req, res) => {
+  const data = await crmAnalyticsService.getCrmAnalytics(req.validated?.query || {});
+  return successResponse(res, {
+    message: "CRM analytics fetched",
+    data
+  });
+});
+
+const alerts = asyncHandler(async (req, res) => {
+  const data = await crmAlertsService.getCrmAlerts(req.validated?.query || {});
+  return successResponse(res, {
+    message: "CRM alerts fetched",
+    data
+  });
+});
+
+const controls = asyncHandler(async (req, res) => {
+  const data = await crmControlsService.getCrmControls(req.validated?.query || {});
+  return successResponse(res, {
+    message: "CRM controls fetched",
+    data
+  });
+});
+
+const runImport = asyncHandler(async (req, res) => {
+  const body = req.validated.body || {};
+  assertCrmImportPermission(req.auth, body.importType);
+  const data = await crmImportsService.runCrmImport({
+    ...body,
+    auth: req.auth,
+    requestId: req.requestId
+  });
+  return successResponse(res, {
+    message: data.dryRun ? "CRM import validated" : "CRM import applied",
+    data,
+    statusCode: data.dryRun ? 200 : 201
+  });
+});
+
+const reportCatalog = asyncHandler(async (_req, res) => {
+  const data = crmReportsService.listCatalog();
+  return successResponse(res, {
+    message: "CRM report catalog fetched",
+    data
+  });
+});
+
+const runReport = asyncHandler(async (req, res) => {
+  const data = await crmReportsService.runCrmReport({
+    reportType: req.validated.params.reportType,
+    filters: req.validated.query || {}
+  });
+  return successResponse(res, {
+    message: "CRM report generated",
+    data
+  });
+});
+
+const exportReport = asyncHandler(async (req, res) => {
+  const { format, ...filters } = req.validated.query || {};
+  const data = await crmReportsService.exportCrmReport({
+    reportType: req.validated.params.reportType,
+    format,
+    filters
+  });
+
+  res.setHeader("Content-Type", data.contentType);
+  res.setHeader("Content-Length", data.contentLength);
+  res.setHeader("Content-Disposition", `${data.disposition}; filename="${data.filename}"`);
+  res.setHeader("x-crm-report-export-format", data.format);
+  res.setHeader("x-crm-report-type", data.report.report.type);
+
+  return res.status(200).send(data.content);
+});
+
 module.exports = {
   acceptQuote,
+  alerts,
+  analytics,
   approveQuote,
   completeFollowUp,
   completeTask,
+  controls,
   createB2BPartner,
   convertLeadToOpportunity,
   convertLeadToCustomer,
@@ -522,6 +639,7 @@ module.exports = {
   createQuote,
   createTask,
   dashboard,
+  exportReport,
   getB2BPartner,
   getCustomer,
   getLead,
@@ -538,6 +656,9 @@ module.exports = {
   listQuotes,
   listTasks,
   reviewDuplicateCandidate,
+  reportCatalog,
+  runReport,
+  runImport,
   salesPipeline,
   sendQuote,
   updateB2BPartner,

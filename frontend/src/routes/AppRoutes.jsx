@@ -299,6 +299,14 @@ const AppRoutes = () => {
           }
         />
         <Route
+          path="/admin/crm/conversations"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_VIEW_CUSTOMERS]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/crm/b2b-agents"
           element={
             <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_MANAGE_B2B]}>
@@ -306,21 +314,44 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-        {[
-          ["/admin/crm/conversations", "Conversations"],
-          ["/admin/crm/lost-opportunities", "Lost Opportunities"],
-          ["/admin/crm/reports", "CRM Reports"]
-        ].map(([path, title]) => (
-          <Route
-            key={path}
-            path={path}
-            element={
-              <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_VIEW]}>
-                <AdminUnavailablePage module="CRM" title={title} />
-              </ProtectedRoute>
-            }
-          />
-        ))}
+        <Route
+          path="/admin/crm/lost-opportunities"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_MANAGE_OPPORTUNITIES]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/crm/reports"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_VIEW_SALES_ANALYTICS]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/crm/controls"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.CRM_VIEW_SALES_ANALYTICS]}>
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/crm/imports"
+          element={
+            <ProtectedRoute
+              permissions={[
+                ADMIN_PERMISSIONS.CRM_MANAGE_CUSTOMERS,
+                ADMIN_PERMISSIONS.CRM_MANAGE_LEADS,
+                ADMIN_PERMISSIONS.CRM_MANAGE_B2B
+              ]}
+            >
+              <AdminCrmPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       <Route

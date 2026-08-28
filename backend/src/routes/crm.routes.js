@@ -16,6 +16,13 @@ const {
   createOpportunitySchema,
   createQuoteSchema,
   createTaskSchema,
+  crmAlertsSchema,
+  crmAnalyticsSchema,
+  crmControlsSchema,
+  crmImportSchema,
+  crmExportReportSchema,
+  crmReportCatalogSchema,
+  crmRunReportSchema,
   customerIdParamsSchema,
   dashboardSchema,
   followUpActionSchema,
@@ -52,6 +59,55 @@ router.get(
   authorizePermission(PERMISSIONS.CRM_VIEW),
   validateRequest(dashboardSchema),
   crmController.dashboard
+);
+
+router.get(
+  "/analytics",
+  authorizePermission(PERMISSIONS.CRM_VIEW_SALES_ANALYTICS),
+  validateRequest(crmAnalyticsSchema),
+  crmController.analytics
+);
+
+router.get(
+  "/alerts",
+  authorizePermission(PERMISSIONS.CRM_VIEW),
+  validateRequest(crmAlertsSchema),
+  crmController.alerts
+);
+
+router.get(
+  "/controls",
+  authorizePermission(PERMISSIONS.CRM_VIEW_SALES_ANALYTICS),
+  validateRequest(crmControlsSchema),
+  crmController.controls
+);
+
+router.post(
+  "/imports",
+  authorizePermission(PERMISSIONS.CRM_MANAGE_CUSTOMERS, PERMISSIONS.CRM_MANAGE_LEADS, PERMISSIONS.CRM_MANAGE_B2B),
+  validateRequest(crmImportSchema),
+  crmController.runImport
+);
+
+router.get(
+  "/reports/catalog",
+  authorizePermission(PERMISSIONS.CRM_VIEW_SALES_ANALYTICS),
+  validateRequest(crmReportCatalogSchema),
+  crmController.reportCatalog
+);
+
+router.get(
+  "/reports/:reportType/export",
+  authorizePermission(PERMISSIONS.CRM_VIEW_SALES_ANALYTICS),
+  validateRequest(crmExportReportSchema),
+  crmController.exportReport
+);
+
+router.get(
+  "/reports/:reportType",
+  authorizePermission(PERMISSIONS.CRM_VIEW_SALES_ANALYTICS),
+  validateRequest(crmRunReportSchema),
+  crmController.runReport
 );
 
 router.get(

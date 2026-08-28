@@ -205,6 +205,50 @@ export const fetchCrmDashboard = async () => {
   return response.data.data;
 };
 
+export const fetchCrmAlerts = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/crm/alerts${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchCrmControls = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/crm/controls${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const runCrmImport = async (payload = {}) => {
+  const response = await axiosClient.post("/admin/crm/imports", payload);
+  return response.data.data;
+};
+
+export const fetchCrmAnalytics = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/crm/analytics${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchCrmReportCatalog = async () => {
+  const response = await axiosClient.get("/admin/crm/reports/catalog");
+  return response.data.data;
+};
+
+export const runCrmReport = async (reportType, params = {}) => {
+  const response = await axiosClient.get(`/admin/crm/reports/${encodeURIComponent(reportType)}${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const exportCrmReport = async (reportType, params = {}) => {
+  const response = await axiosClient.get(
+    `/admin/crm/reports/${encodeURIComponent(reportType)}/export${buildQueryString(params)}`,
+    { responseType: "blob" }
+  );
+  const disposition = response.headers?.["content-disposition"] || "";
+  const match = disposition.match(/filename="?([^";]+)"?/i);
+  return {
+    blob: response.data,
+    filename: match?.[1] || `${reportType}.${String(params.format || "csv").toLowerCase()}`,
+    contentType: response.headers?.["content-type"] || "text/csv"
+  };
+};
+
 export const fetchCrmCustomers = async (params = {}) => {
   const response = await axiosClient.get(`/admin/crm/customers${buildQueryString(params)}`);
   return response.data.data;

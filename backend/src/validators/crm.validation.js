@@ -1,20 +1,28 @@
 const { z } = require("zod");
 const {
+  CRM_ALERT_SEVERITY,
+  CRM_ALERT_TYPE,
   CRM_B2B_COMMISSION_MODEL,
   CRM_B2B_NET_RATE_MODEL,
   CRM_B2B_PARTNER_STATUS,
   CRM_B2B_PARTNER_TYPE,
   CRM_COMMUNICATION_CHANNEL,
   CRM_COMMUNICATION_DIRECTION,
+  CRM_CONTROL_SEVERITY,
+  CRM_DATA_QUALITY_ISSUE,
   CRM_FOLLOW_UP_STATUS,
   CRM_FOLLOW_UP_TYPE,
+  CRM_IMPORT_TYPE,
   CRM_LEAD_SOURCE,
   CRM_LEAD_STATUS,
   CRM_LOST_REASON,
+  CRM_NOTIFICATION_TYPE,
   CRM_OPPORTUNITY_STAGE,
   CRM_PRIORITY,
   CRM_QUOTE_LINE_ITEM_TYPE,
   CRM_QUOTE_STATUS,
+  CRM_REPORT_EXPORT_FORMAT,
+  CRM_REPORT_TYPE,
   CRM_TASK_RELATED_ENTITY_TYPE,
   CRM_TASK_STATUS,
   CUSTOMER_DUPLICATE_STATUS,
@@ -27,6 +35,11 @@ const mongoObjectId = z.string().regex(/^[a-f\d]{24}$/i, "A valid record ID is r
 const optionalText = (max = 240) => z.string().trim().max(max).optional();
 const optionalEmail = z.union([z.string().email(), z.literal("")]).optional();
 const optionalDateTime = z.union([z.string().datetime(), z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.literal("")]).optional();
+const crmReportTypeEnum = z.enum(Object.values(CRM_REPORT_TYPE));
+const crmReportExportFormatEnum = z.enum(Object.values(CRM_REPORT_EXPORT_FORMAT));
+const crmControlSeverityEnum = z.enum(Object.values(CRM_CONTROL_SEVERITY));
+const crmDataQualityIssueEnum = z.enum(Object.values(CRM_DATA_QUALITY_ISSUE));
+const crmImportTypeEnum = z.enum(Object.values(CRM_IMPORT_TYPE));
 
 const externalReferenceSchema = z.object({
   provider: z.string().trim().min(1).max(80),
@@ -435,6 +448,106 @@ const salesPipelineSchema = z.object({
     .optional()
 });
 
+const crmAnalyticsSchema = z.object({
+  params: z.object({}).optional(),
+  body: z.object({}).optional(),
+  query: z
+    .object({
+      from: optionalDateTime,
+      to: optionalDateTime,
+      source: z.enum(Object.values(CRM_LEAD_SOURCE)).optional(),
+      assignedTo: z.string().trim().max(120).optional(),
+      currency: z.string().trim().length(3).optional()
+    })
+    .optional()
+});
+
+const crmAlertsSchema = z.object({
+  params: z.object({}).optional(),
+  body: z.object({}).optional(),
+  query: z
+    .object({
+      type: z.enum(Object.values(CRM_ALERT_TYPE)).optional(),
+      severity: z.enum(Object.values(CRM_ALERT_SEVERITY)).optional(),
+      notificationType: z.enum(Object.values(CRM_NOTIFICATION_TYPE)).optional(),
+      assignedTo: z.string().trim().max(120).optional(),
+      limit: z.coerce.number().int().min(1).max(200).optional()
+    })
+    .optional()
+});
+
+const crmControlsSchema = z.object({
+  params: z.object({}).optional(),
+  body: z.object({}).optional(),
+  query: z
+    .object({
+      severity: crmControlSeverityEnum.optional(),
+      code: crmDataQualityIssueEnum.optional(),
+      entityType: z
+        .enum([
+          "B2BPartner",
+          "Customer",
+          "CustomerDuplicateCandidate",
+          "FollowUp",
+          "Lead",
+          "Quote",
+          "SalesOpportunity"
+        ])
+        .optional(),
+      reference: z.string().trim().max(180).optional(),
+      issueLimit: z.coerce.number().int().min(1).max(500).optional(),
+      sourceLimit: z.coerce.number().int().min(50).max(5000).optional()
+    })
+    .optional()
+});
+
+const crmImportSchema = z.object({
+  params: z.object({}).optional(),
+  query: z.object({}).optional(),
+  body: z.object({
+    importType: crmImportTypeEnum,
+    dryRun: z.coerce.boolean().optional(),
+    source: optionalText(120),
+    evidenceNote: optionalText(1000),
+    records: z.array(z.record(z.any())).min(1).max(500)
+  })
+});
+
+const crmReportFilterShape = {
+  from: optionalDateTime,
+  to: optionalDateTime,
+  source: z.enum(Object.values(CRM_LEAD_SOURCE)).optional(),
+  assignedTo: z.string().trim().max(120).optional(),
+  currency: z.string().trim().length(3).optional()
+};
+
+const crmReportCatalogSchema = z.object({
+  params: z.object({}).optional(),
+  body: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
+const crmRunReportSchema = z.object({
+  params: z.object({
+    reportType: crmReportTypeEnum
+  }),
+  body: z.object({}).optional(),
+  query: z.object(crmReportFilterShape).optional()
+});
+
+const crmExportReportSchema = z.object({
+  params: z.object({
+    reportType: crmReportTypeEnum
+  }),
+  body: z.object({}).optional(),
+  query: z
+    .object({
+      ...crmReportFilterShape,
+      format: crmReportExportFormatEnum.optional()
+    })
+    .optional()
+});
+
 const createLeadSchema = z.object({
   params: z.object({}).optional(),
   query: z.object({}).optional(),
@@ -604,6 +717,13 @@ module.exports = {
   createOpportunitySchema,
   createQuoteSchema,
   createTaskSchema,
+  crmAlertsSchema,
+  crmAnalyticsSchema,
+  crmControlsSchema,
+  crmImportSchema,
+  crmExportReportSchema,
+  crmReportCatalogSchema,
+  crmRunReportSchema,
   customerIdParamsSchema,
   dashboardSchema,
   followUpActionSchema,
