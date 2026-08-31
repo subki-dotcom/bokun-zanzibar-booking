@@ -16,6 +16,17 @@ const AdminLayout = () => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = isMobileMenuOpen ? "hidden" : previousOverflow;
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileMenuOpen]);
+
   const handleToggleSidebar = () => {
     const isMobile =
       typeof window !== "undefined" &&

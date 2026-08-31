@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-08-30T08:38:14.017Z",
+  "stats": {
+    "total": 45,
+    "withBokunId": 3,
+    "missingBokunId": 42
+  },
+  "groups": {
+    "bokunBookingId": [],
+    "confirmationCode": [],
+    "externalReference": [],
+    "bookingReference": []
+  }
+}

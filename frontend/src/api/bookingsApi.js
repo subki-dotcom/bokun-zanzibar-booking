@@ -45,6 +45,20 @@ export const fetchRecentBookings = async () => {
   return response.data.data;
 };
 
+export const fetchAdminBookings = async (params = {}) => {
+  const query = new URLSearchParams();
+  query.set("paginated", "true");
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "" && value !== "all") {
+      query.set(key, String(value));
+    }
+  });
+
+  const response = await axiosClient.get(`/bookings/recent?${query.toString()}`);
+  return response.data.data;
+};
+
 export const fetchBookingStats = async () => {
   const response = await axiosClient.get("/bookings/stats");
   return response.data.data;

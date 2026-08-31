@@ -143,7 +143,7 @@ export const adminNavigation = [
             path: "/admin/operations/bokun-sync/confirmed-import",
             icon: BsCloudCheck,
             roles: ADMIN_ROLES.ALL,
-            status: "planned"
+            status: "active"
           },
           {
             id: "bokun-manual-sync",
@@ -151,7 +151,7 @@ export const adminNavigation = [
             path: "/admin/operations/bokun-sync/manual",
             icon: BsArrowRepeat,
             roles: ADMIN_ROLES.ALL,
-            status: "planned"
+            status: "active"
           },
           {
             id: "bokun-single-sync",
@@ -159,7 +159,7 @@ export const adminNavigation = [
             path: "/admin/operations/bokun-sync/single-booking",
             icon: BsJournalCheck,
             roles: ADMIN_ROLES.ALL,
-            status: "planned"
+            status: "active"
           },
           {
             id: "bokun-sync-logs",
@@ -333,7 +333,7 @@ export const adminNavigation = [
         path: "/admin/booking-accounting/dashboard",
         icon: BsGrid1X2,
         roles: ADMIN_ROLES.ALL,
-        status: "planned"
+        status: "active"
       },
       {
         id: "booking-accounting-invoices",
@@ -341,7 +341,7 @@ export const adminNavigation = [
         path: "/admin/booking-accounting/invoices",
         icon: BsReceipt,
         roles: ADMIN_ROLES.ALL,
-        status: "planned"
+        status: "active"
       },
       {
         id: "booking-accounting-payments",
@@ -357,7 +357,7 @@ export const adminNavigation = [
         path: "/admin/booking-accounting/refunds",
         icon: BsWallet2,
         roles: ADMIN_ROLES.ALL,
-        status: "planned"
+        status: "active"
       },
       {
         id: "booking-accounting-expenses",
@@ -365,7 +365,7 @@ export const adminNavigation = [
         path: "/admin/booking-accounting/expenses",
         icon: BsBriefcase,
         roles: ADMIN_ROLES.ALL,
-        status: "planned"
+        status: "active"
       },
       {
         id: "booking-accounting-cost-templates",
@@ -373,7 +373,7 @@ export const adminNavigation = [
         path: "/admin/booking-accounting/cost-templates",
         icon: BsJournalCheck,
         roles: ADMIN_ROLES.ALL,
-        status: "planned"
+        status: "active"
       },
       {
         id: "booking-accounting-profitability",
@@ -381,7 +381,7 @@ export const adminNavigation = [
         path: "/admin/booking-accounting/profitability",
         icon: BsBarChartLine,
         roles: ADMIN_ROLES.ALL,
-        status: "planned"
+        status: "active"
       },
       {
         id: "booking-accounting-reconciliation",
@@ -389,7 +389,7 @@ export const adminNavigation = [
         path: "/admin/booking-accounting/reconciliation",
         icon: BsShieldCheck,
         roles: ADMIN_ROLES.ALL,
-        status: "planned"
+        status: "active"
       }
     ]
   },

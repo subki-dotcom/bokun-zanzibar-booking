@@ -25,8 +25,16 @@ const countDistinctLeadStage = async (stage) => {
   return Number(rows[0]?.count || 0);
 };
 
+const BOKUN_SYNC_OPERATIONS = [
+  "products_sync",
+  "booking_sync",
+  "webhook_update",
+  "confirmed_booking_import",
+  "confirmed_booking_resync"
+];
+
 const getDashboardSummary = async () => {
-  const [kpis, topProducts, topAgents, sourceBreakdown, syncLogs] = await Promise.all([
+  const [kpis, topProducts, topAgents, sourceBreakdown, bookingStatusBreakdown, syncLogs] = await Promise.all([
     Promise.all([
       Booking.countDocuments({}),
       Booking.countDocuments({ bookingStatus: "confirmed" }),
@@ -58,14 +66,25 @@ const getDashboardSummary = async () => {
     Booking.aggregate([
       {
         $group: {
-          _id: "$sourceChannel",
+          _id: { $ifNull: ["$salesChannel", "$sourceChannel"] },
           count: { $sum: 1 },
           sales: { $sum: "$pricingSnapshot.finalPayable" }
         }
-      }
+      },
+      { $sort: { count: -1, sales: -1 } }
+    ]),
+    Booking.aggregate([
+      {
+        $group: {
+          _id: "$bookingStatus",
+          count: { $sum: 1 },
+          sales: { $sum: "$pricingSnapshot.finalPayable" }
+        }
+      },
+      { $sort: { count: -1, sales: -1 } }
     ]),
     SyncLog.find({
-      operation: { $in: ["products_sync", "booking_sync", "webhook_update"] }
+      operation: { $in: BOKUN_SYNC_OPERATIONS }
     })
       .sort({ createdAt: -1 })
       .limit(10)
@@ -83,6 +102,7 @@ const getDashboardSummary = async () => {
     topProducts,
     topAgents,
     sourceBreakdown,
+    bookingStatusBreakdown,
     syncLogs
   };
 };
@@ -323,7 +343,7 @@ const getOperationsOverview = async () => {
     }),
     EmailDelivery.countDocuments({ status: "failed" }),
     BookingRequest.countDocuments({ status: { $in: ["submitted", "under_review", "awaiting_customer"] } }),
-    SyncLog.findOne({ operation: { $in: ["products_sync", "booking_sync", "webhook_update"] } })
+    SyncLog.findOne({ operation: { $in: BOKUN_SYNC_OPERATIONS } })
       .sort({ createdAt: -1 })
       .lean()
   ]);

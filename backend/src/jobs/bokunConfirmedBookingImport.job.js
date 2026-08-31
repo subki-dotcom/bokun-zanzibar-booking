@@ -1,4 +1,4 @@
-const { env } = require("../config/env");
+const { env, isBokunConfigured } = require("../config/env");
 const logger = require("../config/logger");
 const bokunConfirmedBookingsService = require("../services/bokunConfirmedBookings");
 
@@ -13,6 +13,7 @@ const state = {
   intervalSeconds: Math.max(60, Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_INTERVAL_SECONDS || 900)),
   batchSize: Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_BATCH_SIZE || 50),
   maxPages: Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_MAX_PAGES || 5),
+  configured: Boolean(isBokunConfigured || env.BOKUN_MOCK_MODE),
   lastRunAt: "",
   lastSuccessAt: "",
   lastFailureAt: "",
@@ -38,6 +39,8 @@ const buildLookbackRange = () => {
     toDate: to.toISOString()
   };
 };
+
+const isImportConfigured = () => Boolean(isBokunConfigured || env.BOKUN_MOCK_MODE);
 
 const runConfirmedBookingImportCycle = async (trigger = "interval") => {
   const nowMs = Date.now();
@@ -101,10 +104,21 @@ const runConfirmedBookingImportCycle = async (trigger = "interval") => {
 
 const startBokunConfirmedBookingImportPoller = () => {
   state.enabled = Boolean(env.BOKUN_CONFIRMED_BOOKING_IMPORT_ENABLED);
+  state.configured = isImportConfigured();
   if (!env.BOKUN_CONFIRMED_BOOKING_IMPORT_ENABLED) {
     state.active = false;
     logger.info("Bokun confirmed booking import poller disabled", {
       envFlag: "BOKUN_CONFIRMED_BOOKING_IMPORT_ENABLED=false"
+    });
+    return;
+  }
+
+  if (!state.configured) {
+    state.active = false;
+    state.lastError =
+      "Bokun confirmed booking import is enabled, but BOKUN_ACCESS_KEY and BOKUN_SECRET_KEY are missing.";
+    logger.warn("Bokun confirmed booking import poller blocked by missing credentials", {
+      mockMode: Boolean(env.BOKUN_MOCK_MODE)
     });
     return;
   }
@@ -115,6 +129,7 @@ const startBokunConfirmedBookingImportPoller = () => {
   state.intervalSeconds = intervalMs / 1000;
   state.batchSize = Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_BATCH_SIZE || 50);
   state.maxPages = Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_MAX_PAGES || 5);
+  state.lastError = "";
 
   logger.info("Bokun confirmed booking import poller started", {
     intervalSeconds: intervalMs / 1000,
@@ -150,10 +165,19 @@ const stopBokunConfirmedBookingImportPoller = () => {
 
 const getBokunConfirmedBookingImportWorkerStatus = () => ({
   ...state,
+  configured: isImportConfigured(),
   active: Boolean(importTimer),
   consecutiveFailures,
   nextAllowedRunAt: nextAllowedRunAt ? new Date(nextAllowedRunAt).toISOString() : "",
-  status: !state.enabled ? "disabled" : importTimer ? consecutiveFailures ? "degraded" : "running" : "stopped"
+  status: !state.enabled
+    ? "disabled"
+    : !isImportConfigured()
+      ? "blocked"
+      : importTimer
+        ? consecutiveFailures
+          ? "degraded"
+          : "running"
+        : "stopped"
 });
 
 module.exports = {

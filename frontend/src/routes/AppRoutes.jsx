@@ -24,6 +24,7 @@ import AdminAgentsPage from "../pages/admin/AdminAgentsPage";
 import AdminPaymentsPage from "../pages/admin/AdminPaymentsPage";
 import AdminRecoveryPage from "../pages/admin/AdminRecoveryPage";
 import SyncLogsPage from "../pages/admin/SyncLogsPage";
+import AdminBokunSyncPage from "../pages/admin/AdminBokunSyncPage";
 import AdminBookingRequestsPage from "../pages/admin/AdminBookingRequestsPage";
 import AdminBookingRequestDetailsPage from "../pages/admin/AdminBookingRequestDetailsPage";
 import AdminOperationsPage from "../pages/admin/AdminOperationsPage";
@@ -32,6 +33,7 @@ import AdminDisasterRecoveryPage from "../pages/admin/AdminDisasterRecoveryPage"
 import AdminSystemHealthPage from "../pages/admin/AdminSystemHealthPage";
 import AdminPerformanceReviewPage from "../pages/admin/AdminPerformanceReviewPage";
 import AdminProductionReadinessPage from "../pages/admin/AdminProductionReadinessPage";
+import AdminBookingAccountingPage from "../pages/admin/AdminBookingAccountingPage";
 import AdminBusinessAccountingPage from "../pages/admin/AdminBusinessAccountingPage";
 import AdminCrmPage from "../pages/admin/AdminCrmPage";
 import AdminGeneralLedgerPage from "../pages/admin/AdminGeneralLedgerPage";
@@ -107,17 +109,17 @@ const AppRoutes = () => {
         <Route path="/admin/operations/recovery" element={<AdminRecoveryPage />} />
         <Route path="/admin/operations/agents" element={<AdminAgentsPage />} />
         <Route path="/admin/operations/bokun-sync/sync-logs" element={<SyncLogsPage />} />
-        <Route path="/admin/operations/bokun-sync/confirmed-import" element={<AdminUnavailablePage module="Bokun Sync" title="Confirmed Booking Import" />} />
-        <Route path="/admin/operations/bokun-sync/manual" element={<AdminUnavailablePage module="Bokun Sync" title="Manual Sync" />} />
-        <Route path="/admin/operations/bokun-sync/single-booking" element={<AdminUnavailablePage module="Bokun Sync" title="Single Booking Sync" />} />
-        <Route path="/admin/booking-accounting/dashboard" element={<AdminUnavailablePage module="Booking Accounting" title="Booking Accounting Dashboard" />} />
-        <Route path="/admin/booking-accounting/invoices" element={<AdminUnavailablePage module="Booking Accounting" title="Invoices" />} />
+        <Route path="/admin/operations/bokun-sync/confirmed-import" element={<AdminBokunSyncPage />} />
+        <Route path="/admin/operations/bokun-sync/manual" element={<AdminBokunSyncPage />} />
+        <Route path="/admin/operations/bokun-sync/single-booking" element={<AdminBokunSyncPage />} />
+        <Route path="/admin/booking-accounting/dashboard" element={<AdminBookingAccountingPage />} />
+        <Route path="/admin/booking-accounting/invoices" element={<AdminBookingAccountingPage />} />
         <Route path="/admin/booking-accounting/payments" element={<AdminPaymentsPage />} />
-        <Route path="/admin/booking-accounting/refunds" element={<AdminUnavailablePage module="Booking Accounting" title="Refunds" />} />
-        <Route path="/admin/booking-accounting/expenses" element={<AdminUnavailablePage module="Booking Accounting" title="Booking Expenses" />} />
-        <Route path="/admin/booking-accounting/cost-templates" element={<AdminUnavailablePage module="Booking Accounting" title="Product Cost Templates" />} />
-        <Route path="/admin/booking-accounting/profitability" element={<AdminUnavailablePage module="Booking Accounting" title="Booking Profitability" />} />
-        <Route path="/admin/booking-accounting/reconciliation" element={<AdminUnavailablePage module="Booking Accounting" title="Reconciliation" />} />
+        <Route path="/admin/booking-accounting/refunds" element={<AdminBookingAccountingPage />} />
+        <Route path="/admin/booking-accounting/expenses" element={<AdminBookingAccountingPage />} />
+        <Route path="/admin/booking-accounting/cost-templates" element={<AdminBookingAccountingPage />} />
+        <Route path="/admin/booking-accounting/profitability" element={<AdminBookingAccountingPage />} />
+        <Route path="/admin/booking-accounting/reconciliation" element={<AdminBookingAccountingPage />} />
         <Route
           path="/admin/business-accounting"
           element={

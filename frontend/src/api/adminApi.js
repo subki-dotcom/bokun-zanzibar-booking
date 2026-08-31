@@ -106,6 +106,21 @@ export const retryBokunFromPaymentReconciliation = async (bookingReference, book
   return response.data.data;
 };
 
+export const fetchBokunSyncStatus = async () => {
+  const response = await axiosClient.get("/bokun/admin/sync-status");
+  return response.data.data;
+};
+
+export const importConfirmedBokunBookings = async (payload = {}) => {
+  const response = await axiosClient.post("/bokun/admin/bookings/import-confirmed", payload);
+  return response.data.data;
+};
+
+export const resyncBokunBooking = async (reference, payload = {}) => {
+  const response = await axiosClient.post(`/bokun/admin/bookings/${encodeURIComponent(reference)}/resync`, payload);
+  return response.data.data;
+};
+
 export const markPaymentReviewed = async (bookingReference, reviewNote = "") => {
   const response = await axiosClient.post(`/payments/reconciliation/${bookingReference}/mark-reviewed`, {
     reviewNote
@@ -406,6 +421,41 @@ export const completeCrmTask = async (taskId, payload = {}) => {
 
 export const fetchBusinessAccountingFoundation = async (params = {}) => {
   const response = await axiosClient.get(`/admin/business-accounting/foundation${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchBookingAccountingDashboard = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/booking-accounting/dashboard${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchBookingAccountingInvoices = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/booking-accounting/invoices${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchBookingAccountingRefunds = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/booking-accounting/refunds${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchBookingAccountingExpenses = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/booking-accounting/expenses${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchBookingAccountingCostTemplates = async () => {
+  const response = await axiosClient.get("/admin/booking-accounting/cost-templates");
+  return response.data.data;
+};
+
+export const fetchBookingAccountingProfitability = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/booking-accounting/profitability${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchBookingAccountingReconciliation = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/booking-accounting/reconciliation${buildQueryString(params)}`);
   return response.data.data;
 };
 

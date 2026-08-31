@@ -24,6 +24,12 @@ router.post(
   validateRequest(resyncBokunBookingSchema),
   bokunController.resyncBooking
 );
+router.get(
+  "/admin/sync-status",
+  authenticate,
+  authorize("super_admin", "admin", "staff"),
+  bokunController.syncStatus
+);
 router.get("/products", bokunController.products);
 router.get("/countries", bokunController.countries);
 router.get("/pickup-places", bokunController.pickupPlaces);

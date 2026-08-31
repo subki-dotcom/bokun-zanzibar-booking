@@ -12,6 +12,16 @@ const ensureArray = (value) => (Array.isArray(value) ? value : []);
 const BOKUN_CACHE_TTL_MS = 2 * 60 * 1000;
 const STARTING_PREVIEW_TIMEOUT_MS = 8000;
 const STARTING_PREVIEW_DAYS_WINDOW = 14;
+const BOKUN_BOOKING_SEARCH_STATUS_ALIASES = Object.freeze({
+  confirmed: "CONFIRMED",
+  cancelled: "CANCELLED",
+  canceled: "CANCELLED",
+  voided: "VOIDED",
+  rejected: "REJECTED",
+  timeout: "TIMEOUT",
+  reserved: "RESERVED",
+  pending: "PENDING"
+});
 
 const productDetailsCache = new Map();
 const bookingConfigCache = new Map();
@@ -144,6 +154,67 @@ const normalizeProductSearchResponse = (response) => {
   }
 
   return [];
+};
+
+const wait = (ms = 0) => new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms || 0))));
+
+const isRetriableBokunReadError = (error = {}) =>
+  ["BOKUN_TIMEOUT", "BOKUN_UPSTREAM_UNREACHABLE"].includes(error.code) ||
+  [502, 503, 504].includes(Number(error.statusCode || 0));
+
+const withBokunReadRetry = async (
+  operation,
+  {
+    operationName = "bokun_read",
+    requestId = "",
+    maxRetries = Number(env.BOKUN_RETRY_COUNT || 0),
+    delayMs = 750
+  } = {}
+) => {
+  let attempt = 0;
+
+  while (true) {
+    try {
+      return await operation(attempt);
+    } catch (error) {
+      if (!isRetriableBokunReadError(error) || attempt >= maxRetries) {
+        throw error;
+      }
+
+      const nextDelayMs = Number(delayMs || 0) * (2 ** attempt);
+      logger.warn("Retrying Bokun read request after transient provider error", {
+        operationName,
+        requestId,
+        attempt: attempt + 1,
+        nextDelayMs,
+        error: error.message,
+        code: error.code,
+        statusCode: error.statusCode
+      });
+      attempt += 1;
+      await wait(nextDelayMs);
+    }
+  }
+};
+
+const normalizeBookingSearchStatus = (status = "") => {
+  const token = String(status || "").trim();
+  if (!token) return "";
+  const mapped = BOKUN_BOOKING_SEARCH_STATUS_ALIASES[token.toLowerCase()];
+  return mapped || token.toUpperCase();
+};
+
+const normalizeBookingSearchStatuses = (bookingStatuses = []) => {
+  const input = Array.isArray(bookingStatuses)
+    ? bookingStatuses
+    : String(bookingStatuses || "").split(",");
+  return Array.from(
+    new Set(
+      input
+        .map(normalizeBookingSearchStatus)
+        .filter(Boolean)
+    )
+  );
 };
 
 const fetchProducts = async (requestId) => {
@@ -2337,9 +2408,7 @@ const buildBookingSearchPayload = ({
     pageSize: Math.max(1, Math.min(100, Number(pageSize || 50)))
   };
 
-  const statuses = (Array.isArray(bookingStatuses) ? bookingStatuses : String(bookingStatuses || "").split(","))
-    .map((status) => String(status || "").trim())
-    .filter(Boolean);
+  const statuses = normalizeBookingSearchStatuses(bookingStatuses);
   if (statuses.length) {
     payload.bookingStatuses = statuses;
   }
@@ -2356,12 +2425,18 @@ const buildBookingSearchPayload = ({
 
 const searchBookings = async (options = {}, requestId = "") => {
   const payload = buildBookingSearchPayload(options);
-  const response = await bokunClient.request({
-    method: "post",
-    path: "/booking.json/booking-search",
-    payload,
-    requestId
-  });
+  const response = await withBokunReadRetry(
+    () => bokunClient.request({
+      method: "post",
+      path: "/booking.json/booking-search",
+      payload,
+      requestId
+    }),
+    {
+      operationName: "booking-search",
+      requestId
+    }
+  );
 
   return {
     page: payload.page,
@@ -2393,12 +2468,18 @@ const findExactExternalBookingSearchMatch = (response = {}, externalBookingRefer
 };
 
 const lookupBooking = async (reference, requestId) => {
-  const response = await bokunClient.request({
-    method: "get",
-    path: `/booking.json/booking/${encodeURIComponent(String(reference || "").trim())}`,
-    requestId,
-    expectedNotFound: true
-  });
+  const response = await withBokunReadRetry(
+    () => bokunClient.request({
+      method: "get",
+      path: `/booking.json/booking/${encodeURIComponent(String(reference || "").trim())}`,
+      requestId,
+      expectedNotFound: true
+    }),
+    {
+      operationName: "booking-lookup",
+      requestId
+    }
+  );
 
   return mapper.mapBookingResponse(response);
 };
@@ -2480,6 +2561,9 @@ module.exports = {
   __testables: {
     normalizeBookingSearchItems,
     findExactExternalBookingSearchMatch,
-    buildBookingSearchPayload
+    buildBookingSearchPayload,
+    normalizeBookingSearchStatuses,
+    isRetriableBokunReadError,
+    withBokunReadRetry
   }
 };

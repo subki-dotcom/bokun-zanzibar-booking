@@ -71,3 +71,30 @@ test("CRM navigation stays hidden from staff without CRM permission grants", () 
 
   assert.equal(findById(navigation, "crm"), null);
 });
+
+test("Booking Accounting navigation does not show planned Soon badges", () => {
+  const navigation = filterAdminNavigation(undefined, {
+    role: "staff",
+    permissions: []
+  });
+
+  const bookingAccounting = findById(navigation, "booking-accounting");
+  assert.ok(bookingAccounting);
+  for (const child of bookingAccounting.children || []) {
+    assert.equal(child.status, "active", `${child.id} should be active`);
+  }
+});
+
+test("Bokun Sync navigation does not show planned Soon badges", () => {
+  const navigation = filterAdminNavigation(undefined, {
+    role: "staff",
+    permissions: []
+  });
+
+  const operations = findById(navigation, "operations");
+  const bokunSync = findById(operations?.children || [], "operations-bokun-sync");
+  assert.ok(bokunSync);
+  for (const child of bokunSync.children || []) {
+    assert.equal(child.status, "active", `${child.id} should be active`);
+  }
+});

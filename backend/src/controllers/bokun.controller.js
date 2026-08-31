@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/apiResponse");
 const bokunService = require("../services/bokun");
 const bokunConfirmedBookingsService = require("../services/bokunConfirmedBookings");
+const bokunSyncStatusService = require("../services/bokunSyncStatus");
 
 const products = asyncHandler(async (req, res) => {
   const data = await bokunService.fetchProducts(req.requestId);
@@ -152,6 +153,15 @@ const resyncBooking = asyncHandler(async (req, res) => {
   });
 });
 
+const syncStatus = asyncHandler(async (_req, res) => {
+  const data = bokunSyncStatusService.getBokunSyncStatus();
+
+  return successResponse(res, {
+    message: "Bokun sync status fetched",
+    data
+  });
+});
+
 module.exports = {
   products,
   countries,
@@ -166,5 +176,6 @@ module.exports = {
   cancelBooking,
   editBooking,
   importConfirmedBookings,
-  resyncBooking
+  resyncBooking,
+  syncStatus
 };

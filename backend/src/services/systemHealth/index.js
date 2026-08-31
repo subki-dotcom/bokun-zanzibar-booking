@@ -307,6 +307,7 @@ const normalizeWorkerStatus = (worker = {}) => {
     name: worker.name || "",
     status,
     enabled: Boolean(worker.enabled),
+    configured: worker.configured === undefined ? true : Boolean(worker.configured),
     active: Boolean(worker.active),
     running: Boolean(worker.running),
     intervalSeconds: Number(worker.intervalSeconds || 0),

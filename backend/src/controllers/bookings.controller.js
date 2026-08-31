@@ -39,7 +39,7 @@ const getByReference = asyncHandler(async (req, res) => {
 });
 
 const listRecent = asyncHandler(async (req, res) => {
-  const data = await bookingService.listRecentBookings(req.auth || null);
+  const data = await bookingService.listRecentBookings(req.auth || null, req.query || {});
 
   return successResponse(res, {
     message: "Recent bookings fetched",

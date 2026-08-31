@@ -195,13 +195,57 @@ test("builds Bokun booking-search payload with documented pagination, statuses, 
 
   assert.equal(payload.page, 2);
   assert.equal(payload.pageSize, 75);
-  assert.deepEqual(payload.bookingStatuses, ["confirmed", "cancelled"]);
+  assert.deepEqual(payload.bookingStatuses, ["CONFIRMED", "CANCELLED"]);
   assert.deepEqual(payload.lastModifiedDateRange, {
     from: "2026-08-01T00:00:00.000Z",
     includeLower: true,
     to: "2026-08-08T00:00:00.000Z",
     includeUpper: true
   });
+});
+
+test("normalizes local booking status names to Bokun booking-search status tokens", () => {
+  assert.deepEqual(
+    bokunService.__testables.normalizeBookingSearchStatuses(["confirmed", "cancelled", "CONFIRMED"]),
+    ["CONFIRMED", "CANCELLED"]
+  );
+  assert.deepEqual(
+    bokunService.__testables.normalizeBookingSearchStatuses("pending,voided"),
+    ["PENDING", "VOIDED"]
+  );
+});
+
+test("retries transient Bokun read failures without retrying permanent failures", async () => {
+  const attempts = [];
+  const result = await bokunService.__testables.withBokunReadRetry(
+    async (attempt) => {
+      attempts.push(attempt);
+      if (attempt < 2) {
+        const error = new Error("temporary timeout");
+        error.code = "BOKUN_TIMEOUT";
+        error.statusCode = 504;
+        throw error;
+      }
+      return "ok";
+    },
+    { maxRetries: 2, delayMs: 0, operationName: "test-read" }
+  );
+
+  assert.equal(result, "ok");
+  assert.deepEqual(attempts, [0, 1, 2]);
+
+  await assert.rejects(
+    () => bokunService.__testables.withBokunReadRetry(
+      async () => {
+        const error = new Error("bad request");
+        error.code = "BOKUN_REQUEST_FAILED";
+        error.statusCode = 400;
+        throw error;
+      },
+      { maxRetries: 2, delayMs: 0, operationName: "test-read" }
+    ),
+    /bad request/
+  );
 });
 
 test("maps only confirmed Bokun bookings as importable and preserves raw channel evidence", () => {

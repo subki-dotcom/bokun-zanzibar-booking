@@ -10,6 +10,7 @@ const { env } = require("../../config/env");
 const { BOOKING_STATUS } = require("../../config/constants");
 const bokunService = require("../../integrations/bokun");
 const invoicesService = require("../invoices");
+const bokunConfirmedBookingsService = require("../bokunConfirmedBookings");
 const { normalizeBokunBookingStatus } = require("../../integrations/bokun/bookingStatus.adapter");
 const { mapBokunSalesChannel } = require("../../integrations/bokun/salesChannel.adapter");
 
@@ -495,6 +496,12 @@ const finalizeSyncLog = async ({
 const verifyWebhookSecret = (headers = {}) => {
   const configured = toNonEmptyString(env.BOKUN_WEBHOOK_SECRET || "");
   if (!configured) {
+    // In production we require a configured webhook secret. In non-production
+    // environments allow missing secret for developer convenience.
+    if (String(env.NODE_ENV || "").trim() === "production") {
+      logger.error("Bokun webhook secret not configured in production");
+      return false;
+    }
     return true;
   }
 
@@ -571,6 +578,44 @@ const handleBokunWebhook = async ({ payload, headers = {}, requestId = "" }) => 
       });
 
       if (!bookingDoc) {
+        // If enabled, attempt a safe confirmed-booking import for missing bookings.
+        if (Boolean(env.BOKUN_WEBHOOK_IMPORT_MISSING)) {
+          const lookupReference = context.bookingReference || context.bokunBookingId || context.bokunConfirmationCode;
+          if (!lookupReference) {
+            results.push({
+              skipped: true,
+              reason: "booking_not_found_locally",
+              bookingReference: context.bookingReference,
+              bokunBookingId: context.bokunBookingId
+            });
+            continue;
+          }
+
+          try {
+            const importRes = await bokunConfirmedBookingsService.manualResync({
+              reference: lookupReference,
+              source: "webhook_create",
+              requestId,
+              dryRun: false
+            });
+
+            // manualResync returns { syncLogId, result }
+            results.push({
+              updated: importRes?.result ? importRes.result.action !== "unchanged" : false,
+              action: importRes?.result?.action || "imported",
+              bookingReference: importRes?.result?.bookingReference || lookupReference
+            });
+            continue;
+          } catch (err) {
+            results.push({
+              failed: true,
+              error: err?.message || String(err || "unknown"),
+              bookingReference: lookupReference
+            });
+            continue;
+          }
+        }
+
         results.push({
           skipped: true,
           reason: "booking_not_found_locally",

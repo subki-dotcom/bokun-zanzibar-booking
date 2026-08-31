@@ -9,6 +9,7 @@ const CommissionRecord = require("../../models/CommissionRecord");
 const Agent = require("../../models/Agent");
 const logger = require("../../config/logger");
 const { env } = require("../../config/env");
+const { BOOKING_STATUS, PAYMENT_STATUS } = require("../../config/constants");
 const AppError = require("../../utils/AppError");
 const { signQuoteToken, verifyQuoteToken } = require("../../utils/quoteToken");
 const bokunService = require("../../integrations/bokun");
@@ -2969,15 +2970,258 @@ const getBookingByReference = async (reference) => {
   return toPublicBookingDetails({ booking, productSnapshot, cancellationRequest });
 };
 
-const listRecentBookings = async (auth) => {
+const BOOKING_LIST_SORTS = {
+  createdAt: "createdAt",
+  travelDate: "travelDate",
+  reference: "bookingReference",
+  total: "pricingSnapshot.finalPayable"
+};
+
+const SALES_CHANNELS = [
+  "DIRECT_WEBSITE",
+  "VIATOR",
+  "GETYOURGUIDE",
+  "BOKUN_MARKETPLACE",
+  "AGENT",
+  "B2B",
+  "HOTEL",
+  "WHATSAPP",
+  "WALK_IN",
+  "TOURHQ",
+  "AIRBNB",
+  "OTHER"
+];
+
+const toPositiveInt = (value, fallback, max) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, max);
+};
+
+const escapeRegex = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const hasListFilterParams = (params = {}) =>
+  [
+    "paginated",
+    "page",
+    "limit",
+    "search",
+    "status",
+    "payment",
+    "source",
+    "from",
+    "to",
+    "sortBy",
+    "sortDirection"
+  ].some((key) => params[key] !== undefined && params[key] !== null && params[key] !== "");
+
+const normalizeSourceFilter = (value = "") => {
+  const token = String(value || "").trim();
+  if (!token || token.toLowerCase() === "all") return "";
+  const upperToken = token.toUpperCase();
+  return SALES_CHANNELS.includes(upperToken) ? upperToken : token;
+};
+
+const buildAdminBookingListQuery = (auth, params = {}) => {
   const query = {};
 
   if (auth?.role === "agent") {
     query.agentId = auth.id;
   }
 
+  const search = String(params.search || "").trim();
+  if (search) {
+    const pattern = new RegExp(escapeRegex(search), "i");
+    query.$or = [
+      { bookingReference: pattern },
+      { bokunBookingId: pattern },
+      { bokunConfirmationCode: pattern },
+      { bokunExternalBookingReference: pattern },
+      { externalChannelReference: pattern },
+      { productTitle: pattern },
+      { optionTitle: pattern },
+      { "customer.firstName": pattern },
+      { "customer.lastName": pattern },
+      { "customer.email": pattern },
+      { "customer.phone": pattern }
+    ];
+  }
+
+  const bookingStatus = String(params.status || "").trim().toLowerCase();
+  if (bookingStatus && bookingStatus !== "all" && Object.values(BOOKING_STATUS).includes(bookingStatus)) {
+    query.bookingStatus = bookingStatus;
+  }
+
+  const paymentStatus = String(params.payment || "").trim().toLowerCase();
+  if (paymentStatus && paymentStatus !== "all" && Object.values(PAYMENT_STATUS).includes(paymentStatus)) {
+    query.paymentStatus = paymentStatus;
+  }
+
+  const source = normalizeSourceFilter(params.source);
+  if (source) {
+    query.$and = [
+      ...(query.$and || []),
+      {
+        $or: [
+          { salesChannel: source },
+          { sourceChannel: String(source).toLowerCase() },
+          { sourceChannel: source }
+        ]
+      }
+    ];
+  }
+
+  const from = String(params.from || "").trim();
+  const to = String(params.to || "").trim();
+  if (from || to) {
+    query.travelDate = {};
+    if (from) query.travelDate.$gte = from;
+    if (to) query.travelDate.$lte = to;
+  }
+
+  return query;
+};
+
+const bookingListProjection =
+  "bookingReference bokunBookingId bokunConfirmationCode bokunExternalBookingReference externalChannelReference productTitle optionTitle travelDate startTime bokunOperationalDates bookingStatus paymentStatus pricingSnapshot amount currency customer sourceChannel salesChannel operationalSource paxSummary createdAt updatedAt";
+
+const buildAdminBookingSummary = async (query) => {
+  const [summaryRows, trend, sourceBreakdown, paymentStatusBreakdown, bookingStatusBreakdown] = await Promise.all([
+    Booking.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalBookings: { $sum: 1 },
+          bookedValue: { $sum: { $ifNull: ["$pricingSnapshot.finalPayable", "$amount"] } },
+          confirmed: { $sum: { $cond: [{ $eq: ["$bookingStatus", BOOKING_STATUS.CONFIRMED] }, 1, 0] } },
+          pending: { $sum: { $cond: [{ $eq: ["$bookingStatus", BOOKING_STATUS.PENDING] }, 1, 0] } },
+          cancelled: { $sum: { $cond: [{ $eq: ["$bookingStatus", BOOKING_STATUS.CANCELLED] }, 1, 0] } }
+        }
+      }
+    ]),
+    Booking.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: "$travelDate",
+          count: { $sum: 1 },
+          bookedValue: { $sum: { $ifNull: ["$pricingSnapshot.finalPayable", "$amount"] } }
+        }
+      },
+      { $sort: { _id: -1 } },
+      { $limit: 7 }
+    ]),
+    Booking.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: { $ifNull: ["$salesChannel", "$sourceChannel"] },
+          count: { $sum: 1 },
+          bookedValue: { $sum: { $ifNull: ["$pricingSnapshot.finalPayable", "$amount"] } }
+        }
+      },
+      { $sort: { count: -1, bookedValue: -1 } },
+      { $limit: 6 }
+    ]),
+    Booking.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: "$paymentStatus",
+          count: { $sum: 1 },
+          bookedValue: { $sum: { $ifNull: ["$pricingSnapshot.finalPayable", "$amount"] } }
+        }
+      },
+      { $sort: { count: -1, bookedValue: -1 } }
+    ]),
+    Booking.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: "$bookingStatus",
+          count: { $sum: 1 },
+          bookedValue: { $sum: { $ifNull: ["$pricingSnapshot.finalPayable", "$amount"] } }
+        }
+      },
+      { $sort: { count: -1, bookedValue: -1 } }
+    ])
+  ]);
+
+  const summary = summaryRows[0] || {};
+  const totalBookings = Number(summary.totalBookings || 0);
+  const bookedValue = Number(summary.bookedValue || 0);
+
+  return {
+    totalBookings,
+    confirmed: Number(summary.confirmed || 0),
+    pending: Number(summary.pending || 0),
+    cancelled: Number(summary.cancelled || 0),
+    bookedValue,
+    averageOrderValue: totalBookings > 0 ? Number((bookedValue / totalBookings).toFixed(2)) : 0,
+    trend: [...trend].reverse(),
+    sourceBreakdown,
+    paymentStatusBreakdown,
+    bookingStatusBreakdown
+  };
+};
+
+const listRecentBookings = async (auth, params = {}) => {
+  const query = buildAdminBookingListQuery(auth, params);
+
+  if (auth?.role === "agent") {
+    query.agentId = auth.id;
+  }
+
+  if (String(params.paginated || "false") === "true" || hasListFilterParams(params)) {
+    const page = toPositiveInt(params.page, 1, 10000);
+    const limit = toPositiveInt(params.limit, 20, 100);
+    const sortBy = BOOKING_LIST_SORTS[params.sortBy] ? params.sortBy : "createdAt";
+    const sortDirection = String(params.sortDirection || "desc").toLowerCase() === "asc" ? 1 : -1;
+    const sort = { [BOOKING_LIST_SORTS[sortBy]]: sortDirection, _id: sortDirection };
+    const skip = (page - 1) * limit;
+
+    const [items, total, summary] = await Promise.all([
+      Booking.find(query)
+        .select(bookingListProjection)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Booking.countDocuments(query),
+      buildAdminBookingSummary(query)
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    return {
+      items,
+      summary,
+      filters: {
+        search: String(params.search || ""),
+        status: String(params.status || ""),
+        payment: String(params.payment || ""),
+        source: String(params.source || ""),
+        from: String(params.from || ""),
+        to: String(params.to || "")
+      },
+      sorting: {
+        sortBy,
+        sortDirection: sortDirection === 1 ? "asc" : "desc"
+      },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages
+      }
+    };
+  }
+
   return Booking.find(query)
-    .select("bookingReference productTitle optionTitle travelDate startTime bookingStatus paymentStatus pricingSnapshot sourceChannel createdAt")
+    .select(bookingListProjection)
     .sort({ createdAt: -1 })
     .limit(100)
     .lean();
