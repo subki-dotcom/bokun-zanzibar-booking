@@ -41,18 +41,96 @@ const matchesQuery = (record = {}, query = {}) => {
   });
 };
 
-const createModel = (records = []) => ({
-  find: (query = {}) => records.filter((record) => matchesQuery(record, query)).map(clone),
-  countDocuments: async (query = {}) => records.filter((record) => matchesQuery(record, query)).length
-});
+const createModel = (records = [], name = "record") => {
+  const store = records.map(clone);
+  const assignUpdate = (record, update = {}) => {
+    const patch = update.$set || update;
+    Object.entries(patch).forEach(([key, value]) => {
+      record[key] = clone(value);
+    });
+    record.updatedAt = record.updatedAt || "2026-08-15T00:00:00.000Z";
+    return record;
+  };
+  return {
+    __store: store,
+    find: (query = {}) => store.filter((record) => matchesQuery(record, query)).map(clone),
+    findOne: (query = {}) => clone(store.find((record) => matchesQuery(record, query)) || null),
+    findById: (id) => clone(store.find((record) => String(record._id) === String(id)) || null),
+    findByIdAndUpdate: (id, update = {}) => {
+      const record = store.find((row) => String(row._id) === String(id));
+      return record ? clone(assignUpdate(record, update)) : null;
+    },
+    create: async (payload = {}) => {
+      const record = {
+        _id: `${name}-${store.length + 1}`,
+        createdAt: "2026-08-15T00:00:00.000Z",
+        updatedAt: "2026-08-15T00:00:00.000Z",
+        ...clone(payload)
+      };
+      store.push(record);
+      return clone(record);
+    },
+    countDocuments: async (query = {}) => store.filter((record) => matchesQuery(record, query)).length
+  };
+};
 
-const createService = () =>
+const productSnapshots = [
+  {
+    _id: "snapshot-1",
+    bokunProductId: "PROD-1",
+    title: "Mnemba Snorkeling Tour",
+    slug: "mnemba-snorkeling-tour",
+    currency: "USD",
+    status: "active",
+    images: ["https://example.test/mnemba.jpg"],
+    options: [
+      { bokunOptionId: "OPT-PRIVATE", name: "Private Tour (1-6 Pax)", active: true },
+      { bokunOptionId: "OPT-SHARED", name: "Shared Tour", active: true }
+    ],
+    rawBokunProduct: {
+      pricingCategories: [
+        { id: "adult", title: "Adult", ticketCategory: "ADULT" },
+        { id: "child", title: "Child", ticketCategory: "CHILD" }
+      ]
+    },
+    lastSyncedAt: "2026-08-14T08:00:00.000Z"
+  }
+];
+
+const existingCostTemplates = [
+  {
+    _id: "template-1",
+    bokunProductId: "PROD-1",
+    bokunProductTitle: "Mnemba Snorkeling Tour",
+    bokunOptionId: "OPT-PRIVATE",
+    bokunOptionTitle: "Private Tour (1-6 Pax)",
+    pricingCategoryId: "",
+    currency: "USD",
+    name: "Mnemba Private Cost",
+    status: "active",
+    version: 1,
+    validFrom: "2026-01-01T00:00:00.000Z",
+    validTo: null,
+    costLines: [
+      { lineId: "boat", category: "Boat", basis: "fixed_per_booking", amount: 70 },
+      { lineId: "guide", category: "Guide", basis: "fixed_per_booking", amount: 20 },
+      { lineId: "water", category: "Water", basis: "per_participant", amount: 2 }
+    ],
+    updatedAt: "2026-08-14T08:00:00.000Z"
+  }
+];
+
+const createService = ({ ProductCostTemplateModel = createModel(existingCostTemplates, "template") } = {}) =>
   createBookingAccountingService({
+    AuditLogModel: createModel([], "audit"),
     BookingModel: createModel([
       {
         _id: "booking-1",
         bookingReference: "ZNZ-BA-1",
+        bokunProductId: "PROD-1",
+        bokunOptionId: "OPT-PRIVATE",
         productTitle: "Stone Town Tour",
+        optionTitle: "Standard",
         salesChannel: "DIRECT_WEBSITE",
         bookingStatus: "cancelled",
         paymentStatus: "paid",
@@ -163,7 +241,9 @@ const createService = () =>
         sourceModule: "BUSINESS_ACCOUNTING",
         expenseDate: "2026-08-01T12:00:00.000Z"
       }
-    ])
+    ]),
+    ProductCostTemplateModel,
+    ProductSnapshotModel: createModel(productSnapshots, "product")
   });
 
 test("booking accounting refund list keeps Pesapal request acceptance separate from confirmed refund", async () => {
@@ -212,12 +292,94 @@ test("booking accounting expenses stay scoped to booking-linked records when sea
   assert.equal(result.count, 0);
 });
 
-test("booking accounting cost template endpoint is explicit when no template model exists", async () => {
+test("booking accounting cost template dashboard joins Bokun options with active templates", async () => {
   const service = createService();
 
   const result = await service.getCostTemplates();
 
-  assert.equal(result.configured, false);
+  assert.equal(result.configured, true);
+  assert.equal(result.summary.totalBokunProducts, 1);
+  assert.equal(result.summary.totalBokunOptions, 2);
+  assert.equal(result.summary.costedOptions, 1);
+  assert.equal(result.summary.missingCost, 1);
+  assert.equal(result.items.find((item) => item.bokunOptionId === "OPT-PRIVATE").costStatus, "costed");
+  assert.equal(result.items.find((item) => item.bokunOptionId === "OPT-SHARED").costStatus, "missing_cost");
   assert.ok(result.costBasisTypes.includes("per_participant"));
   assert.ok(result.controlledExpenseCategories.includes("OTHER_OPERATING_EXPENSE"));
+});
+
+test("booking accounting cost template calculation supports core cost bases", async () => {
+  const service = createService();
+
+  const result = service.calculateEstimatedBookingCost({
+    template: { currency: "USD" },
+    costLines: [
+      { category: "Boat", basis: "fixed_per_booking", amount: 70 },
+      { category: "Water", basis: "per_participant", amount: 2 },
+      { category: "Transport", basis: "per_vehicle", amount: 25 },
+      { category: "Commission", basis: "percentage", percentage: 10 },
+      { category: "Guide", basis: "tiered", tiers: [{ min: 1, max: 4, amount: 15 }] }
+    ],
+    context: { adults: 2, children: 0, participants: 2, vehicles: 1, sellingAmount: 100 }
+  });
+
+  assert.equal(result.totalEstimatedCost, 124);
+  assert.equal(result.breakdown.length, 5);
+});
+
+test("booking accounting cost template creation validates real Bokun product options", async () => {
+  const service = createService({ ProductCostTemplateModel: createModel([], "template") });
+
+  await assert.rejects(
+    service.createCostTemplate({
+      payload: {
+        bokunProductId: "PROD-404",
+        bokunOptionId: "OPT-404",
+        currency: "USD",
+        name: "Invalid Option",
+        status: "active",
+        validFrom: "2026-08-01",
+        costLines: [{ category: "Guide", basis: "fixed_per_booking", amount: 10 }]
+      }
+    }),
+    /Select a Bókun product option/
+  );
+});
+
+test("booking accounting cost template creation prevents overlapping active templates", async () => {
+  const service = createService();
+
+  await assert.rejects(
+    service.createCostTemplate({
+      payload: {
+        bokunProductId: "PROD-1",
+        bokunOptionId: "OPT-PRIVATE",
+        currency: "USD",
+        name: "Duplicate Active",
+        status: "active",
+        validFrom: "2026-08-01",
+        validTo: "2026-09-01",
+        costLines: [{ category: "Guide", basis: "fixed_per_booking", amount: 10 }]
+      }
+    }),
+    (error) => error.code === "COST_TEMPLATE_ACTIVE_OVERLAP"
+  );
+});
+
+test("booking accounting resolves effective active template for a booking", async () => {
+  const service = createService();
+
+  const result = await service.resolveCostTemplate({
+    booking: {
+      bokunProductId: "PROD-1",
+      bokunOptionId: "OPT-PRIVATE",
+      paxSummary: { adults: 2, children: 0, total: 2 },
+      pricingSnapshot: { finalPayable: 100 },
+      currency: "USD"
+    },
+    asOfDate: "2026-08-10T00:00:00.000Z"
+  });
+
+  assert.equal(result.template.id, "template-1");
+  assert.equal(result.calculation.totalEstimatedCost, 94);
 });

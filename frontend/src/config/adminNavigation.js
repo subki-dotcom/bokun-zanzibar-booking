@@ -1,24 +1,34 @@
 import {
   BsActivity,
+  BsAirplane,
   BsArchive,
   BsArrowRepeat,
   BsBarChartLine,
   BsBell,
   BsBriefcase,
+  BsBullseye,
   BsBuilding,
   BsCalendar2Check,
   BsCashCoin,
   BsClipboard2Check,
   BsCloudCheck,
+  BsCloudArrowUp,
   BsCreditCard2Front,
+  BsDiagram3,
+  BsEnvelope,
   BsFileEarmarkBarGraph,
+  BsFileEarmarkText,
   BsGear,
   BsGraphUpArrow,
-  BsGrid1X2,
+  BsGrid3X3Gap,
+  BsHouseDoor,
   BsJournalCheck,
+  BsListTask,
   BsPeople,
+  BsPieChart,
   BsReceipt,
   BsShieldCheck,
+  BsSpeedometer2,
   BsTruck,
   BsWallet2
 } from "react-icons/bs";
@@ -69,27 +79,25 @@ export const ADMIN_PERMISSIONS = {
 
 export const adminNavigation = [
   {
-    id: "main-dashboard",
-    label: "Main Dashboard",
-    path: "/admin",
-    icon: BsGrid1X2,
+    id: "main",
+    label: "Main",
     roles: ADMIN_ROLES.ALL,
-    status: "active"
+    children: [
+      {
+        id: "main-dashboard",
+        label: "Dashboard",
+        path: "/admin",
+        icon: BsHouseDoor,
+        roles: ADMIN_ROLES.ALL,
+        status: "active"
+      }
+    ]
   },
   {
     id: "operations",
     label: "Operations",
-    icon: BsCalendar2Check,
     roles: ADMIN_ROLES.ALL,
     children: [
-      {
-        id: "operations-dashboard",
-        label: "Dashboard",
-        path: "/admin/operations/dashboard",
-        icon: BsActivity,
-        roles: ADMIN_ROLES.ALL,
-        status: "planned"
-      },
       {
         id: "operations-bookings",
         label: "Bookings",
@@ -111,80 +119,39 @@ export const adminNavigation = [
         id: "operations-tour-ops",
         label: "Tour Operations",
         path: "/admin/operations/tour-operations",
-        icon: BsTruck,
-        roles: ADMIN_ROLES.ALL,
-        status: "active"
-      },
-      {
-        id: "operations-recovery",
-        label: "Recovery",
-        path: "/admin/operations/recovery",
-        icon: BsArrowRepeat,
+        icon: BsAirplane,
         roles: ADMIN_ROLES.ALL,
         status: "active"
       },
       {
         id: "operations-agents",
-        label: "Agents",
+        label: "Assignments",
         path: "/admin/operations/agents",
-        icon: BsPeople,
+        icon: BsListTask,
         roles: ADMIN_ROLES.ALL,
         status: "active"
       },
       {
-        id: "operations-bokun-sync",
-        label: "Bokun Sync",
-        icon: BsCloudCheck,
+        id: "operations-recovery",
+        label: "Recovery Center",
+        path: "/admin/operations/recovery",
+        icon: BsShieldCheck,
         roles: ADMIN_ROLES.ALL,
-        children: [
-          {
-            id: "bokun-import",
-            label: "Confirmed Booking Import",
-            path: "/admin/operations/bokun-sync/confirmed-import",
-            icon: BsCloudCheck,
-            roles: ADMIN_ROLES.ALL,
-            status: "active"
-          },
-          {
-            id: "bokun-manual-sync",
-            label: "Manual Sync",
-            path: "/admin/operations/bokun-sync/manual",
-            icon: BsArrowRepeat,
-            roles: ADMIN_ROLES.ALL,
-            status: "active"
-          },
-          {
-            id: "bokun-single-sync",
-            label: "Single Booking Sync",
-            path: "/admin/operations/bokun-sync/single-booking",
-            icon: BsJournalCheck,
-            roles: ADMIN_ROLES.ALL,
-            status: "active"
-          },
-          {
-            id: "bokun-sync-logs",
-            label: "Sync Logs",
-            path: "/admin/operations/bokun-sync/sync-logs",
-            icon: BsArchive,
-            roles: ADMIN_ROLES.ALL,
-            status: "active"
-          }
-        ]
+        status: "active"
       }
     ]
   },
   {
     id: "crm",
     label: "CRM",
-    icon: BsPeople,
     roles: ADMIN_ROLES.MANAGE,
     permissions: [ADMIN_PERMISSIONS.CRM_VIEW],
     children: [
       {
         id: "crm-dashboard",
-        label: "Dashboard",
+        label: "CRM Dashboard",
         path: "/admin/crm",
-        icon: BsGrid1X2,
+        icon: BsGrid3X3Gap,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.CRM_VIEW],
         status: "active"
@@ -199,21 +166,30 @@ export const adminNavigation = [
         status: "active"
       },
       {
-        id: "crm-duplicates",
-        label: "Duplicate Review",
-        path: "/admin/crm/duplicates",
-        icon: BsShieldCheck,
-        roles: ADMIN_ROLES.MANAGE,
-        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_CUSTOMERS],
-        status: "active"
-      },
-      {
         id: "crm-leads",
         label: "Leads",
         path: "/admin/crm/leads",
-        icon: BsClipboard2Check,
+        icon: BsBullseye,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_LEADS],
+        status: "active"
+      },
+      {
+        id: "crm-b2b-agents",
+        label: "Agents / B2B",
+        path: "/admin/crm/b2b-agents",
+        icon: BsBriefcase,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_B2B],
+        status: "active"
+      },
+      {
+        id: "crm-follow-ups",
+        label: "Follow-ups",
+        path: "/admin/crm/follow-ups",
+        icon: BsEnvelope,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_FOLLOWUPS],
         status: "active"
       },
       {
@@ -226,21 +202,21 @@ export const adminNavigation = [
         status: "active"
       },
       {
+        id: "crm-pipeline",
+        label: "Sales Pipeline",
+        path: "/admin/crm/pipeline",
+        icon: BsBarChartLine,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_OPPORTUNITIES],
+        status: "active"
+      },
+      {
         id: "crm-quotes",
         label: "Quotes",
         path: "/admin/crm/quotes",
         icon: BsReceipt,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_QUOTES],
-        status: "active"
-      },
-      {
-        id: "crm-follow-ups",
-        label: "Follow-ups",
-        path: "/admin/crm/follow-ups",
-        icon: BsBell,
-        roles: ADMIN_ROLES.MANAGE,
-        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_FOLLOWUPS],
         status: "active"
       },
       {
@@ -256,27 +232,18 @@ export const adminNavigation = [
         id: "crm-conversations",
         label: "Conversations",
         path: "/admin/crm/conversations",
-        icon: BsArchive,
+        icon: BsEnvelope,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.CRM_VIEW_CUSTOMERS],
         status: "active"
       },
       {
-        id: "crm-pipeline",
-        label: "Sales Pipeline",
-        path: "/admin/crm/pipeline",
-        icon: BsBarChartLine,
+        id: "crm-duplicates",
+        label: "Duplicate Review",
+        path: "/admin/crm/duplicates",
+        icon: BsShieldCheck,
         roles: ADMIN_ROLES.MANAGE,
-        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_OPPORTUNITIES],
-        status: "active"
-      },
-      {
-        id: "crm-b2b-agents",
-        label: "B2B / Agents",
-        path: "/admin/crm/b2b-agents",
-        icon: BsBriefcase,
-        roles: ADMIN_ROLES.MANAGE,
-        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_B2B],
+        permissions: [ADMIN_PERMISSIONS.CRM_MANAGE_CUSTOMERS],
         status: "active"
       },
       {
@@ -310,7 +277,7 @@ export const adminNavigation = [
         id: "crm-imports",
         label: "CRM Imports",
         path: "/admin/crm/imports",
-        icon: BsArchive,
+        icon: BsCloudArrowUp,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [
           ADMIN_PERMISSIONS.CRM_MANAGE_CUSTOMERS,
@@ -324,14 +291,13 @@ export const adminNavigation = [
   {
     id: "booking-accounting",
     label: "Booking Accounting",
-    icon: BsCashCoin,
     roles: ADMIN_ROLES.ALL,
     children: [
       {
         id: "booking-accounting-dashboard",
-        label: "Dashboard",
+        label: "Accounting Dashboard",
         path: "/admin/booking-accounting/dashboard",
-        icon: BsGrid1X2,
+        icon: BsGrid3X3Gap,
         roles: ADMIN_ROLES.ALL,
         status: "active"
       },
@@ -369,7 +335,7 @@ export const adminNavigation = [
       },
       {
         id: "booking-accounting-cost-templates",
-        label: "Product Cost Templates",
+        label: "Cost Templates",
         path: "/admin/booking-accounting/cost-templates",
         icon: BsJournalCheck,
         roles: ADMIN_ROLES.ALL,
@@ -377,7 +343,7 @@ export const adminNavigation = [
       },
       {
         id: "booking-accounting-profitability",
-        label: "Booking Profitability",
+        label: "Profitability",
         path: "/admin/booking-accounting/profitability",
         icon: BsBarChartLine,
         roles: ADMIN_ROLES.ALL,
@@ -396,7 +362,6 @@ export const adminNavigation = [
   {
     id: "business-accounting",
     label: "Business Accounting",
-    icon: BsBuilding,
     roles: ADMIN_ROLES.MANAGE,
     permissions: [ADMIN_PERMISSIONS.BUSINESS_ACCOUNTING_READ, ADMIN_PERMISSIONS.GL_VIEW],
     children: [
@@ -413,7 +378,7 @@ export const adminNavigation = [
         id: "gl-chart-of-accounts",
         label: "Chart of Accounts",
         path: "/admin/business-accounting/chart-of-accounts",
-        icon: BsJournalCheck,
+        icon: BsGrid3X3Gap,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.GL_VIEW],
         status: "active"
@@ -447,7 +412,7 @@ export const adminNavigation = [
       },
       {
         id: "gl-accounts-receivable",
-        label: "Accounts Receivable",
+        label: "Receivables (AR)",
         path: "/admin/business-accounting/accounts-receivable",
         icon: BsCashCoin,
         roles: ADMIN_ROLES.MANAGE,
@@ -456,7 +421,7 @@ export const adminNavigation = [
       },
       {
         id: "gl-accounts-payable",
-        label: "Accounts Payable",
+        label: "Payables (AP)",
         path: "/admin/business-accounting/accounts-payable",
         icon: BsWallet2,
         roles: ADMIN_ROLES.MANAGE,
@@ -503,14 +468,14 @@ export const adminNavigation = [
         id: "gl-cash-flow",
         label: "Cash Flow",
         path: "/admin/business-accounting/cash-flow",
-        icon: BsBarChartLine,
+        icon: BsDiagram3,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.GL_VIEW_CASH_FLOW],
         status: "active"
       },
       {
         id: "gl-fixed-assets",
-        label: "Fixed Assets",
+        label: "Assets",
         path: "/admin/business-accounting/fixed-assets",
         icon: BsBriefcase,
         roles: ADMIN_ROLES.MANAGE,
@@ -529,33 +494,86 @@ export const adminNavigation = [
     ]
   },
   {
-    id: "business-intelligence",
-    label: "Business Intelligence",
-    path: "/admin/business-intelligence",
-    icon: BsBarChartLine,
+    id: "reports-analytics",
+    label: "Reports & Analytics",
     roles: ADMIN_ROLES.MANAGE,
-    permissions: [ADMIN_PERMISSIONS.BUSINESS_INTELLIGENCE_READ],
-    status: "active"
+    children: [
+      {
+        id: "business-intelligence",
+        label: "Business Intelligence",
+        path: "/admin/business-intelligence",
+        icon: BsPieChart,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.BUSINESS_INTELLIGENCE_READ],
+        status: "active"
+      },
+      {
+        id: "report-center",
+        label: "Report Center",
+        path: "/admin/report-center",
+        icon: BsFileEarmarkBarGraph,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.REPORT_CENTER_READ],
+        status: "active"
+      },
+      {
+        id: "performance-review",
+        label: "Performance",
+        path: "/admin/performance-review",
+        icon: BsSpeedometer2,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.PERFORMANCE_REVIEW_READ],
+        status: "active"
+      }
+    ]
   },
   {
-    id: "report-center",
-    label: "Report Center",
-    path: "/admin/report-center",
-    icon: BsFileEarmarkBarGraph,
-    roles: ADMIN_ROLES.MANAGE,
-    permissions: [ADMIN_PERMISSIONS.REPORT_CENTER_READ],
-    status: "active"
+    id: "integrations",
+    label: "Integrations",
+    roles: ADMIN_ROLES.ALL,
+    children: [
+      {
+        id: "bokun-import",
+        label: "Bokun Integration",
+        path: "/admin/operations/bokun-sync/confirmed-import",
+        icon: BsCloudCheck,
+        roles: ADMIN_ROLES.ALL,
+        status: "active"
+      },
+      {
+        id: "bokun-manual-sync",
+        label: "Sync Center",
+        path: "/admin/operations/bokun-sync/manual",
+        icon: BsArrowRepeat,
+        roles: ADMIN_ROLES.ALL,
+        status: "active"
+      },
+      {
+        id: "bokun-single-sync",
+        label: "Manual Lookup",
+        path: "/admin/operations/bokun-sync/single-booking",
+        icon: BsJournalCheck,
+        roles: ADMIN_ROLES.ALL,
+        status: "active"
+      },
+      {
+        id: "bokun-sync-logs",
+        label: "Sync Logs",
+        path: "/admin/operations/bokun-sync/sync-logs",
+        icon: BsFileEarmarkText,
+        roles: ADMIN_ROLES.ALL,
+        status: "active"
+      }
+    ]
   },
   {
-    id: "audit-control",
-    label: "Audit & Control",
-    icon: BsShieldCheck,
+    id: "control-system",
+    label: "Control & System",
     roles: ADMIN_ROLES.MANAGE,
-    permissions: [ADMIN_PERMISSIONS.AUDIT_CONTROL_READ],
     children: [
       {
         id: "audit-control-logs",
-        label: "Audit Logs",
+        label: "Audit Trail",
         path: "/admin/audit-control",
         icon: BsShieldCheck,
         roles: ADMIN_ROLES.MANAGE,
@@ -579,52 +597,50 @@ export const adminNavigation = [
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.OPS_CONTROL_READ],
         status: "active"
+      },
+      {
+        id: "system-health",
+        label: "System Health",
+        path: "/admin/system-health",
+        icon: BsActivity,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.SYSTEM_HEALTH_READ],
+        status: "active"
+      },
+      {
+        id: "disaster-recovery",
+        label: "Disaster Recovery",
+        path: "/admin/disaster-recovery",
+        icon: BsCloudCheck,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.DISASTER_RECOVERY_READ],
+        status: "active"
+      },
+      {
+        id: "production-readiness",
+        label: "Production Readiness",
+        path: "/admin/production-readiness",
+        icon: BsClipboard2Check,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.PRODUCTION_READINESS_READ],
+        status: "active"
       }
     ]
   },
   {
-    id: "disaster-recovery",
-    label: "Disaster Recovery",
-    path: "/admin/disaster-recovery",
-    icon: BsArchive,
-    roles: ADMIN_ROLES.MANAGE,
-    permissions: [ADMIN_PERMISSIONS.DISASTER_RECOVERY_READ],
-    status: "active"
-  },
-  {
-    id: "system-health",
-    label: "System Health",
-    path: "/admin/system-health",
-    icon: BsActivity,
-    roles: ADMIN_ROLES.MANAGE,
-    permissions: [ADMIN_PERMISSIONS.SYSTEM_HEALTH_READ],
-    status: "active"
-  },
-  {
-    id: "performance-review",
-    label: "Performance Review",
-    path: "/admin/performance-review",
-    icon: BsGraphUpArrow,
-    roles: ADMIN_ROLES.MANAGE,
-    permissions: [ADMIN_PERMISSIONS.PERFORMANCE_REVIEW_READ],
-    status: "active"
-  },
-  {
-    id: "production-readiness",
-    label: "Production Readiness",
-    path: "/admin/production-readiness",
-    icon: BsClipboard2Check,
-    roles: ADMIN_ROLES.MANAGE,
-    permissions: [ADMIN_PERMISSIONS.PRODUCTION_READINESS_READ],
-    status: "active"
-  },
-  {
-    id: "settings",
+    id: "settings-section",
     label: "Settings",
-    path: "/admin/settings",
-    icon: BsGear,
     roles: ADMIN_ROLES.MANAGE,
-    status: "planned"
+    children: [
+      {
+        id: "settings",
+        label: "System Settings",
+        path: "/admin/settings",
+        icon: BsGear,
+        roles: ADMIN_ROLES.MANAGE,
+        status: "planned"
+      }
+    ]
   }
 ];
 
@@ -693,6 +709,7 @@ export const getAdminRouteMeta = (pathname = "") => {
 export const isAdminNavItemActive = (item, pathname = "") => {
   if (!item.path && !item.matchPrefix) return false;
   if (item.path === pathname) return true;
+  if (item.path && item.path !== "/admin" && pathname.startsWith(`${item.path}/`)) return true;
   return Boolean(item.matchPrefix && pathname.startsWith(item.matchPrefix));
 };
 

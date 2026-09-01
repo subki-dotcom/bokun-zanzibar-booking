@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, Card, Col, Row, Table } from "react-bootstrap";
+import { Button, Card, Col, Row, Table } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
 import {
   BsArrowClockwise,
@@ -27,6 +27,7 @@ import {
   BOOKING_ACCOUNTING_VIEW_CONFIG,
   bookingAccountingModeFromPath
 } from "./bookingAccountingView";
+import { CostTemplateEditor, CostTemplatesDashboard } from "./BookingCostTemplates";
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
 const safeNumber = (value) => {
@@ -235,34 +236,6 @@ const ReconciliationTable = ({ items = [] }) => (
   </AccountingTable>
 );
 
-const CostTemplatePanel = ({ data }) => (
-  <Row className="g-4">
-    <Col xl={5}>
-      <SectionCard title="Template Storage" detail={data?.currentEvidenceSource || ""}>
-        <Alert variant={data?.configured ? "success" : "warning"} className="mb-0">
-          {data?.configured
-            ? "Persistent product cost templates are configured."
-            : data?.message || "Persistent product cost templates are not configured."}
-        </Alert>
-      </SectionCard>
-    </Col>
-    <Col xl={7}>
-      <SectionCard title="Supported Cost Basis">
-        <div className="d-flex flex-wrap gap-2">
-          {asArray(data?.costBasisTypes).map((item) => <Badge bg="secondary" key={item}>{label(item)}</Badge>)}
-        </div>
-      </SectionCard>
-    </Col>
-    <Col xs={12}>
-      <SectionCard title="Controlled Expense Categories">
-        <div className="d-flex flex-wrap gap-2">
-          {asArray(data?.controlledExpenseCategories).map((item) => <Badge bg="light" text="dark" key={item}>{label(item)}</Badge>)}
-        </div>
-      </SectionCard>
-    </Col>
-  </Row>
-);
-
 const AdminBookingAccountingPage = () => {
   const location = useLocation();
   const mode = bookingAccountingModeFromPath(location.pathname);
@@ -322,8 +295,9 @@ const AdminBookingAccountingPage = () => {
   }, []);
 
   useEffect(() => {
+    if (mode.startsWith("cost-template")) return;
     load();
-  }, [load]);
+  }, [load, mode]);
 
   const totals = data.dashboard?.totals || {};
   const currency = data.dashboard?.currency || data.profitability?.currency || "USD";
@@ -335,7 +309,15 @@ const AdminBookingAccountingPage = () => {
     reconciliation: data.reconciliation?.items || []
   }), [data]);
 
-  if (loading) return <Loader message="Loading booking accounting..." />;
+  if (loading && !mode.startsWith("cost-template")) return <Loader message="Loading booking accounting..." />;
+
+  if (mode === "cost-templates") {
+    return <CostTemplatesDashboard initialData={data.costTemplates} />;
+  }
+
+  if (mode.startsWith("cost-template-")) {
+    return <CostTemplateEditor mode={mode} initialCatalog={data.costTemplates} />;
+  }
 
   return (
     <div className="admin-booking-accounting-page">
@@ -443,8 +425,6 @@ const AdminBookingAccountingPage = () => {
           <ExpensesTable items={tableItems.expenses} />
         </SectionCard>
       ) : null}
-
-      {mode === "cost-templates" ? <CostTemplatePanel data={data.costTemplates} /> : null}
 
       {mode === "profitability" ? (
         <Row className="g-4">

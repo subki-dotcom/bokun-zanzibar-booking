@@ -20,7 +20,7 @@ const resolveSyncLabel = (status = "") => {
   return "Sync Unknown";
 };
 
-const AdminTopBar = ({ user, collapsed, mobileOpen, onToggleSidebar, onLogout }) => {
+const AdminTopBar = ({ user, collapsed, mobileOpen, menuButtonRef, onToggleSidebar, onLogout }) => {
   const location = useLocation();
   const routeMeta = useMemo(() => getAdminRouteMeta(location.pathname), [location.pathname]);
   const [overview, setOverview] = useState(null);
@@ -65,6 +65,8 @@ const AdminTopBar = ({ user, collapsed, mobileOpen, onToggleSidebar, onLogout })
           className="admin-platform-icon-button"
           aria-label={collapsed || mobileOpen ? "Show admin menu" : "Hide admin menu"}
           aria-expanded={mobileOpen || !collapsed}
+          aria-controls="admin-platform-sidebar"
+          ref={menuButtonRef}
           onClick={onToggleSidebar}
         >
           <BsList aria-hidden="true" />

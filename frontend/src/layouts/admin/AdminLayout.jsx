@@ -1,15 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import AdminTopBar from "../../components/admin/AdminTopBar";
 import useAuth from "../../hooks/useAuth";
 
-const SIDEBAR_STATE_KEY = "riser_admin_sidebar_collapsed";
+const SIDEBAR_STATE_KEY = "riser.sidebar.collapsed";
+const LEGACY_SIDEBAR_STATE_KEY = "riser_admin_sidebar_collapsed";
+
+const loadSidebarPreference = () => {
+  const stored = localStorage.getItem(SIDEBAR_STATE_KEY) ?? localStorage.getItem(LEGACY_SIDEBAR_STATE_KEY);
+  return stored === "true";
+};
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem(SIDEBAR_STATE_KEY) === "true");
+  const menuButtonRef = useRef(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(loadSidebarPreference);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -24,6 +31,32 @@ const AdminLayout = () => {
 
     return () => {
       document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileMenuOpen]);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen || typeof document === "undefined") return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+
+    const focusCloseButton = () => {
+      document.querySelector(".admin-platform-mobile-close")?.focus();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(focusCloseButton);
+    } else {
+      focusCloseButton();
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMobileMenuOpen]);
 
@@ -51,6 +84,11 @@ const AdminLayout = () => {
         collapsed={isSidebarCollapsed}
         mobileOpen={isMobileMenuOpen}
         onNavigate={() => setIsMobileMenuOpen(false)}
+        onClose={() => {
+          setIsMobileMenuOpen(false);
+          menuButtonRef.current?.focus();
+        }}
+        onLogout={logout}
       />
       <button
         type="button"
@@ -64,6 +102,7 @@ const AdminLayout = () => {
           user={user}
           collapsed={isSidebarCollapsed}
           mobileOpen={isMobileMenuOpen}
+          menuButtonRef={menuButtonRef}
           onToggleSidebar={handleToggleSidebar}
           onLogout={logout}
         />

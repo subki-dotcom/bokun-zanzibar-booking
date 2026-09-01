@@ -16,6 +16,9 @@ test("Booking Accounting mode resolver maps submenu routes", () => {
   assert.equal(bookingAccountingModeFromPath("/admin/booking-accounting/refunds"), "refunds");
   assert.equal(bookingAccountingModeFromPath("/admin/booking-accounting/expenses"), "expenses");
   assert.equal(bookingAccountingModeFromPath("/admin/booking-accounting/cost-templates"), "cost-templates");
+  assert.equal(bookingAccountingModeFromPath("/admin/booking-accounting/cost-templates/new"), "cost-template-new");
+  assert.equal(bookingAccountingModeFromPath("/admin/booking-accounting/cost-templates/template-1"), "cost-template-view");
+  assert.equal(bookingAccountingModeFromPath("/admin/booking-accounting/cost-templates/template-1/edit"), "cost-template-edit");
   assert.equal(bookingAccountingModeFromPath("/admin/booking-accounting/profitability"), "profitability");
   assert.equal(bookingAccountingModeFromPath("/admin/booking-accounting/reconciliation"), "reconciliation");
 });
@@ -25,7 +28,7 @@ test("Booking Accounting routes no longer point to AdminUnavailablePage placehol
     .split(/\r?\n/)
     .filter((line) => line.includes("path=\"/admin/booking-accounting/"));
 
-  assert.ok(bookingAccountingRouteLines.length >= 7);
+  assert.ok(bookingAccountingRouteLines.length >= 10);
   for (const line of bookingAccountingRouteLines) {
     assert.equal(line.includes("AdminUnavailablePage"), false, line.trim());
   }

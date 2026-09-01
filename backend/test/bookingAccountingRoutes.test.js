@@ -111,3 +111,63 @@ test("booking accounting list routes validate shared query limits", async () => 
     await close(server);
   }
 });
+
+test("booking accounting cost template writes require write permission", async () => {
+  let restoreUser = withMockUser("staff");
+  const originalCreate = bookingAccountingService.createCostTemplate;
+  let capturedArgs = null;
+  bookingAccountingService.createCostTemplate = async (args) => {
+    capturedArgs = args;
+    return {
+      action: "created",
+      template: { id: "template-1", name: "Mnemba Cost", status: "active" }
+    };
+  };
+  const server = await listen();
+  const payload = {
+    bokunProductId: "PROD-1",
+    bokunOptionId: "OPT-1",
+    currency: "USD",
+    name: "Mnemba Cost",
+    status: "active",
+    validFrom: "2026-08-01",
+    costLines: [{ category: "Guide", basis: "fixed_per_booking", amount: 10 }]
+  };
+
+  try {
+    const { port } = server.address();
+    const forbidden = await fetch(`http://127.0.0.1:${port}/api/admin/booking-accounting/cost-templates`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token()}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    assert.equal(forbidden.status, 403);
+    assert.equal(capturedArgs, null);
+
+    restoreUser();
+    restoreUser = withMockUser("admin");
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/admin/booking-accounting/cost-templates`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token()}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 201);
+    assert.equal(body.success, true);
+    assert.equal(capturedArgs.payload.name, "Mnemba Cost");
+    assert.equal(capturedArgs.auth.role, "admin");
+  } finally {
+    bookingAccountingService.createCostTemplate = originalCreate;
+    restoreUser();
+    await close(server);
+  }
+});

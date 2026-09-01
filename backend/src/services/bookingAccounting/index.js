@@ -2,11 +2,31 @@ const Booking = require("../../models/Booking");
 const BusinessExpense = require("../../models/BusinessExpense");
 const Invoice = require("../../models/Invoice");
 const Payment = require("../../models/Payment");
+const ProductCostTemplate = require("../../models/ProductCostTemplate");
+const ProductSnapshot = require("../../models/ProductSnapshot");
 const Refund = require("../../models/Refund");
 const { EXPENSE_CATEGORY } = require("../../accounting/constants");
+const AuditLog = require("../../models/AuditLog");
+const AppError = require("../../utils/AppError");
 
 const DEFAULT_LIMIT = 50;
+const DEFAULT_TEMPLATE_LIMIT = 10;
 const MAX_LIMIT = 500;
+
+const COST_BASIS_TYPES = Object.freeze([
+  "fixed_per_booking",
+  "per_participant",
+  "per_adult",
+  "per_child",
+  "per_vehicle",
+  "per_group",
+  "percentage",
+  "tiered",
+  "manual"
+]);
+
+const TEMPLATE_STATUSES = Object.freeze(["draft", "active", "inactive", "archived"]);
+const OPEN_ENDED_DATE = new Date("9999-12-31T23:59:59.999Z");
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -102,6 +122,399 @@ const findRows = async (Model, query = {}, options = {}) => {
 const countRows = async (Model, query = {}) => {
   if (Model?.countDocuments) return Number(await Model.countDocuments(query));
   return (await findRows(Model, query, { limit: MAX_LIMIT })).length;
+};
+
+const executeSingleQuery = async (query, options = {}) => {
+  if (Array.isArray(query)) return query[0] || null;
+  let chain = query;
+  if (options.sort && chain?.sort) chain = chain.sort(options.sort);
+  if (chain?.lean) chain = chain.lean();
+  return chain ? await chain : null;
+};
+
+const findOneRow = async (Model, query = {}, options = {}) => {
+  if (Model?.findOne) return executeSingleQuery(Model.findOne(query), options);
+  return (await findRows(Model, query, { ...options, limit: 1 }))[0] || null;
+};
+
+const findByIdRow = async (Model, id) => {
+  const safeId = normalizeToken(id);
+  if (!safeId) return null;
+  if (Model?.findById) return executeSingleQuery(Model.findById(safeId));
+  return findOneRow(Model, { _id: safeId });
+};
+
+const createRow = async (Model, payload) => {
+  if (!Model?.create) throw new AppError("Product cost template storage is not configured.", 503, "COST_TEMPLATE_STORAGE_UNAVAILABLE");
+  const created = await Model.create(payload);
+  return created?.toObject ? created.toObject() : created;
+};
+
+const updateByIdRow = async (Model, id, update = {}) => {
+  const safeId = normalizeToken(id);
+  if (!safeId) return null;
+  if (Model?.findByIdAndUpdate) {
+    return executeSingleQuery(
+      Model.findByIdAndUpdate(safeId, { $set: update }, { new: true, runValidators: true })
+    );
+  }
+  if (Model?.findOneAndUpdate) {
+    return executeSingleQuery(
+      Model.findOneAndUpdate({ _id: safeId }, { $set: update }, { new: true, runValidators: true })
+    );
+  }
+  throw new AppError("Product cost template storage cannot update records.", 503, "COST_TEMPLATE_STORAGE_UNAVAILABLE");
+};
+
+const normalizeCostBasis = (value = "") => normalizeLower(value).replace(/[-\s]+/g, "_");
+const normalizeTemplateStatus = (value = "draft") => normalizeLower(value || "draft").replace(/[-\s]+/g, "_");
+const normalizeCurrency = (value = "USD") => normalizeUpper(value || "USD").slice(0, 10);
+const sameToken = (left, right) => normalizeToken(left) === normalizeToken(right);
+
+const toCents = (value) => Math.round(roundMoney(value) * 100);
+const fromCents = (value) => roundMoney(Number(value || 0) / 100);
+
+const templateIdentityKey = ({ bokunProductId = "", bokunOptionId = "", pricingCategoryId = "" } = {}) =>
+  [bokunProductId, bokunOptionId, pricingCategoryId].map(normalizeToken).join("::");
+
+const mergeUniqueById = (items = [], idField = "id") => {
+  const map = new Map();
+  asArray(items).forEach((item) => {
+    const id = normalizeToken(item?.[idField] || item?.id || item?.pricingCategoryId || item?.categoryId);
+    if (!id || map.has(id)) return;
+    map.set(id, item);
+  });
+  return Array.from(map.values());
+};
+
+const extractPricingCategories = (product = {}, option = {}) => {
+  const raw = product.rawBokunProduct || {};
+  const candidates = [
+    ...asArray(product.pricingCategories),
+    ...asArray(product.priceCategories),
+    ...asArray(option.pricingCategories),
+    ...asArray(option.priceCategories),
+    ...asArray(raw.pricingCategories),
+    ...asArray(raw.priceCategories),
+    ...asArray(raw.ticketCategories),
+    ...asArray(raw?.activity?.pricingCategories)
+  ];
+
+  return mergeUniqueById(
+    candidates
+      .map((category) => {
+        const pricingCategoryId = normalizeToken(category?.pricingCategoryId || category?.categoryId || category?.id);
+        if (!pricingCategoryId) return null;
+        return {
+          pricingCategoryId,
+          title: normalizeToken(category?.title || category?.name || category?.label || pricingCategoryId),
+          ticketCategory: normalizeToken(category?.ticketCategory || category?.type || "")
+        };
+      })
+      .filter(Boolean),
+    "pricingCategoryId"
+  );
+};
+
+const firstImage = (record = {}) => normalizeToken(asArray(record.images)[0] || record.image || record.thumbnail || "");
+
+const buildBokunCostInventory = ({ productSnapshots = [], bookings = [] } = {}) => {
+  const productsById = new Map();
+  const optionsByKey = new Map();
+
+  const ensureProduct = (product = {}) => {
+    const bokunProductId = normalizeToken(product.bokunProductId);
+    if (!bokunProductId) return null;
+    const current = productsById.get(bokunProductId) || {
+      bokunProductId,
+      title: normalizeToken(product.title || product.productTitle || bokunProductId),
+      productSnapshotId: getId(product),
+      currency: normalizeCurrency(product.currency || product.pricingSnapshot?.currency || "USD"),
+      image: firstImage(product),
+      status: normalizeToken(product.status || "active"),
+      lastSyncedAt: toIso(product.lastSyncedAt || product.updatedAt),
+      optionCount: 0,
+      pricingCategories: []
+    };
+    current.title = normalizeToken(current.title || product.title || product.productTitle || bokunProductId);
+    current.currency = normalizeCurrency(current.currency || product.currency || product.pricingSnapshot?.currency || "USD");
+    current.image = current.image || firstImage(product);
+    current.lastSyncedAt = current.lastSyncedAt || toIso(product.lastSyncedAt || product.updatedAt);
+    current.pricingCategories = mergeUniqueById(
+      [...asArray(current.pricingCategories), ...extractPricingCategories(product)],
+      "pricingCategoryId"
+    );
+    productsById.set(bokunProductId, current);
+    return current;
+  };
+
+  const addOption = ({ product = {}, option = {}, source = "ProductSnapshot" }) => {
+    const parent = ensureProduct(product);
+    const bokunProductId = parent?.bokunProductId || normalizeToken(product.bokunProductId);
+    const bokunOptionId = normalizeToken(option.bokunOptionId || option.optionId || option.id);
+    if (!bokunProductId || !bokunOptionId) return;
+    const key = templateIdentityKey({ bokunProductId, bokunOptionId });
+    const existing = optionsByKey.get(key) || {
+      id: key,
+      bokunProductId,
+      bokunProductTitle: parent?.title || normalizeToken(product.title || product.productTitle || bokunProductId),
+      bokunProductImage: parent?.image || firstImage(product),
+      productSnapshotId: parent?.productSnapshotId || getId(product),
+      bokunOptionId,
+      bokunOptionTitle: normalizeToken(option.name || option.title || option.optionTitle || bokunOptionId),
+      currency: normalizeCurrency(option.currency || product.currency || product.pricingSnapshot?.currency || "USD"),
+      optionActive: option.active !== false,
+      productStatus: parent?.status || normalizeToken(product.status || "active"),
+      pricingCategories: [],
+      source,
+      sourceProductLastSyncedAt: parent?.lastSyncedAt || toIso(product.lastSyncedAt || product.updatedAt)
+    };
+
+    existing.bokunProductTitle = existing.bokunProductTitle || normalizeToken(product.title || product.productTitle || bokunProductId);
+    existing.bokunOptionTitle = existing.bokunOptionTitle || normalizeToken(option.name || option.title || option.optionTitle || bokunOptionId);
+    existing.bokunProductImage = existing.bokunProductImage || firstImage(product);
+    existing.pricingCategories = mergeUniqueById(
+      [
+        ...asArray(existing.pricingCategories),
+        ...asArray(parent?.pricingCategories),
+        ...extractPricingCategories(product, option),
+        ...asArray(product.priceCategoryParticipants).map((category) => ({
+          pricingCategoryId: normalizeToken(category.categoryId || category.pricingCategoryId),
+          title: normalizeToken(category.title || category.label || category.categoryId),
+          ticketCategory: normalizeToken(category.ticketCategory)
+        }))
+      ].filter((category) => normalizeToken(category?.pricingCategoryId)),
+      "pricingCategoryId"
+    );
+    optionsByKey.set(key, existing);
+    if (parent) parent.optionCount = new Set([...asArray(parent.optionIds), bokunOptionId]).size;
+    if (parent) parent.optionIds = [...new Set([...asArray(parent.optionIds), bokunOptionId])];
+  };
+
+  asArray(productSnapshots).forEach((product) => {
+    ensureProduct(product);
+    asArray(product.options)
+      .filter((option) => option?.active !== false)
+      .forEach((option) => addOption({ product, option, source: "ProductSnapshot" }));
+  });
+
+  asArray(bookings).forEach((booking) => {
+    addOption({
+      product: {
+        bokunProductId: booking.bokunProductId,
+        title: booking.productTitle,
+        currency: booking.currency || booking.pricingSnapshot?.currency,
+        status: booking.bookingStatus,
+        priceCategoryParticipants: booking.priceCategoryParticipants,
+        updatedAt: booking.updatedAt
+      },
+      option: {
+        bokunOptionId: booking.bokunOptionId,
+        name: booking.optionTitle,
+        active: true
+      },
+      source: "Booking"
+    });
+  });
+
+  const products = Array.from(productsById.values())
+    .map((product) => ({
+      ...product,
+      optionCount: asArray(product.optionIds).length,
+      optionIds: undefined
+    }))
+    .sort((left, right) => left.title.localeCompare(right.title));
+
+  const options = Array.from(optionsByKey.values()).sort(
+    (left, right) =>
+      left.bokunProductTitle.localeCompare(right.bokunProductTitle) ||
+      left.bokunOptionTitle.localeCompare(right.bokunOptionTitle)
+  );
+
+  return { products, options };
+};
+
+const lineAmountCents = (line = {}, context = {}) => {
+  const basis = normalizeCostBasis(line.basis);
+  const amountCents = toCents(line.amount);
+  const participants = Math.max(0, Number(context.participants || 0));
+  const adults = Math.max(0, Number(context.adults || 0));
+  const children = Math.max(0, Number(context.children || 0));
+  const vehicles = Math.max(0, Number(context.vehicles || 0));
+  const sellingAmountCents = toCents(context.sellingAmount);
+
+  if (basis === "fixed_per_booking" || basis === "per_group" || basis === "manual") return amountCents;
+  if (basis === "per_participant") return amountCents * participants;
+  if (basis === "per_adult") return amountCents * adults;
+  if (basis === "per_child") return amountCents * children;
+  if (basis === "per_vehicle") return amountCents * vehicles;
+  if (basis === "percentage") return Math.round((sellingAmountCents * toNumber(line.percentage)) / 100);
+  if (basis === "tiered") {
+    const tier = asArray(line.tiers).find((row) => {
+      const min = Math.max(0, Number(row.min || 0));
+      const max = row.max === null || row.max === undefined || row.max === "" ? Number.POSITIVE_INFINITY : Number(row.max);
+      return participants >= min && participants <= max;
+    });
+    return tier ? toCents(tier.amount) : 0;
+  }
+  return 0;
+};
+
+const normalizeCalculationContext = (context = {}) => {
+  const adults = Math.max(0, Number(context.adults ?? context.paxSummary?.adults ?? 0));
+  const children = Math.max(0, Number(context.children ?? context.paxSummary?.children ?? 0));
+  const participants = Math.max(0, Number(context.participants ?? context.paxSummary?.total ?? adults + children));
+  return {
+    adults,
+    children,
+    participants,
+    vehicles: Math.max(0, Number(context.vehicles ?? context.vehicleCount ?? 0)),
+    sellingAmount: roundMoney(context.sellingAmount ?? context.bookingRevenue ?? context.revenue ?? 0)
+  };
+};
+
+const calculateEstimatedBookingCost = ({ template = {}, costLines = null, context = {} } = {}) => {
+  const calculationContext = normalizeCalculationContext(context);
+  const lines = asArray(costLines || template.costLines);
+  const breakdown = lines.map((line, index) => {
+    const amount = fromCents(lineAmountCents(line, calculationContext));
+    return {
+      lineId: normalizeToken(line.lineId || `line-${index + 1}`),
+      category: normalizeToken(line.category || "Cost"),
+      basis: normalizeCostBasis(line.basis),
+      amount,
+      currency: normalizeCurrency(template.currency || context.currency || "USD")
+    };
+  });
+  const totalEstimatedCost = fromCents(breakdown.reduce((sum, line) => sum + toCents(line.amount), 0));
+
+  return {
+    totalEstimatedCost,
+    currency: normalizeCurrency(template.currency || context.currency || "USD"),
+    context: calculationContext,
+    breakdown
+  };
+};
+
+const normalizeCostLine = (line = {}, index = 0) => {
+  const basis = normalizeCostBasis(line.basis || "fixed_per_booking");
+  if (!COST_BASIS_TYPES.includes(basis)) {
+    throw new AppError("Cost basis is not supported for product cost templates.", 422, "COST_TEMPLATE_BASIS_INVALID", {
+      basis
+    });
+  }
+  const category = normalizeToken(line.category || line.expenseCategory || "");
+  if (!category) {
+    throw new AppError("Each cost line must include a cost category.", 422, "COST_TEMPLATE_LINE_CATEGORY_REQUIRED");
+  }
+
+  const amount = roundMoney(line.amount);
+  const percentage = roundMoney(line.percentage);
+  const tiers = asArray(line.tiers)
+    .map((tier) => ({
+      min: Math.max(0, Number(tier.min || 0)),
+      max: tier.max === null || tier.max === undefined || tier.max === "" ? null : Math.max(0, Number(tier.max || 0)),
+      amount: roundMoney(tier.amount)
+    }))
+    .filter((tier) => tier.amount > 0);
+
+  if (basis === "percentage" && percentage <= 0) {
+    throw new AppError("Percentage cost lines must include a positive percentage.", 422, "COST_TEMPLATE_PERCENTAGE_REQUIRED");
+  }
+  if (basis === "tiered" && !tiers.length) {
+    throw new AppError("Tiered cost lines must include at least one positive tier.", 422, "COST_TEMPLATE_TIER_REQUIRED");
+  }
+  if (!["percentage", "tiered"].includes(basis) && amount <= 0) {
+    throw new AppError("Cost line amount must be greater than zero.", 422, "COST_TEMPLATE_AMOUNT_REQUIRED");
+  }
+
+  return {
+    lineId: normalizeToken(line.lineId) || `line-${index + 1}`,
+    category,
+    expenseCategory: normalizeToken(line.expenseCategory || ""),
+    description: normalizeToken(line.description || ""),
+    basis,
+    appliesTo: normalizeToken(line.appliesTo || "all"),
+    amount,
+    percentage,
+    percentageBase: normalizeCostBasis(line.percentageBase || "selling_amount"),
+    tiers,
+    supplierId: line.supplierId || null,
+    notes: normalizeToken(line.notes || ""),
+    sortOrder: Number(line.sortOrder ?? index)
+  };
+};
+
+const normalizeTemplateForResponse = (template = {}, { includeCostLines = true, exampleContext = null } = {}) => {
+  const costLines = asArray(template.costLines).map((line, index) => normalizeCostLineForResponse(line, index));
+  const calculation = calculateEstimatedBookingCost({
+    template,
+    costLines,
+    context: exampleContext || { adults: 2, children: 0, participants: 2, vehicles: 1, sellingAmount: 0 }
+  });
+
+  return {
+    id: getId(template),
+    bokunProductId: normalizeToken(template.bokunProductId),
+    bokunProductTitle: normalizeToken(template.bokunProductTitle),
+    bokunProductImage: normalizeToken(template.bokunProductImage),
+    bokunOptionId: normalizeToken(template.bokunOptionId),
+    bokunOptionTitle: normalizeToken(template.bokunOptionTitle),
+    pricingCategoryId: normalizeToken(template.pricingCategoryId),
+    pricingCategoryTitle: normalizeToken(template.pricingCategoryTitle),
+    currency: normalizeCurrency(template.currency || "USD"),
+    name: normalizeToken(template.name),
+    description: normalizeToken(template.description),
+    internalNotes: normalizeToken(template.internalNotes),
+    status: normalizeTemplateStatus(template.status || "draft"),
+    version: Number(template.version || 1),
+    validFrom: toIso(template.validFrom),
+    validTo: toIso(template.validTo),
+    costLineCount: costLines.length,
+    estimatedCostExample: calculation.totalEstimatedCost,
+    createdAt: toIso(template.createdAt),
+    updatedAt: toIso(template.updatedAt),
+    archivedAt: toIso(template.archivedAt),
+    ...(includeCostLines ? { costLines } : {})
+  };
+};
+
+const normalizeCostLineForResponse = (line = {}, index = 0) => ({
+  lineId: normalizeToken(line.lineId || `line-${index + 1}`),
+  category: normalizeToken(line.category),
+  expenseCategory: normalizeToken(line.expenseCategory),
+  description: normalizeToken(line.description),
+  basis: normalizeCostBasis(line.basis),
+  appliesTo: normalizeToken(line.appliesTo || "all"),
+  amount: roundMoney(line.amount),
+  percentage: roundMoney(line.percentage),
+  percentageBase: normalizeCostBasis(line.percentageBase || "selling_amount"),
+  tiers: asArray(line.tiers).map((tier) => ({
+    min: Number(tier.min || 0),
+    max: tier.max === null || tier.max === undefined || tier.max === "" ? null : Number(tier.max || 0),
+    amount: roundMoney(tier.amount)
+  })),
+  supplierId: normalizeToken(line.supplierId),
+  notes: normalizeToken(line.notes),
+  sortOrder: Number(line.sortOrder ?? index)
+});
+
+const effectiveDateRange = ({ validFrom = null, validTo = null } = {}) => {
+  const start = toDate(validFrom) || new Date("1970-01-01T00:00:00.000Z");
+  const end = toDate(validTo) || OPEN_ENDED_DATE;
+  return { start, end };
+};
+
+const periodsOverlap = (left = {}, right = {}) => {
+  const leftRange = effectiveDateRange(left);
+  const rightRange = effectiveDateRange(right);
+  return leftRange.start <= rightRange.end && rightRange.start <= leftRange.end;
+};
+
+const isTemplateEffective = (template = {}, asOf = new Date()) => {
+  const { start, end } = effectiveDateRange(template);
+  const date = toDate(asOf) || new Date();
+  return start <= date && date <= end;
 };
 
 const buildMap = (records = [], keyFn) =>
@@ -369,12 +782,179 @@ const buildReconciliationIssues = ({ bookings = [], invoices = [], payments = []
 };
 
 const createBookingAccountingService = ({
+  AuditLogModel = AuditLog,
   BookingModel = Booking,
   BusinessExpenseModel = BusinessExpense,
   InvoiceModel = Invoice,
   PaymentModel = Payment,
+  ProductCostTemplateModel = ProductCostTemplate,
+  ProductSnapshotModel = ProductSnapshot,
   RefundModel = Refund
 } = {}) => {
+  const recordCostTemplateAudit = async ({
+    action,
+    template = null,
+    before = null,
+    after = null,
+    auth = {},
+    requestId = "",
+    reason = "",
+    metadata = {}
+  }) => {
+    if (!AuditLogModel?.create || !template) return null;
+    return AuditLogModel.create({
+      actorId: auth?.id || null,
+      actorRole: auth?.role || "system",
+      action,
+      entityType: "ProductCostTemplate",
+      entityId: getId(template) || normalizeToken(template.id),
+      reference: templateIdentityKey(template),
+      reason,
+      requestId,
+      correlationId: requestId,
+      before,
+      after,
+      metadata
+    });
+  };
+
+  const loadCostTemplateInventory = async () => {
+    const [productSnapshots, bookings] = await Promise.all([
+      findRows(ProductSnapshotModel, {}, { sort: { title: 1, updatedAt: -1 }, limit: MAX_LIMIT }),
+      findRows(
+        BookingModel,
+        {
+          bokunProductId: { $exists: true, $ne: "" },
+          bokunOptionId: { $exists: true, $ne: "" }
+        },
+        { sort: { updatedAt: -1, createdAt: -1 }, limit: MAX_LIMIT }
+      )
+    ]);
+    return buildBokunCostInventory({ productSnapshots, bookings });
+  };
+
+  const loadCostTemplates = async () =>
+    findRows(ProductCostTemplateModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: MAX_LIMIT });
+
+  const getInventoryOption = (inventory, bokunProductId, bokunOptionId) =>
+    asArray(inventory?.options).find(
+      (option) => sameToken(option.bokunProductId, bokunProductId) && sameToken(option.bokunOptionId, bokunOptionId)
+    ) || null;
+
+  const getPricingCategory = (option = {}, pricingCategoryId = "") => {
+    const safeId = normalizeToken(pricingCategoryId);
+    if (!safeId) return { pricingCategoryId: "", title: "" };
+    return (
+      asArray(option.pricingCategories).find((category) => sameToken(category.pricingCategoryId, safeId)) || {
+        pricingCategoryId: safeId,
+        title: safeId
+      }
+    );
+  };
+
+  const assertValidTemplateDates = ({ validFrom, validTo }) => {
+    const from = toDate(validFrom);
+    const to = toDate(validTo);
+    if (validFrom && !from) {
+      throw new AppError("Valid from date is not valid.", 422, "COST_TEMPLATE_VALID_FROM_INVALID");
+    }
+    if (validTo && !to) {
+      throw new AppError("Valid to date is not valid.", 422, "COST_TEMPLATE_VALID_TO_INVALID");
+    }
+    if (from && to && from > to) {
+      throw new AppError("Valid to date must be after valid from date.", 422, "COST_TEMPLATE_DATE_RANGE_INVALID");
+    }
+  };
+
+  const assertNoActiveOverlap = async ({ templateId = "", bokunProductId, bokunOptionId, pricingCategoryId = "", validFrom, validTo }) => {
+    const candidates = await findRows(
+      ProductCostTemplateModel,
+      {
+        bokunProductId: normalizeToken(bokunProductId),
+        bokunOptionId: normalizeToken(bokunOptionId),
+        pricingCategoryId: normalizeToken(pricingCategoryId),
+        status: "active"
+      },
+      { limit: MAX_LIMIT }
+    );
+    const conflicting = candidates.find(
+      (candidate) => !sameToken(getId(candidate), templateId) && periodsOverlap(candidate, { validFrom, validTo })
+    );
+    if (conflicting) {
+      throw new AppError(
+        "An active cost template already covers this Bókun product option and effective period.",
+        409,
+        "COST_TEMPLATE_ACTIVE_OVERLAP",
+        {
+          conflictingTemplateId: getId(conflicting),
+          bokunProductId: normalizeToken(bokunProductId),
+          bokunOptionId: normalizeToken(bokunOptionId),
+          pricingCategoryId: normalizeToken(pricingCategoryId)
+        }
+      );
+    }
+  };
+
+  const buildTemplatePayload = async (input = {}, { existing = null } = {}) => {
+    const inventory = await loadCostTemplateInventory();
+    const bokunProductId = normalizeToken(input.bokunProductId ?? existing?.bokunProductId);
+    const bokunOptionId = normalizeToken(input.bokunOptionId ?? existing?.bokunOptionId);
+    const option = getInventoryOption(inventory, bokunProductId, bokunOptionId);
+    const identityChanged =
+      !existing ||
+      !sameToken(existing.bokunProductId, bokunProductId) ||
+      !sameToken(existing.bokunOptionId, bokunOptionId);
+
+    if (!option && identityChanged) {
+      throw new AppError(
+        "Select a Bókun product option that exists in the synchronized product catalog.",
+        422,
+        "COST_TEMPLATE_BOKUN_OPTION_REQUIRED",
+        { bokunProductId, bokunOptionId }
+      );
+    }
+
+    const pricingCategory = getPricingCategory(option || {}, input.pricingCategoryId ?? existing?.pricingCategoryId);
+    const status = normalizeTemplateStatus(input.status ?? existing?.status ?? "draft");
+    if (!TEMPLATE_STATUSES.includes(status)) {
+      throw new AppError("Cost template status is not supported.", 422, "COST_TEMPLATE_STATUS_INVALID", { status });
+    }
+    const validFrom = input.validFrom !== undefined ? toDate(input.validFrom) : toDate(existing?.validFrom) || new Date();
+    const validTo = input.validTo !== undefined ? toDate(input.validTo) : toDate(existing?.validTo);
+    assertValidTemplateDates({ validFrom, validTo });
+
+    const costLines = asArray(input.costLines ?? existing?.costLines).map(normalizeCostLine);
+    if (!costLines.length) {
+      throw new AppError("Add at least one cost line before saving a cost template.", 422, "COST_TEMPLATE_LINES_REQUIRED");
+    }
+
+    return {
+      bokunProductId,
+      bokunProductTitle: option?.bokunProductTitle || normalizeToken(input.bokunProductTitle || existing?.bokunProductTitle || bokunProductId),
+      bokunProductImage: option?.bokunProductImage || normalizeToken(input.bokunProductImage || existing?.bokunProductImage || ""),
+      bokunOptionId,
+      bokunOptionTitle: option?.bokunOptionTitle || normalizeToken(input.bokunOptionTitle || existing?.bokunOptionTitle || bokunOptionId),
+      pricingCategoryId: pricingCategory.pricingCategoryId,
+      pricingCategoryTitle: normalizeToken(pricingCategory.title || input.pricingCategoryTitle || existing?.pricingCategoryTitle || ""),
+      currency: normalizeCurrency(input.currency || option?.currency || existing?.currency || "USD"),
+      name:
+        normalizeToken(input.name) ||
+        normalizeToken(existing?.name) ||
+        `${option?.bokunProductTitle || bokunProductId} - ${option?.bokunOptionTitle || bokunOptionId}`,
+      description: normalizeToken(input.description ?? existing?.description),
+      internalNotes: normalizeToken(input.internalNotes ?? existing?.internalNotes),
+      status,
+      validFrom,
+      validTo,
+      costLines,
+      source: {
+        productSnapshotId: normalizeToken(option?.source === "ProductSnapshot" ? option.productSnapshotId : ""),
+        productLastSyncedAt: toDate(option?.sourceProductLastSyncedAt),
+        identitySource: option?.source || existing?.source?.identitySource || "ProductSnapshot"
+      }
+    };
+  };
+
   const loadRefundRelations = async (refunds = []) => {
     const bookingIds = refunds.map((refund) => normalizeToken(refund.bookingId)).filter(Boolean);
     const paymentIds = refunds.map((refund) => normalizeToken(refund.paymentId)).filter(Boolean);
@@ -641,34 +1221,290 @@ const createBookingAccountingService = ({
     };
   };
 
-  const getCostTemplates = async () => ({
-    generatedAt: new Date().toISOString(),
-    configured: false,
-    templates: [],
-    costBasisTypes: [
-      "fixed_per_booking",
-      "per_participant",
-      "per_adult",
-      "per_child",
-      "per_vehicle",
-      "per_group",
-      "percentage",
-      "tiered",
-      "manual"
-    ],
-    controlledExpenseCategories: Object.values(EXPENSE_CATEGORY),
-    currentEvidenceSource: "booking-linked BusinessExpense records and reconciliation checks",
-    message: "No persistent ProductCostTemplate model is registered in this codebase."
-  });
+  const buildCostTemplateRows = ({ inventory, templates }) => {
+    const now = new Date();
+    return asArray(inventory.options).map((option) => {
+      const optionTemplates = asArray(templates)
+        .filter(
+          (template) =>
+            sameToken(template.bokunProductId, option.bokunProductId) &&
+            sameToken(template.bokunOptionId, option.bokunOptionId) &&
+            normalizeTemplateStatus(template.status) !== "archived"
+        )
+        .sort((left, right) => (toDate(right.updatedAt)?.getTime() || 0) - (toDate(left.updatedAt)?.getTime() || 0));
+      const activeTemplates = optionTemplates.filter(
+        (template) => normalizeTemplateStatus(template.status) === "active" && isTemplateEffective(template, now)
+      );
+      const primaryTemplate = activeTemplates[0] || optionTemplates[0] || null;
+      const costStatus = activeTemplates.length ? "costed" : "missing_cost";
+      const calculation = primaryTemplate
+        ? calculateEstimatedBookingCost({
+            template: primaryTemplate,
+            context: { adults: 2, children: 0, participants: 2, vehicles: 1, sellingAmount: 0 }
+          })
+        : null;
+
+      return {
+        id: option.id,
+        rowType: "bokun_option",
+        bokunProductId: option.bokunProductId,
+        bokunProductTitle: option.bokunProductTitle,
+        bokunProductImage: option.bokunProductImage,
+        bokunOptionId: option.bokunOptionId,
+        bokunOptionTitle: option.bokunOptionTitle,
+        pricingCategoryId: primaryTemplate?.pricingCategoryId || "",
+        pricingCategoryTitle:
+          primaryTemplate?.pricingCategoryTitle ||
+          (option.pricingCategories?.length > 1 ? "Multiple categories" : option.pricingCategories?.[0]?.title || ""),
+        currency: primaryTemplate?.currency || option.currency || "USD",
+        costStatus,
+        templateStatus: primaryTemplate ? normalizeTemplateStatus(primaryTemplate.status) : "missing_cost",
+        templateId: primaryTemplate ? getId(primaryTemplate) : "",
+        templateName: primaryTemplate?.name || "",
+        costBasis:
+          primaryTemplate?.costLines?.length
+            ? [...new Set(primaryTemplate.costLines.map((line) => normalizeCostBasis(line.basis)).filter(Boolean))].join(", ")
+            : "",
+        estimatedCostExample: calculation?.totalEstimatedCost ?? null,
+        costLineCount: primaryTemplate?.costLines?.length || 0,
+        activeTemplateCount: activeTemplates.length,
+        templateCount: optionTemplates.length,
+        lastUpdatedAt: primaryTemplate ? toIso(primaryTemplate.updatedAt || primaryTemplate.createdAt) : "",
+        source: option.source
+      };
+    });
+  };
+
+  const applyCostTemplateFilters = (rows = [], filters = {}) => {
+    const search = normalizeLower(filters.search);
+    const productId = normalizeToken(filters.productId || filters.bokunProductId);
+    const optionId = normalizeToken(filters.optionId || filters.bokunOptionId);
+    const costStatus = normalizeCostBasis(filters.costStatus || "");
+    const templateStatus = normalizeToken(filters.templateStatus || filters.status)
+      ? normalizeTemplateStatus(filters.templateStatus || filters.status)
+      : "";
+    const currency = normalizeToken(filters.currency) ? normalizeCurrency(filters.currency) : "";
+    const view = normalizeCostBasis(filters.view || filters.tab || "");
+
+    return asArray(rows).filter((row) => {
+      if (productId && !sameToken(row.bokunProductId, productId)) return false;
+      if (optionId && !sameToken(row.bokunOptionId, optionId)) return false;
+      if (costStatus && row.costStatus !== costStatus) return false;
+      if (templateStatus && row.templateStatus !== templateStatus) return false;
+      if (currency && normalizeCurrency(row.currency) !== currency) return false;
+      if (view === "costed" && row.costStatus !== "costed") return false;
+      if (["missing", "missing_cost"].includes(view) && row.costStatus !== "missing_cost") return false;
+      if (view === "inactive" && !["inactive", "archived"].includes(row.templateStatus)) return false;
+      if (search) {
+        const haystack = [
+          row.bokunProductId,
+          row.bokunProductTitle,
+          row.bokunOptionId,
+          row.bokunOptionTitle,
+          row.templateName,
+          row.costBasis,
+          row.pricingCategoryTitle
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(search)) return false;
+      }
+      return true;
+    });
+  };
+
+  const getCostTemplates = async (filters = {}) => {
+    const { page, limit, skip } = pagination({ ...filters, limit: filters.limit || DEFAULT_TEMPLATE_LIMIT });
+    const [inventory, templates] = await Promise.all([loadCostTemplateInventory(), loadCostTemplates()]);
+    const rows = buildCostTemplateRows({ inventory, templates });
+    const filteredRows = applyCostTemplateFilters(rows, filters);
+    const total = filteredRows.length;
+    const pagedRows = filteredRows.slice(skip, skip + limit);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    return {
+      generatedAt: new Date().toISOString(),
+      configured: true,
+      sourceOfTruth: {
+        productIdentity: "BOKUN_PRODUCT_SNAPSHOT",
+        costRules: "RISER_PRODUCT_COST_TEMPLATE"
+      },
+      summary: {
+        totalBokunProducts: inventory.products.length,
+        totalBokunOptions: inventory.options.length,
+        costedOptions: rows.filter((row) => row.costStatus === "costed").length,
+        missingCost: rows.filter((row) => row.costStatus === "missing_cost").length,
+        activeTemplates: templates.filter((template) => normalizeTemplateStatus(template.status) === "active").length,
+        inactiveTemplates: templates.filter((template) => ["inactive", "archived"].includes(normalizeTemplateStatus(template.status))).length
+      },
+      products: inventory.products,
+      options: inventory.options,
+      items: pagedRows,
+      templates: templates.map((template) => normalizeTemplateForResponse(template, { includeCostLines: false })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages
+      },
+      costBasisTypes: COST_BASIS_TYPES,
+      templateStatuses: TEMPLATE_STATUSES,
+      controlledExpenseCategories: Object.values(EXPENSE_CATEGORY)
+    };
+  };
+
+  const getCostTemplateById = async (templateId) => {
+    const template = await findByIdRow(ProductCostTemplateModel, templateId);
+    if (!template) throw new AppError("Product cost template was not found.", 404, "COST_TEMPLATE_NOT_FOUND");
+    return normalizeTemplateForResponse(template);
+  };
+
+  const createCostTemplate = async ({ payload = {}, auth = {}, requestId = "" } = {}) => {
+    const templatePayload = await buildTemplatePayload(payload);
+    if (templatePayload.status === "active") {
+      await assertNoActiveOverlap(templatePayload);
+    }
+    const actor = { id: auth?.id || "", role: auth?.role || "", email: auth?.email || "" };
+    const created = await createRow(ProductCostTemplateModel, {
+      ...templatePayload,
+      createdBy: actor,
+      updatedBy: actor
+    });
+    await recordCostTemplateAudit({
+      action: "product_cost_template_created",
+      template: created,
+      auth,
+      requestId,
+      reason: "Product cost template created from Bókun product option.",
+      after: normalizeTemplateForResponse(created)
+    });
+    return {
+      action: "created",
+      template: normalizeTemplateForResponse(created)
+    };
+  };
+
+  const updateCostTemplate = async ({ templateId, payload = {}, auth = {}, requestId = "" } = {}) => {
+    const existing = await findByIdRow(ProductCostTemplateModel, templateId);
+    if (!existing) throw new AppError("Product cost template was not found.", 404, "COST_TEMPLATE_NOT_FOUND");
+    const templatePayload = await buildTemplatePayload(payload, { existing });
+    if (templatePayload.status === "active") {
+      await assertNoActiveOverlap({ ...templatePayload, templateId });
+    }
+    const updated = await updateByIdRow(ProductCostTemplateModel, templateId, {
+      ...templatePayload,
+      version: Number(existing.version || 1) + 1,
+      updatedBy: { id: auth?.id || "", role: auth?.role || "", email: auth?.email || "" },
+      archivedAt: templatePayload.status === "archived" ? new Date() : null
+    });
+    await recordCostTemplateAudit({
+      action: "product_cost_template_updated",
+      template: updated,
+      auth,
+      requestId,
+      reason: "Product cost template updated.",
+      before: normalizeTemplateForResponse(existing),
+      after: normalizeTemplateForResponse(updated)
+    });
+    return {
+      action: "updated",
+      template: normalizeTemplateForResponse(updated)
+    };
+  };
+
+  const archiveCostTemplate = async ({ templateId, auth = {}, requestId = "", reason = "" } = {}) => {
+    const existing = await findByIdRow(ProductCostTemplateModel, templateId);
+    if (!existing) throw new AppError("Product cost template was not found.", 404, "COST_TEMPLATE_NOT_FOUND");
+    const updated = await updateByIdRow(ProductCostTemplateModel, templateId, {
+      status: "archived",
+      archivedAt: new Date(),
+      updatedBy: { id: auth?.id || "", role: auth?.role || "", email: auth?.email || "" }
+    });
+    await recordCostTemplateAudit({
+      action: "product_cost_template_archived",
+      template: updated,
+      auth,
+      requestId,
+      reason: reason || "Product cost template archived.",
+      before: normalizeTemplateForResponse(existing),
+      after: normalizeTemplateForResponse(updated)
+    });
+    return {
+      action: "archived",
+      template: normalizeTemplateForResponse(updated)
+    };
+  };
+
+  const previewCostTemplate = async ({ payload = {} } = {}) => {
+    let template = null;
+    if (payload.templateId) {
+      template = await findByIdRow(ProductCostTemplateModel, payload.templateId);
+      if (!template) throw new AppError("Product cost template was not found.", 404, "COST_TEMPLATE_NOT_FOUND");
+    }
+    const costLines = template ? template.costLines : asArray(payload.costLines).map(normalizeCostLine);
+    return calculateEstimatedBookingCost({
+      template: template || { currency: payload.currency || "USD", costLines },
+      costLines,
+      context: payload.context || payload
+    });
+  };
+
+  const resolveCostTemplate = async ({ booking = {}, asOfDate = new Date(), pricingCategoryId = "" } = {}) => {
+    const bokunProductId = normalizeToken(booking.bokunProductId);
+    const bokunOptionId = normalizeToken(booking.bokunOptionId);
+    if (!bokunProductId || !bokunOptionId) return { template: null, calculation: null };
+    const candidates = await findRows(
+      ProductCostTemplateModel,
+      {
+        bokunProductId,
+        bokunOptionId,
+        status: "active"
+      },
+      { sort: { validFrom: -1, updatedAt: -1 }, limit: MAX_LIMIT }
+    );
+    const categoryId = normalizeToken(pricingCategoryId || asArray(booking.priceCategoryParticipants)[0]?.categoryId || "");
+    const effective = candidates
+      .filter((template) => isTemplateEffective(template, asOfDate))
+      .sort((left, right) => {
+        const leftSpecific = sameToken(left.pricingCategoryId, categoryId) ? 1 : sameToken(left.pricingCategoryId, "") ? 0 : -1;
+        const rightSpecific = sameToken(right.pricingCategoryId, categoryId) ? 1 : sameToken(right.pricingCategoryId, "") ? 0 : -1;
+        return rightSpecific - leftSpecific || (toDate(right.validFrom)?.getTime() || 0) - (toDate(left.validFrom)?.getTime() || 0);
+      });
+    const template = effective[0] || null;
+    if (!template) return { template: null, calculation: null };
+    const calculation = calculateEstimatedBookingCost({
+      template,
+      context: {
+        adults: booking.paxSummary?.adults,
+        children: booking.paxSummary?.children,
+        participants: booking.paxSummary?.total,
+        vehicles: booking.assignment?.vehicles?.length || booking.vehicles || 0,
+        sellingAmount: booking.pricingSnapshot?.finalPayable ?? booking.amount,
+        currency: booking.currency
+      }
+    });
+    return {
+      template: normalizeTemplateForResponse(template),
+      calculation
+    };
+  };
 
   return {
+    archiveCostTemplate,
+    createCostTemplate,
     getCostTemplates,
+    getCostTemplateById,
     getDashboard,
     getProfitability,
     getReconciliation,
     listExpenses,
     listInvoices,
-    listRefunds
+    listRefunds,
+    previewCostTemplate,
+    resolveCostTemplate,
+    calculateEstimatedBookingCost
   };
 };
 

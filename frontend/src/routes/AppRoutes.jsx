@@ -118,6 +118,9 @@ const AppRoutes = () => {
         <Route path="/admin/booking-accounting/refunds" element={<AdminBookingAccountingPage />} />
         <Route path="/admin/booking-accounting/expenses" element={<AdminBookingAccountingPage />} />
         <Route path="/admin/booking-accounting/cost-templates" element={<AdminBookingAccountingPage />} />
+        <Route path="/admin/booking-accounting/cost-templates/new" element={<AdminBookingAccountingPage />} />
+        <Route path="/admin/booking-accounting/cost-templates/:templateId" element={<AdminBookingAccountingPage />} />
+        <Route path="/admin/booking-accounting/cost-templates/:templateId/edit" element={<AdminBookingAccountingPage />} />
         <Route path="/admin/booking-accounting/profitability" element={<AdminBookingAccountingPage />} />
         <Route path="/admin/booking-accounting/reconciliation" element={<AdminBookingAccountingPage />} />
         <Route

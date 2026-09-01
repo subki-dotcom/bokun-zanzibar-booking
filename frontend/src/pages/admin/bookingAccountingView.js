@@ -24,6 +24,21 @@ export const BOOKING_ACCOUNTING_VIEW_CONFIG = {
     eyebrow: "Booking Accounting",
     subtitle: "Controlled cost categories and supported cost basis rules for booking cost setup."
   },
+  "cost-template-new": {
+    title: "Create Cost Template",
+    eyebrow: "Booking Accounting / Cost Templates",
+    subtitle: "Select a Bókun product option and define estimated internal cost rules."
+  },
+  "cost-template-edit": {
+    title: "Edit Cost Template",
+    eyebrow: "Booking Accounting / Cost Templates",
+    subtitle: "Update internal cost rules without changing Bókun product identity."
+  },
+  "cost-template-view": {
+    title: "Cost Template",
+    eyebrow: "Booking Accounting / Cost Templates",
+    subtitle: "Review the current cost rules and estimated booking cost."
+  },
   profitability: {
     title: "Booking Profitability",
     eyebrow: "Booking Accounting",
@@ -37,6 +52,10 @@ export const BOOKING_ACCOUNTING_VIEW_CONFIG = {
 };
 
 export const bookingAccountingModeFromPath = (pathname = "") => {
-  const tail = String(pathname || "").split("/").filter(Boolean).pop();
+  const parts = String(pathname || "").split("/").filter(Boolean);
+  const tail = parts[parts.length - 1];
+  if (parts.includes("cost-templates") && tail === "new") return "cost-template-new";
+  if (parts.includes("cost-templates") && tail === "edit") return "cost-template-edit";
+  if (parts.includes("cost-templates") && tail !== "cost-templates") return "cost-template-view";
   return BOOKING_ACCOUNTING_VIEW_CONFIG[tail] ? tail : "dashboard";
 };

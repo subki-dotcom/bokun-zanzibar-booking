@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import {
   ADMIN_PERMISSIONS,
   filterAdminNavigation,
-  getAdminRouteMeta
+  getAdminRouteMeta,
+  isAdminNavItemActive
 } from "../src/config/adminNavigation.js";
 
 const findById = (items, id) => {
@@ -56,7 +57,7 @@ test("CRM navigation is available to admins with CRM permissions", () => {
   assert.equal(getAdminRouteMeta("/admin/crm/follow-ups").label, "Follow-ups");
   assert.equal(getAdminRouteMeta("/admin/crm/tasks").label, "Tasks");
   assert.equal(getAdminRouteMeta("/admin/crm/conversations").label, "Conversations");
-  assert.equal(getAdminRouteMeta("/admin/crm/b2b-agents").label, "B2B / Agents");
+  assert.equal(getAdminRouteMeta("/admin/crm/b2b-agents").label, "Agents / B2B");
   assert.equal(getAdminRouteMeta("/admin/crm/lost-opportunities").label, "Lost Opportunities");
   assert.equal(getAdminRouteMeta("/admin/crm/reports").label, "CRM Reports");
   assert.equal(getAdminRouteMeta("/admin/crm/controls").label, "CRM Controls");
@@ -91,10 +92,22 @@ test("Bokun Sync navigation does not show planned Soon badges", () => {
     permissions: []
   });
 
-  const operations = findById(navigation, "operations");
-  const bokunSync = findById(operations?.children || [], "operations-bokun-sync");
-  assert.ok(bokunSync);
-  for (const child of bokunSync.children || []) {
-    assert.equal(child.status, "active", `${child.id} should be active`);
-  }
+  const integrations = findById(navigation, "integrations");
+  assert.ok(integrations);
+  assert.ok(findById(integrations.children || [], "bokun-import"));
+  assert.ok(findById(integrations.children || [], "bokun-manual-sync"));
+  assert.ok(findById(integrations.children || [], "bokun-single-sync"));
+  assert.ok(findById(integrations.children || [], "bokun-sync-logs"));
+});
+
+test("admin navigation highlights nested routes from their parent path", () => {
+  const navigation = filterAdminNavigation(undefined, {
+    role: "staff",
+    permissions: []
+  });
+  const bookings = findById(navigation, "operations-bookings");
+
+  assert.equal(isAdminNavItemActive(bookings, "/admin/operations/bookings"), true);
+  assert.equal(isAdminNavItemActive(bookings, "/admin/operations/bookings/ABC-123/edit"), true);
+  assert.equal(isAdminNavItemActive(bookings, "/admin/operations/booking-requests"), false);
 });

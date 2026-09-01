@@ -34,10 +34,67 @@ const expenses = asyncHandler(async (req, res) => {
   });
 });
 
-const costTemplates = asyncHandler(async (_req, res) => {
-  const data = await bookingAccountingService.getCostTemplates();
+const costTemplates = asyncHandler(async (req, res) => {
+  const data = await bookingAccountingService.getCostTemplates(req.validated?.query || {});
   return successResponse(res, {
     message: "Booking accounting cost controls fetched",
+    data
+  });
+});
+
+const costTemplate = asyncHandler(async (req, res) => {
+  const data = await bookingAccountingService.getCostTemplateById(req.validated.params.templateId);
+  return successResponse(res, {
+    message: "Booking accounting cost template fetched",
+    data
+  });
+});
+
+const createCostTemplate = asyncHandler(async (req, res) => {
+  const data = await bookingAccountingService.createCostTemplate({
+    payload: req.validated.body,
+    auth: req.auth,
+    requestId: req.requestId
+  });
+  return successResponse(res, {
+    message: "Booking accounting cost template created",
+    data,
+    statusCode: 201
+  });
+});
+
+const updateCostTemplate = asyncHandler(async (req, res) => {
+  const data = await bookingAccountingService.updateCostTemplate({
+    templateId: req.validated.params.templateId,
+    payload: req.validated.body,
+    auth: req.auth,
+    requestId: req.requestId
+  });
+  return successResponse(res, {
+    message: "Booking accounting cost template updated",
+    data
+  });
+});
+
+const archiveCostTemplate = asyncHandler(async (req, res) => {
+  const data = await bookingAccountingService.archiveCostTemplate({
+    templateId: req.validated.params.templateId,
+    auth: req.auth,
+    requestId: req.requestId,
+    reason: req.validated.body?.reason || ""
+  });
+  return successResponse(res, {
+    message: "Booking accounting cost template archived",
+    data
+  });
+});
+
+const previewCostTemplate = asyncHandler(async (req, res) => {
+  const data = await bookingAccountingService.previewCostTemplate({
+    payload: req.validated.body
+  });
+  return successResponse(res, {
+    message: "Booking accounting cost template preview calculated",
     data
   });
 });
@@ -59,11 +116,16 @@ const reconciliation = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  archiveCostTemplate,
+  createCostTemplate,
+  costTemplate,
   costTemplates,
   dashboard,
   expenses,
   invoices,
+  previewCostTemplate,
   profitability,
   reconciliation,
-  refunds
+  refunds,
+  updateCostTemplate
 };

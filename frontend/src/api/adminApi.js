@@ -106,6 +106,11 @@ export const retryBokunFromPaymentReconciliation = async (bookingReference, book
   return response.data.data;
 };
 
+export const syncBokunProductCatalog = async () => {
+  const response = await axiosClient.post("/tours/sync");
+  return response.data.data;
+};
+
 export const fetchBokunSyncStatus = async () => {
   const response = await axiosClient.get("/bokun/admin/sync-status");
   return response.data.data;
@@ -444,8 +449,33 @@ export const fetchBookingAccountingExpenses = async (params = {}) => {
   return response.data.data;
 };
 
-export const fetchBookingAccountingCostTemplates = async () => {
-  const response = await axiosClient.get("/admin/booking-accounting/cost-templates");
+export const fetchBookingAccountingCostTemplates = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/booking-accounting/cost-templates${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchBookingAccountingCostTemplate = async (templateId) => {
+  const response = await axiosClient.get(`/admin/booking-accounting/cost-templates/${encodeURIComponent(templateId)}`);
+  return response.data.data;
+};
+
+export const createBookingAccountingCostTemplate = async (payload = {}) => {
+  const response = await axiosClient.post("/admin/booking-accounting/cost-templates", payload);
+  return response.data.data;
+};
+
+export const updateBookingAccountingCostTemplate = async (templateId, payload = {}) => {
+  const response = await axiosClient.put(`/admin/booking-accounting/cost-templates/${encodeURIComponent(templateId)}`, payload);
+  return response.data.data;
+};
+
+export const archiveBookingAccountingCostTemplate = async (templateId, payload = {}) => {
+  const response = await axiosClient.post(`/admin/booking-accounting/cost-templates/${encodeURIComponent(templateId)}/archive`, payload);
+  return response.data.data;
+};
+
+export const previewBookingAccountingCostTemplate = async (payload = {}) => {
+  const response = await axiosClient.post("/admin/booking-accounting/cost-templates/preview", payload);
   return response.data.data;
 };
 
