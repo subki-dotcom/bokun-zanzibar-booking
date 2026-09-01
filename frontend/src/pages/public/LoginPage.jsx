@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
+import { warmAuthBackend } from "../../api/authApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import useAuth from "../../hooks/useAuth";
 
@@ -16,11 +17,18 @@ const LoginPage = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [slowServer, setSlowServer] = useState(false);
+
+  useEffect(() => {
+    warmAuthBackend();
+  }, []);
 
   const onSubmit = async (event) => {
     event.preventDefault();
     setError("");
     setLoading(true);
+    setSlowServer(false);
+    const slowServerTimer = window.setTimeout(() => setSlowServer(true), 7000);
 
     try {
       const result = await login(form);
@@ -29,6 +37,8 @@ const LoginPage = () => {
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {
+      window.clearTimeout(slowServerTimer);
+      setSlowServer(false);
       setLoading(false);
     }
   };
@@ -77,8 +87,13 @@ const LoginPage = () => {
                 </Form.Group>
 
                 <Button type="submit" className="premium-btn text-white w-100" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
+                  {loading ? (slowServer ? "Waking secure server..." : "Signing in...") : "Sign In"}
                 </Button>
+                {loading && slowServer ? (
+                  <p className="text-muted small text-center mt-3 mb-0">
+                    The secure API is starting up. Please keep this page open.
+                  </p>
+                ) : null}
                 <div className="text-center mt-3">
                   <Link to="/agent-register" className="text-muted">
                     Apply for an agent account
