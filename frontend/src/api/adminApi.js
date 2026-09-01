@@ -106,8 +106,12 @@ export const retryBokunFromPaymentReconciliation = async (bookingReference, book
   return response.data.data;
 };
 
-export const syncBokunProductCatalog = async ({ timeout = 180000 } = {}) => {
-  const response = await axiosClient.post("/tours/sync", {}, { timeout });
+export const syncBokunProductCatalog = async ({ timeout = 15000 } = {}) => {
+  const response = await axiosClient.post(
+    "/admin/booking-accounting/cost-templates/sync-bokun-products",
+    {},
+    { timeout }
+  );
   return response.data.data;
 };
 

@@ -21,6 +21,11 @@ router.get("/invoices", validateRequest(bookingAccountingQuerySchema), bookingAc
 router.get("/refunds", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.refunds);
 router.get("/expenses", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.expenses);
 router.get("/cost-templates", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.costTemplates);
+router.post(
+  "/cost-templates/sync-bokun-products",
+  authorizePermission(PERMISSIONS.BOOKING_ACCOUNTING_WRITE),
+  bookingAccountingController.syncCostTemplateBokunProducts
+);
 router.post("/cost-templates/preview", validateRequest(costTemplatePreviewSchema), bookingAccountingController.previewCostTemplate);
 router.get("/cost-templates/:templateId", validateRequest(costTemplateParamsSchema), bookingAccountingController.costTemplate);
 router.post(

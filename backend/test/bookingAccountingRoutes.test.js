@@ -171,3 +171,66 @@ test("booking accounting cost template writes require write permission", async (
     await close(server);
   }
 });
+
+test("booking accounting cost template Bokun product sync starts asynchronously and requires write permission", async () => {
+  let restoreUser = withMockUser("staff");
+  const originalSync = bookingAccountingService.startCostTemplateBokunProductSync;
+  let capturedArgs = null;
+  let calls = 0;
+  bookingAccountingService.startCostTemplateBokunProductSync = async (args) => {
+    capturedArgs = args;
+    calls += 1;
+    return {
+      syncStatus: "started",
+      syncInProgress: true,
+      currentCatalog: {
+        summary: {
+          totalBokunProducts: 38,
+          totalBokunOptions: 245
+        },
+        items: []
+      }
+    };
+  };
+  const server = await listen();
+
+  try {
+    const { port } = server.address();
+    const forbidden = await fetch(
+      `http://127.0.0.1:${port}/api/admin/booking-accounting/cost-templates/sync-bokun-products`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token()}`
+        }
+      }
+    );
+
+    assert.equal(forbidden.status, 403);
+    assert.equal(calls, 0);
+
+    restoreUser();
+    restoreUser = withMockUser("admin");
+
+    const response = await fetch(
+      `http://127.0.0.1:${port}/api/admin/booking-accounting/cost-templates/sync-bokun-products`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token()}`
+        }
+      }
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 202);
+    assert.equal(body.success, true);
+    assert.equal(body.data.syncStatus, "started");
+    assert.equal(body.data.currentCatalog.summary.totalBokunProducts, 38);
+    assert.equal(capturedArgs.auth.role, "admin");
+  } finally {
+    bookingAccountingService.startCostTemplateBokunProductSync = originalSync;
+    restoreUser();
+    await close(server);
+  }
+});

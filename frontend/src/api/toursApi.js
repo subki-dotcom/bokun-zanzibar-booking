@@ -143,8 +143,8 @@ export const searchToursByAvailability = async ({ travelDate, pax, slugs } = {})
   return response.data.data || [];
 };
 
-export const syncTours = async () => {
-  const response = await axiosClient.post("/tours/sync");
+export const syncTours = async ({ timeout = 180000 } = {}) => {
+  const response = await axiosClient.post("/tours/sync", {}, { timeout });
   clearToursCache();
   return response.data.data;
 };

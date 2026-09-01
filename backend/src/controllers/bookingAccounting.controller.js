@@ -50,6 +50,18 @@ const costTemplate = asyncHandler(async (req, res) => {
   });
 });
 
+const syncCostTemplateBokunProducts = asyncHandler(async (req, res) => {
+  const data = await bookingAccountingService.startCostTemplateBokunProductSync({
+    auth: req.auth,
+    requestId: req.requestId
+  });
+  return successResponse(res, {
+    message: "Bokun product sync started for cost templates",
+    data,
+    statusCode: 202
+  });
+});
+
 const createCostTemplate = asyncHandler(async (req, res) => {
   const data = await bookingAccountingService.createCostTemplate({
     payload: req.validated.body,
@@ -127,5 +139,6 @@ module.exports = {
   profitability,
   reconciliation,
   refunds,
+  syncCostTemplateBokunProducts,
   updateCostTemplate
 };

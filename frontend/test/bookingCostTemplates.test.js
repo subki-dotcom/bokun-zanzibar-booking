@@ -34,9 +34,12 @@ test("Booking cost template sync reloads all synced options instead of leaving f
 });
 
 test("Booking cost template sync handles long Bokun refreshes without hiding local catalog", () => {
-  assert.ok(adminApiSource.includes("timeout = 180000"));
-  assert.ok(adminApiSource.includes('axiosClient.post("/tours/sync", {}, { timeout })'));
+  assert.ok(adminApiSource.includes("timeout = 15000"));
+  assert.ok(adminApiSource.includes('"/admin/booking-accounting/cost-templates/sync-bokun-products"'));
+  assert.equal(adminApiSource.includes('axiosClient.post("/tours/sync"'), false);
   assert.ok(axiosClientSource.includes("timeout: isTimeout || isBokunTimeout"));
+  assert.ok(source.includes("syncInBackground"));
+  assert.ok(source.includes("in the background"));
   assert.ok(source.includes("syncResult.timedOut"));
   assert.ok(source.includes("Showing the latest local Bokun catalog now"));
 });

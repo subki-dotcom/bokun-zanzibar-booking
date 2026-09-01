@@ -7,6 +7,8 @@ const ProductSnapshot = require("../../models/ProductSnapshot");
 const Refund = require("../../models/Refund");
 const { EXPENSE_CATEGORY } = require("../../accounting/constants");
 const AuditLog = require("../../models/AuditLog");
+const logger = require("../../config/logger");
+const toursService = require("../tours");
 const AppError = require("../../utils/AppError");
 
 const DEFAULT_LIMIT = 50;
@@ -789,8 +791,13 @@ const createBookingAccountingService = ({
   PaymentModel = Payment,
   ProductCostTemplateModel = ProductCostTemplate,
   ProductSnapshotModel = ProductSnapshot,
-  RefundModel = Refund
+  RefundModel = Refund,
+  ToursService = toursService
 } = {}) => {
+  let productCatalogSyncInFlight = null;
+  let productCatalogSyncStartedAt = null;
+  let lastProductCatalogSyncResult = null;
+
   const recordCostTemplateAudit = async ({
     action,
     template = null,
@@ -1355,6 +1362,70 @@ const createBookingAccountingService = ({
     };
   };
 
+  const startCostTemplateBokunProductSync = async ({ auth = {}, requestId = "" } = {}) => {
+    const currentCatalog = await getCostTemplates({ page: 1, limit: DEFAULT_TEMPLATE_LIMIT });
+    const now = new Date();
+
+    if (productCatalogSyncInFlight) {
+      return {
+        syncStatus: "already_running",
+        syncInProgress: true,
+        syncStartedAt: productCatalogSyncStartedAt ? productCatalogSyncStartedAt.toISOString() : null,
+        lastResult: lastProductCatalogSyncResult,
+        currentCatalog
+      };
+    }
+
+    productCatalogSyncStartedAt = now;
+    const actor = {
+      id: auth?.id || null,
+      role: auth?.role || "system",
+      source: "booking_accounting_cost_templates"
+    };
+
+    productCatalogSyncInFlight = Promise.resolve()
+      .then(() => ToursService.syncProducts(requestId, actor))
+      .then((result) => {
+        lastProductCatalogSyncResult = {
+          status: "success",
+          completedAt: new Date().toISOString(),
+          syncedCount: Number(result?.syncedCount || 0),
+          syncLogId: result?.syncLogId || null
+        };
+        logger.info("Cost template Bokun product sync finished", {
+          requestId,
+          syncedCount: lastProductCatalogSyncResult.syncedCount,
+          syncLogId: lastProductCatalogSyncResult.syncLogId
+        });
+        return result;
+      })
+      .catch((error) => {
+        lastProductCatalogSyncResult = {
+          status: "failed",
+          completedAt: new Date().toISOString(),
+          error: error.message
+        };
+        logger.warn("Cost template Bokun product sync failed", {
+          requestId,
+          error: error.message,
+          code: error.code,
+          statusCode: error.statusCode
+        });
+        return lastProductCatalogSyncResult;
+      })
+      .finally(() => {
+        productCatalogSyncInFlight = null;
+      });
+
+    return {
+      syncStatus: "started",
+      syncInProgress: true,
+      syncStartedAt: productCatalogSyncStartedAt.toISOString(),
+      lastResult: lastProductCatalogSyncResult,
+      currentCatalog
+    };
+  };
+
   const getCostTemplateById = async (templateId) => {
     const template = await findByIdRow(ProductCostTemplateModel, templateId);
     if (!template) throw new AppError("Product cost template was not found.", 404, "COST_TEMPLATE_NOT_FOUND");
@@ -1504,6 +1575,7 @@ const createBookingAccountingService = ({
     listRefunds,
     previewCostTemplate,
     resolveCostTemplate,
+    startCostTemplateBokunProductSync,
     calculateEstimatedBookingCost
   };
 };

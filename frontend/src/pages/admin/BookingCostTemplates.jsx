@@ -387,10 +387,14 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
     setSyncResult(null);
     try {
       const result = await syncBokunProductCatalog();
-      setSyncResult(result);
       const nextFilters = { ...defaultDashboardFilters(), limit: filters.limit };
       setFilters(nextFilters);
-      await load(nextFilters);
+      if (result?.currentCatalog) {
+        setData(result.currentCatalog);
+      } else {
+        await load(nextFilters);
+      }
+      setSyncResult(result);
     } catch (err) {
       const isTimeout = err?.timeout || /too long|timeout|timed out/i.test(err?.message || "");
       if (isTimeout) {
@@ -414,6 +418,8 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
   const pages = Array.from({ length: Math.min(5, pagination.totalPages || 1) }, (_, index) => index + 1);
   const totalProducts = safeNumber(data?.summary?.totalBokunProducts);
   const totalOptions = safeNumber(data?.summary?.totalBokunOptions);
+  const syncedCatalogProductCount = safeNumber(syncResult?.currentCatalog?.summary?.totalBokunProducts ?? syncResult?.syncedCount);
+  const syncInBackground = ["started", "already_running"].includes(String(syncResult?.syncStatus || ""));
   const visibleItems = asArray(data?.items);
   const hasActiveFilters = Boolean(
     filters.search ||
@@ -452,7 +458,9 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
         <Alert variant={syncResult.timedOut ? "info" : "success"} className="border-0 cost-template-sync-alert">
           {syncResult.timedOut
             ? "Bokun product sync is still taking longer than expected. Showing the latest local Bokun catalog now; use Refresh Data in a moment to check for newly synced options."
-            : `Bokun product sync completed. ${safeNumber(syncResult.syncedCount)} products were refreshed from Bokun. Showing all synced options now.`}
+            : syncInBackground
+              ? `Bokun product sync ${syncResult.syncStatus === "already_running" ? "is already running" : "started"} in the background. Showing ${syncedCatalogProductCount} local Bokun products now; use Refresh Data in a moment to check for newly synced options.`
+              : `Bokun product sync completed. ${safeNumber(syncResult.syncedCount)} products were refreshed from Bokun. Showing all synced options now.`}
         </Alert>
       ) : null}
       {!loading && totalProducts === 0 ? (

@@ -120,7 +120,10 @@ const existingCostTemplates = [
   }
 ];
 
-const createService = ({ ProductCostTemplateModel = createModel(existingCostTemplates, "template") } = {}) =>
+const createService = ({
+  ProductCostTemplateModel = createModel(existingCostTemplates, "template"),
+  ToursService = { syncProducts: async () => ({ syncedCount: 0, syncLogId: null }) }
+} = {}) =>
   createBookingAccountingService({
     AuditLogModel: createModel([], "audit"),
     BookingModel: createModel([
@@ -243,7 +246,8 @@ const createService = ({ ProductCostTemplateModel = createModel(existingCostTemp
       }
     ]),
     ProductCostTemplateModel,
-    ProductSnapshotModel: createModel(productSnapshots, "product")
+    ProductSnapshotModel: createModel(productSnapshots, "product"),
+    ToursService
   });
 
 test("booking accounting refund list keeps Pesapal request acceptance separate from confirmed refund", async () => {
@@ -306,6 +310,43 @@ test("booking accounting cost template dashboard joins Bokun options with active
   assert.equal(result.items.find((item) => item.bokunOptionId === "OPT-SHARED").costStatus, "missing_cost");
   assert.ok(result.costBasisTypes.includes("per_participant"));
   assert.ok(result.controlledExpenseCategories.includes("OTHER_OPERATING_EXPENSE"));
+});
+
+test("booking accounting cost template Bokun sync returns current catalog and prevents duplicate in-flight sync", async () => {
+  let calls = 0;
+  let releaseSync;
+  const syncHold = new Promise((resolve) => {
+    releaseSync = resolve;
+  });
+  const service = createService({
+    ToursService: {
+      syncProducts: async () => {
+        calls += 1;
+        await syncHold;
+        return { syncedCount: 38, syncLogId: "sync-log-1" };
+      }
+    }
+  });
+
+  const first = await service.startCostTemplateBokunProductSync({
+    auth: { id: "admin-1", role: "admin" },
+    requestId: "req-1"
+  });
+  const second = await service.startCostTemplateBokunProductSync({
+    auth: { id: "admin-1", role: "admin" },
+    requestId: "req-2"
+  });
+
+  assert.equal(first.syncStatus, "started");
+  assert.equal(first.syncInProgress, true);
+  assert.equal(first.currentCatalog.summary.totalBokunProducts, 1);
+  assert.equal(second.syncStatus, "already_running");
+  assert.equal(second.syncInProgress, true);
+  assert.equal(second.currentCatalog.summary.totalBokunOptions, 2);
+  assert.equal(calls, 1);
+
+  releaseSync();
+  await new Promise((resolve) => setImmediate(resolve));
 });
 
 test("booking accounting cost template calculation supports core cost bases", async () => {
