@@ -355,8 +355,10 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
         view: requestFilters.view === "all" ? "" : requestFilters.view
       });
       setData(response);
+      return response;
     } catch (err) {
       setError(err.message || "Failed to load cost templates.");
+      return null;
     } finally {
       setLoading(false);
     }
@@ -390,7 +392,19 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
       setFilters(nextFilters);
       await load(nextFilters);
     } catch (err) {
-      setError(err.message || "Bokun product sync failed. Check Bókun credentials and integration logs.");
+      const isTimeout = err?.timeout || /too long|timeout|timed out/i.test(err?.message || "");
+      if (isTimeout) {
+        const nextFilters = { ...defaultDashboardFilters(), limit: filters.limit };
+        setFilters(nextFilters);
+        await load(nextFilters);
+        setError("");
+        setSyncResult({
+          timedOut: true,
+          syncedCount: safeNumber(data?.summary?.totalBokunProducts)
+        });
+      } else {
+        setError(err.message || "Bokun product sync failed. Check Bókun credentials and integration logs.");
+      }
     } finally {
       setSyncingProducts(false);
     }
@@ -435,8 +449,10 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
 
       <ErrorAlert error={error} />
       {syncResult ? (
-        <Alert variant="success" className="border-0 cost-template-sync-alert">
-          Bokun product sync completed. {safeNumber(syncResult.syncedCount)} products were refreshed from Bokun. Showing all synced options now.
+        <Alert variant={syncResult.timedOut ? "info" : "success"} className="border-0 cost-template-sync-alert">
+          {syncResult.timedOut
+            ? "Bokun product sync is still taking longer than expected. Showing the latest local Bokun catalog now; use Refresh Data in a moment to check for newly synced options."
+            : `Bokun product sync completed. ${safeNumber(syncResult.syncedCount)} products were refreshed from Bokun. Showing all synced options now.`}
         </Alert>
       ) : null}
       {!loading && totalProducts === 0 ? (

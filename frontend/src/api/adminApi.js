@@ -106,8 +106,8 @@ export const retryBokunFromPaymentReconciliation = async (bookingReference, book
   return response.data.data;
 };
 
-export const syncBokunProductCatalog = async () => {
-  const response = await axiosClient.post("/tours/sync");
+export const syncBokunProductCatalog = async ({ timeout = 180000 } = {}) => {
+  const response = await axiosClient.post("/tours/sync", {}, { timeout });
   return response.data.data;
 };
 

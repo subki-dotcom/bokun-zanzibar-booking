@@ -147,6 +147,8 @@ axiosClient.interceptors.response.use(
       status: error.response?.status || 500,
       code: responseCode,
       requestId: error.response?.data?.meta?.requestId || "",
+      timeout: isTimeout || isBokunTimeout,
+      network: isNetwork || isBokunUpstreamUnavailable,
       message: isBokunTimeout
         ? "Live availability from Bokun is taking longer than expected. Please try again."
         : isBokunUpstreamUnavailable

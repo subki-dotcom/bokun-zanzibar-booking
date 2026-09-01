@@ -7,6 +7,8 @@ const source = fs.readFileSync(
   path.join(process.cwd(), "src", "pages", "admin", "BookingCostTemplates.jsx"),
   "utf8"
 );
+const adminApiSource = fs.readFileSync(path.join(process.cwd(), "src", "api", "adminApi.js"), "utf8");
+const axiosClientSource = fs.readFileSync(path.join(process.cwd(), "src", "api", "axiosClient.js"), "utf8");
 
 test("Booking cost template UI uses the real admin API helpers", () => {
   assert.ok(source.includes("fetchBookingAccountingCostTemplates"));
@@ -29,4 +31,12 @@ test("Booking cost template sync reloads all synced options instead of leaving f
   assert.ok(source.includes("Showing all synced options now."));
   assert.ok(source.includes("Show all synced options"));
   assert.ok(source.includes("filtersHideSyncedOptions"));
+});
+
+test("Booking cost template sync handles long Bokun refreshes without hiding local catalog", () => {
+  assert.ok(adminApiSource.includes("timeout = 180000"));
+  assert.ok(adminApiSource.includes('axiosClient.post("/tours/sync", {}, { timeout })'));
+  assert.ok(axiosClientSource.includes("timeout: isTimeout || isBokunTimeout"));
+  assert.ok(source.includes("syncResult.timedOut"));
+  assert.ok(source.includes("Showing the latest local Bokun catalog now"));
 });
