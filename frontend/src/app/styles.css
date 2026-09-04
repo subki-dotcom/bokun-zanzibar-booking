@@ -15044,6 +15044,790 @@ textarea.form-control {
   }
 }
 
+.management-accounting-page {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  min-width: 0;
+  color: #071739;
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.management-accounting-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+.management-accounting-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: #49638f;
+  font-size: 0.84rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.management-accounting-header h1 {
+  margin: 0;
+  color: #071739;
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.management-accounting-header p {
+  max-width: 760px;
+  margin: 0.3rem 0 0;
+  color: #49638f;
+  font-size: 0.94rem;
+}
+
+.management-accounting-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.management-accounting-actions label,
+.management-accounting-actions input,
+.management-accounting-actions button,
+.management-accounting-card header button,
+.management-accounting-period-pill {
+  min-height: 42px;
+  border: 1px solid #d8e2f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #071739;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.management-accounting-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0 0.75rem;
+}
+
+.management-accounting-actions select,
+.management-accounting-actions input {
+  min-width: 0;
+}
+
+.management-accounting-actions select {
+  min-width: 170px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: 0;
+}
+
+.management-accounting-actions input {
+  padding: 0 0.75rem;
+}
+
+.management-accounting-actions button,
+.management-accounting-card header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding-inline: 1rem;
+}
+
+.management-accounting-actions button:focus-visible,
+.management-accounting-card header button:focus-visible,
+.management-accounting-actions label:focus-within {
+  outline: 3px solid rgba(0, 150, 154, 0.22);
+  outline-offset: 2px;
+}
+
+.management-accounting-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.management-accounting-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.management-accounting-kpi,
+.management-accounting-card {
+  min-width: 0;
+  border: 1px solid #dfe7f2;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+}
+
+.management-accounting-kpi {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.9rem;
+  min-height: 126px;
+  padding: 1rem;
+}
+
+.management-accounting-kpi-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.management-accounting-kpi-main > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.management-accounting-kpi-main span:not(.management-accounting-kpi-icon) {
+  color: #234064;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.management-accounting-kpi-main strong {
+  color: #071739;
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1.1;
+  word-break: break-word;
+}
+
+.management-accounting-kpi-main small {
+  color: #49638f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.management-accounting-kpi-main small.is-up {
+  color: #059669;
+}
+
+.management-accounting-kpi-main small.is-down {
+  color: #dc2626;
+}
+
+.management-accounting-kpi-main small.is-neutral {
+  color: #64748b;
+}
+
+.management-accounting-kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  color: #007b83;
+  background: #dff8f5;
+  font-size: 1.45rem;
+}
+
+.management-accounting-kpi.is-blue .management-accounting-kpi-icon {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.management-accounting-kpi.is-red .management-accounting-kpi-icon {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.management-accounting-kpi.is-purple .management-accounting-kpi-icon {
+  color: #7c3aed;
+  background: #ede9fe;
+}
+
+.management-accounting-sparkline {
+  flex: 0 0 92px;
+  width: 92px;
+  height: 42px;
+}
+
+.management-accounting-sparkline path {
+  fill: none;
+  stroke: #00969a;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.management-accounting-sparkline.is-blue path {
+  stroke: #1d7ff0;
+}
+
+.management-accounting-sparkline.is-red path {
+  stroke: #ff4d57;
+}
+
+.management-accounting-sparkline.is-purple path {
+  stroke: #8b5cf6;
+}
+
+.management-accounting-analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr) minmax(280px, 1fr);
+  gap: 0.9rem;
+}
+
+.management-accounting-transaction-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.management-accounting-card {
+  padding: 1rem;
+}
+
+.management-accounting-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.management-accounting-card h3 {
+  margin: 0;
+  color: #071739;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.management-accounting-period-pill,
+.management-accounting-card header button {
+  padding: 0.45rem 0.8rem;
+}
+
+.management-accounting-card header button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.management-accounting-line-chart {
+  min-width: 0;
+}
+
+.management-accounting-line-chart svg {
+  width: 100%;
+  height: 270px;
+}
+
+.management-accounting-line-chart line {
+  stroke: #e7edf6;
+  stroke-width: 1;
+}
+
+.management-accounting-line-chart text {
+  fill: #234064;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.management-accounting-line-chart path {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.management-accounting-line-chart .is-income {
+  stroke: #10b981;
+}
+
+.management-accounting-line-chart .is-expense {
+  stroke: #ff4d57;
+}
+
+.management-accounting-line-chart .is-income-fill {
+  fill: rgba(16, 185, 129, 0.12);
+  stroke: none;
+}
+
+.management-accounting-line-chart .is-expense-fill {
+  fill: rgba(255, 77, 87, 0.1);
+  stroke: none;
+}
+
+.management-accounting-line-chart circle {
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.management-accounting-line-chart .is-income-dot {
+  fill: #10b981;
+}
+
+.management-accounting-line-chart .is-expense-dot {
+  fill: #ff4d57;
+}
+
+.management-accounting-chart-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #49638f;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.management-accounting-donut-wrap {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.management-accounting-donut {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 168px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.management-accounting-donut::after {
+  content: "";
+  position: absolute;
+  inset: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e2e8f0;
+}
+
+.management-accounting-donut > div {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  gap: 0.2rem;
+  text-align: center;
+}
+
+.management-accounting-donut strong {
+  color: #071739;
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.management-accounting-donut span {
+  color: #49638f;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.management-accounting-breakdown-list {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.management-accounting-breakdown-list div {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 0.45rem 0.55rem;
+  align-items: center;
+}
+
+.management-accounting-breakdown-list i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--dot-color, #00969a);
+}
+
+.management-accounting-breakdown-list span {
+  min-width: 0;
+  color: #234064;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.management-accounting-breakdown-list strong {
+  color: #071739;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.management-accounting-breakdown-list small {
+  grid-column: 2 / 4;
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.management-accounting-table-wrap {
+  overflow-x: auto;
+}
+
+.management-accounting-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+}
+
+.management-accounting-table th,
+.management-accounting-table td {
+  padding: 0.75rem 0.7rem;
+  border-bottom: 1px solid #edf2f7;
+  vertical-align: middle;
+  color: #153157;
+  font-size: 0.82rem;
+}
+
+.management-accounting-table th {
+  color: #234064;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.management-accounting-table strong {
+  color: #007b83;
+}
+
+.management-accounting-truncate {
+  max-width: 240px;
+}
+
+.management-accounting-truncate span {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.management-accounting-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #475569;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.management-accounting-status.is-approved,
+.management-accounting-status.is-paid {
+  background: #dcfce7;
+  color: #047857;
+}
+
+.management-accounting-status.is-draft,
+.management-accounting-status.is-submitted {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.management-accounting-status.is-rejected,
+.management-accounting-status.is-void {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.management-accounting-mobile-transactions {
+  display: none;
+}
+
+.management-accounting-source-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.management-accounting-source-list > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #e7edf6;
+  border-radius: 10px;
+  background: #fbfdff;
+}
+
+.management-accounting-source-list svg {
+  color: #10b981;
+}
+
+.management-accounting-source-list strong,
+.management-accounting-source-list span {
+  display: block;
+  min-width: 0;
+}
+
+.management-accounting-source-list strong {
+  color: #071739;
+  font-size: 0.86rem;
+}
+
+.management-accounting-source-list span {
+  color: #49638f;
+  font-size: 0.8rem;
+}
+
+.management-accounting-source-list em {
+  color: #071739;
+  font-size: 0.82rem;
+  font-style: normal;
+  font-weight: 800;
+  text-align: right;
+}
+
+.management-accounting-empty,
+.management-accounting-skeleton {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  text-align: center;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.management-accounting-empty {
+  gap: 0.45rem;
+}
+
+.management-accounting-skeleton {
+  align-content: center;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.management-accounting-skeleton span {
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e2e8f0 0%, #f8fafc 45%, #e2e8f0 100%);
+  background-size: 220% 100%;
+  animation: dashboardSkeleton 1.4s ease-in-out infinite;
+}
+
+.management-accounting-skeleton span:nth-child(2) {
+  width: 70%;
+}
+
+.management-accounting-skeleton span:nth-child(3) {
+  width: 86%;
+}
+
+.management-accounting-skeleton.is-chart,
+.management-accounting-skeleton.is-donut {
+  min-height: 270px;
+}
+
+@media (max-width: 1399.98px) {
+  .management-accounting-analytics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-accounting-analytics-grid .is-wide {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .management-accounting-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-accounting-transaction-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .management-accounting-page {
+    gap: 0.85rem;
+  }
+
+  .management-accounting-header {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .management-accounting-header h1 {
+    font-size: 1.45rem;
+  }
+
+  .management-accounting-header p {
+    font-size: 0.86rem;
+  }
+
+  .management-accounting-actions {
+    justify-content: stretch;
+  }
+
+  .management-accounting-actions label,
+  .management-accounting-actions input,
+  .management-accounting-actions button {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .management-accounting-actions select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .management-accounting-kpi-grid,
+  .management-accounting-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .management-accounting-kpi {
+    align-items: center;
+    min-height: 112px;
+  }
+
+  .management-accounting-kpi-main strong {
+    font-size: 1.45rem;
+  }
+
+  .management-accounting-sparkline {
+    flex-basis: 74px;
+    width: 74px;
+  }
+
+  .management-accounting-card {
+    padding: 0.85rem;
+  }
+
+  .management-accounting-card header {
+    align-items: flex-start;
+  }
+
+  .management-accounting-line-chart svg {
+    height: 250px;
+  }
+
+  .management-accounting-chart-axis {
+    flex-wrap: wrap;
+  }
+
+  .management-accounting-donut-wrap {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .management-accounting-donut {
+    width: 156px;
+  }
+
+  .management-accounting-breakdown-list {
+    width: 100%;
+  }
+
+  .management-accounting-table-wrap {
+    display: none;
+  }
+
+  .management-accounting-mobile-transactions {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .management-accounting-mobile-transactions article {
+    display: grid;
+    gap: 0.55rem;
+    min-width: 0;
+    padding: 0.8rem;
+    border: 1px solid #e7edf6;
+    border-radius: 10px;
+    background: #fbfdff;
+  }
+
+  .management-accounting-mobile-transactions header,
+  .management-accounting-mobile-transactions div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .management-accounting-mobile-transactions p {
+    margin: 0;
+    color: #153157;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .management-accounting-mobile-transactions span {
+    color: #49638f;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .management-accounting-mobile-transactions strong {
+    color: #071739;
+    font-size: 0.9rem;
+  }
+
+  .management-accounting-source-list > div {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .management-accounting-source-list em {
+    grid-column: 2;
+    text-align: left;
+  }
+}
+
+@media (max-width: 360px) {
+  .management-accounting-kpi {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .management-accounting-sparkline {
+    width: 100%;
+    flex-basis: 36px;
+  }
+
+  .management-accounting-card header {
+    flex-direction: column;
+  }
+
+  .management-accounting-card header > * {
+    width: 100%;
+  }
+}
+
 /* Booking Accounting Dashboard */
 .booking-accounting-dashboard {
   display: grid;

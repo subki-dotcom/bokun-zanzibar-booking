@@ -65,6 +65,46 @@ const numberOrZero = (value) => {
 
 const toApiMoney = (value) => Number(toDecimal(value || 0).toFixed(2));
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const INCOME_LABELS = Object.freeze({
+  [POSTING_TYPE.BOOKING_NET_CONTRIBUTION]: "Booking Contribution",
+  [POSTING_TYPE.OTHER_BUSINESS_INCOME]: "Other Income"
+});
+
+const EXPENSE_CATEGORY_LABELS = Object.freeze({
+  [EXPENSE_CATEGORY.OFFICE_RENT]: "Office & Admin",
+  [EXPENSE_CATEGORY.SALARIES]: "Salaries & Wages",
+  [EXPENSE_CATEGORY.INTERNET]: "Office & Admin",
+  [EXPENSE_CATEGORY.TELEPHONE]: "Office & Admin",
+  [EXPENSE_CATEGORY.ELECTRICITY]: "Office & Admin",
+  [EXPENSE_CATEGORY.WATER]: "Office & Admin",
+  [EXPENSE_CATEGORY.MARKETING]: "Marketing",
+  [EXPENSE_CATEGORY.ADVERTISING]: "Marketing",
+  [EXPENSE_CATEGORY.SOFTWARE]: "Office & Admin",
+  [EXPENSE_CATEGORY.BANK_CHARGES]: "Bank Charges",
+  [EXPENSE_CATEGORY.INSURANCE]: "Other Expenses",
+  [EXPENSE_CATEGORY.GOVERNMENT_FEES]: "Other Expenses",
+  [EXPENSE_CATEGORY.TAXES]: "Other Expenses",
+  [EXPENSE_CATEGORY.PROFESSIONAL_FEES]: "Office & Admin",
+  [EXPENSE_CATEGORY.OFFICE_SUPPLIES]: "Office & Admin",
+  [EXPENSE_CATEGORY.VEHICLE_OVERHEAD]: "Vehicle Costs",
+  [EXPENSE_CATEGORY.MAINTENANCE]: "Vehicle Costs",
+  [EXPENSE_CATEGORY.TRAVEL]: "Travel",
+  [EXPENSE_CATEGORY.STAFF_WELFARE]: "Salaries & Wages",
+  [EXPENSE_CATEGORY.TRAINING]: "Salaries & Wages",
+  [EXPENSE_CATEGORY.EQUIPMENT]: "Other Expenses",
+  [EXPENSE_CATEGORY.OTHER_OPERATING_EXPENSE]: "Operating Expenses"
+});
+
+const POSTING_TYPE_LABELS = Object.freeze({
+  [POSTING_TYPE.BOOKING_NET_CONTRIBUTION]: "Booking Net Contribution",
+  [POSTING_TYPE.OTHER_BUSINESS_INCOME]: "Other Business Income",
+  [POSTING_TYPE.OPERATING_EXPENSE]: "Operating Expenses",
+  [POSTING_TYPE.PAYROLL_EXPENSE]: "Salaries & Wages",
+  [POSTING_TYPE.OTHER_COMPANY_EXPENSE]: "Other Expenses"
+});
+
 const paymentIdentity = (payment = {}) =>
   normalizeToken(payment.intentId || payment.providerTransactionId || payment.orderTrackingId || payment._id);
 
@@ -163,6 +203,118 @@ const buildPostingKey = ({ accountingScope, sourceModule, sourceReference, posti
     .join(":");
 
 const isCountedStatus = (status = "") => COUNTED_FINANCIAL_STATUSES.includes(String(status || "").toUpperCase());
+
+const startOfUtcDay = (value = new Date()) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return new Date();
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+};
+
+const endOfUtcDay = (value = new Date()) => new Date(startOfUtcDay(value).getTime() + DAY_MS - 1);
+
+const startOfUtcMonth = (value = new Date()) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return startOfUtcDay(new Date());
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+};
+
+const endOfUtcMonth = (value = new Date()) => {
+  const start = startOfUtcMonth(value);
+  return new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1) - 1);
+};
+
+const startOfUtcQuarter = (value = new Date()) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return startOfUtcMonth(new Date());
+  const quarterMonth = Math.floor(date.getUTCMonth() / 3) * 3;
+  return new Date(Date.UTC(date.getUTCFullYear(), quarterMonth, 1));
+};
+
+const endOfUtcQuarter = (value = new Date()) => {
+  const start = startOfUtcQuarter(value);
+  return new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 3, 1) - 1);
+};
+
+const startOfUtcYear = (value = new Date()) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return startOfUtcMonth(new Date());
+  return new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+};
+
+const endOfUtcYear = (value = new Date()) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return endOfUtcMonth(new Date());
+  return new Date(Date.UTC(date.getUTCFullYear() + 1, 0, 1) - 1);
+};
+
+const parsePeriodDate = (value, fallback = null, { endOfDay = false } = {}) => {
+  if (!value) return fallback;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(value));
+  return dateOnly ? (endOfDay ? endOfUtcDay(parsed) : startOfUtcDay(parsed)) : parsed;
+};
+
+const resolveFoundationPeriod = ({ fromDate = "", toDate = "", dateRange = "", nowDate = new Date() } = {}) => {
+  const nowDay = startOfUtcDay(nowDate);
+  const key = String(dateRange || "").trim().toLowerCase();
+  let start = parsePeriodDate(fromDate, null);
+  let end = parsePeriodDate(toDate, null, { endOfDay: true });
+  let label = "Custom Range";
+
+  if (!start || !end) {
+    if (key === "today") {
+      start = nowDay;
+      end = endOfUtcDay(nowDay);
+      label = "Today";
+    } else if (key === "yesterday") {
+      start = new Date(nowDay.getTime() - DAY_MS);
+      end = endOfUtcDay(start);
+      label = "Yesterday";
+    } else if (key === "last_7_days" || key === "last7days") {
+      start = new Date(nowDay.getTime() - 6 * DAY_MS);
+      end = endOfUtcDay(nowDay);
+      label = "Last 7 Days";
+    } else if (key === "last_month") {
+      start = startOfUtcMonth(new Date(Date.UTC(nowDay.getUTCFullYear(), nowDay.getUTCMonth() - 1, 1)));
+      end = endOfUtcMonth(start);
+      label = "Last Month";
+    } else if (key === "this_quarter" || key === "quarter") {
+      start = startOfUtcQuarter(nowDay);
+      end = endOfUtcQuarter(nowDay);
+      label = "This Quarter";
+    } else if (key === "this_year" || key === "year") {
+      start = startOfUtcYear(nowDay);
+      end = endOfUtcYear(nowDay);
+      label = "This Year";
+    } else {
+      start = startOfUtcMonth(nowDay);
+      end = endOfUtcMonth(nowDay);
+      label = "This Month";
+    }
+  }
+
+  if (start && end && start > end) {
+    const previousStart = start;
+    start = end;
+    end = previousStart;
+  }
+
+  const durationMs = Math.max(DAY_MS - 1, end.getTime() - start.getTime());
+  const previousEnd = new Date(start.getTime() - 1);
+  const previousStart = new Date(previousEnd.getTime() - durationMs);
+
+  return {
+    dateRange: key || "this_month",
+    label,
+    fromDate: start.toISOString(),
+    toDate: end.toISOString(),
+    previous: {
+      fromDate: previousStart.toISOString(),
+      toDate: previousEnd.toISOString()
+    }
+  };
+};
 
 const buildBusinessIncomeReference = (nowDate = new Date()) =>
   `BI-${nowDate.toISOString().slice(0, 10).replace(/-/g, "")}-${uuidv4().slice(0, 8).toUpperCase()}`;
@@ -812,6 +964,195 @@ const buildDateRangeQuery = ({ fromDate = "", toDate = "", field = "transactionD
   return Object.keys(range).length ? { [field]: range } : {};
 };
 
+const isIncomePosting = (posting = {}) =>
+  [POSTING_TYPE.BOOKING_NET_CONTRIBUTION, POSTING_TYPE.OTHER_BUSINESS_INCOME].includes(posting.postingType);
+
+const isExpensePosting = (posting = {}) =>
+  [POSTING_TYPE.OPERATING_EXPENSE, POSTING_TYPE.PAYROLL_EXPENSE, POSTING_TYPE.OTHER_COMPANY_EXPENSE].includes(posting.postingType);
+
+const postingAmount = (posting = {}) => moneyOrZero(posting.baseCurrencyAmount ?? posting.amount);
+
+const postingCurrency = (posting = {}) => firstCurrency(posting.baseCurrency, posting.currency, "USD");
+
+const percentageChange = (current = 0, previous = 0) => {
+  const currentDecimal = toDecimal(current || 0);
+  const previousDecimal = toDecimal(previous || 0);
+  if (previousDecimal.isZero()) return currentDecimal.isZero() ? 0 : null;
+  return Number(currentDecimal.minus(previousDecimal).dividedBy(previousDecimal).times(100).toFixed(1));
+};
+
+const bucketLabel = (date, bucket = "day") => {
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return "";
+  const month = parsed.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+  if (bucket === "month") return `${month} ${parsed.getUTCFullYear()}`;
+  if (bucket === "week") return `Week ${Math.ceil(parsed.getUTCDate() / 7)}`;
+  return `${String(parsed.getUTCDate()).padStart(2, "0")} ${month}`;
+};
+
+const bucketKey = (date, bucket = "day") => {
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return "";
+  if (bucket === "month") {
+    return `${parsed.getUTCFullYear()}-${String(parsed.getUTCMonth() + 1).padStart(2, "0")}`;
+  }
+  if (bucket === "week") {
+    const weekStart = startOfUtcDay(parsed);
+    weekStart.setUTCDate(weekStart.getUTCDate() - weekStart.getUTCDay());
+    return weekStart.toISOString().slice(0, 10);
+  }
+  return parsed.toISOString().slice(0, 10);
+};
+
+const chooseBucket = ({ fromDate = "", toDate = "" } = {}) => {
+  const start = new Date(fromDate);
+  const end = new Date(toDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "day";
+  const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / DAY_MS));
+  if (days > 370) return "month";
+  if (days > 62) return "week";
+  return "day";
+};
+
+const summarizePostings = (postings = []) => {
+  const bookingContributionRows = postings.filter((posting) => posting.postingType === POSTING_TYPE.BOOKING_NET_CONTRIBUTION);
+  const otherIncomeRows = postings.filter((posting) => posting.postingType === POSTING_TYPE.OTHER_BUSINESS_INCOME);
+  const expenseRows = postings.filter(isExpensePosting);
+  const bookingContribution = sumMoney(bookingContributionRows, postingAmount);
+  const otherBusinessIncome = sumMoney(otherIncomeRows, postingAmount);
+  const companyExpenses = sumMoney(expenseRows, postingAmount);
+  const companyContributionRevenue = add(bookingContribution, otherBusinessIncome);
+  const companyNetProfit = subtract(companyContributionRevenue, companyExpenses);
+
+  return {
+    bookingContributionRows,
+    otherIncomeRows,
+    expenseRows,
+    totals: {
+      bookingNetContribution: toApiMoney(bookingContribution),
+      otherBusinessIncome: toApiMoney(otherBusinessIncome),
+      companyContributionRevenue: toApiMoney(companyContributionRevenue),
+      companyExpenses: toApiMoney(companyExpenses),
+      companyNetProfit: toApiMoney(companyNetProfit)
+    }
+  };
+};
+
+const buildKpi = ({ id, label, value, previousValue, currency, detail = "", tone = "teal", sparkline = [] } = {}) => ({
+  id,
+  label,
+  value: toApiMoney(value || 0),
+  currency,
+  detail,
+  tone,
+  changePercent: percentageChange(value || 0, previousValue || 0),
+  sparkline: sparkline.map((point) => Number(toDecimal(point || 0).toFixed(2)))
+});
+
+const buildBreakdown = (rows = [], { total = 0, mapper = () => "Other" } = {}) => {
+  const byLabel = new Map();
+  rows.forEach((row) => {
+    const label = mapper(row) || "Other";
+    const current = byLabel.get(label) || new Decimal(0);
+    byLabel.set(label, current.plus(toDecimal(postingAmount(row))));
+  });
+  const totalDecimal = toDecimal(total || 0);
+  return Array.from(byLabel.entries())
+    .map(([label, amount]) => ({
+      label,
+      amount: Number(amount.toFixed(2)),
+      percentage: totalDecimal.isZero() ? 0 : Number(amount.dividedBy(totalDecimal).times(100).toFixed(1))
+    }))
+    .sort((left, right) => right.amount - left.amount);
+};
+
+const buildTrend = (postings = [], period = {}) => {
+  const bucket = chooseBucket(period);
+  const byBucket = new Map();
+  postings.forEach((posting) => {
+    const date = posting.transactionDate || posting.createdAt;
+    const key = bucketKey(date, bucket);
+    if (!key) return;
+    const existing = byBucket.get(key) || {
+      key,
+      label: bucketLabel(date, bucket),
+      income: new Decimal(0),
+      expenses: new Decimal(0),
+      netProfit: new Decimal(0)
+    };
+    if (isIncomePosting(posting)) existing.income = existing.income.plus(toDecimal(postingAmount(posting)));
+    if (isExpensePosting(posting)) existing.expenses = existing.expenses.plus(toDecimal(postingAmount(posting)));
+    existing.netProfit = existing.income.minus(existing.expenses);
+    byBucket.set(key, existing);
+  });
+  return Array.from(byBucket.values())
+    .sort((left, right) => String(left.key).localeCompare(String(right.key)))
+    .map((point) => ({
+      key: point.key,
+      label: point.label,
+      income: Number(point.income.toFixed(2)),
+      expenses: Number(point.expenses.toFixed(2)),
+      netProfit: Number(point.netProfit.toFixed(2))
+    }));
+};
+
+const recentPostingRow = (posting = {}) => {
+  const category =
+    posting.postingType === POSTING_TYPE.OTHER_BUSINESS_INCOME
+      ? posting.sourceSnapshot?.incomeCategory
+      : posting.sourceSnapshot?.category;
+  return {
+    id: posting.id || posting._id || posting.postingKey,
+    date: posting.transactionDate || null,
+    reference: posting.sourceReference || posting.bookingReference || posting.postingKey,
+    category: category || POSTING_TYPE_LABELS[posting.postingType] || posting.postingType,
+    categoryLabel: posting.postingType === POSTING_TYPE.BOOKING_NET_CONTRIBUTION
+      ? "Booking Contribution"
+      : EXPENSE_CATEGORY_LABELS[category] || POSTING_TYPE_LABELS[posting.postingType] || String(category || "").replaceAll("_", " "),
+    description: posting.description || "",
+    amount: toApiMoney(postingAmount(posting)),
+    currency: postingCurrency(posting),
+    status: posting.status,
+    postingType: posting.postingType
+  };
+};
+
+const buildRecentRows = (rows = [], limit = 5) =>
+  rows
+    .slice()
+    .sort((left, right) => new Date(right.transactionDate || 0) - new Date(left.transactionDate || 0))
+    .slice(0, limit)
+    .map(recentPostingRow);
+
+const buildCurrencySummary = (postings = []) => {
+  const currencies = new Set(postings.map(postingCurrency).filter(Boolean));
+  return {
+    primaryCurrency: currencies.values().next().value || "USD",
+    currencies: Array.from(currencies),
+    warning: currencies.size > 1
+      ? "Multiple accounting currencies are present. Amounts use each posting's base currency without synthetic FX conversion."
+      : ""
+  };
+};
+
+const buildSourceStrategy = () => ({
+  bookingAccountingIntegration: {
+    label: "Booking Accounting Integration",
+    description: "Booking net contribution feeds Business Accounting through source-linked postings.",
+    value: "Enabled"
+  },
+  revenueDuplicationProtection: {
+    label: "Revenue Duplication Protection",
+    description: "Booking revenue is not counted twice as manual business income.",
+    value: "Enabled"
+  },
+  countedTransactionStatuses: {
+    label: "Counted Transaction Statuses",
+    description: "Only approved and paid business accounting postings are included.",
+    value: COUNTED_FINANCIAL_STATUSES.join(", ")
+  }
+});
+
 const createBusinessAccountingService = ({
   AccountingPostingModel = AccountingPosting,
   AuditLogModel = AuditLog,
@@ -1349,23 +1690,27 @@ const createBusinessAccountingService = ({
     return { action: "updated", posting: normalizePostingForApi(updated) };
   };
 
-  const getFoundationSummary = async ({ fromDate = "", toDate = "" } = {}) => {
+  const getFoundationSummary = async ({ fromDate = "", toDate = "", dateRange = "" } = {}) => {
+    const period = resolveFoundationPeriod({ fromDate, toDate, dateRange, nowDate: now() });
     const query = {
       accountingScope: ACCOUNTING_SCOPE.BUSINESS,
       status: { $in: COUNTED_FINANCIAL_STATUSES },
-      ...buildDateRangeQuery({ fromDate, toDate })
+      ...buildDateRangeQuery({ fromDate: period.fromDate, toDate: period.toDate })
+    };
+    const previousQuery = {
+      accountingScope: ACCOUNTING_SCOPE.BUSINESS,
+      status: { $in: COUNTED_FINANCIAL_STATUSES },
+      ...buildDateRangeQuery(period.previous)
     };
     const postings = asArray(await leanMaybe(AccountingPostingModel.find(query)));
-    const bookingContributionRows = postings.filter((posting) => posting.postingType === POSTING_TYPE.BOOKING_NET_CONTRIBUTION);
-    const otherIncomeRows = postings.filter((posting) => posting.postingType === POSTING_TYPE.OTHER_BUSINESS_INCOME);
-    const expenseRows = postings.filter((posting) =>
-      [POSTING_TYPE.OPERATING_EXPENSE, POSTING_TYPE.PAYROLL_EXPENSE, POSTING_TYPE.OTHER_COMPANY_EXPENSE].includes(posting.postingType)
-    );
-    const bookingContribution = sumMoney(bookingContributionRows, (posting) => moneyOrZero(posting.baseCurrencyAmount ?? posting.amount));
-    const otherBusinessIncome = sumMoney(otherIncomeRows, (posting) => moneyOrZero(posting.baseCurrencyAmount ?? posting.amount));
-    const companyExpenses = sumMoney(expenseRows, (posting) => moneyOrZero(posting.baseCurrencyAmount ?? posting.amount));
-    const companyContributionRevenue = add(bookingContribution, otherBusinessIncome);
-    const companyNetProfit = subtract(companyContributionRevenue, companyExpenses);
+    const previousPostings = asArray(await leanMaybe(AccountingPostingModel.find(previousQuery)));
+    const summary = summarizePostings(postings);
+    const previousSummary = summarizePostings(previousPostings);
+    const trend = buildTrend(postings, period);
+    const previousTrend = buildTrend(previousPostings, period.previous);
+    const currencySummary = buildCurrencySummary(postings);
+    const currency = currencySummary.primaryCurrency;
+    const sparklineFor = (key) => trend.map((point) => point[key] || 0);
 
     return {
       reportLabel: "Management Business Accounting Foundation",
@@ -1376,15 +1721,79 @@ const createBusinessAccountingService = ({
         bookingRevenueIsNotDuplicated: true,
         countedStatuses: COUNTED_FINANCIAL_STATUSES
       },
-      totals: {
-        bookingNetContribution: toApiMoney(bookingContribution),
-        otherBusinessIncome: toApiMoney(otherBusinessIncome),
-        companyContributionRevenue: toApiMoney(companyContributionRevenue),
-        companyExpenses: toApiMoney(companyExpenses),
-        companyNetProfit: toApiMoney(companyNetProfit)
+      sourceStrategy: buildSourceStrategy(),
+      period,
+      currency,
+      currencySummary,
+      totals: summary.totals,
+      previousTotals: previousSummary.totals,
+      kpis: {
+        bookingNetContribution: buildKpi({
+          id: "bookingNetContribution",
+          label: "Booking Net Contribution",
+          value: summary.totals.bookingNetContribution,
+          previousValue: previousSummary.totals.bookingNetContribution,
+          currency,
+          detail: `${summary.bookingContributionRows.length} contribution postings`,
+          tone: "green",
+          sparkline: sparklineFor("income")
+        }),
+        otherBusinessIncome: buildKpi({
+          id: "otherBusinessIncome",
+          label: "Other Business Income",
+          value: summary.totals.otherBusinessIncome,
+          previousValue: previousSummary.totals.otherBusinessIncome,
+          currency,
+          detail: "Counted non-booking income",
+          tone: "blue",
+          sparkline: sparklineFor("income")
+        }),
+        companyExpenses: buildKpi({
+          id: "companyExpenses",
+          label: "Company Expenses",
+          value: summary.totals.companyExpenses,
+          previousValue: previousSummary.totals.companyExpenses,
+          currency,
+          detail: "Operating and company-wide expenses",
+          tone: "red",
+          sparkline: sparklineFor("expenses")
+        }),
+        companyNetProfit: buildKpi({
+          id: "companyNetProfit",
+          label: "Company Net Profit",
+          value: summary.totals.companyNetProfit,
+          previousValue: previousSummary.totals.companyNetProfit,
+          currency,
+          detail: `${postings.length} counted postings`,
+          tone: "purple",
+          sparkline: sparklineFor("netProfit")
+        })
       },
+      incomeVsExpenses: trend,
+      previousIncomeVsExpenses: previousTrend,
+      incomeBreakdown: buildBreakdown(
+        [...summary.bookingContributionRows, ...summary.otherIncomeRows],
+        {
+          total: summary.totals.companyContributionRevenue,
+          mapper: (posting) => INCOME_LABELS[posting.postingType] || "Other Income"
+        }
+      ),
+      expenseBreakdown: buildBreakdown(summary.expenseRows, {
+        total: summary.totals.companyExpenses,
+        mapper: (posting) =>
+          EXPENSE_CATEGORY_LABELS[posting.sourceSnapshot?.category] ||
+          POSTING_TYPE_LABELS[posting.postingType] ||
+          "Operating Expenses"
+      }),
+      recentIncome: buildRecentRows([...summary.bookingContributionRows, ...summary.otherIncomeRows]),
+      recentExpenses: buildRecentRows(summary.expenseRows),
       postingCount: postings.length,
-      bookingContributionPostingCount: bookingContributionRows.length
+      bookingContributionPostingCount: summary.bookingContributionRows.length,
+      formulas: {
+        companyContributionRevenue: "bookingNetContribution + otherBusinessIncome",
+        companyNetProfit: "companyContributionRevenue - companyExpenses",
+        duplicateBookingRevenueProtection: "Booking sales enter Business Accounting only through BOOKING_NET_CONTRIBUTION postings."
+      }
     };
   };
 

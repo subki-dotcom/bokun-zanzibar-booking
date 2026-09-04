@@ -588,3 +588,109 @@ test("voided operating expense keeps history but stops counting in company total
   assert.equal(harness.state.postings[0].status, FINANCIAL_ENTRY_STATUS.VOID);
   assert.equal(afterVoid.totals.companyExpenses, 0);
 });
+
+test("management accounting dashboard snapshot uses counted postings without duplicating booking revenue", async () => {
+  const harness = createFakeModels();
+
+  await harness.service.postBookingContribution({ bookingReference: "ZNZ-BA-1001" });
+  await harness.service.createBusinessIncome({
+    input: {
+      incomeCategory: INCOME_CATEGORY.COMMISSION_INCOME,
+      description: "Partner commission",
+      amount: "250",
+      currency: "USD",
+      status: FINANCIAL_ENTRY_STATUS.APPROVED,
+      sourceReference: "COMM-2026-08",
+      transactionDate: "2026-08-12T09:00:00.000Z"
+    }
+  });
+  await harness.service.createBusinessExpense({
+    input: {
+      category: EXPENSE_CATEGORY.SALARIES,
+      description: "Guide payroll",
+      amount: "80",
+      currency: "USD",
+      status: FINANCIAL_ENTRY_STATUS.PAID,
+      paymentStatus: EXPENSE_PAYMENT_STATUS.PAID,
+      sourceReference: "PAY-2026-08",
+      expenseDate: "2026-08-15T09:00:00.000Z"
+    }
+  });
+  await harness.service.createBusinessIncome({
+    input: {
+      incomeCategory: INCOME_CATEGORY.SERVICE_INCOME,
+      description: "Prior period service",
+      amount: "100",
+      currency: "USD",
+      status: FINANCIAL_ENTRY_STATUS.APPROVED,
+      sourceReference: "SVC-2026-07",
+      transactionDate: "2026-07-12T09:00:00.000Z"
+    }
+  });
+  await harness.service.createBusinessExpense({
+    input: {
+      category: EXPENSE_CATEGORY.INTERNET,
+      description: "Prior period internet",
+      amount: "20",
+      currency: "USD",
+      status: FINANCIAL_ENTRY_STATUS.APPROVED,
+      sourceReference: "NET-2026-07",
+      expenseDate: "2026-07-14T09:00:00.000Z"
+    }
+  });
+
+  const summary = await harness.service.getFoundationSummary({ dateRange: "this_month" });
+
+  assert.equal(summary.period.label, "This Month");
+  assert.equal(summary.totals.bookingNetContribution, 67);
+  assert.equal(summary.totals.otherBusinessIncome, 250);
+  assert.equal(summary.totals.companyContributionRevenue, 317);
+  assert.equal(summary.totals.companyExpenses, 80);
+  assert.equal(summary.totals.companyNetProfit, 237);
+  assert.equal(summary.previousTotals.otherBusinessIncome, 100);
+  assert.equal(summary.previousTotals.companyExpenses, 20);
+  assert.equal(summary.kpis.companyNetProfit.value, 237);
+  assert.equal(summary.formulas.duplicateBookingRevenueProtection.includes("BOOKING_NET_CONTRIBUTION"), true);
+  assert.deepEqual(
+    summary.incomeBreakdown.map((row) => row.label),
+    ["Other Income", "Booking Contribution"]
+  );
+  assert.equal(summary.expenseBreakdown[0].label, "Salaries & Wages");
+  assert.match(summary.recentIncome[0].reference, /^BI-20260808-/);
+  assert.equal(summary.recentIncome[0].description, "Partner commission");
+  assert.match(summary.recentExpenses[0].reference, /^BE-20260808-/);
+  assert.equal(summary.recentExpenses[0].description, "Guide payroll");
+  assert.ok(summary.incomeVsExpenses.some((point) => point.income > 0));
+  assert.equal(summary.sourceStrategy.revenueDuplicationProtection.label, "Revenue Duplication Protection");
+});
+
+test("management accounting dashboard custom date filters all widgets", async () => {
+  const harness = createFakeModels();
+
+  await harness.service.createBusinessIncome({
+    input: {
+      incomeCategory: INCOME_CATEGORY.RENTAL_INCOME,
+      description: "August car rental",
+      amount: "70",
+      currency: "USD",
+      status: FINANCIAL_ENTRY_STATUS.APPROVED,
+      sourceReference: "RENT-2026-08",
+      transactionDate: "2026-08-20T09:00:00.000Z"
+    }
+  });
+
+  const august = await harness.service.getFoundationSummary({
+    fromDate: "2026-08-01",
+    toDate: "2026-08-31"
+  });
+  const september = await harness.service.getFoundationSummary({
+    fromDate: "2026-09-01",
+    toDate: "2026-09-30"
+  });
+
+  assert.equal(august.totals.otherBusinessIncome, 70);
+  assert.equal(august.recentIncome.length, 1);
+  assert.equal(september.totals.otherBusinessIncome, 0);
+  assert.equal(september.recentIncome.length, 0);
+  assert.equal(september.incomeBreakdown.length, 0);
+});

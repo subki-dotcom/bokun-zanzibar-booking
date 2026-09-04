@@ -26,7 +26,8 @@ const foundationQuerySchema = z.object({
   query: z
     .object({
       fromDate: z.string().min(1).optional(),
-      toDate: z.string().min(1).optional()
+      toDate: z.string().min(1).optional(),
+      dateRange: z.string().min(1).max(80).optional()
     })
     .optional()
 });
