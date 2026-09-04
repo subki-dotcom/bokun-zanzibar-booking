@@ -280,6 +280,58 @@ test("booking accounting profitability uses only confirmed refund amounts", asyn
   assert.equal(row.profitMargin, 70.59);
 });
 
+test("booking accounting dashboard aggregates real booking financial metrics", async () => {
+  const service = createService();
+
+  const result = await service.getDashboard({ fromDate: "2026-08-01", toDate: "2026-08-31", limit: 20 });
+
+  assert.equal(result.summaryKpis.bookingRevenue.value, 100);
+  assert.equal(result.summaryKpis.collectedRevenue.value, 100);
+  assert.equal(result.summaryKpis.directCosts.value, 20);
+  assert.equal(result.summaryKpis.grossProfit.value, 80);
+  assert.equal(result.secondaryKpis.profitMargin.value, 80);
+  assert.equal(result.secondaryKpis.refunds.value, 30);
+  assert.equal(result.totals.grossProfit, 48);
+  assert.equal(result.totals.dashboardGrossProfit, 80);
+  assert.equal(result.charts.revenueByChannel[0].label, "Direct Website");
+  assert.equal(result.charts.revenueByChannel[0].revenue, 100);
+  assert.equal(result.recentBookingFinancials[0].bookingReference, "ZNZ-BA-1");
+  assert.equal(result.recentBookingFinancials[0].costStatus, "actual");
+  assert.equal(result.recentBookingFinancials[0].estimatedDirectCost, 90);
+  assert.equal(result.topProducts[0].profit, 80);
+  assert.equal(result.needsAttention.find((item) => item.id === "missing-cost-templates").count, 1);
+  assert.equal(result.footerKpis.refundRate, 30);
+  assert.equal(result.footerKpis.collectionRate, 100);
+  assert.deepEqual(result.currencySummary, [
+    {
+      currency: "USD",
+      bookingRevenue: 100,
+      collectedRevenue: 100,
+      refundedAmount: 30,
+      directCosts: 20,
+      bookingCount: 1
+    }
+  ]);
+});
+
+test("booking accounting dashboard applies date and channel filters centrally", async () => {
+  const service = createService();
+
+  const wrongMonth = await service.getDashboard({ fromDate: "2026-09-01", toDate: "2026-09-30", limit: 20 });
+  const wrongChannel = await service.getDashboard({ channel: "VIATOR", limit: 20 });
+
+  assert.equal(wrongMonth.summaryKpis.bookingRevenue.value, 0);
+  assert.equal(wrongMonth.recentBookingFinancials.length, 0);
+  assert.equal(wrongChannel.summaryKpis.bookingRevenue.value, 0);
+  assert.equal(wrongChannel.totals.invoiceCount, 0);
+  assert.equal(wrongChannel.totals.refundCount, 0);
+  assert.equal(wrongChannel.totals.reconciliationIssueCount, 0);
+  assert.equal(wrongChannel.secondaryKpis.outstandingAmount.value, 0);
+  assert.equal(wrongChannel.secondaryKpis.refunds.value, 0);
+  assert.equal(wrongChannel.secondaryKpis.unreconciledItems.value, 0);
+  assert.equal(wrongChannel.recentBookingFinancials.length, 0);
+});
+
 test("booking accounting reconciliation flags completed refund with zero confirmed amount", async () => {
   const service = createService();
 

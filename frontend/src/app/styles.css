@@ -15044,6 +15044,1067 @@ textarea.form-control {
   }
 }
 
+/* Booking Accounting Dashboard */
+.booking-accounting-dashboard {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 1rem;
+  color: #0f172a;
+}
+
+.booking-accounting-dashboard-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.booking-accounting-dashboard-head span {
+  display: block;
+  color: #0f766e;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.booking-accounting-dashboard-head h1 {
+  margin: 0.2rem 0 0;
+  color: #0f172a;
+  font-size: clamp(1.45rem, 1.05rem + 0.8vw, 1.95rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.booking-accounting-dashboard-head p {
+  margin: 0.32rem 0 0;
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.booking-accounting-dashboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.booking-accounting-dashboard-actions label,
+.booking-accounting-dashboard-actions button,
+.booking-accounting-dashboard-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 42px;
+  border: 1px solid #d8e2ec;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1.1;
+  padding: 0.6rem 0.78rem;
+  text-decoration: none;
+}
+
+.booking-accounting-dashboard-actions select,
+.booking-accounting-dashboard-actions input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+  font: inherit;
+  outline: 0;
+}
+
+.booking-accounting-dashboard-actions input[type="date"] {
+  min-width: 138px;
+}
+
+.booking-accounting-dashboard-actions button:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.booking-accounting-dashboard-actions label:focus-within,
+.booking-accounting-dashboard-actions button:focus-visible,
+.booking-accounting-dashboard-actions a:focus-visible {
+  border-color: #0f9f95;
+  box-shadow: 0 0 0 3px rgba(15, 159, 149, 0.16);
+  outline: 0;
+}
+
+.booking-accounting-dashboard-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  min-width: 0;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  font-weight: 780;
+  line-height: 1.4;
+  padding: 0.68rem 0.8rem;
+}
+
+.booking-accounting-dashboard-note svg {
+  flex: 0 0 auto;
+  margin-top: 0.12rem;
+}
+
+.booking-accounting-dashboard-card,
+.booking-accounting-dashboard-kpi,
+.booking-accounting-dashboard-secondary-kpi,
+.booking-accounting-dashboard-footer-kpis {
+  min-width: 0;
+  border: 1px solid #dce4ee;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.booking-accounting-dashboard-card {
+  padding: 1rem;
+}
+
+.booking-accounting-dashboard-primary-kpis,
+.booking-accounting-dashboard-secondary-kpis,
+.booking-accounting-dashboard-chart-grid,
+.booking-accounting-dashboard-work-grid {
+  display: grid;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.booking-accounting-dashboard-primary-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.booking-accounting-dashboard-secondary-kpis {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.booking-accounting-dashboard-chart-grid {
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.85fr) minmax(280px, 0.95fr);
+}
+
+.booking-accounting-dashboard-work-grid {
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.72fr) minmax(300px, 0.88fr);
+  align-items: stretch;
+}
+
+.booking-accounting-dashboard-kpi,
+.booking-accounting-dashboard-secondary-kpi {
+  display: flex;
+  color: inherit;
+  text-decoration: none;
+}
+
+.booking-accounting-dashboard-kpi {
+  align-items: center;
+  gap: 0.9rem;
+  min-height: 116px;
+  padding: 0.95rem;
+}
+
+.booking-accounting-dashboard-kpi:hover,
+.booking-accounting-dashboard-secondary-kpi:hover {
+  border-color: #8bc8c1;
+  color: inherit;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+}
+
+.booking-accounting-dashboard-kpi-icon,
+.booking-accounting-dashboard-secondary-kpi > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: #edf7f8;
+  color: #0f766e;
+}
+
+.booking-accounting-dashboard-kpi.is-green .booking-accounting-dashboard-kpi-icon,
+.booking-accounting-dashboard-secondary-kpi.is-green > span {
+  background: #ecfdf3;
+  color: #16a34a;
+}
+
+.booking-accounting-dashboard-kpi.is-red .booking-accounting-dashboard-kpi-icon,
+.booking-accounting-dashboard-secondary-kpi.is-red > span {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.booking-accounting-dashboard-kpi.is-purple .booking-accounting-dashboard-kpi-icon,
+.booking-accounting-dashboard-secondary-kpi.is-purple > span {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.booking-accounting-dashboard-kpi.is-blue .booking-accounting-dashboard-kpi-icon,
+.booking-accounting-dashboard-secondary-kpi.is-blue > span {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.booking-accounting-dashboard-kpi.is-orange .booking-accounting-dashboard-kpi-icon,
+.booking-accounting-dashboard-secondary-kpi.is-orange > span {
+  background: #fff7ed;
+  color: #d97706;
+}
+
+.booking-accounting-dashboard-kpi-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.booking-accounting-dashboard-kpi-copy > span,
+.booking-accounting-dashboard-secondary-kpi small,
+.booking-accounting-dashboard-footer-kpis span {
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.booking-accounting-dashboard-kpi-copy strong {
+  color: #0f172a;
+  font-size: clamp(1.35rem, 1.05rem + 0.58vw, 1.8rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.booking-accounting-dashboard-kpi-copy small,
+.booking-accounting-dashboard-secondary-kpi em {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 780;
+  line-height: 1.25;
+}
+
+.booking-accounting-dashboard-kpi-copy small.is-up {
+  color: #059669;
+}
+
+.booking-accounting-dashboard-kpi-copy small.is-down {
+  color: #dc2626;
+}
+
+.booking-accounting-dashboard-secondary-kpi {
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 98px;
+  padding: 0.85rem;
+}
+
+.booking-accounting-dashboard-secondary-kpi > span {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.booking-accounting-dashboard-secondary-kpi div {
+  display: grid;
+  min-width: 0;
+  gap: 0.16rem;
+}
+
+.booking-accounting-dashboard-secondary-kpi strong {
+  color: #0f172a;
+  font-size: clamp(1.1rem, 0.95rem + 0.35vw, 1.45rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.booking-accounting-dashboard-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+  min-width: 0;
+}
+
+.booking-accounting-dashboard-card-head h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.98rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.booking-accounting-dashboard-card-head p {
+  margin: 0.22rem 0 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.booking-accounting-dashboard-card-head a {
+  color: #0f766e;
+  font-size: 0.8rem;
+  font-weight: 850;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.booking-accounting-dashboard-chart {
+  display: grid;
+  gap: 0.55rem;
+  min-height: 260px;
+}
+
+.booking-accounting-dashboard-chart svg {
+  width: 100%;
+  height: 220px;
+  min-width: 0;
+}
+
+.booking-accounting-dashboard-chart line {
+  stroke: #e6edf5;
+  stroke-width: 1;
+}
+
+.booking-accounting-dashboard-chart polyline {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+}
+
+.booking-accounting-dashboard-chart .is-revenue {
+  stroke: #0f9f95;
+  fill: #0f9f95;
+}
+
+.booking-accounting-dashboard-chart .is-cost {
+  stroke: #ef4444;
+  fill: #ef4444;
+}
+
+.booking-accounting-dashboard-chart-labels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 0.35rem;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 780;
+}
+
+.booking-accounting-dashboard-donut-wrap {
+  display: grid;
+  grid-template-columns: minmax(130px, 160px) minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+  min-height: 260px;
+}
+
+.booking-accounting-dashboard-donut {
+  position: relative;
+  width: 100%;
+  max-width: 160px;
+  aspect-ratio: 1;
+  border-radius: 999px;
+}
+
+.booking-accounting-dashboard-donut::after {
+  position: absolute;
+  inset: 25%;
+  border-radius: 999px;
+  background: #ffffff;
+  content: "";
+}
+
+.booking-accounting-dashboard-donut > div {
+  position: absolute;
+  inset: 25%;
+  z-index: 1;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.booking-accounting-dashboard-donut strong {
+  color: #0f172a;
+  font-size: 0.92rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.booking-accounting-dashboard-donut span {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.booking-accounting-dashboard-breakdown,
+.booking-accounting-dashboard-attention-list,
+.booking-accounting-dashboard-top-products {
+  display: grid;
+  gap: 0.58rem;
+  min-width: 0;
+}
+
+.booking-accounting-dashboard-breakdown div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.booking-accounting-dashboard-breakdown span {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  min-width: 0;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.booking-accounting-dashboard-breakdown i {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+}
+
+.booking-accounting-dashboard-breakdown strong {
+  color: #0f172a;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.booking-accounting-dashboard-breakdown small {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.booking-accounting-dashboard-bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
+  align-items: end;
+  gap: 0.65rem;
+  min-height: 260px;
+}
+
+.booking-accounting-dashboard-bars > div {
+  display: grid;
+  grid-template-rows: minmax(150px, 1fr) auto auto;
+  gap: 0.35rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.booking-accounting-dashboard-bar-track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.18rem;
+  border-radius: 8px;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.booking-accounting-dashboard-bar-track span {
+  width: 14px;
+  min-height: 4px;
+  border-radius: 8px 8px 0 0;
+}
+
+.booking-accounting-dashboard-bar-track .is-revenue {
+  background: #0f9f95;
+}
+
+.booking-accounting-dashboard-bar-track .is-cost {
+  background: #ef4444;
+}
+
+.booking-accounting-dashboard-bars strong {
+  color: #2563eb;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.booking-accounting-dashboard-bars small {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 780;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.booking-accounting-dashboard-table-scroll {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.booking-accounting-dashboard-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+}
+
+.booking-accounting-dashboard-table th,
+.booking-accounting-dashboard-table td {
+  border-bottom: 1px solid #e6edf5;
+  color: #334155;
+  font-size: 0.77rem;
+  line-height: 1.35;
+  padding: 0.68rem 0.55rem;
+  vertical-align: middle;
+}
+
+.booking-accounting-dashboard-table th {
+  color: #64748b;
+  font-size: 0.66rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.booking-accounting-dashboard-table td strong {
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.booking-accounting-dashboard-table td small,
+.booking-accounting-dashboard-truncate small {
+  display: block;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 760;
+}
+
+.booking-accounting-dashboard-truncate {
+  max-width: 220px;
+}
+
+.booking-accounting-dashboard-truncate span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.booking-accounting-dashboard-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.28rem 0.52rem;
+  white-space: nowrap;
+}
+
+.booking-accounting-dashboard-pill.is-success {
+  border-color: #9adfba;
+  background: #ecfdf3;
+  color: #047857;
+}
+
+.booking-accounting-dashboard-pill.is-warning {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.booking-accounting-dashboard-pill.is-danger {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.booking-accounting-dashboard-mobile-financials {
+  display: none;
+}
+
+.booking-accounting-dashboard-attention-list a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 46px;
+  border: 1px solid #e6edf5;
+  border-radius: 8px;
+  color: #334155;
+  padding: 0.55rem 0.65rem;
+  text-decoration: none;
+}
+
+.booking-accounting-dashboard-attention-list a:hover {
+  border-color: #8bc8c1;
+  color: #0f766e;
+}
+
+.booking-accounting-dashboard-attention-list span {
+  display: grid;
+  min-width: 0;
+  color: #0f172a;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.booking-accounting-dashboard-attention-list small {
+  margin-top: 0.12rem;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 720;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.booking-accounting-dashboard-attention-list strong {
+  min-width: 28px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 950;
+  padding: 0.22rem 0.45rem;
+  text-align: center;
+}
+
+.booking-accounting-dashboard-attention-list a.is-danger strong {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.booking-accounting-dashboard-attention-list a.is-warning strong {
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.booking-accounting-dashboard-attention-list a.is-info strong {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.booking-accounting-dashboard-attention-list a.is-success strong {
+  background: #ecfdf3;
+  color: #047857;
+}
+
+.booking-accounting-dashboard-top-products > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.58rem;
+  min-width: 0;
+  border-bottom: 1px solid #e6edf5;
+  padding: 0.45rem 0 0.62rem;
+}
+
+.booking-accounting-dashboard-top-products > div:last-child {
+  border-bottom: 0;
+}
+
+.booking-accounting-dashboard-top-products span {
+  min-width: 0;
+  color: #0f172a;
+  font-size: 0.8rem;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.booking-accounting-dashboard-top-products strong,
+.booking-accounting-dashboard-top-products em {
+  color: #0f172a;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.booking-accounting-dashboard-top-products em {
+  color: #64748b;
+}
+
+.booking-accounting-dashboard-top-products i {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 999px;
+  background: #edf2f7;
+  overflow: hidden;
+}
+
+.booking-accounting-dashboard-top-products b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #16a085;
+}
+
+.booking-accounting-dashboard-footer-kpis {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.booking-accounting-dashboard-footer-kpis div {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+  border-right: 1px solid #e6edf5;
+  padding: 0.85rem 1rem;
+}
+
+.booking-accounting-dashboard-footer-kpis div:last-child {
+  border-right: 0;
+}
+
+.booking-accounting-dashboard-footer-kpis strong {
+  color: #0f172a;
+  font-size: 1.02rem;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.booking-accounting-dashboard-empty,
+.booking-accounting-dashboard-error {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #64748b;
+  padding: 1rem;
+  text-align: center;
+}
+
+.booking-accounting-dashboard-empty {
+  gap: 0.45rem;
+}
+
+.booking-accounting-dashboard-empty svg {
+  color: #0f766e;
+}
+
+.booking-accounting-dashboard-error {
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  place-items: stretch;
+  align-items: center;
+  gap: 0.65rem;
+  text-align: left;
+}
+
+.booking-accounting-dashboard-error svg {
+  color: #dc2626;
+}
+
+.booking-accounting-dashboard-error strong,
+.booking-accounting-dashboard-error span {
+  display: block;
+}
+
+.booking-accounting-dashboard-error strong {
+  color: #0f172a;
+  font-size: 0.84rem;
+}
+
+.booking-accounting-dashboard-error span {
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.booking-accounting-dashboard-error button {
+  min-height: 40px;
+  border: 1px solid #d8e2ec;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 850;
+  padding: 0.45rem 0.65rem;
+}
+
+.booking-accounting-dashboard-skeleton {
+  display: grid;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.booking-accounting-dashboard-skeleton span {
+  display: block;
+  min-height: 18px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #eef2f7, #f8fafc, #eef2f7);
+  background-size: 180% 100%;
+  animation: admin-dashboard-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.booking-accounting-dashboard-skeleton span:nth-child(2n) {
+  width: 74%;
+}
+
+.booking-accounting-dashboard-skeleton span:nth-child(3n) {
+  width: 52%;
+}
+
+.booking-accounting-dashboard-skeleton.is-chart {
+  align-content: end;
+  min-height: 250px;
+}
+
+.booking-accounting-dashboard-skeleton.is-table span {
+  min-height: 38px;
+  width: 100%;
+}
+
+@media (max-width: 1399.98px) {
+  .booking-accounting-dashboard-chart-grid,
+  .booking-accounting-dashboard-work-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .booking-accounting-dashboard-chart-grid .is-wide,
+  .booking-accounting-dashboard-work-grid .is-financials {
+    grid-column: 1 / -1;
+  }
+
+  .booking-accounting-dashboard-secondary-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .booking-accounting-dashboard-footer-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .booking-accounting-dashboard-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .booking-accounting-dashboard-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .booking-accounting-dashboard-primary-kpis,
+  .booking-accounting-dashboard-secondary-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .booking-accounting-dashboard-chart-grid,
+  .booking-accounting-dashboard-work-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-accounting-dashboard-donut-wrap {
+    grid-template-columns: minmax(120px, 150px) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .booking-accounting-dashboard {
+    gap: 0.85rem;
+  }
+
+  .booking-accounting-dashboard-head h1 {
+    font-size: 1.38rem;
+  }
+
+  .booking-accounting-dashboard-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .booking-accounting-dashboard-actions label,
+  .booking-accounting-dashboard-actions button,
+  .booking-accounting-dashboard-actions a,
+  .booking-accounting-dashboard-actions input[type="date"] {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .booking-accounting-dashboard-card {
+    padding: 0.85rem;
+  }
+
+  .booking-accounting-dashboard-kpi {
+    min-height: 104px;
+    padding: 0.78rem;
+  }
+
+  .booking-accounting-dashboard-kpi-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .booking-accounting-dashboard-table-scroll {
+    display: none;
+  }
+
+  .booking-accounting-dashboard-mobile-financials {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .booking-accounting-dashboard-mobile-financials article {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem;
+    min-width: 0;
+    border: 1px solid #e6edf5;
+    border-radius: 10px;
+    padding: 0.8rem;
+  }
+
+  .booking-accounting-dashboard-mobile-financials strong {
+    display: block;
+    color: #0f172a;
+    font-size: 0.9rem;
+    font-weight: 950;
+  }
+
+  .booking-accounting-dashboard-mobile-financials article > div:first-child span,
+  .booking-accounting-dashboard-mobile-financials footer {
+    color: #64748b;
+    font-size: 0.74rem;
+    font-weight: 780;
+  }
+
+  .booking-accounting-dashboard-mobile-financials dl {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin: 0;
+  }
+
+  .booking-accounting-dashboard-mobile-financials dt,
+  .booking-accounting-dashboard-mobile-financials dd {
+    margin: 0;
+  }
+
+  .booking-accounting-dashboard-mobile-financials dt {
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 850;
+  }
+
+  .booking-accounting-dashboard-mobile-financials dd {
+    color: #0f172a;
+    font-size: 0.92rem;
+    font-weight: 950;
+    overflow-wrap: anywhere;
+  }
+
+  .booking-accounting-dashboard-mobile-financials dd small {
+    display: block;
+    color: #64748b;
+    font-size: 0.66rem;
+    font-weight: 760;
+  }
+
+  .booking-accounting-dashboard-mobile-financials footer {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .booking-accounting-dashboard-donut-wrap {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    min-height: auto;
+  }
+
+  .booking-accounting-dashboard-breakdown,
+  .booking-accounting-dashboard-top-products {
+    width: 100%;
+  }
+
+  .booking-accounting-dashboard-footer-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .booking-accounting-dashboard-footer-kpis div {
+    border-bottom: 1px solid #e6edf5;
+  }
+}
+
+@media (max-width: 479.98px) {
+  .booking-accounting-dashboard-primary-kpis,
+  .booking-accounting-dashboard-secondary-kpis,
+  .booking-accounting-dashboard-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-accounting-dashboard-kpi-copy strong {
+    font-size: 1.35rem;
+  }
+
+  .booking-accounting-dashboard-chart svg {
+    height: 190px;
+  }
+
+  .booking-accounting-dashboard-bars {
+    gap: 0.38rem;
+    min-height: 220px;
+  }
+
+  .booking-accounting-dashboard-bars > div {
+    grid-template-rows: minmax(118px, 1fr) auto auto;
+  }
+
+  .booking-accounting-dashboard-card-head {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 340px) {
+  .booking-accounting-dashboard-card,
+  .booking-accounting-dashboard-kpi,
+  .booking-accounting-dashboard-secondary-kpi,
+  .booking-accounting-dashboard-mobile-financials article {
+    padding: 0.72rem;
+  }
+
+  .booking-accounting-dashboard-footer-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Admin Bookings Page */
 .admin-bookings-page {
   display: grid;

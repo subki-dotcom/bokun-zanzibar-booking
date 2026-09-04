@@ -29,6 +29,28 @@ const COST_BASIS_TYPES = Object.freeze([
 
 const TEMPLATE_STATUSES = Object.freeze(["draft", "active", "inactive", "archived"]);
 const OPEN_ENDED_DATE = new Date("9999-12-31T23:59:59.999Z");
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const CHANNEL_LABELS = Object.freeze({
+  DIRECT_WEBSITE: "Direct Website",
+  WEBSITE: "Direct Website",
+  GETYOURGUIDE: "GetYourGuide",
+  GET_YOUR_GUIDE: "GetYourGuide",
+  GYG: "GetYourGuide",
+  VIATOR: "Viator",
+  BOKUN: "Bokun Direct",
+  BOKUN_DIRECT: "Bokun Direct",
+  BOKUN_MARKETPLACE: "Bokun Marketplace",
+  MARKETPLACE: "Bokun Marketplace",
+  AGENT: "Agent / B2B",
+  B2B: "Agent / B2B",
+  HOTEL: "Hotel",
+  WHATSAPP: "WhatsApp",
+  WALK_IN: "Walk-in",
+  TOURHQ: "TourHQ",
+  AIRBNB: "Airbnb",
+  OTHER: "Other"
+});
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -172,6 +194,80 @@ const normalizeCostBasis = (value = "") => normalizeLower(value).replace(/[-\s]+
 const normalizeTemplateStatus = (value = "draft") => normalizeLower(value || "draft").replace(/[-\s]+/g, "_");
 const normalizeCurrency = (value = "USD") => normalizeUpper(value || "USD").slice(0, 10);
 const sameToken = (left, right) => normalizeToken(left) === normalizeToken(right);
+
+const titleize = (value = "") =>
+  normalizeToken(value || "Unknown")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+
+const normalizeChannel = (value = "") =>
+  normalizeUpper(value || "OTHER")
+    .replace(/[-\s/]+/g, "_")
+    .replace(/_+/g, "_");
+
+const channelLabel = (value = "") => {
+  const normalized = normalizeChannel(value);
+  return CHANNEL_LABELS[normalized] || titleize(normalized || "OTHER");
+};
+
+const startOfDay = (value) => {
+  const date = toDate(value);
+  if (!date) return null;
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+};
+
+const endOfDay = (value) => {
+  const date = toDate(value);
+  if (!date) return null;
+  const copy = new Date(date);
+  copy.setHours(23, 59, 59, 999);
+  return copy;
+};
+
+const addDays = (value, days = 0) => {
+  const date = toDate(value);
+  if (!date) return null;
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + Number(days || 0));
+  return copy;
+};
+
+const resolveDashboardRange = (filters = {}) => {
+  const from = startOfDay(filters.fromDate);
+  const to = endOfDay(filters.toDate);
+  if (!from && !to) {
+    return {
+      current: null,
+      previous: null,
+      label: "All time"
+    };
+  }
+
+  const now = new Date();
+  const currentFrom = from || new Date("1970-01-01T00:00:00.000Z");
+  const currentTo = to || now;
+  const days = Math.max(1, Math.ceil((currentTo.getTime() - currentFrom.getTime() + 1) / DAY_MS));
+  const previousTo = endOfDay(addDays(currentFrom, -1));
+  const previousFrom = startOfDay(addDays(previousTo, 1 - days));
+
+  return {
+    current: { from: currentFrom, to: currentTo },
+    previous: previousFrom && previousTo ? { from: previousFrom, to: previousTo } : null,
+    label: filters.dateRange || filters.range || "Custom"
+  };
+};
+
+const dateInRange = (value, range = null) => {
+  if (!range) return true;
+  const date = toDate(value);
+  if (!date) return false;
+  if (range.from && date < range.from) return false;
+  if (range.to && date > range.to) return false;
+  return true;
+};
 
 const toCents = (value) => Math.round(roundMoney(value) * 100);
 const fromCents = (value) => roundMoney(Number(value || 0) / 100);
@@ -574,6 +670,491 @@ const getPrimaryCurrency = (...records) => {
   return "USD";
 };
 
+const getFinancialDate = ({ booking = null, invoice = null, payments = [], expenses = [] } = {}) =>
+  toDate(invoice?.issueDate) ||
+  toDate(booking?.bokunOperationalDates?.travelDate?.normalizedAt) ||
+  toDate(booking?.bokunOperationalDates?.travelDate?.normalizedDate) ||
+  toDate(booking?.bokunOperationalDates?.activityDate?.normalizedAt) ||
+  toDate(booking?.travelDate) ||
+  toDate(asArray(payments)[0]?.paidAt) ||
+  toDate(asArray(expenses)[0]?.expenseDate) ||
+  toDate(booking?.createdAt) ||
+  toDate(invoice?.createdAt) ||
+  null;
+
+const getBookingSalesChannel = (booking = {}, invoice = {}, payment = {}) => {
+  const raw =
+    booking?.salesChannel ||
+    booking?.sourceChannel ||
+    booking?.rawChannelSource?.salesChannel ||
+    booking?.rawChannelSource?.channel ||
+    invoice?.salesChannel ||
+    payment?.salesChannel ||
+    "OTHER";
+  return normalizeChannel(raw || "OTHER");
+};
+
+const getParticipantContextFromBooking = (booking = {}, sellingAmount = 0) => {
+  const paxSummary = booking?.paxSummary || {};
+  const categoryParticipants = asArray(booking?.priceCategoryParticipants);
+  const adultsFromCategories = categoryParticipants.reduce((sum, category) => {
+    const type = normalizeUpper(category?.ticketCategory || category?.category || category?.title);
+    if (!type.includes("ADULT")) return sum;
+    return sum + Math.max(0, Number(category?.quantity || category?.count || category?.participants || 0));
+  }, 0);
+  const childrenFromCategories = categoryParticipants.reduce((sum, category) => {
+    const type = normalizeUpper(category?.ticketCategory || category?.category || category?.title);
+    if (!type.includes("CHILD")) return sum;
+    return sum + Math.max(0, Number(category?.quantity || category?.count || category?.participants || 0));
+  }, 0);
+  const adults = Math.max(0, Number(paxSummary.adults ?? adultsFromCategories ?? 0));
+  const children = Math.max(0, Number(paxSummary.children ?? childrenFromCategories ?? 0));
+  const categoryParticipantTotal = categoryParticipants.reduce(
+    (sum, category) => sum + Math.max(0, Number(category?.quantity || category?.count || 0)),
+    0
+  );
+  const participantFallback = adults + children;
+  const participants = Math.max(
+    0,
+    Number((paxSummary.total ?? paxSummary.participants ?? booking?.participants ?? categoryParticipantTotal) || participantFallback)
+  );
+  const vehicles = Math.max(
+    0,
+    Number(
+      booking?.vehicleCount ??
+        booking?.assignmentSnapshot?.vehicleCount ??
+        asArray(booking?.vehicles).length ??
+        asArray(booking?.assignedVehicles).length ??
+        0
+    )
+  );
+
+  return {
+    adults,
+    children,
+    participants,
+    vehicles,
+    sellingAmount
+  };
+};
+
+const resolveBookingCostTemplate = ({ booking = {}, templates = [], asOfDate = new Date() } = {}) => {
+  const bokunProductId = normalizeToken(booking?.bokunProductId);
+  const bokunOptionId = normalizeToken(booking?.bokunOptionId);
+  if (!bokunProductId || !bokunOptionId) return null;
+
+  return asArray(templates)
+    .filter(
+      (template) =>
+        normalizeTemplateStatus(template.status) === "active" &&
+        sameToken(template.bokunProductId, bokunProductId) &&
+        sameToken(template.bokunOptionId, bokunOptionId) &&
+        isTemplateEffective(template, asOfDate)
+    )
+    .sort((left, right) => {
+      const rightDate = toDate(right.updatedAt || right.validFrom)?.getTime() || 0;
+      const leftDate = toDate(left.updatedAt || left.validFrom)?.getTime() || 0;
+      return rightDate - leftDate;
+    })[0] || null;
+};
+
+const estimateDirectCost = ({ booking = {}, templates = [], bookedRevenue = 0, currency = "USD", asOfDate = new Date() } = {}) => {
+  const template = resolveBookingCostTemplate({ booking, templates, asOfDate });
+  if (!template) {
+    return {
+      estimatedDirectCost: 0,
+      costTemplateId: "",
+      costTemplateName: "",
+      costTemplateCurrency: currency
+    };
+  }
+  const calculation = calculateEstimatedBookingCost({
+    template,
+    context: {
+      ...getParticipantContextFromBooking(booking, bookedRevenue),
+      currency
+    }
+  });
+  return {
+    estimatedDirectCost: roundMoney(calculation.totalEstimatedCost),
+    costTemplateId: getId(template),
+    costTemplateName: normalizeToken(template.name),
+    costTemplateCurrency: calculation.currency
+  };
+};
+
+const matchesDashboardFilters = (item = {}, filters = {}, range = null) => {
+  const requestedChannel = normalizeToken(filters.channel || filters.salesChannel);
+  const requestedCurrency = normalizeToken(filters.currency);
+  if (requestedChannel && normalizeChannel(item.salesChannel) !== normalizeChannel(requestedChannel)) return false;
+  if (requestedCurrency && normalizeCurrency(item.currency) !== normalizeCurrency(requestedCurrency)) return false;
+  if (!dateInRange(item.financialDate, range)) return false;
+  return true;
+};
+
+const compareNumber = (current = 0, previous = 0) => {
+  const currentValue = roundMoney(current);
+  const previousValue = roundMoney(previous);
+  if (!previousValue) {
+    return {
+      value: currentValue,
+      previousValue,
+      changePercent: currentValue ? 100 : 0,
+      direction: currentValue ? "up" : "flat"
+    };
+  }
+  const changePercent = Number((((currentValue - previousValue) / Math.abs(previousValue)) * 100).toFixed(2));
+  return {
+    value: currentValue,
+    previousValue,
+    changePercent,
+    direction: changePercent > 0 ? "up" : changePercent < 0 ? "down" : "flat"
+  };
+};
+
+const summarizeProfitabilityItems = (items = []) => {
+  const totals = asArray(items).reduce(
+    (summary, item) => {
+      summary.bookedRevenue += item.bookedRevenue;
+      summary.collectedRevenue += item.collectedRevenue;
+      summary.refundedAmount += item.refundedAmount;
+      summary.paymentProviderFees += item.paymentProviderFees;
+      summary.actualDirectCost += item.actualDirectCost;
+      summary.estimatedDirectCost += item.estimatedDirectCost;
+      summary.netRevenue += item.netRevenue;
+      summary.grossProfit += item.grossProfit;
+      summary.dashboardGrossProfit += item.dashboardGrossProfit;
+      return summary;
+    },
+    {
+      bookedRevenue: 0,
+      collectedRevenue: 0,
+      refundedAmount: 0,
+      paymentProviderFees: 0,
+      actualDirectCost: 0,
+      estimatedDirectCost: 0,
+      netRevenue: 0,
+      grossProfit: 0,
+      dashboardGrossProfit: 0
+    }
+  );
+  Object.keys(totals).forEach((key) => {
+    totals[key] = roundMoney(totals[key]);
+  });
+  totals.profitMargin = totals.netRevenue > 0 ? Number(((totals.grossProfit / totals.netRevenue) * 100).toFixed(2)) : 0;
+  totals.dashboardProfitMargin =
+    totals.bookedRevenue > 0 ? Number(((totals.dashboardGrossProfit / totals.bookedRevenue) * 100).toFixed(2)) : 0;
+  return totals;
+};
+
+const buildChannelOptions = (items = []) => {
+  const byChannel = new Map();
+  asArray(items).forEach((item) => {
+    const value = normalizeChannel(item.salesChannel || "OTHER");
+    const current = byChannel.get(value) || {
+      value,
+      label: channelLabel(value),
+      count: 0,
+      revenue: 0,
+      currency: item.currency || "USD"
+    };
+    current.count += 1;
+    current.revenue += toNumber(item.bookedRevenue);
+    byChannel.set(value, current);
+  });
+  return Array.from(byChannel.values())
+    .map((row) => ({ ...row, revenue: roundMoney(row.revenue) }))
+    .sort((left, right) => right.revenue - left.revenue || left.label.localeCompare(right.label));
+};
+
+const groupKeyForDate = (value, bucket = "day") => {
+  const date = toDate(value);
+  if (!date) return "undated";
+  if (bucket === "month") return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  if (bucket === "week") {
+    const start = startOfDay(date);
+    const day = start.getDay() || 7;
+    start.setDate(start.getDate() - day + 1);
+    return toIso(start).slice(0, 10);
+  }
+  return toIso(date).slice(0, 10);
+};
+
+const chooseTimeBucket = (range = null) => {
+  if (!range?.from || !range?.to) return "month";
+  const days = Math.max(1, Math.ceil((range.to.getTime() - range.from.getTime() + 1) / DAY_MS));
+  if (days > 95) return "month";
+  if (days > 31) return "week";
+  return "day";
+};
+
+const buildTrend = (items = [], range = null, bucket = chooseTimeBucket(range)) => {
+  const byKey = new Map();
+  asArray(items).forEach((item) => {
+    const key = groupKeyForDate(item.financialDate, bucket);
+    const current = byKey.get(key) || {
+      key,
+      label: key === "undated" ? "Undated" : key,
+      revenue: 0,
+      directCosts: 0,
+      grossProfit: 0,
+      margin: 0,
+      count: 0,
+      currency: item.currency || "USD"
+    };
+    current.revenue += toNumber(item.bookedRevenue);
+    current.directCosts += toNumber(item.actualDirectCost);
+    current.count += 1;
+    byKey.set(key, current);
+  });
+  return Array.from(byKey.values())
+    .sort((left, right) => left.key.localeCompare(right.key))
+    .map((row) => {
+      const revenue = roundMoney(row.revenue);
+      const directCosts = roundMoney(row.directCosts);
+      const grossProfit = roundMoney(revenue - directCosts);
+      return {
+        ...row,
+        revenue,
+        directCosts,
+        grossProfit,
+        margin: revenue > 0 ? Number(((grossProfit / revenue) * 100).toFixed(2)) : 0
+      };
+    });
+};
+
+const buildRevenueByChannel = (items = []) => {
+  const channels = buildChannelOptions(items);
+  const totalRevenue = roundMoney(channels.reduce((sum, row) => sum + row.revenue, 0));
+  return channels.map((row) => ({
+    ...row,
+    percent: totalRevenue > 0 ? Number(((row.revenue / totalRevenue) * 100).toFixed(2)) : 0
+  }));
+};
+
+const buildTopProducts = (items = [], limit = 5) => {
+  const byProduct = new Map();
+  asArray(items).forEach((item) => {
+    const productTitle = normalizeToken(item.productTitle || "Unknown product");
+    const current = byProduct.get(productTitle) || {
+      productTitle,
+      bookingCount: 0,
+      revenue: 0,
+      directCost: 0,
+      profit: 0,
+      margin: 0,
+      currency: item.currency || "USD"
+    };
+    current.bookingCount += 1;
+    current.revenue += toNumber(item.bookedRevenue);
+    current.directCost += toNumber(item.actualDirectCost);
+    byProduct.set(productTitle, current);
+  });
+  return Array.from(byProduct.values())
+    .map((row) => {
+      const revenue = roundMoney(row.revenue);
+      const directCost = roundMoney(row.directCost);
+      const profit = roundMoney(revenue - directCost);
+      return {
+        ...row,
+        revenue,
+        directCost,
+        profit,
+        margin: revenue > 0 ? Number(((profit / revenue) * 100).toFixed(2)) : 0
+      };
+    })
+    .sort((left, right) => right.profit - left.profit)
+    .slice(0, limit);
+};
+
+const financialStatusForItem = (item = {}) => {
+  if (item.refundedAmount > 0 && item.refundedAmount >= item.collectedRevenue) return "refunded";
+  if (item.refundedAmount > 0) return "partially_refunded";
+  if (!item.evidence?.invoice) return "missing_invoice";
+  if (item.costStatus === "missing_cost") return "missing_cost";
+  if (normalizeLower(item.paymentStatus) === "paid") return "paid";
+  if (normalizeLower(item.paymentStatus).includes("partial")) return "partially_paid";
+  return normalizeLower(item.paymentStatus || "pending");
+};
+
+const getInvoiceBalance = (invoice = {}) =>
+  Math.max(0, roundMoney(invoice.balanceDueAmount ?? invoice.balanceDue ?? getInvoiceTotal(invoice) - getInvoicePaid(invoice) + getInvoiceRefunded(invoice)));
+
+const getInvoiceDueDate = (invoice = {}) =>
+  toDate(invoice.dueDate || invoice.paymentDueDate || invoice.paymentTerms?.dueDate || invoice.metadata?.dueDate);
+
+const isInvoiceOverdue = (invoice = {}, now = new Date()) => {
+  const dueDate = getInvoiceDueDate(invoice);
+  return Boolean(dueDate && dueDate < now && getInvoiceBalance(invoice) > 0);
+};
+
+const statusMatches = (value = "", candidates = []) => candidates.includes(normalizeLower(value));
+
+const openRefundStatuses = Object.freeze([
+  "requested",
+  "eligible",
+  "pending_approval",
+  "approved",
+  "awaiting_merchant_approval",
+  "processing",
+  "verification_required"
+]);
+
+const makeKpi = ({ label, value, previousValue = 0, type = "money", tone = "teal", detail = "", href = "" } = {}) => ({
+  label,
+  value: roundMoney(value),
+  previousValue: roundMoney(previousValue),
+  type,
+  tone,
+  detail,
+  href,
+  comparison: compareNumber(value, previousValue)
+});
+
+const buildAttentionItems = ({ items = [], invoices = [], refunds = [], reconciliation = {}, costTemplates = null, currency = "USD" } = {}) => {
+  const now = new Date();
+  const missingInvoices = asArray(items).filter((item) => !item.evidence?.invoice).length;
+  const outstandingInvoices = asArray(invoices).filter((invoice) => getInvoiceBalance(invoice) > 0).length;
+  const overdueInvoices = asArray(invoices).filter((invoice) => isInvoiceOverdue(invoice, now)).length;
+  const missingActualCosts = asArray(items).filter((item) => item.actualDirectCost <= 0 && item.estimatedDirectCost > 0).length;
+  const missingCostTemplates = Number(costTemplates?.summary?.missingCost || 0);
+  const openRefunds = asArray(refunds).filter((refund) => openRefundStatuses.includes(normalizeLower(refund.status))).length;
+  const unreconciled = Number(reconciliation?.count || 0);
+
+  return [
+    {
+      id: "missing-invoices",
+      label: "Missing Invoices",
+      count: missingInvoices,
+      severity: missingInvoices ? "danger" : "success",
+      href: "/admin/booking-accounting/reconciliation",
+      description: "Confirmed booking rows without invoice evidence."
+    },
+    {
+      id: "outstanding-payments",
+      label: "Outstanding Payments",
+      count: outstandingInvoices,
+      severity: outstandingInvoices ? "warning" : "success",
+      href: "/admin/booking-accounting/invoices",
+      description: "Invoices with remaining balance."
+    },
+    {
+      id: "missing-cost-templates",
+      label: "Missing Cost Templates",
+      count: missingCostTemplates,
+      severity: missingCostTemplates ? "warning" : "success",
+      href: "/admin/booking-accounting/cost-templates",
+      description: "Bokun options without active cost templates."
+    },
+    {
+      id: "missing-actual-costs",
+      label: "Missing Actual Costs",
+      count: missingActualCosts,
+      severity: missingActualCosts ? "info" : "success",
+      href: "/admin/booking-accounting/expenses",
+      description: "Rows using estimated costs until actual expenses are posted."
+    },
+    {
+      id: "overdue-invoices",
+      label: "Overdue Invoices",
+      count: overdueInvoices,
+      severity: overdueInvoices ? "danger" : "success",
+      href: "/admin/booking-accounting/invoices",
+      description: "Outstanding invoices past a stored due date.",
+      currency
+    },
+    {
+      id: "unreconciled-items",
+      label: "Unreconciled Items",
+      count: unreconciled,
+      severity: unreconciled ? "warning" : "success",
+      href: "/admin/booking-accounting/reconciliation",
+      description: "Booking, invoice, payment, refund or expense mismatches."
+    },
+    {
+      id: "refund-review",
+      label: "Refunds Requiring Review",
+      count: openRefunds,
+      severity: openRefunds ? "warning" : "success",
+      href: "/admin/booking-accounting/refunds",
+      description: "Refund requests not yet confirmed as completed."
+    }
+  ];
+};
+
+const buildRecentFinancialRows = (items = [], limit = 8) =>
+  asArray(items)
+    .slice()
+    .sort((left, right) => (toDate(right.financialDate)?.getTime() || 0) - (toDate(left.financialDate)?.getTime() || 0))
+    .slice(0, limit)
+    .map((item) => ({
+      bookingReference: item.bookingReference,
+      productTitle: item.productTitle,
+      optionTitle: item.optionTitle,
+      salesChannel: item.salesChannel,
+      salesChannelLabel: item.salesChannelLabel,
+      revenue: item.bookedRevenue,
+      collectedRevenue: item.collectedRevenue,
+      refundedAmount: item.refundedAmount,
+      directCost: item.displayDirectCost,
+      actualDirectCost: item.actualDirectCost,
+      estimatedDirectCost: item.estimatedDirectCost,
+      costStatus: item.costStatus,
+      profit: item.displayGrossProfit,
+      margin: item.displayProfitMargin,
+      financialStatus: item.financialStatus,
+      date: item.financialDate,
+      currency: item.currency
+    }));
+
+const buildFooterKpis = ({ items = [], totals = {} } = {}) => {
+  const totalBookings = asArray(items).length;
+  const confirmedBookings = asArray(items).filter((item) => statusMatches(item.bookingStatus, ["confirmed", "completed"])).length;
+  const cancelledBookings = asArray(items).filter((item) => statusMatches(item.bookingStatus, ["cancelled", "canceled"])).length;
+  const averageBookingValue = totalBookings ? roundMoney(toNumber(totals.bookedRevenue) / totalBookings) : 0;
+  const refundRate =
+    toNumber(totals.collectedRevenue) > 0 ? Number(((toNumber(totals.refundedAmount) / toNumber(totals.collectedRevenue)) * 100).toFixed(2)) : 0;
+  const collectionRate =
+    toNumber(totals.bookedRevenue) > 0 ? Number(((toNumber(totals.collectedRevenue) / toNumber(totals.bookedRevenue)) * 100).toFixed(2)) : 0;
+
+  return {
+    totalBookings,
+    confirmedBookings,
+    cancelledBookings,
+    averageBookingValue,
+    refundRate,
+    collectionRate
+  };
+};
+
+const buildCurrencySummary = (items = []) => {
+  const byCurrency = new Map();
+  asArray(items).forEach((item) => {
+    const currency = normalizeCurrency(item.currency || "USD");
+    const current = byCurrency.get(currency) || {
+      currency,
+      bookingRevenue: 0,
+      collectedRevenue: 0,
+      refundedAmount: 0,
+      directCosts: 0,
+      bookingCount: 0
+    };
+    current.bookingRevenue += toNumber(item.bookedRevenue);
+    current.collectedRevenue += toNumber(item.collectedRevenue);
+    current.refundedAmount += toNumber(item.refundedAmount);
+    current.directCosts += toNumber(item.actualDirectCost);
+    current.bookingCount += 1;
+    byCurrency.set(currency, current);
+  });
+  return Array.from(byCurrency.values()).map((row) => ({
+    ...row,
+    bookingRevenue: roundMoney(row.bookingRevenue),
+    collectedRevenue: roundMoney(row.collectedRevenue),
+    refundedAmount: roundMoney(row.refundedAmount),
+    directCosts: roundMoney(row.directCosts)
+  }));
+};
+
 const normalizeInvoice = (invoice = {}) => {
   const currency = getPrimaryCurrency(invoice);
   const total = getInvoiceTotal(invoice);
@@ -599,6 +1180,7 @@ const normalizeInvoice = (invoice = {}) => {
     balanceDue,
     currency,
     issueDate: toIso(invoice.issueDate || invoice.createdAt),
+    dueDate: toIso(invoice.dueDate || invoice.paymentDueDate || invoice.paymentTerms?.dueDate || invoice.metadata?.dueDate),
     updatedAt: toIso(invoice.updatedAt)
   };
 };
@@ -1062,6 +1644,7 @@ const createBookingAccountingService = ({
 
   const getProfitability = async (filters = {}) => {
     const { bookings, invoices, payments, refunds, expenses, scanLimit } = await loadSnapshot(filters);
+    const templates = await loadCostTemplates();
     const bookingsByReference = buildMap(bookings, (booking) => booking.bookingReference);
     const invoicesByReference = buildMap(invoices, (invoice) => invoice.bookingReference);
     const paymentsByReference = buildMap(payments, (payment) => payment.bookingReference);
@@ -1077,7 +1660,7 @@ const createBookingAccountingService = ({
       ])
     );
 
-    const items = references.map((bookingReference) => {
+    const rawItems = references.map((bookingReference) => {
       const booking = latestByDate(bookingsByReference.get(bookingReference) || []);
       const invoice = latestByDate(invoicesByReference.get(bookingReference) || []);
       const bookingPayments = paymentsByReference.get(bookingReference) || [];
@@ -1100,69 +1683,99 @@ const createBookingAccountingService = ({
       const actualDirectCost = roundMoney(
         bookingExpenses.reduce((sum, expense) => sum + toNumber(expense.baseCurrencyAmount ?? expense.amount), 0)
       );
+      const financialDate = getFinancialDate({ booking, invoice, payments: bookingPayments, expenses: bookingExpenses });
+      const salesChannel = getBookingSalesChannel(booking, invoice, paidPayments[0] || bookingPayments[0]);
+      const estimatedCost = estimateDirectCost({
+        booking: booking || {},
+        templates,
+        bookedRevenue,
+        currency,
+        asOfDate: financialDate || new Date()
+      });
+      const estimatedDirectCost = estimatedCost.estimatedDirectCost;
+      const displayDirectCost = actualDirectCost > 0 ? actualDirectCost : estimatedDirectCost;
+      const costStatus = actualDirectCost > 0 ? "actual" : estimatedDirectCost > 0 ? "estimated" : "missing_cost";
       const netRevenue = roundMoney(collectedRevenue - refundedAmount - paymentProviderFees);
       const grossProfit = roundMoney(netRevenue - actualDirectCost);
       const profitMargin = netRevenue > 0 ? Number(((grossProfit / netRevenue) * 100).toFixed(2)) : 0;
+      const dashboardGrossProfit = roundMoney(bookedRevenue - actualDirectCost);
+      const dashboardProfitMargin = bookedRevenue > 0 ? Number(((dashboardGrossProfit / bookedRevenue) * 100).toFixed(2)) : 0;
+      const displayGrossProfit = roundMoney(bookedRevenue - displayDirectCost);
+      const displayProfitMargin = bookedRevenue > 0 ? Number(((displayGrossProfit / bookedRevenue) * 100).toFixed(2)) : 0;
 
       return {
         bookingReference,
         productTitle: booking?.productTitle || invoice?.tourName || "",
-        salesChannel: booking?.salesChannel || "",
+        optionTitle: booking?.optionTitle || invoice?.bookedOption || "",
+        bokunProductId: normalizeToken(booking?.bokunProductId),
+        bokunOptionId: normalizeToken(booking?.bokunOptionId),
+        salesChannel,
+        salesChannelLabel: channelLabel(salesChannel),
         bookingStatus: booking?.bookingStatus || invoice?.bookingStatus || "",
         paymentStatus: booking?.paymentStatus || invoice?.paymentStatus || "",
         currency,
+        financialDate: toIso(financialDate),
         bookedRevenue,
         collectedRevenue,
         refundedAmount,
         paymentProviderFees,
         actualDirectCost,
+        estimatedDirectCost,
+        displayDirectCost,
+        costStatus,
+        costTemplateId: estimatedCost.costTemplateId,
+        costTemplateName: estimatedCost.costTemplateName,
         netRevenue,
         grossProfit,
         profitMargin,
+        dashboardGrossProfit,
+        dashboardProfitMargin,
+        displayGrossProfit,
+        displayProfitMargin,
         evidence: {
           invoice: Boolean(invoice),
           successfulPaymentCount: paidPayments.length,
           completedRefundCount: linkedRefunds.length,
-          bookingLinkedExpenseCount: bookingExpenses.length
-        }
+          bookingLinkedExpenseCount: bookingExpenses.length,
+          costTemplate: Boolean(estimatedCost.costTemplateId)
+        },
+        financialStatus: financialStatusForItem({
+          refundedAmount,
+          collectedRevenue,
+          paymentStatus: booking?.paymentStatus || invoice?.paymentStatus || "",
+          costStatus,
+          evidence: { invoice: Boolean(invoice) }
+        })
       };
     });
 
-    const totals = items.reduce(
-      (summary, item) => {
-        summary.bookedRevenue += item.bookedRevenue;
-        summary.collectedRevenue += item.collectedRevenue;
-        summary.refundedAmount += item.refundedAmount;
-        summary.paymentProviderFees += item.paymentProviderFees;
-        summary.actualDirectCost += item.actualDirectCost;
-        summary.netRevenue += item.netRevenue;
-        summary.grossProfit += item.grossProfit;
-        return summary;
-      },
-      {
-        bookedRevenue: 0,
-        collectedRevenue: 0,
-        refundedAmount: 0,
-        paymentProviderFees: 0,
-        actualDirectCost: 0,
-        netRevenue: 0,
-        grossProfit: 0
-      }
-    );
-    Object.keys(totals).forEach((key) => {
-      totals[key] = roundMoney(totals[key]);
+    const range = resolveDashboardRange(filters).current;
+    const search = normalizeLower(filters.search);
+    const status = normalizeLower(filters.status);
+    const items = rawItems.filter((item) => {
+      if (!matchesDashboardFilters(item, filters, range)) return false;
+      if (status && normalizeLower(item.bookingStatus) !== status && normalizeLower(item.paymentStatus) !== status) return false;
+      if (!search) return true;
+      return `${item.bookingReference} ${item.productTitle} ${item.optionTitle} ${item.salesChannelLabel}`
+        .toLowerCase()
+        .includes(search);
     });
-    totals.profitMargin = totals.netRevenue > 0 ? Number(((totals.grossProfit / totals.netRevenue) * 100).toFixed(2)) : 0;
+
+    const totals = summarizeProfitabilityItems(items);
 
     return {
       generatedAt: new Date().toISOString(),
       scan: { limit: scanLimit, boundedScan: true },
       totals,
-      currency: items[0]?.currency || "USD",
+      currency: items[0]?.currency || rawItems[0]?.currency || "USD",
       items: items
         .sort((left, right) => right.netRevenue - left.netRevenue)
         .slice(0, pagination(filters).limit),
-      count: items.length
+      count: items.length,
+      filters: {
+        channels: buildChannelOptions(rawItems),
+        range: resolveDashboardRange(filters)
+      }
     };
   };
 
@@ -1191,40 +1804,213 @@ const createBookingAccountingService = ({
   };
 
   const getDashboard = async (filters = {}) => {
-    const [invoices, refunds, expenses, profitability, reconciliation] = await Promise.all([
-      listInvoices({ ...filters, limit: 10 }),
-      listRefunds({ ...filters, limit: 10 }),
-      listExpenses({ ...filters, limit: 10 }),
-      getProfitability({ ...filters, limit: 10 }),
-      getReconciliation({ ...filters, limit: 25 })
+    const range = resolveDashboardRange(filters);
+    const previousFilters = range.previous
+      ? {
+          ...filters,
+          fromDate: range.previous.from.toISOString(),
+          toDate: range.previous.to.toISOString(),
+          limit: MAX_LIMIT
+        }
+      : null;
+
+    const [invoices, refunds, expenses, profitability, previousProfitability, reconciliation, costTemplates] = await Promise.all([
+      listInvoices({ ...filters, limit: MAX_LIMIT }),
+      listRefunds({ ...filters, limit: MAX_LIMIT }),
+      listExpenses({ ...filters, limit: MAX_LIMIT }),
+      getProfitability({ ...filters, limit: MAX_LIMIT }),
+      previousFilters ? getProfitability(previousFilters) : Promise.resolve({ totals: summarizeProfitabilityItems([]) }),
+      getReconciliation({ ...filters, limit: MAX_LIMIT }),
+      getCostTemplates({ limit: DEFAULT_TEMPLATE_LIMIT })
     ]);
 
-    const openRefunds = refunds.items.filter((refund) =>
-      ["requested", "eligible", "pending_approval", "approved", "awaiting_merchant_approval", "processing", "verification_required"].includes(
-        normalizeLower(refund.status)
-      )
+    const selectedChannel = normalizeToken(filters.channel || filters.salesChannel);
+    const visibleReferences = new Set(profitability.items.map((item) => normalizeToken(item.bookingReference)).filter(Boolean));
+    const inSelectedScope = (bookingReference = "") => {
+      if (!selectedChannel) return true;
+      return visibleReferences.has(normalizeToken(bookingReference));
+    };
+    const scopedInvoices = invoices.items.filter((invoice) => inSelectedScope(invoice.bookingReference));
+    const scopedRefunds = refunds.items.filter((refund) => inSelectedScope(refund.bookingReference));
+    const scopedExpenses = expenses.items.filter((expense) => inSelectedScope(expense.bookingReference));
+    const scopedReconciliationItems = selectedChannel
+      ? reconciliation.items.filter((issue) => inSelectedScope(issue.reference))
+      : reconciliation.items;
+    const scopedReconciliation = {
+      ...reconciliation,
+      items: scopedReconciliationItems,
+      count: selectedChannel ? scopedReconciliationItems.length : reconciliation.count
+    };
+
+    const openRefunds = scopedRefunds.filter((refund) =>
+      openRefundStatuses.includes(normalizeLower(refund.status))
     );
+    const overdueInvoices = scopedInvoices.filter((invoice) => isInvoiceOverdue(invoice));
+    const outstandingAmount = roundMoney(scopedInvoices.reduce((sum, invoice) => sum + getInvoiceBalance(invoice), 0));
+    const overdueAmount = roundMoney(overdueInvoices.reduce((sum, invoice) => sum + getInvoiceBalance(invoice), 0));
+    const bookingRevenue = profitability.totals.bookedRevenue;
+    const collectedRevenue = profitability.totals.collectedRevenue;
+    const directCosts = profitability.totals.actualDirectCost;
+    const dashboardGrossProfit = roundMoney(bookingRevenue - directCosts);
+    const dashboardProfitMargin = bookingRevenue > 0 ? Number(((dashboardGrossProfit / bookingRevenue) * 100).toFixed(2)) : 0;
+    const previousBookingRevenue = previousProfitability.totals.bookedRevenue || 0;
+    const previousCollectedRevenue = previousProfitability.totals.collectedRevenue || 0;
+    const previousDirectCosts = previousProfitability.totals.actualDirectCost || 0;
+    const previousGrossProfit = roundMoney(previousBookingRevenue - previousDirectCosts);
+    const previousProfitMargin =
+      previousBookingRevenue > 0 ? Number(((previousGrossProfit / previousBookingRevenue) * 100).toFixed(2)) : 0;
+    const recentBookingFinancials = buildRecentFinancialRows(profitability.items, 8);
+    const revenueVsCosts = buildTrend(profitability.items, range.current);
+    const profitabilityOverview = buildTrend(profitability.items, range.current, chooseTimeBucket(range.current));
+    const revenueByChannel = buildRevenueByChannel(profitability.items);
+    const topProducts = buildTopProducts(profitability.items, 5);
+    const footerKpis = buildFooterKpis({ items: profitability.items, totals: profitability.totals });
+    const currencySummary = buildCurrencySummary(profitability.items);
+    const currency = profitability.currency;
+    const needsAttention = buildAttentionItems({
+      items: profitability.items,
+      invoices: scopedInvoices,
+      refunds: scopedRefunds,
+      reconciliation: scopedReconciliation,
+      costTemplates,
+      currency
+    });
 
     return {
       generatedAt: new Date().toISOString(),
       totals: {
-        invoiceCount: invoices.total,
-        refundCount: refunds.total,
-        bookingExpenseCount: expenses.total,
+        invoiceCount: selectedChannel ? scopedInvoices.length : invoices.total,
+        refundCount: selectedChannel ? scopedRefunds.length : refunds.total,
+        bookingExpenseCount: selectedChannel ? scopedExpenses.length : expenses.total,
         openRefundCount: openRefunds.length,
-        reconciliationIssueCount: reconciliation.count,
+        reconciliationIssueCount: scopedReconciliation.count,
         collectedRevenue: profitability.totals.collectedRevenue,
         confirmedRefundedAmount: profitability.totals.refundedAmount,
         netRevenue: profitability.totals.netRevenue,
         grossProfit: profitability.totals.grossProfit,
-        profitMargin: profitability.totals.profitMargin
+        profitMargin: profitability.totals.profitMargin,
+        bookingRevenue,
+        directCosts,
+        dashboardGrossProfit,
+        dashboardProfitMargin,
+        outstandingAmount,
+        overdueAmount
       },
-      currency: profitability.currency,
-      recentInvoices: invoices.items,
-      recentRefunds: refunds.items,
-      recentExpenses: expenses.items,
-      profitability: profitability.items,
-      reconciliation: reconciliation.items.slice(0, 10)
+      currency,
+      summaryKpis: {
+        bookingRevenue: makeKpi({
+          label: "Booking Revenue",
+          value: bookingRevenue,
+          previousValue: previousBookingRevenue,
+          tone: "green",
+          detail: "Recognized booking revenue",
+          href: "/admin/booking-accounting/profitability"
+        }),
+        collectedRevenue: makeKpi({
+          label: "Collected Revenue",
+          value: collectedRevenue,
+          previousValue: previousCollectedRevenue,
+          tone: "teal",
+          detail: "Successfully collected",
+          href: "/admin/booking-accounting/payments"
+        }),
+        directCosts: makeKpi({
+          label: "Direct Costs",
+          value: directCosts,
+          previousValue: previousDirectCosts,
+          tone: "red",
+          detail: "Actual booking-linked expenses",
+          href: "/admin/booking-accounting/expenses"
+        }),
+        grossProfit: makeKpi({
+          label: "Gross Profit",
+          value: dashboardGrossProfit,
+          previousValue: previousGrossProfit,
+          tone: "purple",
+          detail: "Booking revenue minus actual direct costs",
+          href: "/admin/booking-accounting/profitability"
+        })
+      },
+      secondaryKpis: {
+        profitMargin: makeKpi({
+          label: "Profit Margin",
+          value: dashboardProfitMargin,
+          previousValue: previousProfitMargin,
+          type: "percent",
+          tone: "purple",
+          detail: "Gross profit over booking revenue"
+        }),
+        outstandingAmount: makeKpi({
+          label: "Outstanding Amount",
+          value: outstandingAmount,
+          type: "money",
+          tone: "orange",
+          detail: `${scopedInvoices.filter((invoice) => getInvoiceBalance(invoice) > 0).length} invoices`,
+          href: "/admin/booking-accounting/invoices"
+        }),
+        refunds: makeKpi({
+          label: "Refunds",
+          value: profitability.totals.refundedAmount,
+          type: "money",
+          tone: "blue",
+          detail: `${selectedChannel ? scopedRefunds.length : refunds.total || 0} refund records`,
+          href: "/admin/booking-accounting/refunds"
+        }),
+        unreconciledItems: makeKpi({
+          label: "Unreconciled Items",
+          value: scopedReconciliation.count,
+          type: "count",
+          tone: scopedReconciliation.count ? "orange" : "green",
+          detail: scopedReconciliation.count ? "Needs attention" : "No issues in scan",
+          href: "/admin/booking-accounting/reconciliation"
+        }),
+        overdueAmount: makeKpi({
+          label: "Overdue Amount",
+          value: overdueAmount,
+          type: "money",
+          tone: overdueAmount ? "red" : "green",
+          detail: `${overdueInvoices.length} overdue invoices`,
+          href: "/admin/booking-accounting/invoices"
+        })
+      },
+      charts: {
+        revenueVsCosts,
+        revenueByChannel,
+        profitabilityOverview
+      },
+      recentBookingFinancials,
+      needsAttention,
+      topProducts,
+      footerKpis,
+      currencySummary,
+      currencyWarning:
+        currencySummary.length > 1
+          ? "Multiple currencies are present in this bounded scan. Dashboard totals use each record's accounting currency fields; review currency groups before external reporting."
+          : "",
+      costTemplateCoverage: costTemplates.summary,
+      filters: {
+        applied: {
+          fromDate: filters.fromDate || "",
+          toDate: filters.toDate || "",
+          channel: normalizeToken(filters.channel || filters.salesChannel || ""),
+          currency: normalizeToken(filters.currency || "")
+        },
+        range,
+        channels: profitability.filters?.channels || []
+      },
+      definitions: {
+        bookingRevenue: "Sum of booked/invoiced revenue in the selected booking accounting scan.",
+        collectedRevenue: "Sum of invoice paid amount or successful linked payment amount.",
+        directCosts: "Only actual booking-linked BusinessExpense records.",
+        dashboardGrossProfit: "Booking revenue minus actual direct booking costs.",
+        refundRate: "Confirmed refunded amount divided by collected revenue.",
+        collectionRate: "Collected revenue divided by booking revenue."
+      },
+      recentInvoices: scopedInvoices.slice(0, 10),
+      recentRefunds: scopedRefunds.slice(0, 10),
+      recentExpenses: scopedExpenses.slice(0, 10),
+      profitability: profitability.items.slice(0, 10),
+      reconciliation: scopedReconciliation.items.slice(0, 10)
     };
   };
 

@@ -9,6 +9,14 @@ const routesSource = fs.readFileSync(
   path.join(process.cwd(), "src", "routes", "AppRoutes.jsx"),
   "utf8"
 );
+const bookingAccountingPageSource = fs.readFileSync(
+  path.join(process.cwd(), "src", "pages", "admin", "AdminBookingAccountingPage.jsx"),
+  "utf8"
+);
+const stylesSource = fs.readFileSync(
+  path.join(process.cwd(), "src", "app", "styles.css"),
+  "utf8"
+);
 
 test("Booking Accounting mode resolver maps submenu routes", () => {
   assert.equal(bookingAccountingModeFromPath("/admin/booking-accounting/dashboard"), "dashboard");
@@ -33,4 +41,23 @@ test("Booking Accounting routes no longer point to AdminUnavailablePage placehol
     assert.equal(line.includes("AdminUnavailablePage"), false, line.trim());
   }
   assert.ok(routesSource.includes("AdminBookingAccountingPage"));
+});
+
+test("Booking Accounting dashboard uses the aggregated financial dashboard contract", () => {
+  assert.ok(bookingAccountingPageSource.includes("BookingAccountingDashboard"));
+  assert.ok(bookingAccountingPageSource.includes("summaryKpis"));
+  assert.ok(bookingAccountingPageSource.includes("secondaryKpis"));
+  assert.ok(bookingAccountingPageSource.includes("recentBookingFinancials"));
+  assert.ok(bookingAccountingPageSource.includes("Revenue vs Direct Costs"));
+  assert.ok(bookingAccountingPageSource.includes("Revenue by Channel"));
+  assert.ok(bookingAccountingPageSource.includes("Top Profitable Products"));
+  assert.equal(bookingAccountingPageSource.includes("title=\"Recent Invoices\""), false);
+});
+
+test("Booking Accounting dashboard has mobile financial cards and small-screen rules", () => {
+  assert.ok(stylesSource.includes(".booking-accounting-dashboard-mobile-financials"));
+  assert.ok(stylesSource.includes("@media (max-width: 767.98px)"));
+  assert.ok(stylesSource.includes("@media (max-width: 479.98px)"));
+  assert.ok(stylesSource.includes("@media (max-width: 340px)"));
+  assert.ok(stylesSource.includes("grid-template-columns: 1fr"));
 });

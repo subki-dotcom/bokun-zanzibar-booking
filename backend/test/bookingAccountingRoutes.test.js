@@ -76,16 +76,19 @@ test("booking accounting dashboard route requires auth and allows staff read per
     const unauthorized = await fetch(`http://127.0.0.1:${port}/api/admin/booking-accounting/dashboard`);
     assert.equal(unauthorized.status, 401);
 
-    const response = await fetch(`http://127.0.0.1:${port}/api/admin/booking-accounting/dashboard?limit=25`, {
+    const response = await fetch(
+      `http://127.0.0.1:${port}/api/admin/booking-accounting/dashboard?limit=25&channel=VIATOR&dateRange=this_month`,
+      {
       headers: {
         Authorization: `Bearer ${token()}`
       }
-    });
+      }
+    );
     const payload = await response.json();
 
     assert.equal(response.status, 200);
     assert.equal(payload.success, true);
-    assert.deepEqual(capturedArgs, { limit: 25 });
+    assert.deepEqual(capturedArgs, { limit: 25, channel: "VIATOR", dateRange: "this_month" });
     assert.equal(payload.data.totals.collectedRevenue, 100);
   } finally {
     bookingAccountingService.getDashboard = originalDashboard;

@@ -2,7 +2,7 @@ export const BOOKING_ACCOUNTING_VIEW_CONFIG = {
   dashboard: {
     title: "Booking Accounting Dashboard",
     eyebrow: "Booking Accounting",
-    subtitle: "Invoices, payments, refunds, booking-linked expenses, profitability and reconciliation evidence."
+    subtitle: "Real-time overview of booking financial performance and reconciliation status."
   },
   invoices: {
     title: "Invoices",
