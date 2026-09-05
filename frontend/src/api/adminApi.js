@@ -599,6 +599,16 @@ export const fetchChartOfAccounts = async (params = {}) => {
   return response.data.data;
 };
 
+export const createChartAccount = async (payload = {}) => {
+  const response = await axiosClient.post("/admin/accounting/chart-of-accounts", payload);
+  return response.data.data;
+};
+
+export const updateChartAccount = async (accountId, payload = {}) => {
+  const response = await axiosClient.patch(`/admin/accounting/chart-of-accounts/${accountId}`, payload);
+  return response.data.data;
+};
+
 export const seedChartOfAccounts = async (payload = { dryRun: true }) => {
   const response = await axiosClient.post("/admin/accounting/chart-of-accounts/seed-defaults", payload);
   return response.data.data;

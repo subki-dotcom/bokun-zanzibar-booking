@@ -35,6 +35,7 @@ import AdminPerformanceReviewPage from "../pages/admin/AdminPerformanceReviewPag
 import AdminProductionReadinessPage from "../pages/admin/AdminProductionReadinessPage";
 import AdminBookingAccountingPage from "../pages/admin/AdminBookingAccountingPage";
 import AdminBusinessAccountingPage from "../pages/admin/AdminBusinessAccountingPage";
+import AdminChartOfAccountsPage from "../pages/admin/AdminChartOfAccountsPage";
 import AdminCrmPage from "../pages/admin/AdminCrmPage";
 import AdminGeneralLedgerPage from "../pages/admin/AdminGeneralLedgerPage";
 import AdminReportCenterPage from "../pages/admin/AdminReportCenterPage";
@@ -131,8 +132,15 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/business-accounting/chart-of-accounts"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW]}>
+              <AdminChartOfAccountsPage />
+            </ProtectedRoute>
+          }
+        />
         {[
-          "/admin/business-accounting/chart-of-accounts",
           "/admin/business-accounting/journal-entries",
           "/admin/business-accounting/general-ledger",
           "/admin/business-accounting/trial-balance",

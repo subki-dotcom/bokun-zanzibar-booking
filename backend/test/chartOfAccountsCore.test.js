@@ -30,6 +30,12 @@ const createFakeModels = () => {
       if (value instanceof RegExp) {
         return value.test(String(row[key] || ""));
       }
+      if (value && typeof value === "object" && Array.isArray(value.$in)) {
+        return value.$in.includes(row[key]);
+      }
+      if (value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "$ne")) {
+        return String(row[key] || "") !== String(value.$ne || "");
+      }
       return String(row[key] || "") === String(value || "");
     });
 
@@ -169,6 +175,56 @@ test("manual chart account creation prevents duplicates and normalizes API respo
       }),
     /already exists/
   );
+});
+
+test("chart account listing returns paginated accounts with full summary and hierarchy", async () => {
+  const { service } = createFakeModels();
+  await service.seedDefaultChart({ dryRun: false, auth: { id: "admin-1", role: "admin" } });
+
+  const result = await service.listAccounts({
+    status: "all",
+    page: 2,
+    limit: 5,
+    sortBy: "code",
+    sortDirection: "asc"
+  });
+
+  assert.equal(result.items.length, 5);
+  assert.equal(result.pagination.page, 2);
+  assert.equal(result.pagination.limit, 5);
+  assert.equal(result.pagination.total > result.items.length, true);
+  assert.equal(result.summary.total, result.pagination.total);
+  assert.equal(result.summary.byType.some((row) => row.type === GL_ACCOUNT_TYPE.ASSET && row.count > 0), true);
+  assert.equal(result.numberingPolicy.some((row) => row.range === "1xxx" && row.label === "Assets"), true);
+  assert.equal(result.hierarchy.some((row) => row.code === "1000" && row.children.some((child) => child.code === "1030")), true);
+  assert.equal(result.items.every((row) => row.typeLabel && row.status && row.systemLabel), true);
+});
+
+test("chart account listing supports search, status, ownership and hierarchy filters", async () => {
+  const { service, state } = createFakeModels();
+  await service.seedDefaultChart({ dryRun: false, auth: { id: "admin-1", role: "admin" } });
+  const pesapal = state.accounts.find((account) => account.code === "1030");
+  await service.updateAccount({
+    accountId: pesapal._id,
+    input: {
+      name: "Pesapal Clearing Account",
+      description: "Gateway settlement account"
+    },
+    auth: { id: "admin-1", role: "admin" }
+  });
+
+  const result = await service.listAccounts({
+    search: "gateway",
+    status: "active",
+    systemAccount: "system",
+    hasParent: true,
+    limit: 25
+  });
+
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0].code, "1030");
+  assert.equal(result.items[0].parentLabel, "1000 - Current Assets");
+  assert.equal(result.summary.total, 1);
 });
 
 test("system chart accounts cannot have structural fields changed", async () => {

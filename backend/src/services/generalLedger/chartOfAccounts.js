@@ -9,6 +9,50 @@ const {
 const AppError = require("../../utils/AppError");
 
 const CODE_PATTERN = /^[1-7]\d{3}(?:-[A-Z0-9]{1,16})?$/;
+const MAX_ACCOUNT_LIST_LIMIT = 1000;
+const DEFAULT_ACCOUNT_LIST_LIMIT = 25;
+const ACCOUNT_TYPE_ORDER = [
+  GL_ACCOUNT_TYPE.ASSET,
+  GL_ACCOUNT_TYPE.LIABILITY,
+  GL_ACCOUNT_TYPE.EQUITY,
+  GL_ACCOUNT_TYPE.REVENUE,
+  GL_ACCOUNT_TYPE.COST_OF_SALES,
+  GL_ACCOUNT_TYPE.EXPENSE,
+  GL_ACCOUNT_TYPE.OTHER_INCOME,
+  GL_ACCOUNT_TYPE.OTHER_EXPENSE
+];
+
+const ACCOUNT_TYPE_LABELS = Object.freeze({
+  [GL_ACCOUNT_TYPE.ASSET]: "Assets",
+  [GL_ACCOUNT_TYPE.LIABILITY]: "Liabilities",
+  [GL_ACCOUNT_TYPE.EQUITY]: "Equity",
+  [GL_ACCOUNT_TYPE.REVENUE]: "Income",
+  [GL_ACCOUNT_TYPE.COST_OF_SALES]: "Cost of Sales",
+  [GL_ACCOUNT_TYPE.EXPENSE]: "Expenses",
+  [GL_ACCOUNT_TYPE.OTHER_INCOME]: "Other Income",
+  [GL_ACCOUNT_TYPE.OTHER_EXPENSE]: "Other Expenses"
+});
+
+const ACCOUNT_TYPE_COLORS = Object.freeze({
+  [GL_ACCOUNT_TYPE.ASSET]: "#0f766e",
+  [GL_ACCOUNT_TYPE.LIABILITY]: "#7c3aed",
+  [GL_ACCOUNT_TYPE.EQUITY]: "#2563eb",
+  [GL_ACCOUNT_TYPE.REVENUE]: "#10b981",
+  [GL_ACCOUNT_TYPE.COST_OF_SALES]: "#eab308",
+  [GL_ACCOUNT_TYPE.EXPENSE]: "#ef4444",
+  [GL_ACCOUNT_TYPE.OTHER_INCOME]: "#06b6d4",
+  [GL_ACCOUNT_TYPE.OTHER_EXPENSE]: "#64748b"
+});
+
+const NUMBERING_POLICY = Object.freeze([
+  { range: "1xxx", type: GL_ACCOUNT_TYPE.ASSET, label: "Assets", example: "1000 - Current Assets" },
+  { range: "2xxx", type: GL_ACCOUNT_TYPE.LIABILITY, label: "Liabilities", example: "2000 - Current Liabilities" },
+  { range: "3xxx", type: GL_ACCOUNT_TYPE.EQUITY, label: "Equity", example: "3000 - Equity" },
+  { range: "4xxx", type: GL_ACCOUNT_TYPE.REVENUE, label: "Income", example: "4000 - Operating Revenue" },
+  { range: "5xxx", type: GL_ACCOUNT_TYPE.COST_OF_SALES, label: "Cost of Sales", example: "5000 - Cost of Sales" },
+  { range: "6xxx", type: GL_ACCOUNT_TYPE.EXPENSE, label: "Operating Expenses", example: "6000 - Operating Expenses" },
+  { range: "7xxx", type: "OTHER", label: "Other Income / Expenses", example: "7000 - Other Income, 7900 - Other Expenses" }
+]);
 
 const normalizeToken = (value = "") => String(value || "").trim();
 const normalizeEnumToken = (value = "") => normalizeToken(value).toUpperCase();
@@ -21,6 +65,30 @@ const leanMaybe = async (value) => {
 
 const sortByCode = (rows = []) =>
   [...rows].sort((left, right) => String(left.code || "").localeCompare(String(right.code || ""), "en"));
+
+const parsePositiveInt = (value, fallback, { min = 1, max = Number.MAX_SAFE_INTEGER } = {}) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, min), max);
+};
+
+const labelForType = (type = "") => ACCOUNT_TYPE_LABELS[type] || String(type || "").replace(/_/g, " ");
+
+const percentage = (count = 0, total = 0) => {
+  if (!total) return 0;
+  return Math.round((Number(count || 0) / Number(total || 0)) * 1000) / 10;
+};
+
+const sortAccounts = (rows = [], { sortBy = "code", sortDirection = "asc" } = {}) => {
+  const field = ["code", "name", "type", "subtype", "active", "createdAt", "updatedAt"].includes(sortBy) ? sortBy : "code";
+  const direction = String(sortDirection).toLowerCase() === "desc" ? -1 : 1;
+  return [...rows].sort((left, right) => {
+    const leftValue = field === "active" ? Number(left.active !== false) : String(left[field] || "");
+    const rightValue = field === "active" ? Number(right.active !== false) : String(right[field] || "");
+    if (typeof leftValue === "number") return (leftValue - rightValue) * direction;
+    return leftValue.localeCompare(rightValue, "en", { numeric: true, sensitivity: "base" }) * direction;
+  });
+};
 
 const normalBalanceForType = (type = "") =>
   [
@@ -196,47 +264,212 @@ const createChartOfAccountsService = ({
 
   const findOne = async (query = {}) => leanMaybe(ChartOfAccountModel.findOne(query));
 
-  const findMany = async (query = {}, { limit = 500 } = {}) => {
+  const findMany = async (query = {}, { limit = 500, skip = 0, sort = { code: 1 } } = {}) => {
     let result = ChartOfAccountModel.find(query);
     if (result && typeof result.sort === "function") {
-      result = result.sort({ code: 1 });
+      result = result.sort(sort);
+    }
+    if (result && typeof result.skip === "function") {
+      result = result.skip(skip);
     }
     if (result && typeof result.limit === "function") {
       result = result.limit(limit);
     }
     const rows = await leanMaybe(result);
-    return sortByCode(asArray(rows)).slice(0, limit);
+    return sortAccounts(asArray(rows), {
+      sortBy: Object.keys(sort || {})[0] || "code",
+      sortDirection: Object.values(sort || {})[0] === -1 ? "desc" : "asc"
+    }).slice(skip, skip + limit);
+  };
+
+  const countMany = async (query = {}) => {
+    if (typeof ChartOfAccountModel.countDocuments === "function") {
+      return ChartOfAccountModel.countDocuments(query);
+    }
+    const rows = await leanMaybe(ChartOfAccountModel.find(query));
+    return asArray(rows).length;
+  };
+
+  const buildListQuery = ({
+    type = "",
+    subtype = "",
+    active = null,
+    status = "",
+    includeInactive = false,
+    search = "",
+    systemAccount = "",
+    hasParent = ""
+  } = {}) => {
+    const query = {};
+    const normalizedType = normalizeEnumToken(type);
+    const normalizedStatus = normalizeToken(status).toLowerCase();
+    if (normalizedType === "OTHER") {
+      query.type = { $in: [GL_ACCOUNT_TYPE.OTHER_INCOME, GL_ACCOUNT_TYPE.OTHER_EXPENSE] };
+    } else if (normalizedType) {
+      query.type = normalizedType;
+    }
+    if (subtype) query.subtype = normalizeEnumToken(subtype);
+
+    if (normalizedStatus === "active") query.active = true;
+    else if (normalizedStatus === "inactive") query.active = false;
+    else if (!includeInactive) query.active = active === null || active === undefined ? true : Boolean(active);
+    else if (active !== null && active !== undefined) query.active = Boolean(active);
+
+    if (systemAccount === true || systemAccount === "true" || systemAccount === "system") query.systemAccount = true;
+    if (systemAccount === false || systemAccount === "false" || systemAccount === "manual") query.systemAccount = false;
+
+    if (hasParent === true || hasParent === "true") query.parentAccount = { $ne: null };
+    if (hasParent === false || hasParent === "false") query.parentAccount = null;
+
+    if (search) {
+      const expression = new RegExp(normalizeToken(search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      query.$or = [{ code: expression }, { name: expression }, { description: expression }, { parentCode: expression }];
+    }
+    return query;
+  };
+
+  const buildAccountSummary = (accounts = []) => {
+    const total = accounts.length;
+    const typeCounts = ACCOUNT_TYPE_ORDER.map((type) => {
+      const count = accounts.filter((account) => account.type === type).length;
+      return {
+        type,
+        label: labelForType(type),
+        count,
+        percentage: percentage(count, total),
+        color: ACCOUNT_TYPE_COLORS[type] || "#64748b"
+      };
+    });
+
+    return {
+      total,
+      activeCount: accounts.filter((account) => account.active !== false).length,
+      inactiveCount: accounts.filter((account) => account.active === false).length,
+      systemCount: accounts.filter((account) => account.systemAccount).length,
+      manualCount: accounts.filter((account) => !account.systemAccount).length,
+      byType: typeCounts,
+      primaryCards: [
+        {
+          key: "total",
+          label: "Total Accounts",
+          count: total,
+          detail: "All accounts in chart",
+          percentage: 100
+        },
+        ...[
+          GL_ACCOUNT_TYPE.ASSET,
+          GL_ACCOUNT_TYPE.LIABILITY,
+          GL_ACCOUNT_TYPE.EQUITY,
+          GL_ACCOUNT_TYPE.REVENUE,
+          GL_ACCOUNT_TYPE.EXPENSE
+        ].map((type) => {
+          const row = typeCounts.find((item) => item.type === type) || {};
+          return {
+            key: type,
+            label: row.label || labelForType(type),
+            count: row.count || 0,
+            detail: `${row.percentage || 0}% of total`,
+            percentage: row.percentage || 0,
+            color: row.color || ACCOUNT_TYPE_COLORS[type]
+          };
+        })
+      ]
+    };
+  };
+
+  const attachParentLabels = (accounts = [], allAccounts = []) => {
+    const byId = new Map(allAccounts.map((account) => [normalizeId(account._id || account.id), account]));
+    const byCode = new Map(allAccounts.map((account) => [account.code, account]));
+    return accounts.map((account) => {
+      const normalized = normalizeChartAccountForApi(account);
+      const parent = normalized.parentAccount ? byId.get(normalized.parentAccount) : byCode.get(normalized.parentCode);
+      return {
+        ...normalized,
+        parentLabel: parent ? `${parent.code} - ${parent.name}` : "",
+        typeLabel: labelForType(normalized.type),
+        status: normalized.active ? "active" : "inactive",
+        systemLabel: normalized.systemAccount ? "System" : "Manual"
+      };
+    });
+  };
+
+  const buildHierarchy = (accounts = []) => {
+    const normalized = attachParentLabels(accounts, accounts);
+    const byCode = new Map(normalized.map((account) => [account.code, { ...account, children: [] }]));
+    const roots = [];
+
+    for (const account of byCode.values()) {
+      const parent = account.parentCode ? byCode.get(account.parentCode) : null;
+      if (parent) parent.children.push(account);
+      else roots.push(account);
+    }
+
+    const sortTree = (nodes = []) =>
+      nodes
+        .sort((left, right) => left.code.localeCompare(right.code, "en", { numeric: true }))
+        .map((node) => ({ ...node, children: sortTree(node.children || []) }));
+
+    return sortTree(roots);
   };
 
   const listAccounts = async ({
     type = "",
     subtype = "",
     active = null,
+    status = "",
     includeInactive = false,
     search = "",
-    limit = 500
+    systemAccount = "",
+    hasParent = "",
+    page = 1,
+    limit = DEFAULT_ACCOUNT_LIST_LIMIT,
+    sortBy = "code",
+    sortDirection = "asc"
   } = {}) => {
-    const query = {};
-    if (type) query.type = normalizeEnumToken(type);
-    if (subtype) query.subtype = normalizeEnumToken(subtype);
-    if (!includeInactive) query.active = active === null || active === undefined ? true : Boolean(active);
-    if (includeInactive && active !== null && active !== undefined) query.active = Boolean(active);
-    if (search) {
-      const expression = new RegExp(normalizeToken(search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-      query.$or = [{ code: expression }, { name: expression }, { description: expression }];
-    }
+    const normalizedLimit = parsePositiveInt(limit, DEFAULT_ACCOUNT_LIST_LIMIT, { min: 1, max: MAX_ACCOUNT_LIST_LIMIT });
+    const normalizedPage = parsePositiveInt(page, 1);
+    const skip = (normalizedPage - 1) * normalizedLimit;
+    const query = buildListQuery({ type, subtype, active, status, includeInactive, search, systemAccount, hasParent });
+    const allMatching = await findMany(query, { limit: 5000, sort: { code: 1 } });
+    const total = typeof ChartOfAccountModel.countDocuments === "function" ? await countMany(query) : allMatching.length;
+    const allForLookup = await findMany({}, { limit: 5000, sort: { code: 1 } });
+    const sorted = sortAccounts(allMatching, { sortBy, sortDirection });
+    const pageItems = sorted.slice(skip, skip + normalizedLimit);
+    const items = attachParentLabels(pageItems, allForLookup);
+    const pages = Math.max(1, Math.ceil(total / normalizedLimit));
 
-    const items = await findMany(query, { limit });
     return {
-      items: items.map(normalizeChartAccountForApi),
+      items,
       count: items.length,
+      total,
+      pagination: {
+        page: normalizedPage,
+        limit: normalizedLimit,
+        total,
+        pages,
+        hasPrevious: normalizedPage > 1,
+        hasNext: normalizedPage < pages,
+        from: total ? skip + 1 : 0,
+        to: Math.min(skip + items.length, total)
+      },
+      summary: buildAccountSummary(allMatching),
+      hierarchy: buildHierarchy(allMatching),
+      numberingPolicy: NUMBERING_POLICY,
+      sort: {
+        by: ["code", "name", "type", "subtype", "active", "createdAt", "updatedAt"].includes(sortBy) ? sortBy : "code",
+        direction: String(sortDirection).toLowerCase() === "desc" ? "desc" : "asc"
+      },
       filters: {
-        type: query.type || "",
+        type: normalizeEnumToken(type),
         subtype: query.subtype || "",
         active: query.active,
+        status: status || "",
         includeInactive: Boolean(includeInactive),
         search: normalizeToken(search),
-        limit
+        systemAccount,
+        hasParent,
+        page: normalizedPage,
+        limit: normalizedLimit
       }
     };
   };

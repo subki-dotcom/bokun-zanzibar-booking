@@ -43,9 +43,15 @@ const listChartOfAccountsSchema = z.object({
       type: accountTypeEnum.optional(),
       subtype: accountSubtypeEnum.optional(),
       active: queryBoolean.optional(),
+      status: z.enum(["all", "active", "inactive"]).optional(),
       includeInactive: queryBoolean.optional(),
       search: z.string().max(120).optional(),
-      limit: z.coerce.number().int().min(1).max(1000).optional()
+      systemAccount: z.enum(["all", "system", "manual"]).optional(),
+      hasParent: queryBoolean.optional(),
+      page: z.coerce.number().int().min(1).max(100000).optional(),
+      limit: z.coerce.number().int().min(1).max(1000).optional(),
+      sortBy: z.enum(["code", "name", "type", "subtype", "active", "createdAt", "updatedAt"]).optional(),
+      sortDirection: z.enum(["asc", "desc"]).optional()
     })
     .optional()
 });
