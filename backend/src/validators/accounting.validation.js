@@ -198,10 +198,18 @@ const ledgerReportQuerySchema = z.object({
     .object({
       accountCode: accountCode.optional(),
       accountId: mongoObjectId.optional(),
+      sourceModule: sourceModuleEnum.optional(),
+      journal: z.string().trim().max(80).optional(),
+      entryNumber: z.string().trim().max(80).optional(),
+      user: z.string().trim().max(120).optional(),
+      search: z.string().trim().max(160).optional(),
       fromDate: z.string().min(1).optional(),
       toDate: z.string().min(1).optional(),
       asOfDate: z.string().min(1).optional(),
-      limit: z.coerce.number().int().min(1).max(5000).optional()
+      page: z.coerce.number().int().min(1).max(100000).optional(),
+      limit: z.coerce.number().int().min(1).max(1000).optional(),
+      sortBy: z.enum(["postingDate", "entryNumber", "accountCode", "baseCurrencyDebit", "baseCurrencyCredit", "sourceReference"]).optional(),
+      sortDirection: z.enum(["asc", "desc"]).optional()
     })
     .optional()
 });

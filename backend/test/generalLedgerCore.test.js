@@ -319,6 +319,87 @@ test("provider settlement with fee clears Pesapal balance", async () => {
   assert.equal(ledger.items.at(-1).runningBalance, "0");
 });
 
+test("general ledger register uses posted lines, summaries and account balances", async () => {
+  const { service } = createFakeModels();
+  const opening = await service.createManualJournal({
+    input: {
+      postingDate: "2026-07-31T10:00:00.000Z",
+      description: "Opening bank balance",
+      currency: "USD",
+      requiresApproval: false,
+      lines: [
+        { accountCode: "1020", debit: "100", description: "Opening bank" },
+        { accountCode: "3010", credit: "100", description: "Owner equity" }
+      ]
+    },
+    auth: { id: "admin-1", role: "admin" }
+  });
+  await service.postJournal({ journalId: opening.journal.id, auth: { id: "admin-1", role: "admin" } });
+
+  const posted = await service.createManualJournal({
+    input: {
+      postingDate: "2026-08-10T10:00:00.000Z",
+      description: "August office rent payment",
+      currency: "USD",
+      requiresApproval: false,
+      lines: [
+        { accountCode: "6020", debit: "40", description: "Office rent" },
+        { accountCode: "1020", credit: "40", description: "Bank payment" }
+      ]
+    },
+    auth: { id: "admin-2", role: "admin" }
+  });
+  await service.postJournal({ journalId: posted.journal.id, auth: { id: "admin-2", role: "admin" } });
+
+  await service.createManualJournal({
+    input: {
+      postingDate: "2026-08-11T10:00:00.000Z",
+      description: "Draft that must not affect the ledger",
+      currency: "USD",
+      lines: [
+        { accountCode: "6020", debit: "90" },
+        { accountCode: "1020", credit: "90" }
+      ]
+    },
+    auth: { id: "admin-3", role: "admin" }
+  });
+
+  const all = await service.getGeneralLedger({
+    fromDate: "2026-08-01T00:00:00.000Z",
+    toDate: "2026-08-31T23:59:59.999Z",
+    search: "rent",
+    page: 1,
+    limit: 1
+  });
+
+  assert.equal(all.total, 2);
+  assert.equal(all.count, 1);
+  assert.equal(all.pagination.pages, 2);
+  assert.equal(all.summary.totalTransactions, 2);
+  assert.equal(all.summary.totalDebit, "40");
+  assert.equal(all.summary.totalCredit, "40");
+  assert.equal(all.summary.balanced, true);
+  assert.equal(all.summary.accountsInUse, 2);
+  assert.equal(all.items[0].runningBalance, null);
+  assert.equal(all.trend.points.length, 1);
+  assert.equal(all.topAccounts.length, 2);
+  assert.equal(all.items.some((line) => line.description.includes("Draft")), false);
+
+  const bank = await service.getGeneralLedger({
+    accountCode: "1020",
+    fromDate: "2026-08-01T00:00:00.000Z",
+    toDate: "2026-08-31T23:59:59.999Z",
+    sortDirection: "asc"
+  });
+
+  assert.equal(bank.total, 1);
+  assert.equal(bank.accountSummary.openingBalance, "100");
+  assert.equal(bank.accountSummary.periodDebit, "0");
+  assert.equal(bank.accountSummary.periodCredit, "40");
+  assert.equal(bank.accountSummary.closingBalance, "60");
+  assert.equal(bank.items[0].runningBalance, "60");
+});
+
 test("historical migration dry-run writes nothing and apply requires evidence", async () => {
   const { service, state } = createFakeModels();
   const dryRun = await service.runHistoricalMigration({ dryRun: true });

@@ -49,6 +49,8 @@ const CLOSED_PERIOD_STATUSES = new Set([ACCOUNTING_PERIOD_STATUS.CLOSED, ACCOUNT
 const MONEY_ZERO = "0";
 const DEFAULT_JOURNAL_LIMIT = 25;
 const MAX_JOURNAL_LIMIT = 1000;
+const DEFAULT_LEDGER_LIMIT = 25;
+const MAX_LEDGER_LIMIT = 1000;
 
 const JOURNAL_STATUS_LABELS = Object.freeze({
   [JOURNAL_STATUS.DRAFT]: "Draft",
@@ -122,6 +124,148 @@ const journalHasProblem = (entry = {}) => {
     !toDecimal(entry.baseTotalDebit || 0).equals(toDecimal(entry.baseTotalCredit || 0)) ||
     Number(entry.lineCount || 0) < 2
   );
+};
+
+const isDebitNormalAccount = (accountType = "") =>
+  [GL_ACCOUNT_TYPE.ASSET, GL_ACCOUNT_TYPE.EXPENSE, GL_ACCOUNT_TYPE.COST_OF_SALES, GL_ACCOUNT_TYPE.OTHER_EXPENSE].includes(accountType);
+
+const ledgerLineSignedBalance = (line = {}) => {
+  const debit = toDecimal(line.baseCurrencyDebit || 0);
+  const credit = toDecimal(line.baseCurrencyCredit || 0);
+  return isDebitNormalAccount(line.accountType) ? debit.minus(credit) : credit.minus(debit);
+};
+
+const ledgerLineActivityAmount = (line = {}) =>
+  toDecimal(line.baseCurrencyDebit || 0).plus(toDecimal(line.baseCurrencyCredit || 0));
+
+const lineDateValue = (line = {}) => new Date(line.postingDate || line.entryDate || 0).getTime();
+
+const sortLedgerRows = (rows = [], { sortBy = "postingDate", sortDirection = "desc" } = {}) => {
+  const field = ["postingDate", "entryNumber", "accountCode", "baseCurrencyDebit", "baseCurrencyCredit", "sourceReference"].includes(sortBy)
+    ? sortBy
+    : "postingDate";
+  const direction = String(sortDirection).toLowerCase() === "asc" ? 1 : -1;
+  return [...rows].sort((left, right) => {
+    if (field === "postingDate") {
+      const dateCompare = (lineDateValue(left) - lineDateValue(right)) * direction;
+      if (dateCompare) return dateCompare;
+      return String(left.entryNumber || "").localeCompare(String(right.entryNumber || ""), "en", { numeric: true }) * direction;
+    }
+    if (["baseCurrencyDebit", "baseCurrencyCredit"].includes(field)) {
+      return toDecimal(left[field] || 0).minus(toDecimal(right[field] || 0)).toNumber() * direction;
+    }
+    return String(left[field] || "").localeCompare(String(right[field] || ""), "en", { numeric: true, sensitivity: "base" }) * direction;
+  });
+};
+
+const ledgerTrendBucket = (date, granularity) => {
+  const parsed = new Date(date);
+  if (granularity === "month") {
+    return `${parsed.getUTCFullYear()}-${String(parsed.getUTCMonth() + 1).padStart(2, "0")}`;
+  }
+  if (granularity === "week") {
+    const weekStart = new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate()));
+    weekStart.setUTCDate(weekStart.getUTCDate() - weekStart.getUTCDay());
+    return weekStart.toISOString().slice(0, 10);
+  }
+  return parsed.toISOString().slice(0, 10);
+};
+
+const chooseLedgerTrendGranularity = ({ fromDate = "", toDate = "" } = {}) => {
+  if (!fromDate || !toDate) return "month";
+  const spanDays = Math.abs(normalizeDate(toDate).getTime() - normalizeDate(fromDate).getTime()) / 86400000;
+  if (spanDays > 120) return "month";
+  if (spanDays > 45) return "week";
+  return "day";
+};
+
+const buildLedgerTrend = (lines = [], filters = {}) => {
+  const granularity = chooseLedgerTrendGranularity(filters);
+  const buckets = new Map();
+  lines.forEach((line) => {
+    const bucket = ledgerTrendBucket(line.postingDate || line.entryDate, granularity);
+    const row = buckets.get(bucket) || {
+      bucket,
+      label: bucket,
+      debit: new Decimal(0),
+      credit: new Decimal(0)
+    };
+    row.debit = row.debit.plus(toDecimal(line.baseCurrencyDebit || 0));
+    row.credit = row.credit.plus(toDecimal(line.baseCurrencyCredit || 0));
+    buckets.set(bucket, row);
+  });
+  return {
+    granularity,
+    points: Array.from(buckets.values())
+      .sort((left, right) => left.bucket.localeCompare(right.bucket))
+      .map((row) => ({
+        bucket: row.bucket,
+        label: row.label,
+        debit: row.debit.toFixed(),
+        credit: row.credit.toFixed(),
+        difference: row.debit.minus(row.credit).toFixed()
+      }))
+  };
+};
+
+const summarizeLedgerLines = (lines = []) => {
+  const totalDebit = decimalSum(lines.map((line) => line.baseCurrencyDebit || 0));
+  const totalCredit = decimalSum(lines.map((line) => line.baseCurrencyCredit || 0));
+  const accountCodes = new Set(lines.map((line) => line.accountCode).filter(Boolean));
+  const journalNumbers = new Set(lines.map((line) => line.entryNumber).filter(Boolean));
+  const currencySet = new Set(lines.map((line) => line.baseCurrency || line.currency).filter(Boolean));
+  const sourceMap = new Map();
+  lines.forEach((line) => {
+    const sourceModule = line.sourceModule || SOURCE_MODULE.MANUAL;
+    const existing = sourceMap.get(sourceModule) || { sourceModule, label: sourceLabel(sourceModule), count: 0 };
+    existing.count += 1;
+    sourceMap.set(sourceModule, existing);
+  });
+  return {
+    totalTransactions: lines.length,
+    totalDebit,
+    totalCredit,
+    difference: decimalDifference(totalDebit, totalCredit),
+    balanced: toDecimal(totalDebit).equals(toDecimal(totalCredit)),
+    accountsInUse: accountCodes.size,
+    journalsInUse: journalNumbers.size,
+    baseCurrencies: Array.from(currencySet),
+    sources: Array.from(sourceMap.values()).sort((left, right) => right.count - left.count)
+  };
+};
+
+const topAccountsFromLedgerLines = (lines = [], limit = 5) => {
+  const map = new Map();
+  lines.forEach((line) => {
+    const key = line.accountCode || "UNKNOWN";
+    const row = map.get(key) || {
+      accountCode: line.accountCode || "",
+      accountName: line.accountName || "Unknown account",
+      accountType: line.accountType || "",
+      transactions: 0,
+      amount: new Decimal(0),
+      debit: new Decimal(0),
+      credit: new Decimal(0)
+    };
+    row.transactions += 1;
+    row.amount = row.amount.plus(ledgerLineActivityAmount(line));
+    row.debit = row.debit.plus(toDecimal(line.baseCurrencyDebit || 0));
+    row.credit = row.credit.plus(toDecimal(line.baseCurrencyCredit || 0));
+    map.set(key, row);
+  });
+  return Array.from(map.values())
+    .sort((left, right) => right.amount.minus(left.amount).toNumber() || left.accountCode.localeCompare(right.accountCode))
+    .slice(0, limit)
+    .map((row, index) => ({
+      rank: index + 1,
+      accountCode: row.accountCode,
+      accountName: row.accountName,
+      accountType: row.accountType,
+      transactions: row.transactions,
+      amount: row.amount.toFixed(),
+      debit: row.debit.toFixed(),
+      credit: row.credit.toFixed()
+    }));
 };
 
 const sortJournalRows = (rows = [], { sortBy = "postingDate", sortDirection = "desc" } = {}) => {
@@ -1177,31 +1321,173 @@ const createGeneralLedgerService = ({
     return true;
   };
 
-  const getGeneralLedger = async ({ accountCode = "", accountId = "", fromDate = "", toDate = "", limit = 500 } = {}) => {
-    const lines = (await allPostedLines())
-      .filter((line) => (!accountCode || line.accountCode === normalizeEnumToken(accountCode)))
-      .filter((line) => (!accountId || normalizeId(line.accountId) === normalizeId(accountId)))
-      .filter((line) => lineInRange(line, fromDate, toDate))
-      .slice(0, limit);
+  const getGeneralLedger = async ({
+    accountCode = "",
+    accountId = "",
+    sourceModule = "",
+    journal = "",
+    entryNumber = "",
+    user = "",
+    search = "",
+    fromDate = "",
+    toDate = "",
+    page = 1,
+    limit = DEFAULT_LEDGER_LIMIT,
+    sortBy = "postingDate",
+    sortDirection = "desc"
+  } = {}) => {
+    const normalizedAccountCode = normalizeEnumToken(accountCode);
+    const normalizedSourceModule = normalizeEnumToken(sourceModule);
+    const normalizedJournal = normalizeToken(journal || entryNumber);
+    const normalizedSearch = normalizeToken(search);
+    const normalizedUser = normalizeToken(user);
+    const normalizedPage = parsePositiveInt(page, 1);
+    const normalizedLimit = parsePositiveInt(limit, DEFAULT_LEDGER_LIMIT, { min: 1, max: MAX_LEDGER_LIMIT });
+    const hasAccountContext = Boolean(normalizedAccountCode || accountId);
+    let allowedJournalNumbers = null;
+    let searchJournalNumbers = null;
 
-    let running = new Decimal(0);
-    const items = lines.map((line) => {
-      const debit = toDecimal(line.baseCurrencyDebit || 0);
-      const credit = toDecimal(line.baseCurrencyCredit || 0);
-      const sign = [GL_ACCOUNT_TYPE.ASSET, GL_ACCOUNT_TYPE.EXPENSE, GL_ACCOUNT_TYPE.COST_OF_SALES, GL_ACCOUNT_TYPE.OTHER_EXPENSE].includes(line.accountType)
-        ? debit.minus(credit)
-        : credit.minus(debit);
-      running = running.plus(sign);
-      return {
-        ...normalizeLineForApi(line),
-        runningBalance: running.toFixed()
-      };
+    if (normalizedUser) {
+      const userJournals = await leanMaybe(queryMaybe(JournalEntryModel.find({
+        status: { $in: Array.from(POSTED_LINE_STATUSES) },
+        $or: [
+          { createdBy: normalizedUser },
+          { approvedBy: normalizedUser },
+          { postedBy: normalizedUser }
+        ]
+      }), { limit: MAX_LEDGER_LIMIT }));
+      allowedJournalNumbers = new Set(asArray(userJournals).map((entry) => entry.entryNumber).filter(Boolean));
+    }
+
+    if (normalizedSearch) {
+      const expression = new RegExp(escapeRegex(normalizedSearch), "i");
+      const matchingJournals = await leanMaybe(queryMaybe(JournalEntryModel.find({
+        status: { $in: Array.from(POSTED_LINE_STATUSES) },
+        $or: [
+          { entryNumber: expression },
+          { description: expression },
+          { "source.sourceReference": expression },
+          { "source.sourceEntityId": expression }
+        ]
+      }), { limit: MAX_LEDGER_LIMIT }));
+      searchJournalNumbers = new Set(asArray(matchingJournals).map((entry) => entry.entryNumber).filter(Boolean));
+    }
+
+    const allLines = await allPostedLines();
+    const accountScopedLines = allLines
+      .filter((line) => (!normalizedAccountCode || line.accountCode === normalizedAccountCode))
+      .filter((line) => (!accountId || normalizeId(line.accountId) === normalizeId(accountId)));
+    const openingLines = hasAccountContext && fromDate
+      ? accountScopedLines.filter((line) => new Date(line.postingDate) < normalizeDate(fromDate))
+      : [];
+
+    const searchable = normalizedSearch ? new RegExp(escapeRegex(normalizedSearch), "i") : null;
+    const periodLines = accountScopedLines
+      .filter((line) => (!normalizedSourceModule || normalizeEnumToken(line.sourceModule) === normalizedSourceModule))
+      .filter((line) => (!normalizedJournal || line.entryNumber === normalizedJournal))
+      .filter((line) => (!allowedJournalNumbers || allowedJournalNumbers.has(line.entryNumber)))
+      .filter((line) => lineInRange(line, fromDate, toDate))
+      .filter((line) => {
+        if (!searchable) return true;
+        return searchJournalNumbers?.has(line.entryNumber) || [
+          line.accountCode,
+          line.accountName,
+          line.entryNumber,
+          line.sourceReference,
+          line.description,
+          line.sourceEntityId,
+          line.postingKey
+        ].some((value) => searchable.test(String(value || "")));
+      });
+
+    const summary = summarizeLedgerLines(periodLines);
+    const trend = buildLedgerTrend(periodLines, { fromDate, toDate });
+    const topAccounts = topAccountsFromLedgerLines(periodLines, 5);
+    const chronologicalAccountLines = hasAccountContext
+      ? sortLedgerRows(periodLines, { sortBy: "postingDate", sortDirection: "asc" })
+      : [];
+    const runningByLine = new Map();
+    let running = openingLines.reduce((total, line) => total.plus(ledgerLineSignedBalance(line)), new Decimal(0));
+    chronologicalAccountLines.forEach((line) => {
+      running = running.plus(ledgerLineSignedBalance(line));
+      runningByLine.set(normalizeId(line._id) || `${line.entryNumber}:${line.accountCode}:${line.postingDate}`, running.toFixed());
     });
 
+    const effectiveSortDirection = hasAccountContext ? "asc" : sortDirection;
+    const sorted = sortLedgerRows(periodLines, { sortBy, sortDirection: effectiveSortDirection });
+    const skip = (normalizedPage - 1) * normalizedLimit;
+    const paged = sorted.slice(skip, skip + normalizedLimit);
+    const total = periodLines.length;
+    const pages = Math.max(1, Math.ceil(total / normalizedLimit));
+    const baseCurrency = summary.baseCurrencies.length === 1 ? summary.baseCurrencies[0] : "";
+    const accountOpening = openingLines.reduce((total, line) => total.plus(ledgerLineSignedBalance(line)), new Decimal(0));
+    const accountDebits = decimalSum(periodLines.map((line) => line.baseCurrencyDebit || 0));
+    const accountCredits = decimalSum(periodLines.map((line) => line.baseCurrencyCredit || 0));
+    const accountClosing = accountOpening.plus(
+      periodLines.reduce((total, line) => total.plus(ledgerLineSignedBalance(line)), new Decimal(0))
+    );
+    const firstAccountLine = accountScopedLines[0] || {};
+
     return {
-      items,
-      count: items.length,
-      filters: { accountCode, accountId, fromDate, toDate, limit }
+      items: paged.map((line) => {
+        const normalized = normalizeLineForApi(line);
+        return {
+          ...normalized,
+          sourceLabel: sourceLabel(normalized.sourceModule),
+          amount: ledgerLineActivityAmount(line).toFixed(),
+          runningBalance: hasAccountContext
+            ? runningByLine.get(normalizeId(line._id) || `${line.entryNumber}:${line.accountCode}:${line.postingDate}`) || "0"
+            : null
+        };
+      }),
+      count: paged.length,
+      total,
+      pagination: {
+        page: normalizedPage,
+        limit: normalizedLimit,
+        total,
+        pages,
+        from: total ? skip + 1 : 0,
+        to: Math.min(skip + paged.length, total),
+        hasPrevious: normalizedPage > 1,
+        hasNext: normalizedPage < pages
+      },
+      summary: {
+        ...summary,
+        baseCurrency,
+        mixedBaseCurrencies: summary.baseCurrencies.length > 1
+      },
+      trend,
+      topAccounts,
+      accountSummary: hasAccountContext
+        ? {
+            accountCode: firstAccountLine.accountCode || normalizedAccountCode,
+            accountName: firstAccountLine.accountName || "",
+            accountType: firstAccountLine.accountType || "",
+            normalBalance: isDebitNormalAccount(firstAccountLine.accountType) ? "DEBIT" : "CREDIT",
+            openingBalance: accountOpening.toFixed(),
+            periodDebit: accountDebits,
+            periodCredit: accountCredits,
+            closingBalance: accountClosing.toFixed(),
+            baseCurrency: firstAccountLine.baseCurrency || baseCurrency
+          }
+        : null,
+      filters: {
+        accountCode: normalizedAccountCode,
+        accountId,
+        sourceModule: normalizedSourceModule,
+        journal: normalizedJournal,
+        user: normalizedUser,
+        search: normalizedSearch,
+        fromDate,
+        toDate,
+        page: normalizedPage,
+        limit: normalizedLimit
+      },
+      sort: {
+        by: ["postingDate", "entryNumber", "accountCode", "baseCurrencyDebit", "baseCurrencyCredit", "sourceReference"].includes(sortBy) ? sortBy : "postingDate",
+        direction: String(effectiveSortDirection).toLowerCase() === "asc" ? "asc" : "desc"
+      }
     };
   };
 
