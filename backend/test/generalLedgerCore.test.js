@@ -36,10 +36,13 @@ const createFakeModels = () => {
   const valueAt = (row, key) => key.split(".").reduce((current, part) => current?.[part], row);
   const matches = (row, query = {}) =>
     Object.entries(query || {}).every(([key, value]) => {
+      if (key === "$or") {
+        return value.some((condition) => matches(row, condition));
+      }
       const actual = valueAt(row, key);
       if (value instanceof RegExp) return value.test(String(actual || ""));
       if (value && typeof value === "object" && !Array.isArray(value)) {
-        if (value.$in) return value.$in.includes(actual);
+        if (value.$in) return value.$in.map(String).includes(String(actual));
         if (value.$ne !== undefined) return actual !== value.$ne;
         if (value.$lte || value.$gte) {
           const actualDate = new Date(actual);
@@ -343,4 +346,87 @@ test("multi-currency journal preserves locked historical exchange rate", async (
 
   assert.equal(created.journal.exchangeRate, "1.2");
   assert.equal(state.lines[0].baseCurrencyDebit.$numberDecimal || state.lines[0].baseCurrencyDebit, "12");
+});
+
+test("journal register listing returns summary counts, filters, pagination and lines", async () => {
+  const { service, state } = createFakeModels();
+  const manual = await service.createManualJournal({
+    input: {
+      postingDate: "2026-08-20T10:00:00.000Z",
+      description: "Office rent payment",
+      currency: "USD",
+      requiresApproval: false,
+      lines: [
+        { accountCode: "6020", debit: "75", description: "Office rent" },
+        { accountCode: "1020", credit: "75", description: "Bank payment" }
+      ]
+    },
+    auth: { id: "admin-1", role: "admin" }
+  });
+  await service.postJournal({ journalId: manual.journal.id, auth: { id: "admin-1", role: "admin" } });
+  await service.createManualJournal({
+    input: {
+      postingDate: "2026-08-21T10:00:00.000Z",
+      description: "Draft adjustment",
+      currency: "USD",
+      lines: [
+        { accountCode: "1020", debit: "20" },
+        { accountCode: "3010", credit: "20" }
+      ]
+    },
+    auth: { id: "admin-2", role: "admin" }
+  });
+
+  state.journals.push({
+    _id: "64e000000000000000999999",
+    entryNumber: "JE-2026-999999",
+    entryDate: new Date("2026-08-22T10:00:00.000Z"),
+    postingDate: new Date("2026-08-22T10:00:00.000Z"),
+    period: "2026-08",
+    source: {
+      sourceModule: SOURCE_MODULE.MANUAL,
+      sourceEntityType: "ManualJournal",
+      sourceEntityId: "broken",
+      sourceReference: "broken",
+      postingType: GL_POSTING_TYPE.MANUAL_JOURNAL,
+      postingKey: "MANUAL:broken:MANUAL_JOURNAL"
+    },
+    description: "Broken draft",
+    status: JOURNAL_STATUS.DRAFT,
+    currency: "USD",
+    exchangeRate: "1",
+    totalDebit: "10",
+    totalCredit: "0",
+    baseCurrency: "USD",
+    baseTotalDebit: "10",
+    baseTotalCredit: "0",
+    lineCount: 1
+  });
+
+  const result = await service.listJournals({
+    search: "rent",
+    includeLines: true,
+    page: 1,
+    limit: 10
+  });
+
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0].description, "Office rent payment");
+  assert.equal(result.items[0].lines.length, 2);
+  assert.equal(result.items[0].balanced, true);
+  assert.equal(result.summary.total, 1);
+  assert.equal(result.summary.posted, 1);
+
+  const all = await service.listJournals({ tab: "all", page: 1, limit: 2 });
+  assert.equal(all.pagination.total, 3);
+  assert.equal(all.pagination.pages, 2);
+  assert.equal(all.summary.posted, 1);
+  assert.equal(all.summary.draft, 2);
+  assert.equal(all.summary.problems, 1);
+  assert.equal(all.sources.some((source) => source.label === "Manual" && source.count === 3), true);
+
+  const problems = await service.listJournals({ tab: "problems" });
+  assert.equal(problems.items.length, 1);
+  assert.equal(problems.items[0].entryNumber, "JE-2026-999999");
+  assert.equal(problems.items[0].needsAttention, true);
 });

@@ -164,7 +164,16 @@ const listJournalsSchema = z.object({
       sourceModule: sourceModuleEnum.optional(),
       fromDate: z.string().min(1).optional(),
       toDate: z.string().min(1).optional(),
-      limit: z.coerce.number().int().min(1).max(1000).optional()
+      search: z.string().trim().max(160).optional(),
+      createdBy: z.string().trim().max(120).optional(),
+      postedBy: z.string().trim().max(120).optional(),
+      currency: z.string().trim().length(3).optional(),
+      tab: z.enum(["all", "posted", "draft", "problems"]).optional(),
+      includeLines: queryBoolean.optional(),
+      page: z.coerce.number().int().min(1).max(100000).optional(),
+      limit: z.coerce.number().int().min(1).max(1000).optional(),
+      sortBy: z.enum(["postingDate", "entryDate", "entryNumber", "status", "baseTotalDebit", "baseTotalCredit", "createdAt"]).optional(),
+      sortDirection: z.enum(["asc", "desc"]).optional()
     })
     .optional()
 });

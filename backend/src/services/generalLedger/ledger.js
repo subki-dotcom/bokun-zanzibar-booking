@@ -47,6 +47,30 @@ const {
 const POSTED_LINE_STATUSES = new Set([JOURNAL_STATUS.POSTED, JOURNAL_STATUS.REVERSED]);
 const CLOSED_PERIOD_STATUSES = new Set([ACCOUNTING_PERIOD_STATUS.CLOSED, ACCOUNTING_PERIOD_STATUS.LOCKED]);
 const MONEY_ZERO = "0";
+const DEFAULT_JOURNAL_LIMIT = 25;
+const MAX_JOURNAL_LIMIT = 1000;
+
+const JOURNAL_STATUS_LABELS = Object.freeze({
+  [JOURNAL_STATUS.DRAFT]: "Draft",
+  [JOURNAL_STATUS.SUBMITTED]: "Submitted",
+  [JOURNAL_STATUS.PENDING_APPROVAL]: "Pending Approval",
+  [JOURNAL_STATUS.APPROVED]: "Approved",
+  [JOURNAL_STATUS.POSTED]: "Posted",
+  [JOURNAL_STATUS.REVERSED]: "Reversed",
+  [JOURNAL_STATUS.VOID]: "Void"
+});
+
+const SOURCE_MODULE_LABELS = Object.freeze({
+  [SOURCE_MODULE.BOOKING_ACCOUNTING]: "Booking Accounting",
+  [SOURCE_MODULE.BUSINESS_ACCOUNTING]: "Business Accounting",
+  [SOURCE_MODULE.BOOKING]: "Booking",
+  [SOURCE_MODULE.INVOICE]: "Invoice",
+  [SOURCE_MODULE.PAYMENT]: "Payment",
+  [SOURCE_MODULE.REFUND]: "Refund",
+  [SOURCE_MODULE.COMMISSION]: "Commission",
+  [SOURCE_MODULE.CASH_MOVEMENT]: "Cash Movement",
+  [SOURCE_MODULE.MANUAL]: "Manual"
+});
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
 const normalizeToken = (value = "") => String(value || "").trim();
@@ -67,6 +91,92 @@ const queryMaybe = (result, { sort = null, limit = null } = {}) => {
   if (sort && next && typeof next.sort === "function") next = next.sort(sort);
   if (limit && next && typeof next.limit === "function") next = next.limit(limit);
   return next;
+};
+
+const parsePositiveInt = (value, fallback, { min = 1, max = Number.MAX_SAFE_INTEGER } = {}) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, min), max);
+};
+
+const escapeRegex = (value = "") => normalizeToken(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const labelizeToken = (value = "") => String(value || "")
+  .toLowerCase()
+  .split("_")
+  .filter(Boolean)
+  .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+  .join(" ");
+
+const sourceLabel = (sourceModule = "") => SOURCE_MODULE_LABELS[sourceModule] || labelizeToken(sourceModule);
+
+const statusLabel = (status = "") => JOURNAL_STATUS_LABELS[status] || labelizeToken(status);
+
+const journalDifference = (entry = {}) =>
+  decimalDifference(entry.baseTotalDebit || entry.totalDebit || 0, entry.baseTotalCredit || entry.totalCredit || 0);
+
+const journalHasProblem = (entry = {}) => {
+  const status = normalizeEnumToken(entry.status);
+  return (
+    status === JOURNAL_STATUS.VOID ||
+    !toDecimal(entry.baseTotalDebit || 0).equals(toDecimal(entry.baseTotalCredit || 0)) ||
+    Number(entry.lineCount || 0) < 2
+  );
+};
+
+const sortJournalRows = (rows = [], { sortBy = "postingDate", sortDirection = "desc" } = {}) => {
+  const field = ["postingDate", "entryDate", "entryNumber", "status", "baseTotalDebit", "baseTotalCredit", "createdAt"].includes(sortBy)
+    ? sortBy
+    : "postingDate";
+  const direction = String(sortDirection).toLowerCase() === "asc" ? 1 : -1;
+  return [...rows].sort((left, right) => {
+    if (["postingDate", "entryDate", "createdAt"].includes(field)) {
+      return (new Date(left[field] || 0).getTime() - new Date(right[field] || 0).getTime()) * direction;
+    }
+    if (["baseTotalDebit", "baseTotalCredit"].includes(field)) {
+      return toDecimal(left[field] || 0).minus(toDecimal(right[field] || 0)).toNumber() * direction;
+    }
+    return String(left[field] || "").localeCompare(String(right[field] || ""), "en", { numeric: true, sensitivity: "base" }) * direction;
+  });
+};
+
+const summarizeJournalRows = (rows = []) => {
+  const total = rows.length;
+  const posted = rows.filter((entry) => entry.status === JOURNAL_STATUS.POSTED).length;
+  const draft = rows.filter((entry) => [JOURNAL_STATUS.DRAFT, JOURNAL_STATUS.SUBMITTED, JOURNAL_STATUS.PENDING_APPROVAL, JOURNAL_STATUS.APPROVED].includes(entry.status)).length;
+  const problems = rows.filter(journalHasProblem).length;
+  const totalDebit = decimalSum(rows.map((entry) => entry.baseTotalDebit || entry.totalDebit || 0));
+  const totalCredit = decimalSum(rows.map((entry) => entry.baseTotalCredit || entry.totalCredit || 0));
+  const byStatus = Object.values(JOURNAL_STATUS).map((status) => ({
+    status,
+    label: statusLabel(status),
+    count: rows.filter((entry) => entry.status === status).length
+  }));
+  const sourceMap = new Map();
+  rows.forEach((entry) => {
+    const sourceModule = entry.source?.sourceModule || entry.sourceModule || SOURCE_MODULE.MANUAL;
+    const existing = sourceMap.get(sourceModule) || { sourceModule, label: sourceLabel(sourceModule), count: 0 };
+    existing.count += 1;
+    sourceMap.set(sourceModule, existing);
+  });
+
+  return {
+    total,
+    posted,
+    draft,
+    problems,
+    totalDebit,
+    totalCredit,
+    difference: decimalDifference(totalDebit, totalCredit),
+    byStatus,
+    bySource: Array.from(sourceMap.values()).sort((left, right) => right.count - left.count),
+    tabs: [
+      { key: "all", label: "All Entries", count: total },
+      { key: "posted", label: "Posted", count: posted },
+      { key: "draft", label: "Draft", count: draft },
+      { key: "problems", label: "Needs Attention", count: problems }
+    ]
+  };
 };
 
 const money = (value = 0, options = {}) => decimalString(value ?? 0, options);
@@ -936,19 +1046,122 @@ const createGeneralLedgerService = ({
     });
   };
 
-  const listJournals = async ({ status = "", sourceModule = "", fromDate = "", toDate = "", limit = 100 } = {}) => {
+  const listJournals = async ({
+    status = "",
+    sourceModule = "",
+    fromDate = "",
+    toDate = "",
+    search = "",
+    createdBy = "",
+    postedBy = "",
+    currency = "",
+    tab = "",
+    includeLines = false,
+    page = 1,
+    limit = DEFAULT_JOURNAL_LIMIT,
+    sortBy = "postingDate",
+    sortDirection = "desc"
+  } = {}) => {
     const query = {};
-    if (status) query.status = normalizeEnumToken(status);
+    const normalizedStatus = normalizeEnumToken(status);
+    const normalizedTab = normalizeToken(tab).toLowerCase();
+    if (normalizedTab === "posted") query.status = JOURNAL_STATUS.POSTED;
+    else if (normalizedTab === "draft") query.status = { $in: [JOURNAL_STATUS.DRAFT, JOURNAL_STATUS.SUBMITTED, JOURNAL_STATUS.PENDING_APPROVAL, JOURNAL_STATUS.APPROVED] };
+    else if (normalizedStatus) query.status = normalizedStatus;
     if (sourceModule) query["source.sourceModule"] = normalizeEnumToken(sourceModule);
+    if (createdBy) query.createdBy = normalizeToken(createdBy);
+    if (postedBy) query.postedBy = normalizeToken(postedBy);
+    if (currency) query.currency = requireCurrency(currency);
     if (fromDate || toDate) {
       query.postingDate = {};
       if (fromDate) query.postingDate.$gte = normalizeDate(fromDate);
       if (toDate) query.postingDate.$lte = normalizeDate(toDate);
     }
-    const rows = await leanMaybe(queryMaybe(JournalEntryModel.find(query), { sort: { postingDate: -1, entryNumber: -1 }, limit }));
+    if (search) {
+      const expression = new RegExp(escapeRegex(search), "i");
+      const lineMatches = await leanMaybe(queryMaybe(JournalEntryLineModel.find({
+        $or: [
+          { accountCode: expression },
+          { accountName: expression },
+          { description: expression }
+        ]
+      }), { limit: 1000 }));
+      const journalIds = asArray(lineMatches).map((line) => line.journalEntryId).filter(Boolean);
+      const entryNumbers = asArray(lineMatches).map((line) => line.entryNumber).filter(Boolean);
+      query.$or = [
+        { entryNumber: expression },
+        { description: expression },
+        { "source.sourceReference": expression },
+        { "source.sourceEntityId": expression },
+        { currency: expression },
+        ...(journalIds.length ? [{ _id: { $in: journalIds } }] : []),
+        ...(entryNumbers.length ? [{ entryNumber: { $in: entryNumbers } }] : [])
+      ];
+    }
+
+    const allRowsRaw = await leanMaybe(queryMaybe(JournalEntryModel.find(query), { sort: { postingDate: -1, entryNumber: -1 } }));
+    const allRows = asArray(allRowsRaw);
+    const problemFiltered = normalizedTab === "problems" ? allRows.filter(journalHasProblem) : allRows;
+    const sorted = sortJournalRows(problemFiltered, { sortBy, sortDirection });
+    const normalizedPage = parsePositiveInt(page, 1);
+    const normalizedLimit = parsePositiveInt(limit, DEFAULT_JOURNAL_LIMIT, { min: 1, max: MAX_JOURNAL_LIMIT });
+    const skip = (normalizedPage - 1) * normalizedLimit;
+    const rows = sorted.slice(skip, skip + normalizedLimit);
+    const linesByJournal = new Map();
+    if (includeLines && rows.length) {
+      for (const entry of rows) {
+        const lines = await leanMaybe(queryMaybe(JournalEntryLineModel.find({ journalEntryId: entry._id }), { sort: { accountCode: 1 } }));
+        linesByJournal.set(normalizeId(entry._id), asArray(lines));
+      }
+    }
+    const summary = summarizeJournalRows(problemFiltered);
+    const total = problemFiltered.length;
+    const pages = Math.max(1, Math.ceil(total / normalizedLimit));
     return {
-      items: asArray(rows).map((row) => normalizeJournalForApi(row)),
-      count: asArray(rows).length
+      items: asArray(rows).map((row) => {
+        const lines = linesByJournal.get(normalizeId(row._id)) || [];
+        const normalized = normalizeJournalForApi(row, lines);
+        return {
+          ...normalized,
+          statusLabel: statusLabel(normalized.status),
+          sourceLabel: sourceLabel(normalized.sourceModule),
+          balanced: toDecimal(normalized.baseTotalDebit || 0).equals(toDecimal(normalized.baseTotalCredit || 0)),
+          difference: journalDifference(row),
+          needsAttention: journalHasProblem(row)
+        };
+      }),
+      count: rows.length,
+      total,
+      pagination: {
+        page: normalizedPage,
+        limit: normalizedLimit,
+        total,
+        pages,
+        from: total ? skip + 1 : 0,
+        to: Math.min(skip + rows.length, total),
+        hasPrevious: normalizedPage > 1,
+        hasNext: normalizedPage < pages
+      },
+      summary,
+      sources: summary.bySource,
+      sort: {
+        by: ["postingDate", "entryDate", "entryNumber", "status", "baseTotalDebit", "baseTotalCredit", "createdAt"].includes(sortBy) ? sortBy : "postingDate",
+        direction: String(sortDirection).toLowerCase() === "asc" ? "asc" : "desc"
+      },
+      filters: {
+        status: normalizedStatus,
+        sourceModule: normalizeEnumToken(sourceModule),
+        fromDate,
+        toDate,
+        search: normalizeToken(search),
+        createdBy,
+        postedBy,
+        currency: normalizeEnumToken(currency),
+        tab: normalizedTab,
+        includeLines: Boolean(includeLines),
+        page: normalizedPage,
+        limit: normalizedLimit
+      }
     };
   };
 
