@@ -203,12 +203,40 @@ const ledgerReportQuerySchema = z.object({
       entryNumber: z.string().trim().max(80).optional(),
       user: z.string().trim().max(120).optional(),
       search: z.string().trim().max(160).optional(),
+      accountType: z.enum([
+        "ASSET",
+        "LIABILITY",
+        "EQUITY",
+        "REVENUE",
+        "COST_OF_SALES",
+        "EXPENSE",
+        "OTHER_INCOME",
+        "OTHER_EXPENSE",
+        "OTHER"
+      ]).optional(),
+      accountSubtype: z.string().trim().max(80).optional(),
+      status: z.enum(["all", "normal", "review"]).optional(),
+      activity: z.enum(["all", "with_activity", "with_balance", "no_activity"]).optional(),
+      balanceSide: z.enum(["all", "debit", "credit", "zero"]).optional(),
       fromDate: z.string().min(1).optional(),
       toDate: z.string().min(1).optional(),
       asOfDate: z.string().min(1).optional(),
       page: z.coerce.number().int().min(1).max(100000).optional(),
       limit: z.coerce.number().int().min(1).max(1000).optional(),
-      sortBy: z.enum(["postingDate", "entryNumber", "accountCode", "baseCurrencyDebit", "baseCurrencyCredit", "sourceReference"]).optional(),
+      sortBy: z.enum([
+        "postingDate",
+        "entryNumber",
+        "accountCode",
+        "accountName",
+        "accountType",
+        "periodDebit",
+        "periodCredit",
+        "closingDebit",
+        "closingCredit",
+        "baseCurrencyDebit",
+        "baseCurrencyCredit",
+        "sourceReference"
+      ]).optional(),
       sortDirection: z.enum(["asc", "desc"]).optional()
     })
     .optional()

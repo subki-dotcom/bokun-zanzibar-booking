@@ -400,6 +400,115 @@ test("general ledger register uses posted lines, summaries and account balances"
   assert.equal(bank.items[0].runningBalance, "60");
 });
 
+test("trial balance register returns filtered summaries without counting draft journals", async () => {
+  const { service } = createFakeModels();
+  const opening = await service.createManualJournal({
+    input: {
+      postingDate: "2026-07-31T10:00:00.000Z",
+      description: "Opening balances",
+      currency: "USD",
+      requiresApproval: false,
+      lines: [
+        { accountCode: "1020", debit: "100" },
+        { accountCode: "3010", credit: "100" }
+      ]
+    },
+    auth: { id: "admin-1", role: "admin" }
+  });
+  await service.postJournal({ journalId: opening.journal.id, auth: { id: "admin-1", role: "admin" } });
+
+  const rent = await service.createManualJournal({
+    input: {
+      postingDate: "2026-08-10T10:00:00.000Z",
+      description: "August rent",
+      currency: "USD",
+      requiresApproval: false,
+      lines: [
+        { accountCode: "6020", debit: "40" },
+        { accountCode: "1020", credit: "40" }
+      ]
+    },
+    auth: { id: "admin-2", role: "admin" }
+  });
+  await service.postJournal({ journalId: rent.journal.id, auth: { id: "admin-2", role: "admin" } });
+
+  const abnormalExpense = await service.createManualJournal({
+    input: {
+      postingDate: "2026-08-12T10:00:00.000Z",
+      description: "Expense correction requiring review",
+      currency: "USD",
+      requiresApproval: false,
+      lines: [
+        { accountCode: "3010", debit: "50" },
+        { accountCode: "6020", credit: "50" }
+      ]
+    },
+    auth: { id: "admin-2", role: "admin" }
+  });
+  await service.postJournal({ journalId: abnormalExpense.journal.id, auth: { id: "admin-2", role: "admin" } });
+
+  await service.createManualJournal({
+    input: {
+      postingDate: "2026-08-11T10:00:00.000Z",
+      description: "Draft revenue",
+      currency: "USD",
+      lines: [
+        { accountCode: "1020", debit: "900" },
+        { accountCode: "4010", credit: "900" }
+      ]
+    },
+    auth: { id: "admin-3", role: "admin" }
+  });
+
+  const trial = await service.getTrialBalance({
+    fromDate: "2026-08-01T00:00:00.000Z",
+    toDate: "2026-08-31T23:59:59.999Z",
+    page: 1,
+    limit: 2
+  });
+
+  assert.equal(trial.total, 3);
+  assert.equal(trial.count, 2);
+  assert.equal(trial.pagination.pages, 2);
+  assert.equal(trial.totals.openingDebit, "100");
+  assert.equal(trial.totals.openingCredit, "100");
+  assert.equal(trial.totals.periodDebit, "90");
+  assert.equal(trial.totals.periodCredit, "90");
+  assert.equal(trial.totals.closingDebit, "60");
+  assert.equal(trial.totals.closingCredit, "60");
+  assert.equal(trial.balanced, true);
+  assert.equal(trial.status, "BALANCED");
+  assert.equal(trial.summary.accountsWithActivity, 3);
+  assert.equal(trial.summary.reviewAccounts, 1);
+  assert.equal(trial.summary.baseCurrency, "USD");
+  assert.deepEqual(trial.summary.baseCurrencies, ["USD"]);
+  assert.equal(trial.trend.points.length, 2);
+  assert.equal(trial.summary.byType.some((row) => row.accountType === "ASSET"), true);
+  assert.equal(trial.summary.topAccounts[0].accountCode, "1020");
+  assert.equal(trial.items.some((row) => row.accountCode === "4010"), false);
+
+  const assets = await service.getTrialBalance({
+    fromDate: "2026-08-01T00:00:00.000Z",
+    toDate: "2026-08-31T23:59:59.999Z",
+    accountType: "ASSET",
+    search: "bank"
+  });
+
+  assert.equal(assets.total, 1);
+  assert.equal(assets.items[0].accountCode, "1020");
+  assert.equal(assets.items[0].closingDebit, "60");
+  assert.equal(assets.items[0].reviewStatus, "normal");
+
+  const review = await service.getTrialBalance({
+    fromDate: "2026-08-01T00:00:00.000Z",
+    toDate: "2026-08-31T23:59:59.999Z",
+    status: "review"
+  });
+  assert.equal(review.total, 1);
+  assert.equal(review.items[0].accountCode, "6020");
+  assert.equal(review.items[0].closingCredit, "10");
+});
+
 test("historical migration dry-run writes nothing and apply requires evidence", async () => {
   const { service, state } = createFakeModels();
   const dryRun = await service.runHistoricalMigration({ dryRun: true });

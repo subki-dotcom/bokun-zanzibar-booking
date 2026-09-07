@@ -1528,41 +1528,221 @@ const createGeneralLedgerService = ({
     return Array.from(accounts.values()).sort((left, right) => left.accountCode.localeCompare(right.accountCode));
   };
 
-  const getTrialBalance = async ({ fromDate = "", toDate = "" } = {}) => {
+  const getTrialBalance = async ({
+    fromDate = "",
+    toDate = "",
+    search = "",
+    accountType = "",
+    accountSubtype = "",
+    status = "",
+    activity = "",
+    balanceSide = "",
+    page = "",
+    limit = "",
+    sortBy = "accountCode",
+    sortDirection = "asc"
+  } = {}) => {
+    const normalizedSearch = normalizeToken(search);
+    const normalizedType = normalizeEnumToken(accountType);
+    const normalizedSubtype = normalizeEnumToken(accountSubtype);
+    const normalizedStatus = normalizeToken(status).toLowerCase();
+    const normalizedActivity = normalizeToken(activity).toLowerCase();
+    const normalizedBalanceSide = normalizeToken(balanceSide).toLowerCase();
+    const expression = normalizedSearch ? new RegExp(escapeRegex(normalizedSearch), "i") : null;
     const rows = await summarizeAccounts({ fromDate, toDate });
-    let totalDebit = new Decimal(0);
-    let totalCredit = new Decimal(0);
-    const items = rows.map((row) => {
+    const periodLines = (await allPostedLines())
+      .filter((line) => lineInRange(line, fromDate, toDate))
+      .filter((line) => (!normalizedType || (normalizedType === "OTHER"
+        ? [GL_ACCOUNT_TYPE.OTHER_INCOME, GL_ACCOUNT_TYPE.OTHER_EXPENSE].includes(line.accountType)
+        : line.accountType === normalizedType)))
+      .filter((line) => (!normalizedSubtype || line.accountSubtype === normalizedSubtype))
+      .filter((line) => {
+        if (!expression) return true;
+        return [line.accountCode, line.accountName, line.entryNumber, line.sourceReference, line.description]
+          .some((value) => expression.test(String(value || "")));
+      });
+    const baseCurrencies = Array.from(new Set(periodLines
+      .map((line) => normalizeEnumToken(line.baseCurrency || line.currency))
+      .filter(Boolean)));
+
+    const decoratedRows = rows.map((row) => {
       const debitBalance = row.openingDebit.plus(row.periodDebit);
       const creditBalance = row.openingCredit.plus(row.periodCredit);
       const net = debitBalance.minus(creditBalance);
       const closingDebit = net.greaterThanOrEqualTo(0) ? net : new Decimal(0);
       const closingCredit = net.isNegative() ? net.abs() : new Decimal(0);
-      totalDebit = totalDebit.plus(closingDebit);
-      totalCredit = totalCredit.plus(closingCredit);
+      const hasActivity = row.periodDebit.greaterThan(0) || row.periodCredit.greaterThan(0);
+      const hasBalance = closingDebit.greaterThan(0) || closingCredit.greaterThan(0);
+      const normalBalance = isDebitNormalAccount(row.accountType) ? "DEBIT" : "CREDIT";
+      const balanceSideValue = closingDebit.greaterThan(0) ? "debit" : closingCredit.greaterThan(0) ? "credit" : "zero";
+      const abnormalBalance = (normalBalance === "DEBIT" && closingCredit.greaterThan(0)) ||
+        (normalBalance === "CREDIT" && closingDebit.greaterThan(0));
       return {
         accountCode: row.accountCode,
         accountName: row.accountName,
         accountType: row.accountType,
         accountSubtype: row.accountSubtype,
+        normalBalance,
         openingDebit: row.openingDebit.toFixed(),
         openingCredit: row.openingCredit.toFixed(),
         periodDebit: row.periodDebit.toFixed(),
         periodCredit: row.periodCredit.toFixed(),
         closingDebit: closingDebit.toFixed(),
-        closingCredit: closingCredit.toFixed()
+        closingCredit: closingCredit.toFixed(),
+        balanceSide: balanceSideValue,
+        hasActivity,
+        hasBalance,
+        reviewStatus: abnormalBalance ? "review" : "normal",
+        reviewReason: abnormalBalance ? `Abnormal ${balanceSideValue} balance for ${normalBalance.toLowerCase()}-normal account` : ""
       };
     });
+
+    const filteredRows = decoratedRows
+      .filter((row) => (!normalizedType || (normalizedType === "OTHER"
+        ? [GL_ACCOUNT_TYPE.OTHER_INCOME, GL_ACCOUNT_TYPE.OTHER_EXPENSE].includes(row.accountType)
+        : row.accountType === normalizedType)))
+      .filter((row) => (!normalizedSubtype || row.accountSubtype === normalizedSubtype))
+      .filter((row) => {
+        if (!expression) return true;
+        return [row.accountCode, row.accountName, row.accountType, row.accountSubtype].some((value) => expression.test(String(value || "")));
+      })
+      .filter((row) => {
+        if (!normalizedActivity || normalizedActivity === "all") return true;
+        if (normalizedActivity === "with_activity") return row.hasActivity;
+        if (normalizedActivity === "with_balance") return row.hasBalance;
+        if (normalizedActivity === "no_activity") return !row.hasActivity;
+        return true;
+      })
+      .filter((row) => {
+        if (!normalizedBalanceSide || normalizedBalanceSide === "all") return true;
+        return row.balanceSide === normalizedBalanceSide;
+      })
+      .filter((row) => {
+        if (!normalizedStatus || normalizedStatus === "all") return true;
+        return row.reviewStatus === normalizedStatus;
+      });
+
+    const sortField = ["accountCode", "accountName", "accountType", "periodDebit", "periodCredit", "closingDebit", "closingCredit"].includes(sortBy)
+      ? sortBy
+      : "accountCode";
+    const direction = String(sortDirection).toLowerCase() === "desc" ? -1 : 1;
+    const sortedRows = [...filteredRows].sort((left, right) => {
+      if (["periodDebit", "periodCredit", "closingDebit", "closingCredit"].includes(sortField)) {
+        return toDecimal(left[sortField] || 0).minus(toDecimal(right[sortField] || 0)).toNumber() * direction;
+      }
+      return String(left[sortField] || "").localeCompare(String(right[sortField] || ""), "en", { numeric: true, sensitivity: "base" }) * direction;
+    });
+
+    const hasExplicitPagination = Boolean(page || limit);
+    const normalizedPage = parsePositiveInt(page, 1);
+    const normalizedLimit = parsePositiveInt(limit, hasExplicitPagination ? DEFAULT_LEDGER_LIMIT : MAX_LEDGER_LIMIT, { min: 1, max: MAX_LEDGER_LIMIT });
+    const skip = (normalizedPage - 1) * normalizedLimit;
+    const items = sortedRows.slice(skip, skip + normalizedLimit);
+    let totalDebit = new Decimal(0);
+    let totalCredit = new Decimal(0);
+    let openingDebit = new Decimal(0);
+    let openingCredit = new Decimal(0);
+    let periodDebit = new Decimal(0);
+    let periodCredit = new Decimal(0);
+    filteredRows.forEach((row) => {
+      openingDebit = openingDebit.plus(toDecimal(row.openingDebit || 0));
+      openingCredit = openingCredit.plus(toDecimal(row.openingCredit || 0));
+      periodDebit = periodDebit.plus(toDecimal(row.periodDebit || 0));
+      periodCredit = periodCredit.plus(toDecimal(row.periodCredit || 0));
+      totalDebit = totalDebit.plus(toDecimal(row.closingDebit || 0));
+      totalCredit = totalCredit.plus(toDecimal(row.closingCredit || 0));
+    });
+    const accountsWithActivity = filteredRows.filter((row) => row.hasActivity).length;
+    const debitBalanceAccounts = filteredRows.filter((row) => row.balanceSide === "debit").length;
+    const creditBalanceAccounts = filteredRows.filter((row) => row.balanceSide === "credit").length;
+    const reviewAccounts = filteredRows.filter((row) => row.reviewStatus === "review").length;
+    const byTypeMap = new Map();
+    filteredRows.forEach((row) => {
+      const key = [GL_ACCOUNT_TYPE.OTHER_INCOME, GL_ACCOUNT_TYPE.OTHER_EXPENSE].includes(row.accountType) ? "OTHER" : row.accountType;
+      const existing = byTypeMap.get(key) || { accountType: key, label: labelizeToken(key), accounts: 0, debit: new Decimal(0), credit: new Decimal(0), absoluteBalance: new Decimal(0) };
+      existing.accounts += 1;
+      existing.debit = existing.debit.plus(toDecimal(row.closingDebit || 0));
+      existing.credit = existing.credit.plus(toDecimal(row.closingCredit || 0));
+      existing.absoluteBalance = existing.absoluteBalance.plus(toDecimal(row.closingDebit || 0)).plus(toDecimal(row.closingCredit || 0));
+      byTypeMap.set(key, existing);
+    });
+    const topAccounts = [...filteredRows]
+      .map((row) => ({
+        accountCode: row.accountCode,
+        accountName: row.accountName,
+        accountType: row.accountType,
+        balance: toDecimal(row.closingDebit || 0).plus(toDecimal(row.closingCredit || 0)).toFixed()
+      }))
+      .sort((left, right) => toDecimal(right.balance).minus(toDecimal(left.balance)).toNumber() || left.accountCode.localeCompare(right.accountCode))
+      .slice(0, 5)
+      .map((row, index) => ({ ...row, rank: index + 1 }));
     const balanced = totalDebit.equals(totalCredit);
+    const hasData = filteredRows.length > 0;
     return {
       items,
+      count: items.length,
+      total: filteredRows.length,
+      pagination: {
+        page: normalizedPage,
+        limit: normalizedLimit,
+        total: filteredRows.length,
+        pages: Math.max(1, Math.ceil(filteredRows.length / normalizedLimit)),
+        from: filteredRows.length ? skip + 1 : 0,
+        to: Math.min(skip + items.length, filteredRows.length),
+        hasPrevious: normalizedPage > 1,
+        hasNext: normalizedPage < Math.max(1, Math.ceil(filteredRows.length / normalizedLimit))
+      },
       totals: {
         debit: totalDebit.toFixed(),
         credit: totalCredit.toFixed(),
-        difference: totalDebit.minus(totalCredit).abs().toFixed()
+        difference: totalDebit.minus(totalCredit).abs().toFixed(),
+        openingDebit: openingDebit.toFixed(),
+        openingCredit: openingCredit.toFixed(),
+        periodDebit: periodDebit.toFixed(),
+        periodCredit: periodCredit.toFixed(),
+        closingDebit: totalDebit.toFixed(),
+        closingCredit: totalCredit.toFixed()
       },
       balanced,
-      accountingError: balanced ? null : "CRITICAL_ACCOUNTING_ERROR"
+      status: hasData ? (balanced ? "BALANCED" : "NEEDS_ATTENTION") : "NO_DATA",
+      accountingError: balanced ? null : "CRITICAL_ACCOUNTING_ERROR",
+      summary: {
+        totalAccounts: filteredRows.length,
+        accountsWithActivity,
+        debitBalanceAccounts,
+        creditBalanceAccounts,
+        reviewAccounts,
+        hasData,
+        baseCurrency: baseCurrencies.length === 1 ? baseCurrencies[0] : "",
+        baseCurrencies,
+        mixedBaseCurrencies: baseCurrencies.length > 1,
+        byType: Array.from(byTypeMap.values()).map((row) => ({
+          accountType: row.accountType,
+          label: row.label,
+          accounts: row.accounts,
+          debit: row.debit.toFixed(),
+          credit: row.credit.toFixed(),
+          absoluteBalance: row.absoluteBalance.toFixed()
+        })),
+        topAccounts
+      },
+      trend: buildLedgerTrend(periodLines, { fromDate, toDate }),
+      filters: {
+        fromDate,
+        toDate,
+        search: normalizedSearch,
+        accountType: normalizedType,
+        accountSubtype: normalizedSubtype,
+        status: normalizedStatus,
+        activity: normalizedActivity,
+        balanceSide: normalizedBalanceSide,
+        page: normalizedPage,
+        limit: normalizedLimit
+      },
+      sort: {
+        by: sortField,
+        direction: direction === -1 ? "desc" : "asc"
+      }
     };
   };
 

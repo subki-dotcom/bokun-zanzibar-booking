@@ -40,6 +40,7 @@ import AdminCrmPage from "../pages/admin/AdminCrmPage";
 import AdminGeneralLedgerPage from "../pages/admin/AdminGeneralLedgerPage";
 import AdminGeneralLedgerRegisterPage from "../pages/admin/AdminGeneralLedgerRegisterPage";
 import AdminJournalEntriesPage from "../pages/admin/AdminJournalEntriesPage";
+import AdminTrialBalancePage from "../pages/admin/AdminTrialBalancePage";
 import AdminReportCenterPage from "../pages/admin/AdminReportCenterPage";
 import AdminAuditControlPage from "../pages/admin/AdminAuditControlPage";
 import AdminDataQualityPage from "../pages/admin/AdminDataQualityPage";
@@ -158,8 +159,15 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/business-accounting/trial-balance"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW]}>
+              <AdminTrialBalancePage />
+            </ProtectedRoute>
+          }
+        />
         {[
-          "/admin/business-accounting/trial-balance",
           "/admin/business-accounting/accounts-receivable",
           "/admin/business-accounting/accounts-payable",
           "/admin/business-accounting/cash-bank",
