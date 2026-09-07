@@ -8,6 +8,7 @@ const CommissionRecord = require("../../models/CommissionRecord");
 const Invoice = require("../../models/Invoice");
 const Payment = require("../../models/Payment");
 const Refund = require("../../models/Refund");
+const generalLedgerService = require("../generalLedger");
 const {
   ACCOUNTING_SCOPE,
   BUSINESS_UNIT,
@@ -1163,6 +1164,7 @@ const createBusinessAccountingService = ({
   InvoiceModel = Invoice,
   PaymentModel = Payment,
   RefundModel = Refund,
+  GeneralLedgerService = generalLedgerService,
   now = () => new Date()
 } = {}) => {
   const recordAudit = async ({ action, posting, auth = {}, requestId = "", reason = "", before = null, after = null, metadata = {} }) => {
@@ -1797,10 +1799,212 @@ const createBusinessAccountingService = ({
     };
   };
 
+  const getAccountsPayableDashboard = async ({
+    fromDate = "",
+    toDate = "",
+    search = "",
+    supplier = "",
+    status = "all",
+    currency = "",
+    dueFrom = "",
+    dueTo = "",
+    page = 1,
+    limit = 10
+  } = {}) => {
+    const current = now();
+    const query = { accountingScope: ACCOUNTING_SCOPE.BUSINESS };
+    Object.assign(query, buildDateRangeQuery({ fromDate, toDate, field: "expenseDate" }));
+    const found = BusinessExpenseModel.find(query);
+    const loaded = found && typeof found.sort === "function"
+      ? await leanMaybe(found.sort({ expenseDate: -1, createdAt: -1 }))
+      : await leanMaybe(found);
+    const allRows = asArray(loaded).map(normalizeBusinessExpenseForApi);
+    const normalizedSearch = normalizeToken(search).toLowerCase();
+    const normalizedSupplier = normalizeToken(supplier).toLowerCase();
+    const normalizedStatus = normalizeToken(status).toLowerCase();
+    const normalizedCurrency = normalizeCurrency(currency);
+    const dueStart = dueFrom ? startOfUtcDay(dueFrom) : null;
+    const dueEnd = dueTo ? endOfUtcDay(dueTo) : null;
+    const activeStatuses = new Set([
+      FINANCIAL_ENTRY_STATUS.SUBMITTED,
+      FINANCIAL_ENTRY_STATUS.APPROVED,
+      FINANCIAL_ENTRY_STATUS.PAID
+    ]);
+
+    const decorate = (row) => {
+      const amount = toDecimal(row.baseCurrencyAmount || 0);
+      const explicitPaid = row.metadata?.paidBaseCurrencyAmount ?? row.metadata?.paidAmount;
+      let paid = row.paymentStatus === EXPENSE_PAYMENT_STATUS.PAID ? amount : toDecimal(explicitPaid || 0);
+      if (paid.isNegative()) paid = new Decimal(0);
+      if (paid.greaterThan(amount)) paid = amount;
+      const counted = activeStatuses.has(row.status) && row.paymentStatus !== EXPENSE_PAYMENT_STATUS.VOID;
+      const balance = counted ? amount.minus(paid) : new Decimal(0);
+      const dueDate = row.dueDate ? new Date(row.dueDate) : null;
+      const overdue = Boolean(balance.greaterThan(0) && dueDate && !Number.isNaN(dueDate.getTime()) && dueDate < startOfUtcDay(current));
+      const partialEvidenceMissing = row.paymentStatus === EXPENSE_PAYMENT_STATUS.PARTIALLY_PAID && explicitPaid === undefined;
+      const displayStatus = row.status === FINANCIAL_ENTRY_STATUS.DRAFT
+        ? "draft"
+        : row.status === FINANCIAL_ENTRY_STATUS.VOID || row.paymentStatus === EXPENSE_PAYMENT_STATUS.VOID
+          ? "void"
+          : balance.equals(0) && counted
+            ? "paid"
+            : overdue
+              ? "overdue"
+              : paid.greaterThan(0)
+                ? "partial"
+                : "outstanding";
+      return {
+        ...row,
+        amount: amount.toFixed(),
+        paidAmount: paid.toFixed(),
+        outstandingAmount: balance.toFixed(),
+        reportingCurrency: row.baseCurrency || row.currency,
+        displayStatus,
+        overdue,
+        partialEvidenceMissing,
+        counted
+      };
+    };
+
+    const decorated = allRows.map(decorate);
+    const matchesText = (row) => !normalizedSearch || [
+      row.expenseReference,
+      row.sourceReference,
+      row.description,
+      row.supplier?.name,
+      row.supplier?.supplierId,
+      row.paymentReference
+    ].some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
+    const inDueRange = (row) => {
+      if (!dueStart && !dueEnd) return true;
+      if (!row.dueDate) return false;
+      const value = new Date(row.dueDate);
+      if (dueStart && value < dueStart) return false;
+      if (dueEnd && value > dueEnd) return false;
+      return true;
+    };
+    const baseFiltered = decorated
+      .filter(matchesText)
+      .filter((row) => !normalizedSupplier || String(row.supplier?.supplierId || row.supplier?.name || "").toLowerCase() === normalizedSupplier)
+      .filter((row) => !normalizedCurrency || normalizeCurrency(row.reportingCurrency) === normalizedCurrency)
+      .filter(inDueRange);
+    const statusFiltered = baseFiltered.filter((row) => {
+      if (!normalizedStatus || normalizedStatus === "all") return true;
+      if (normalizedStatus === "outstanding") return row.outstandingAmount !== "0" && !row.overdue && row.displayStatus !== "draft";
+      if (normalizedStatus === "overdue") return row.overdue;
+      if (normalizedStatus === "paid") return row.displayStatus === "paid";
+      if (normalizedStatus === "draft") return row.displayStatus === "draft";
+      return row.displayStatus === normalizedStatus;
+    });
+    const tabCounts = {
+      all: baseFiltered.length,
+      outstanding: baseFiltered.filter((row) => toDecimal(row.outstandingAmount).greaterThan(0) && !row.overdue && row.displayStatus !== "draft").length,
+      overdue: baseFiltered.filter((row) => row.overdue).length,
+      paid: baseFiltered.filter((row) => row.displayStatus === "paid").length,
+      drafts: baseFiltered.filter((row) => row.displayStatus === "draft").length
+    };
+    const financialRows = baseFiltered.filter((row) => row.counted);
+    const currencies = Array.from(new Set(financialRows.map((row) => normalizeCurrency(row.reportingCurrency)).filter(Boolean)));
+    const canCombine = currencies.length <= 1;
+    const currencyTotals = currencies.map((currencyCode) => {
+      const rows = financialRows.filter((row) => normalizeCurrency(row.reportingCurrency) === currencyCode);
+      return {
+        currency: currencyCode,
+        amount: sumMoney(rows, (row) => row.amount),
+        paid: sumMoney(rows, (row) => row.paidAmount),
+        outstanding: sumMoney(rows, (row) => row.outstandingAmount)
+      };
+    });
+    const reportingCurrency = canCombine ? (currencies[0] || "") : "";
+    const outstandingRows = financialRows.filter((row) => toDecimal(row.outstandingAmount).greaterThan(0));
+    const aging = { current: new Decimal(0), days31to60: new Decimal(0), days61to90: new Decimal(0), days91plus: new Decimal(0) };
+    outstandingRows.forEach((row) => {
+      const due = row.dueDate ? startOfUtcDay(row.dueDate) : startOfUtcDay(current);
+      const age = Math.max(0, Math.floor((startOfUtcDay(current) - due) / DAY_MS));
+      const bucket = age <= 30 ? "current" : age <= 60 ? "days31to60" : age <= 90 ? "days61to90" : "days91plus";
+      aging[bucket] = aging[bucket].plus(toDecimal(row.outstandingAmount));
+    });
+    const supplierMap = new Map();
+    outstandingRows.forEach((row) => {
+      const name = row.supplier?.name || row.supplier?.supplierId || "Unassigned supplier";
+      supplierMap.set(name, (supplierMap.get(name) || new Decimal(0)).plus(toDecimal(row.outstandingAmount)));
+    });
+    const supplierRows = Array.from(supplierMap.entries())
+      .map(([name, amount]) => ({ name, amount: amount.toFixed() }))
+      .sort((left, right) => toDecimal(right.amount).minus(toDecimal(left.amount)).toNumber());
+    const topSuppliers = supplierRows.slice(0, 5);
+    if (supplierRows.length > 5) topSuppliers.push({ name: "Other", amount: sumMoney(supplierRows.slice(5), (row) => row.amount) });
+    const paidMonthStart = startOfUtcMonth(current);
+    const paidThisMonthRows = financialRows.filter((row) => row.displayStatus === "paid" && new Date(row.expenseDate) >= paidMonthStart);
+    const safePage = Math.max(1, Number(page || 1));
+    const safeLimit = Math.max(1, Math.min(100, Number(limit || 10)));
+    const skip = (safePage - 1) * safeLimit;
+    let glBalance = null;
+    try {
+      const trial = await GeneralLedgerService.getTrialBalance({ fromDate: "", toDate: toDate || current.toISOString() });
+      const account = asArray(trial?.items).find((row) => row.accountCode === "2010");
+      glBalance = account ? toDecimal(account.closingCredit || 0).minus(toDecimal(account.closingDebit || 0)).toFixed() : "0";
+    } catch (error) {
+      glBalance = null;
+    }
+    const subledgerOutstanding = canCombine ? sumMoney(outstandingRows, (row) => row.outstandingAmount) : null;
+    const difference = glBalance !== null && subledgerOutstanding !== null
+      ? toDecimal(subledgerOutstanding).minus(toDecimal(glBalance)).abs().toFixed()
+      : null;
+    const dataQuality = [];
+    if (!canCombine) dataQuality.push({ code: "AP_MIXED_REPORTING_CURRENCIES", message: "AP totals are separated by reporting currency." });
+    decorated.filter((row) => row.partialEvidenceMissing).forEach((row) => dataQuality.push({
+      code: "PARTIAL_PAYMENT_AMOUNT_MISSING",
+      reference: row.expenseReference,
+      message: "Partial payment status exists without an explicit paid amount."
+    }));
+
+    return {
+      items: statusFiltered.slice(skip, skip + safeLimit),
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total: statusFiltered.length,
+        pages: Math.max(1, Math.ceil(statusFiltered.length / safeLimit)),
+        from: statusFiltered.length ? skip + 1 : 0,
+        to: Math.min(skip + safeLimit, statusFiltered.length),
+        hasPrevious: safePage > 1,
+        hasNext: safePage < Math.max(1, Math.ceil(statusFiltered.length / safeLimit))
+      },
+      summary: {
+        invoiceCount: financialRows.length,
+        totalAmount: canCombine ? sumMoney(financialRows, (row) => row.amount) : null,
+        outstanding: subledgerOutstanding,
+        paidThisMonth: canCombine ? sumMoney(paidThisMonthRows, (row) => row.paidAmount) : null,
+        reportingCurrency,
+        currencies: currencyTotals,
+        mixedCurrencies: !canCombine,
+        activeSuppliers: new Set(financialRows.map((row) => row.supplier?.supplierId || row.supplier?.name).filter(Boolean)).size
+      },
+      tabCounts,
+      aging: Object.fromEntries(Object.entries(aging).map(([key, value]) => [key, value.toFixed()])),
+      suppliers: topSuppliers,
+      reconciliation: {
+        controlAccountCode: "2010",
+        subledgerBalance: subledgerOutstanding,
+        generalLedgerBalance: glBalance,
+        difference,
+        status: difference === null ? "UNAVAILABLE" : toDecimal(difference).equals(0) ? "RECONCILED" : "NEEDS_REVIEW"
+      },
+      dataQuality,
+      capabilities: {
+        createBill: true,
+        recordSupplierPayment: false,
+        recordSupplierPaymentReason: "A supplier payment allocation and double-entry posting workflow is not yet available."
+      }
+    };
+  };
+
   return {
     createBusinessExpense,
     createBusinessIncome,
     getFoundationSummary,
+    getAccountsPayableDashboard,
     listBusinessExpenses,
     listBusinessIncome,
     updateBusinessExpense,

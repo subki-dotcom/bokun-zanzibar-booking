@@ -5,6 +5,7 @@ const { authorizePermission } = require("../middleware/rbac");
 const { PERMISSIONS } = require("../security/permissions");
 const validateRequest = require("../middleware/validateRequest");
 const {
+  accountsPayableQuerySchema,
   foundationQuerySchema,
   postBookingContributionSchema
 } = require("../validators/businessAccounting.validation");
@@ -12,6 +13,13 @@ const {
 const router = express.Router();
 
 router.use(authenticate);
+
+router.get(
+  "/accounts-payable",
+  authorizePermission(PERMISSIONS.BUSINESS_ACCOUNTING_READ),
+  validateRequest(accountsPayableQuerySchema),
+  businessAccountingController.accountsPayable
+);
 
 router.get(
   "/foundation",

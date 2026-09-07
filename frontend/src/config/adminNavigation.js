@@ -40,6 +40,7 @@ export const ADMIN_ROLES = {
 
 export const ADMIN_PERMISSIONS = {
   BUSINESS_ACCOUNTING_READ: "business_accounting.read",
+  BUSINESS_EXPENSE_WRITE: "business_expense.write",
   BUSINESS_INTELLIGENCE_READ: "business_intelligence.read",
   REPORT_CENTER_READ: "report_center.read",
   AUDIT_CONTROL_READ: "audit_control.read",

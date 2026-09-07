@@ -272,6 +272,11 @@ const createFakeModels = ({
     PaymentModel,
     RefundModel,
     CommissionRecordModel,
+    GeneralLedgerService: {
+      getTrialBalance: async () => ({
+        items: [{ accountCode: "2010", closingDebit: "0", closingCredit: "60" }]
+      })
+    },
     now: () => new Date("2026-08-08T09:00:00.000Z")
   });
 
@@ -693,4 +698,102 @@ test("management accounting dashboard custom date filters all widgets", async ()
   assert.equal(september.totals.otherBusinessIncome, 0);
   assert.equal(september.recentIncome.length, 0);
   assert.equal(september.incomeBreakdown.length, 0);
+});
+
+test("accounts payable dashboard calculates bill balances, aging and GL reconciliation from real expense evidence", async () => {
+  const harness = createFakeModels();
+  await harness.service.createBusinessExpense({
+    input: {
+      category: EXPENSE_CATEGORY.OFFICE_SUPPLIES,
+      description: "Supplier materials",
+      amount: "100",
+      currency: "USD",
+      supplier: { supplierId: "SUP-1", name: "Zanzibar Supplies" },
+      dueDate: "2026-08-01T00:00:00.000Z",
+      expenseDate: "2026-08-02T00:00:00.000Z",
+      status: FINANCIAL_ENTRY_STATUS.APPROVED,
+      paymentStatus: EXPENSE_PAYMENT_STATUS.PARTIALLY_PAID,
+      metadata: { paidBaseCurrencyAmount: "40" }
+    }
+  });
+  await harness.service.createBusinessExpense({
+    input: {
+      category: EXPENSE_CATEGORY.SOFTWARE,
+      description: "Paid software bill",
+      amount: "50",
+      currency: "USD",
+      supplier: { supplierId: "SUP-2", name: "Software Vendor" },
+      dueDate: "2026-08-20T00:00:00.000Z",
+      expenseDate: "2026-08-04T00:00:00.000Z",
+      status: FINANCIAL_ENTRY_STATUS.PAID,
+      paymentStatus: EXPENSE_PAYMENT_STATUS.PAID
+    }
+  });
+  await harness.service.createBusinessExpense({
+    input: {
+      category: EXPENSE_CATEGORY.TRAVEL,
+      description: "Draft supplier bill",
+      amount: "25",
+      currency: "USD",
+      supplier: { name: "Draft Vendor" },
+      expenseDate: "2026-08-05T00:00:00.000Z",
+      status: FINANCIAL_ENTRY_STATUS.DRAFT
+    }
+  });
+
+  const result = await harness.service.getAccountsPayableDashboard({
+    fromDate: "2026-08-01",
+    toDate: "2026-08-31",
+    limit: 2
+  });
+
+  assert.equal(result.summary.invoiceCount, 2);
+  assert.equal(result.summary.totalAmount, "150");
+  assert.equal(result.summary.outstanding, "60");
+  assert.equal(result.summary.paidThisMonth, "50");
+  assert.equal(result.tabCounts.drafts, 1);
+  assert.equal(result.tabCounts.overdue, 1);
+  assert.equal(result.aging.current, "60");
+  assert.equal(result.suppliers[0].name, "Zanzibar Supplies");
+  assert.equal(result.suppliers[0].amount, "60");
+  assert.equal(result.reconciliation.controlAccountCode, "2010");
+  assert.equal(result.reconciliation.status, "RECONCILED");
+  assert.equal(result.pagination.total, 3);
+  assert.equal(result.items.length, 2);
+});
+
+test("accounts payable dashboard separates mixed reporting currencies and flags missing partial-payment evidence", async () => {
+  const harness = createFakeModels();
+  await harness.service.createBusinessExpense({
+    input: {
+      category: EXPENSE_CATEGORY.MAINTENANCE,
+      description: "USD partial bill",
+      amount: "20",
+      currency: "USD",
+      supplier: { name: "USD Supplier" },
+      status: FINANCIAL_ENTRY_STATUS.APPROVED,
+      paymentStatus: EXPENSE_PAYMENT_STATUS.PARTIALLY_PAID
+    }
+  });
+  await harness.service.createBusinessExpense({
+    input: {
+      category: EXPENSE_CATEGORY.MAINTENANCE,
+      description: "TZS bill",
+      amount: "50000",
+      currency: "TZS",
+      supplier: { name: "TZS Supplier" },
+      status: FINANCIAL_ENTRY_STATUS.APPROVED,
+      paymentStatus: EXPENSE_PAYMENT_STATUS.UNPAID
+    }
+  });
+
+  const result = await harness.service.getAccountsPayableDashboard();
+
+  assert.equal(result.summary.mixedCurrencies, true);
+  assert.equal(result.summary.totalAmount, null);
+  assert.equal(result.summary.outstanding, null);
+  assert.deepEqual(result.summary.currencies.map((row) => row.currency).sort(), ["TZS", "USD"]);
+  assert.equal(result.dataQuality.some((issue) => issue.code === "AP_MIXED_REPORTING_CURRENCIES"), true);
+  assert.equal(result.dataQuality.some((issue) => issue.code === "PARTIAL_PAYMENT_AMOUNT_MISSING"), true);
+  assert.equal(result.reconciliation.status, "UNAVAILABLE");
 });

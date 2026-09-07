@@ -165,3 +165,50 @@ test("admin can read business accounting foundation through permission middlewar
     await close(server);
   }
 });
+
+test("accounts payable dashboard validates filters and requires business accounting read permission", async () => {
+  const originalDashboard = businessAccountingService.getAccountsPayableDashboard;
+  let capturedArgs = null;
+  businessAccountingService.getAccountsPayableDashboard = async (args) => {
+    capturedArgs = args;
+    return { summary: { outstanding: "60", reportingCurrency: "USD" }, items: [] };
+  };
+
+  const restoreStaff = withMockUser("staff");
+  const staffServer = await listen();
+  try {
+    const { port } = staffServer.address();
+    const response = await fetch(`http://127.0.0.1:${port}/api/admin/business-accounting/accounts-payable`, {
+      headers: { Authorization: `Bearer ${token()}` }
+    });
+    assert.equal(response.status, 403);
+    assert.equal(capturedArgs, null);
+  } finally {
+    restoreStaff();
+    await close(staffServer);
+  }
+
+  const restoreAdmin = withMockUser("admin");
+  const adminServer = await listen();
+  try {
+    const { port } = adminServer.address();
+    const response = await fetch(
+      `http://127.0.0.1:${port}/api/admin/business-accounting/accounts-payable?status=overdue&page=2&limit=25`,
+      { headers: { Authorization: `Bearer ${token()}` } }
+    );
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.deepEqual(capturedArgs, { status: "overdue", page: 2, limit: 25 });
+    assert.equal(payload.data.summary.outstanding, "60");
+
+    const invalid = await fetch(
+      `http://127.0.0.1:${port}/api/admin/business-accounting/accounts-payable?status=unknown`,
+      { headers: { Authorization: `Bearer ${token()}` } }
+    );
+    assert.equal(invalid.status, 422);
+  } finally {
+    businessAccountingService.getAccountsPayableDashboard = originalDashboard;
+    restoreAdmin();
+    await close(adminServer);
+  }
+});

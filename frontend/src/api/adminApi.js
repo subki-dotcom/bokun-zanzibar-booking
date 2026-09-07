@@ -599,6 +599,16 @@ export const fetchChartOfAccounts = async (params = {}) => {
   return response.data.data;
 };
 
+export const fetchAccountsPayableDashboard = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/business-accounting/accounts-payable${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const createBusinessExpense = async (payload = {}) => {
+  const response = await axiosClient.post("/admin/business-expenses", payload);
+  return response.data.data;
+};
+
 export const createChartAccount = async (payload = {}) => {
   const response = await axiosClient.post("/admin/accounting/chart-of-accounts", payload);
   return response.data.data;

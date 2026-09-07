@@ -10,6 +10,14 @@ const foundation = asyncHandler(async (req, res) => {
   });
 });
 
+const accountsPayable = asyncHandler(async (req, res) => {
+  const data = await businessAccountingService.getAccountsPayableDashboard(req.validated?.query || req.query || {});
+  return successResponse(res, {
+    message: "Accounts payable dashboard fetched",
+    data
+  });
+});
+
 const postBookingContribution = asyncHandler(async (req, res) => {
   const data = await businessAccountingService.postBookingContribution({
     bookingReference: req.validated.params.bookingReference,
@@ -27,6 +35,7 @@ const postBookingContribution = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  accountsPayable,
   foundation,
   postBookingContribution
 };
