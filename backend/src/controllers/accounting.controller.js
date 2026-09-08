@@ -172,6 +172,14 @@ const generalLedger = asyncHandler(async (req, res) => {
   });
 });
 
+const cashBank = asyncHandler(async (req, res) => {
+  const data = await ledgerService.getCashBankDashboard(req.validated?.query || req.query || {});
+  return successResponse(res, {
+    message: "Cash and bank dashboard fetched",
+    data
+  });
+});
+
 const trialBalance = asyncHandler(async (req, res) => {
   const data = await ledgerService.getTrialBalance(req.validated?.query || req.query || {});
   return successResponse(res, {
@@ -282,6 +290,7 @@ module.exports = {
   accountingHealth,
   approveJournal,
   balanceSheet,
+  cashBank,
   cashFlow,
   closePeriod,
   createChartAccount,

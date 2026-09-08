@@ -5,6 +5,7 @@ const { authorizePermission } = require("../middleware/rbac");
 const validateRequest = require("../middleware/validateRequest");
 const { PERMISSIONS } = require("../security/permissions");
 const {
+  cashBankQuerySchema,
   createChartAccountSchema,
   createFixedAssetSchema,
   createJournalSchema,
@@ -66,6 +67,13 @@ router.post(
   authorizePermission(PERMISSIONS.GL_JOURNAL_REVERSE),
   validateRequest(journalActionSchema),
   accountingController.reverseJournal
+);
+
+router.get(
+  "/cash-bank",
+  authorizePermission(PERMISSIONS.GL_JOURNAL_READ),
+  validateRequest(cashBankQuerySchema),
+  accountingController.cashBank
 );
 
 router.get(

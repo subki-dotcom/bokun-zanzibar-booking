@@ -319,6 +319,88 @@ test("provider settlement with fee clears Pesapal balance", async () => {
   assert.equal(ledger.items.at(-1).runningBalance, "0");
 });
 
+test("cash and bank dashboard excludes internal transfers from economic cash flow", async () => {
+  const { service } = createFakeModels();
+  const auth = { id: "admin-1", role: "admin" };
+  const post = async ({ description, postingDate, lines }) => {
+    const created = await service.createManualJournal({
+      input: { description, postingDate, currency: "USD", baseCurrency: "USD", requiresApproval: false, lines },
+      auth
+    });
+    await service.postJournal({ journalId: created.journal.id, auth });
+  };
+
+  await post({
+    description: "External receipt",
+    postingDate: "2026-08-18T15:00:00.000Z",
+    lines: [{ accountCode: "1020", debit: "100" }, { accountCode: "3010", credit: "100" }]
+  });
+  await post({
+    description: "External payment",
+    postingDate: "2026-08-19T10:00:00.000Z",
+    lines: [{ accountCode: "6010", debit: "25" }, { accountCode: "1020", credit: "25" }]
+  });
+  await post({
+    description: "Bank to cash transfer",
+    postingDate: "2026-08-20T09:00:00.000Z",
+    lines: [{ accountCode: "1010", debit: "30" }, { accountCode: "1020", credit: "30" }]
+  });
+
+  const dashboard = await service.getCashBankDashboard({
+    fromDate: "2026-08-01",
+    toDate: "2026-08-20",
+    limit: 20
+  });
+
+  assert.equal(dashboard.summary.totalBalance, "75");
+  assert.equal(dashboard.summary.inflow, "100");
+  assert.equal(dashboard.summary.outflow, "25");
+  assert.equal(dashboard.summary.netCashFlow, "75");
+  assert.equal(dashboard.tabCounts.transfers, 2);
+  assert.equal(dashboard.items.filter((row) => row.isInternalTransfer).length, 2);
+  assert.equal(dashboard.items.every((row) => row.balanceAfterTransaction === null), true);
+
+  const bankView = await service.getCashBankDashboard({
+    fromDate: "2026-08-01",
+    toDate: "2026-08-20",
+    accountCode: "1020",
+    sortDirection: "asc",
+    limit: 20
+  });
+  assert.deepEqual(bankView.items.map((row) => row.balanceAfterTransaction), ["100", "75", "45"]);
+});
+
+test("cash and bank dashboard keeps different currencies separated", async () => {
+  const { service } = createFakeModels();
+  const auth = { id: "admin-1", role: "admin" };
+  const createAndPost = async (input) => {
+    const created = await service.createManualJournal({ input: { ...input, requiresApproval: false }, auth });
+    await service.postJournal({ journalId: created.journal.id, auth });
+  };
+
+  await createAndPost({
+    description: "USD receipt",
+    postingDate: "2026-08-18T09:00:00.000Z",
+    currency: "USD",
+    baseCurrency: "USD",
+    lines: [{ accountCode: "1020", debit: "10" }, { accountCode: "3010", credit: "10" }]
+  });
+  await createAndPost({
+    description: "TZS receipt",
+    postingDate: "2026-08-18T11:00:00.000Z",
+    currency: "TZS",
+    baseCurrency: "TZS",
+    lines: [{ accountCode: "1010", debit: "25000" }, { accountCode: "3010", credit: "25000" }]
+  });
+
+  const dashboard = await service.getCashBankDashboard({ fromDate: "2026-08-01", toDate: "2026-08-20" });
+  assert.equal(dashboard.summary.totalBalance, null);
+  assert.equal(dashboard.summary.inflow, null);
+  assert.equal(dashboard.summary.mixedCurrencies, true);
+  assert.deepEqual(dashboard.summary.balanceTotals.map((row) => row.currency).sort(), ["TZS", "USD"]);
+  assert.equal(new Set(dashboard.trend.map((row) => row.currency)).size, 2);
+});
+
 test("general ledger register uses posted lines, summaries and account balances", async () => {
   const { service } = createFakeModels();
   const opening = await service.createManualJournal({

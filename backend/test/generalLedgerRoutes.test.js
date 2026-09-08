@@ -77,6 +77,41 @@ test("general ledger reports require admin auth and expose trial balance", async
   }
 });
 
+test("cash and bank route is protected, validated, and returns the normalized dashboard", async () => {
+  const restoreUser = withMockAdmin("admin");
+  const original = ledgerService.getCashBankDashboard;
+  ledgerService.getCashBankDashboard = async (query) => ({
+    summary: { totalBalance: "75", reportingCurrency: "USD" },
+    items: [],
+    filters: query
+  });
+  const server = await listen();
+
+  try {
+    const { port } = server.address();
+    const unauthorized = await fetch(`http://127.0.0.1:${port}/api/admin/accounting/cash-bank`);
+    assert.equal(unauthorized.status, 401);
+
+    const invalid = await fetch(`http://127.0.0.1:${port}/api/admin/accounting/cash-bank?direction=sideways`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    assert.equal(invalid.status, 422);
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/admin/accounting/cash-bank?direction=inflow`, {
+      headers: { Authorization: `Bearer ${adminToken()}` }
+    });
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.success, true);
+    assert.equal(payload.data.summary.totalBalance, "75");
+    assert.equal(payload.data.filters.direction, "inflow");
+  } finally {
+    ledgerService.getCashBankDashboard = original;
+    restoreUser();
+    await close(server);
+  }
+});
+
 test("journal create route validates unstructured account values before service call", async () => {
   const restoreUser = withMockAdmin("admin");
   const originalCreateManualJournal = ledgerService.createManualJournal;

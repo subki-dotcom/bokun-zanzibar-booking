@@ -45,6 +45,12 @@ const {
 } = require("../../utils/money");
 
 const POSTED_LINE_STATUSES = new Set([JOURNAL_STATUS.POSTED, JOURNAL_STATUS.REVERSED]);
+const CASH_ACCOUNT_SUBTYPES = new Set([
+  GL_ACCOUNT_SUBTYPE.CASH,
+  GL_ACCOUNT_SUBTYPE.BANK,
+  GL_ACCOUNT_SUBTYPE.MOBILE_MONEY,
+  GL_ACCOUNT_SUBTYPE.PROVIDER_CLEARING
+]);
 const CLOSED_PERIOD_STATUSES = new Set([ACCOUNTING_PERIOD_STATUS.CLOSED, ACCOUNTING_PERIOD_STATUS.LOCKED]);
 const MONEY_ZERO = "0";
 const DEFAULT_JOURNAL_LIMIT = 25;
@@ -1491,6 +1497,210 @@ const createGeneralLedgerService = ({
     };
   };
 
+  const getCashBankDashboard = async ({
+    fromDate = "",
+    toDate = "",
+    search = "",
+    accountCode = "",
+    direction = "all",
+    postingType = "",
+    sourceModule = "",
+    currency = "",
+    page = 1,
+    limit = 10,
+    sortBy = "postingDate",
+    sortDirection = "desc"
+  } = {}) => {
+    const accountsLoaded = await leanMaybe(ChartOfAccountModel.find({ active: true }));
+    const cashAccounts = asArray(accountsLoaded).filter((account) => CASH_ACCOUNT_SUBTYPES.has(account.subtype));
+    const cashCodes = new Set(cashAccounts.map((account) => account.code));
+    const allLines = await allPostedLines();
+    const endDate = toDate ? normalizeDate(toDate) : now();
+    if (toDate && /^\d{4}-\d{2}-\d{2}$/.test(String(toDate))) {
+      endDate.setUTCHours(23, 59, 59, 999);
+    }
+    const asOfLines = allLines.filter((line) => cashCodes.has(line.accountCode) && new Date(line.postingDate) <= endDate);
+    const periodStart = fromDate ? normalizeDate(fromDate) : null;
+    const periodLines = asOfLines.filter((line) => {
+      const date = new Date(line.postingDate);
+      return (!periodStart || date >= periodStart) && date <= endDate;
+    });
+    const linesByJournal = new Map();
+    allLines.forEach((line) => {
+      const key = line.entryNumber || normalizeId(line.journalEntryId);
+      if (!linesByJournal.has(key)) linesByJournal.set(key, []);
+      linesByJournal.get(key).push(line);
+    });
+    const transferJournal = (line) => {
+      if (line.postingType === GL_POSTING_TYPE.PROVIDER_SETTLEMENT) return true;
+      const journalLines = linesByJournal.get(line.entryNumber || normalizeId(line.journalEntryId)) || [];
+      const cashLegs = journalLines.filter((candidate) => cashCodes.has(candidate.accountCode));
+      return cashLegs.length >= 2 && journalLines.every((candidate) => cashCodes.has(candidate.accountCode));
+    };
+    const balances = cashAccounts.map((account) => {
+      const accountLines = asOfLines.filter((line) => line.accountCode === account.code);
+      const originalCurrencies = Array.from(new Set(accountLines.map((line) => normalizeCurrency(line.currency)).filter(Boolean)));
+      const baseCurrencies = Array.from(new Set(accountLines.map((line) => normalizeCurrency(line.baseCurrency)).filter(Boolean)));
+      const configuredCurrency = normalizeCurrency(account.currency);
+      const canUseOriginal = originalCurrencies.length <= 1 && (!configuredCurrency || !originalCurrencies[0] || configuredCurrency === originalCurrencies[0]);
+      const balanceCurrency = canUseOriginal
+        ? (configuredCurrency || originalCurrencies[0] || baseCurrencies[0] || "")
+        : (baseCurrencies.length === 1 ? baseCurrencies[0] : "");
+      const balance = accountLines.reduce((total, line) => total.plus(
+        canUseOriginal
+          ? toDecimal(line.debit || 0).minus(toDecimal(line.credit || 0))
+          : toDecimal(line.baseCurrencyDebit || 0).minus(toDecimal(line.baseCurrencyCredit || 0))
+      ), new Decimal(0));
+      return {
+        id: normalizeId(account._id),
+        code: account.code,
+        name: account.name,
+        subtype: account.subtype,
+        typeLabel: account.subtype === GL_ACCOUNT_SUBTYPE.PROVIDER_CLEARING ? "Gateway Clearing" : labelizeToken(account.subtype),
+        currency: balanceCurrency,
+        balance: balanceCurrency || !accountLines.length ? balance.toFixed() : null,
+        hasActivity: accountLines.length > 0,
+        active: account.active !== false,
+        reconciliation: {
+          status: "UNAVAILABLE",
+          statementBalance: null,
+          difference: null,
+          reason: "No bank statement or provider statement balance is stored for this account."
+        }
+      };
+    });
+    const balanceCurrencies = Array.from(new Set(balances.map((row) => row.currency).filter(Boolean)));
+    const balanceTotals = balanceCurrencies.map((currencyCode) => ({
+      currency: currencyCode,
+      amount: balances.filter((row) => row.currency === currencyCode).reduce((sum, row) => sum.plus(toDecimal(row.balance || 0)), new Decimal(0)).toFixed()
+    }));
+
+    const decorated = periodLines.map((line) => {
+      const transfer = transferJournal(line);
+      const inflow = toDecimal(line.baseCurrencyDebit || 0);
+      const outflow = toDecimal(line.baseCurrencyCredit || 0);
+      return {
+        ...normalizeLineForApi(line),
+        id: normalizeId(line._id) || `${line.entryNumber}:${line.accountCode}:${line.postingDate}`,
+        transactionType: transfer ? "INTERNAL_TRANSFER" : line.postingType || line.sourceModule || "CASH_MOVEMENT",
+        typeLabel: transfer ? "Internal Transfer" : labelizeToken(line.postingType || line.sourceModule || "Cash Movement"),
+        direction: transfer ? "transfer" : inflow.greaterThan(0) ? "inflow" : "outflow",
+        inflow: inflow.toFixed(),
+        outflow: outflow.toFixed(),
+        amount: inflow.plus(outflow).toFixed(),
+        balanceAfterTransaction: null,
+        isInternalTransfer: transfer,
+        reconciliationStatus: "UNRECONCILED"
+      };
+    });
+    const normalizedSearch = normalizeToken(search).toLowerCase();
+    const normalizedAccount = normalizeEnumToken(accountCode);
+    const normalizedDirection = normalizeToken(direction).toLowerCase();
+    const normalizedPostingType = normalizeEnumToken(postingType);
+    const normalizedSource = normalizeEnumToken(sourceModule);
+    const normalizedCurrency = normalizeCurrency(currency);
+    const baseFiltered = decorated.filter((row) => {
+      if (normalizedAccount && row.accountCode !== normalizedAccount) return false;
+      if (normalizedPostingType && row.postingType !== normalizedPostingType) return false;
+      if (normalizedSource && row.sourceModule !== normalizedSource) return false;
+      if (normalizedCurrency && normalizeCurrency(row.baseCurrency) !== normalizedCurrency) return false;
+      if (!normalizedSearch) return true;
+      return [row.sourceReference, row.description, row.accountCode, row.accountName, row.entryNumber, row.bookingReference, row.amount]
+        .some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
+    });
+    const tabCounts = {
+      all: baseFiltered.length,
+      inflows: baseFiltered.filter((row) => row.direction === "inflow").length,
+      outflows: baseFiltered.filter((row) => row.direction === "outflow").length,
+      transfers: baseFiltered.filter((row) => row.direction === "transfer").length
+    };
+    const filtered = baseFiltered.filter((row) => normalizedDirection === "all" || !normalizedDirection || row.direction === normalizedDirection);
+    if (normalizedAccount) {
+      const opening = asOfLines
+        .filter((line) => line.accountCode === normalizedAccount && fromDate && new Date(line.postingDate) < normalizeDate(fromDate))
+        .reduce((sum, line) => sum.plus(toDecimal(line.baseCurrencyDebit || 0)).minus(toDecimal(line.baseCurrencyCredit || 0)), new Decimal(0));
+      let running = opening;
+      [...filtered].sort((left, right) => lineDateValue(left) - lineDateValue(right)).forEach((row) => {
+        running = running.plus(toDecimal(row.inflow)).minus(toDecimal(row.outflow));
+        row.balanceAfterTransaction = running.toFixed();
+      });
+    }
+    const economicRows = baseFiltered.filter((row) => !row.isInternalTransfer);
+    const movementCurrencies = Array.from(new Set(economicRows.map((row) => normalizeCurrency(row.baseCurrency)).filter(Boolean)));
+    const movementTotals = movementCurrencies.map((currencyCode) => {
+      const rows = economicRows.filter((row) => normalizeCurrency(row.baseCurrency) === currencyCode);
+      const inflow = rows.reduce((sum, row) => sum.plus(toDecimal(row.inflow)), new Decimal(0));
+      const outflow = rows.reduce((sum, row) => sum.plus(toDecimal(row.outflow)), new Decimal(0));
+      return { currency: currencyCode, inflow: inflow.toFixed(), outflow: outflow.toFixed(), net: inflow.minus(outflow).toFixed() };
+    });
+    const span = fromDate && toDate ? Math.abs(normalizeDate(toDate) - normalizeDate(fromDate)) / 86400000 : 365;
+    const trendMap = new Map();
+    economicRows.forEach((row) => {
+      const date = new Date(row.postingDate);
+      const bucket = span > 62 ? `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}` : date.toISOString().slice(0, 10);
+      const rowCurrency = normalizeCurrency(row.baseCurrency);
+      const key = `${rowCurrency}:${bucket}`;
+      const existing = trendMap.get(key) || { bucket, currency: rowCurrency, inflow: new Decimal(0), outflow: new Decimal(0) };
+      existing.inflow = existing.inflow.plus(toDecimal(row.inflow));
+      existing.outflow = existing.outflow.plus(toDecimal(row.outflow));
+      trendMap.set(key, existing);
+    });
+    const trend = Array.from(trendMap.values()).sort((left, right) => left.bucket.localeCompare(right.bucket)).map((row) => ({ bucket: row.bucket, currency: row.currency, inflow: row.inflow.toFixed(), outflow: row.outflow.toFixed(), net: row.inflow.minus(row.outflow).toFixed() }));
+    const sortField = ["postingDate", "sourceReference", "accountCode", "postingType", "inflow", "outflow"].includes(sortBy) ? sortBy : "postingDate";
+    const directionMultiplier = String(sortDirection).toLowerCase() === "asc" ? 1 : -1;
+    filtered.sort((left, right) => {
+      if (sortField === "postingDate") return (lineDateValue(left) - lineDateValue(right)) * directionMultiplier;
+      if (["inflow", "outflow"].includes(sortField)) return toDecimal(left[sortField]).minus(toDecimal(right[sortField])).toNumber() * directionMultiplier;
+      return String(left[sortField] || "").localeCompare(String(right[sortField] || ""), "en", { numeric: true }) * directionMultiplier;
+    });
+    const safePage = parsePositiveInt(page, 1);
+    const safeLimit = parsePositiveInt(limit, 10, { min: 1, max: 100 });
+    const skip = (safePage - 1) * safeLimit;
+    const pages = Math.max(1, Math.ceil(filtered.length / safeLimit));
+    const mixedBalances = balanceTotals.length > 1 || balances.some((row) => row.hasActivity && !row.currency);
+    const mixedMovements = movementTotals.length > 1;
+
+    return {
+      accounts: balances.sort((left, right) => toDecimal(right.balance || 0).minus(toDecimal(left.balance || 0)).toNumber()),
+      items: filtered.slice(skip, skip + safeLimit),
+      recentTransactions: [...baseFiltered].sort((left, right) => lineDateValue(right) - lineDateValue(left)).slice(0, 5),
+      pagination: { page: safePage, limit: safeLimit, total: filtered.length, pages, from: filtered.length ? skip + 1 : 0, to: Math.min(skip + safeLimit, filtered.length), hasPrevious: safePage > 1, hasNext: safePage < pages },
+      summary: {
+        totalBalance: mixedBalances ? null : (balanceTotals[0]?.amount || "0"),
+        reportingCurrency: mixedBalances ? "" : (balanceTotals[0]?.currency || ""),
+        balanceTotals,
+        inflow: mixedMovements ? null : (movementTotals[0]?.inflow || "0"),
+        outflow: mixedMovements ? null : (movementTotals[0]?.outflow || "0"),
+        netCashFlow: mixedMovements ? null : (movementTotals[0]?.net || "0"),
+        movementTotals,
+        activeAccounts: balances.length,
+        bankAccounts: balances.filter((row) => row.subtype === GL_ACCOUNT_SUBTYPE.BANK).length,
+        cashAccounts: balances.filter((row) => row.subtype === GL_ACCOUNT_SUBTYPE.CASH).length,
+        clearingAccounts: balances.filter((row) => row.subtype === GL_ACCOUNT_SUBTYPE.PROVIDER_CLEARING).length,
+        mixedCurrencies: mixedBalances || mixedMovements,
+        inflowRule: "Posted cash-account debits excluding internal transfers and provider settlements.",
+        outflowRule: "Posted cash-account credits excluding internal transfers and provider settlements."
+      },
+      tabCounts,
+      trend,
+      reconciliation: {
+        status: "UNAVAILABLE",
+        reason: "Bank and provider statement balances are not persisted, so GL-to-statement reconciliation cannot be asserted."
+      },
+      filterOptions: {
+        accounts: balances.map((row) => ({ code: row.code, name: row.name, subtype: row.subtype, currency: row.currency })),
+        postingTypes: Array.from(new Set(decorated.map((row) => row.postingType).filter(Boolean))).sort()
+      },
+      capabilities: {
+        createTransaction: false,
+        createTransactionReason: "Use the source payment, expense, refund or approved journal workflow.",
+        transfer: false,
+        transferReason: "A dedicated transfer workflow with period-close and approval controls is not implemented.",
+        reconcileStatement: false
+      }
+    };
+  };
+
   const summarizeAccounts = async ({ fromDate = "", toDate = "" } = {}) => {
     const allLines = await allPostedLines();
     const openingLines = allLines.filter((line) => fromDate && new Date(line.postingDate) < normalizeDate(fromDate));
@@ -2196,6 +2406,7 @@ const createGeneralLedgerService = ({
     fixedAssetDepreciationPlan,
     getAccountingHealth,
     getBalanceSheet,
+    getCashBankDashboard,
     getCashFlow,
     getFixedAssets,
     getGeneralLedger,

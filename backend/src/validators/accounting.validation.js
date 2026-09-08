@@ -242,6 +242,25 @@ const ledgerReportQuerySchema = z.object({
     .optional()
 });
 
+const cashBankQuerySchema = z.object({
+  params: z.object({}).optional(),
+  body: z.object({}).optional(),
+  query: z.object({
+    fromDate: z.string().min(1).optional(),
+    toDate: z.string().min(1).optional(),
+    search: z.string().trim().max(160).optional(),
+    accountCode: accountCode.optional(),
+    direction: z.enum(["all", "inflow", "outflow", "transfer"]).optional(),
+    postingType: postingTypeEnum.optional(),
+    sourceModule: sourceModuleEnum.optional(),
+    currency: z.string().trim().length(3).optional(),
+    page: z.coerce.number().int().min(1).max(100000).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+    sortBy: z.enum(["postingDate", "sourceReference", "accountCode", "postingType", "inflow", "outflow"]).optional(),
+    sortDirection: z.enum(["asc", "desc"]).optional()
+  }).optional()
+});
+
 const listPeriodsSchema = z.object({
   params: z.object({}).optional(),
   body: z.object({}).optional(),
@@ -333,6 +352,7 @@ const exportLedgerReportSchema = z.object({
 });
 
 module.exports = {
+  cashBankQuerySchema,
   createFixedAssetSchema,
   createChartAccountSchema,
   createJournalSchema,
