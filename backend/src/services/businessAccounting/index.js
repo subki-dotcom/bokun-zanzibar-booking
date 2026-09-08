@@ -2000,10 +2000,248 @@ const createBusinessAccountingService = ({
     };
   };
 
+  const getAccountsReceivableDashboard = async ({
+    fromDate = "",
+    toDate = "",
+    search = "",
+    customer = "",
+    status = "all",
+    currency = "",
+    dueFrom = "",
+    dueTo = "",
+    sortBy = "issueDate",
+    sortOrder = "desc",
+    page = 1,
+    limit = 10
+  } = {}) => {
+    const current = now();
+    const query = buildDateRangeQuery({ fromDate, toDate, field: "issueDate" });
+    const found = InvoiceModel.find(query);
+    const loaded = found && typeof found.sort === "function"
+      ? await leanMaybe(found.sort({ issueDate: -1, createdAt: -1 }))
+      : await leanMaybe(found);
+    const normalizedSearch = normalizeToken(search).toLowerCase();
+    const normalizedCustomer = normalizeToken(customer).toLowerCase();
+    const normalizedStatus = normalizeToken(status).toLowerCase();
+    const normalizedCurrency = normalizeCurrency(currency);
+    const dueStart = dueFrom ? startOfUtcDay(dueFrom) : null;
+    const dueEnd = dueTo ? endOfUtcDay(dueTo) : null;
+
+    const decorate = (invoice = {}) => {
+      const amount = toDecimal(invoice.totalAmount ?? invoice.total ?? 0);
+      const paid = Decimal.max(new Decimal(0), toDecimal(invoice.paidAccountingAmount ?? invoice.amountPaid ?? 0));
+      const refunded = Decimal.max(new Decimal(0), toDecimal(invoice.refundedAccountingAmount ?? invoice.amountRefunded ?? 0));
+      const fallbackBalance = Decimal.max(new Decimal(0), amount.minus(paid).plus(refunded));
+      const balance = Decimal.max(new Decimal(0), toDecimal(invoice.balanceDueAmount ?? invoice.balanceDue ?? fallbackBalance));
+      const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : null;
+      const overdue = Boolean(balance.greaterThan(0) && dueDate && !Number.isNaN(dueDate.getTime()) && dueDate < startOfUtcDay(current));
+      const cancelled = String(invoice.bookingStatus || "").toLowerCase() === "cancelled";
+      const rawStatus = String(invoice.status || invoice.paymentStatus || "pending").toLowerCase();
+      const displayStatus = cancelled
+        ? "cancelled"
+        : rawStatus === "draft"
+          ? "draft"
+          : refunded.greaterThan(0) && refunded.greaterThanOrEqualTo(paid) && paid.greaterThan(0)
+            ? "refunded"
+            : refunded.greaterThan(0)
+              ? "partially_refunded"
+              : balance.equals(0) && amount.greaterThan(0)
+                ? "paid"
+                : overdue
+                  ? "overdue"
+                  : paid.greaterThan(0)
+                    ? "partial"
+                    : "outstanding";
+      return {
+        id: String(invoice._id || ""),
+        invoiceNumber: invoice.invoiceNumber,
+        bookingReference: invoice.bookingReference,
+        issueDate: invoice.issueDate || invoice.createdAt || null,
+        dueDate: invoice.dueDate || null,
+        customer: {
+          name: invoice.clientName || invoice.clientEmail || "Unassigned customer",
+          email: invoice.clientEmail || "",
+          phone: invoice.clientPhone || ""
+        },
+        description: invoice.tourName || asArray(invoice.items)[0]?.label || invoice.notes || "Customer invoice",
+        amount: amount.toFixed(),
+        paidAmount: paid.toFixed(),
+        refundedAmount: refunded.toFixed(),
+        outstandingAmount: balance.toFixed(),
+        reportingCurrency: normalizeCurrency(invoice.accountingCurrency || "USD"),
+        displayStatus,
+        overdue,
+        counted: !cancelled && displayStatus !== "draft",
+        source: invoice.bookingReference ? "Booking Accounting" : "Invoice"
+      };
+    };
+
+    const decorated = asArray(loaded).map(decorate);
+    const matchesText = (row) => !normalizedSearch || [
+      row.invoiceNumber,
+      row.bookingReference,
+      row.customer?.name,
+      row.customer?.email,
+      row.description
+    ].some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
+    const inDueRange = (row) => {
+      if (!dueStart && !dueEnd) return true;
+      if (!row.dueDate) return false;
+      const value = new Date(row.dueDate);
+      return (!dueStart || value >= dueStart) && (!dueEnd || value <= dueEnd);
+    };
+    const baseFiltered = decorated
+      .filter(matchesText)
+      .filter((row) => !normalizedCustomer || String(row.customer?.name || row.customer?.email || "").toLowerCase() === normalizedCustomer)
+      .filter((row) => !normalizedCurrency || row.reportingCurrency === normalizedCurrency)
+      .filter(inDueRange);
+    const statusFiltered = baseFiltered.filter((row) => {
+      if (!normalizedStatus || normalizedStatus === "all") return true;
+      if (normalizedStatus === "outstanding") return toDecimal(row.outstandingAmount).greaterThan(0) && !row.overdue && !["draft", "cancelled"].includes(row.displayStatus);
+      if (normalizedStatus === "paid") return row.displayStatus === "paid";
+      return row.displayStatus === normalizedStatus;
+    });
+    const sortValue = (row) => {
+      if (sortBy === "dueDate") return row.dueDate ? new Date(row.dueDate).getTime() : 0;
+      if (sortBy === "invoiceNumber") return row.invoiceNumber || "";
+      if (sortBy === "customer") return row.customer?.name || "";
+      if (sortBy === "amount") return Number(row.amount || 0);
+      if (sortBy === "balance") return Number(row.outstandingAmount || 0);
+      if (sortBy === "status") return row.displayStatus || "";
+      return row.issueDate ? new Date(row.issueDate).getTime() : 0;
+    };
+    statusFiltered.sort((left, right) => {
+      const leftValue = sortValue(left);
+      const rightValue = sortValue(right);
+      const result = typeof leftValue === "number"
+        ? leftValue - rightValue
+        : String(leftValue).localeCompare(String(rightValue));
+      return sortOrder === "asc" ? result : -result;
+    });
+    const tabCounts = {
+      all: baseFiltered.length,
+      outstanding: baseFiltered.filter((row) => toDecimal(row.outstandingAmount).greaterThan(0) && !row.overdue && !["draft", "cancelled"].includes(row.displayStatus)).length,
+      overdue: baseFiltered.filter((row) => row.overdue).length,
+      paid: baseFiltered.filter((row) => row.displayStatus === "paid").length,
+      drafts: baseFiltered.filter((row) => row.displayStatus === "draft").length
+    };
+    const financialRows = baseFiltered.filter((row) => row.counted);
+    const currencies = Array.from(new Set(financialRows.map((row) => row.reportingCurrency).filter(Boolean)));
+    const canCombine = currencies.length <= 1;
+    const currencyTotals = currencies.map((currencyCode) => {
+      const rows = financialRows.filter((row) => row.reportingCurrency === currencyCode);
+      return {
+        currency: currencyCode,
+        amount: sumMoney(rows, (row) => row.amount),
+        paid: sumMoney(rows, (row) => row.paidAmount),
+        refunded: sumMoney(rows, (row) => row.refundedAmount),
+        outstanding: sumMoney(rows, (row) => row.outstandingAmount)
+      };
+    });
+    const reportingCurrency = canCombine ? (currencies[0] || "") : "";
+    const outstandingRows = financialRows.filter((row) => toDecimal(row.outstandingAmount).greaterThan(0));
+    const aging = { current: new Decimal(0), days31to60: new Decimal(0), days61to90: new Decimal(0), days91plus: new Decimal(0) };
+    outstandingRows.forEach((row) => {
+      const due = row.dueDate ? startOfUtcDay(row.dueDate) : startOfUtcDay(current);
+      const age = Math.max(0, Math.floor((startOfUtcDay(current) - due) / DAY_MS));
+      const bucket = age <= 30 ? "current" : age <= 60 ? "days31to60" : age <= 90 ? "days61to90" : "days91plus";
+      aging[bucket] = aging[bucket].plus(toDecimal(row.outstandingAmount));
+    });
+    const customerMap = new Map();
+    outstandingRows.forEach((row) => {
+      const name = row.customer?.name || "Unassigned customer";
+      customerMap.set(name, (customerMap.get(name) || new Decimal(0)).plus(toDecimal(row.outstandingAmount)));
+    });
+    const customerRows = Array.from(customerMap.entries())
+      .map(([name, amount]) => ({ name, amount: amount.toFixed() }))
+      .sort((left, right) => toDecimal(right.amount).minus(toDecimal(left.amount)).toNumber());
+    const topCustomers = canCombine ? customerRows.slice(0, 5) : [];
+    if (canCombine && customerRows.length > 5) topCustomers.push({ name: "Other", amount: sumMoney(customerRows.slice(5), (row) => row.amount) });
+
+    const paymentFound = PaymentModel.find({ status: "paid" });
+    const paymentRows = dedupePaidPayments(await leanMaybe(paymentFound));
+    const paidMonthStart = startOfUtcMonth(current);
+    const paidMonthEnd = endOfUtcMonth(current);
+    const collections = paymentRows.filter((payment) => {
+      const paidAt = payment.paidAt ? new Date(payment.paidAt) : null;
+      return paidAt && !Number.isNaN(paidAt.getTime()) && paidAt >= paidMonthStart && paidAt <= paidMonthEnd;
+    });
+    const collectionCurrencies = new Set(collections.map(paymentCurrency).filter(Boolean));
+    const collectedThisMonth = canCombine && (!collections.length || (collectionCurrencies.size === 1 && collectionCurrencies.has(reportingCurrency)))
+      ? sumMoney(collections, paymentAccountingAmount)
+      : null;
+
+    let glBalance = null;
+    let glCurrency = "";
+    try {
+      const trial = await GeneralLedgerService.getTrialBalance({ fromDate: "", toDate: toDate || current.toISOString() });
+      const account = asArray(trial?.items).find((row) => row.accountCode === "1100");
+      glBalance = account ? toDecimal(account.closingDebit || 0).minus(toDecimal(account.closingCredit || 0)).toFixed() : "0";
+      glCurrency = normalizeCurrency(trial?.summary?.baseCurrency || trial?.baseCurrency || account?.baseCurrency || "");
+    } catch (error) {
+      glBalance = null;
+    }
+    const subledgerOutstanding = canCombine ? sumMoney(outstandingRows, (row) => row.outstandingAmount) : null;
+    const comparableGl = glBalance !== null && subledgerOutstanding !== null && (!glCurrency || !reportingCurrency || glCurrency === reportingCurrency);
+    const difference = comparableGl ? toDecimal(subledgerOutstanding).minus(toDecimal(glBalance)).abs().toFixed() : null;
+    const dataQuality = [];
+    if (!canCombine) dataQuality.push({ code: "AR_MIXED_REPORTING_CURRENCIES", message: "AR totals are separated by reporting currency; select one currency for aging and reconciliation." });
+    if (glCurrency && reportingCurrency && glCurrency !== reportingCurrency) dataQuality.push({ code: "AR_GL_CURRENCY_MISMATCH", message: `AR is ${reportingCurrency} while the GL control account is ${glCurrency}.` });
+    outstandingRows.filter((row) => !row.dueDate).forEach((row) => dataQuality.push({ code: "INVOICE_DUE_DATE_MISSING", reference: row.invoiceNumber, message: "Outstanding invoice has no due date; no date was inferred." }));
+    const safePage = Math.max(1, Number(page || 1));
+    const safeLimit = Math.max(1, Math.min(100, Number(limit || 10)));
+    const skip = (safePage - 1) * safeLimit;
+
+    return {
+      items: statusFiltered.slice(skip, skip + safeLimit),
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total: statusFiltered.length,
+        pages: Math.max(1, Math.ceil(statusFiltered.length / safeLimit)),
+        from: statusFiltered.length ? skip + 1 : 0,
+        to: Math.min(skip + safeLimit, statusFiltered.length),
+        hasPrevious: safePage > 1,
+        hasNext: safePage < Math.max(1, Math.ceil(statusFiltered.length / safeLimit))
+      },
+      summary: {
+        invoiceCount: financialRows.length,
+        totalAmount: canCombine ? sumMoney(financialRows, (row) => row.amount) : null,
+        outstanding: subledgerOutstanding,
+        collectedThisMonth,
+        reportingCurrency,
+        currencies: currencyTotals,
+        mixedCurrencies: !canCombine,
+        activeCustomers: new Set(financialRows.map((row) => row.customer?.email || row.customer?.name).filter(Boolean)).size
+      },
+      tabCounts,
+      aging: canCombine ? Object.fromEntries(Object.entries(aging).map(([key, value]) => [key, value.toFixed()])) : null,
+      customers: topCustomers,
+      filterOptions: {
+        customers: Array.from(new Set(decorated.map((row) => row.customer?.name).filter(Boolean))).sort()
+      },
+      reconciliation: {
+        controlAccountCode: "1100",
+        subledgerBalance: subledgerOutstanding,
+        generalLedgerBalance: comparableGl ? glBalance : null,
+        difference,
+        status: difference === null ? "UNAVAILABLE" : toDecimal(difference).equals(0) ? "RECONCILED" : "NEEDS_REVIEW"
+      },
+      dataQuality,
+      capabilities: {
+        createStandaloneInvoice: false,
+        createStandaloneInvoiceReason: "Standalone customer invoice posting is not yet available; Booking Accounting remains the invoice source.",
+        recordPayment: false,
+        recordPaymentReason: "Use the existing verified payment gateway and allocation workflow."
+      }
+    };
+  };
+
   return {
     createBusinessExpense,
     createBusinessIncome,
     getFoundationSummary,
+    getAccountsReceivableDashboard,
     getAccountsPayableDashboard,
     listBusinessExpenses,
     listBusinessIncome,

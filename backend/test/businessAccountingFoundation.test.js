@@ -111,7 +111,7 @@ const createFakeModels = ({
 } = {}) => {
   const state = {
     booking: clone(booking),
-    invoice: clone(invoice),
+    invoices: clone(Array.isArray(invoice) ? invoice : [invoice]),
     payments: clone(payments),
     refunds: clone(refunds),
     commissions: clone(commissions),
@@ -247,11 +247,11 @@ const createFakeModels = ({
   };
   const InvoiceModel = {
     findOne: async ({ bookingReference }) =>
-      state.invoice.bookingReference === bookingReference ? clone(state.invoice) : null
+      clone(state.invoices.find((row) => row.bookingReference === bookingReference) || null),
+    find: async (query = {}) => state.invoices.filter((row) => matches(row, query)).map(clone)
   };
   const PaymentModel = {
-    find: async ({ bookingReference }) =>
-      state.payments.filter((payment) => payment.bookingReference === bookingReference).map(clone)
+    find: async (query = {}) => state.payments.filter((payment) => matches(payment, query)).map(clone)
   };
   const RefundModel = {
     find: async ({ bookingId }) =>
@@ -274,7 +274,11 @@ const createFakeModels = ({
     CommissionRecordModel,
     GeneralLedgerService: {
       getTrialBalance: async () => ({
-        items: [{ accountCode: "2010", closingDebit: "0", closingCredit: "60" }]
+        baseCurrency: "USD",
+        items: [
+          { accountCode: "1100", closingDebit: "60", closingCredit: "0", baseCurrency: "USD" },
+          { accountCode: "2010", closingDebit: "0", closingCredit: "60", baseCurrency: "USD" }
+        ]
       })
     },
     now: () => new Date("2026-08-08T09:00:00.000Z")
@@ -795,5 +799,67 @@ test("accounts payable dashboard separates mixed reporting currencies and flags 
   assert.deepEqual(result.summary.currencies.map((row) => row.currency).sort(), ["TZS", "USD"]);
   assert.equal(result.dataQuality.some((issue) => issue.code === "AP_MIXED_REPORTING_CURRENCIES"), true);
   assert.equal(result.dataQuality.some((issue) => issue.code === "PARTIAL_PAYMENT_AMOUNT_MISSING"), true);
+  assert.equal(result.reconciliation.status, "UNAVAILABLE");
+});
+
+test("accounts receivable dashboard uses canonical invoice balances, verified collections and AR control account", async () => {
+  const harness = createFakeModels({
+    invoice: {
+      ...baseInvoice(),
+      clientName: "Asha Hamad",
+      clientEmail: "asha@example.com",
+      tourName: "Stone Town Tour",
+      dueDate: "2026-08-01T00:00:00.000Z",
+      paymentStatus: "partial",
+      totalAmount: "100",
+      paidAccountingAmount: "40",
+      refundedAccountingAmount: "0",
+      balanceDueAmount: "60"
+    },
+    payments: [{
+      ...basePayments()[0],
+      intentId: "ar-payment-1",
+      accountingAmount: "40",
+      paidAt: "2026-08-05T00:00:00.000Z"
+    }],
+    refunds: []
+  });
+
+  const result = await harness.service.getAccountsReceivableDashboard({
+    fromDate: "2026-08-01",
+    toDate: "2026-08-31"
+  });
+
+  assert.equal(result.summary.invoiceCount, 1);
+  assert.equal(result.summary.totalAmount, "100");
+  assert.equal(result.summary.outstanding, "60");
+  assert.equal(result.summary.collectedThisMonth, "40");
+  assert.equal(result.items[0].displayStatus, "overdue");
+  assert.equal(result.aging.current, "60");
+  assert.equal(result.customers[0].name, "Asha Hamad");
+  assert.equal(result.reconciliation.controlAccountCode, "1100");
+  assert.equal(result.reconciliation.status, "RECONCILED");
+  assert.equal(result.capabilities.createStandaloneInvoice, false);
+  assert.equal(result.capabilities.recordPayment, false);
+});
+
+test("accounts receivable dashboard separates currencies and does not infer missing due dates", async () => {
+  const harness = createFakeModels({
+    invoice: [
+      { ...baseInvoice(), clientName: "USD Customer", accountingCurrency: "USD", totalAmount: "20", paidAccountingAmount: "0", balanceDueAmount: "20" },
+      { ...baseInvoice(), _id: "64f000000000000000000102", invoiceNumber: "INV-BA-1002", bookingReference: "ZNZ-BA-1002", clientName: "TZS Customer", accountingCurrency: "TZS", totalAmount: "50000", paidAccountingAmount: "0", balanceDueAmount: "50000" }
+    ],
+    payments: [],
+    refunds: []
+  });
+
+  const result = await harness.service.getAccountsReceivableDashboard();
+
+  assert.equal(result.summary.mixedCurrencies, true);
+  assert.equal(result.summary.totalAmount, null);
+  assert.equal(result.summary.outstanding, null);
+  assert.equal(result.aging, null);
+  assert.equal(result.dataQuality.some((issue) => issue.code === "AR_MIXED_REPORTING_CURRENCIES"), true);
+  assert.equal(result.dataQuality.filter((issue) => issue.code === "INVOICE_DUE_DATE_MISSING").length, 2);
   assert.equal(result.reconciliation.status, "UNAVAILABLE");
 });

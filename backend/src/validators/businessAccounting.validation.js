@@ -49,6 +49,25 @@ const accountsPayableQuerySchema = z.object({
   }).optional()
 });
 
+const accountsReceivableQuerySchema = z.object({
+  params: z.object({}).optional(),
+  body: z.object({}).optional(),
+  query: z.object({
+    fromDate: z.string().min(1).optional(),
+    toDate: z.string().min(1).optional(),
+    search: z.string().trim().max(180).optional(),
+    customer: z.string().trim().max(180).optional(),
+    status: z.enum(["all", "outstanding", "overdue", "partial", "paid", "draft", "cancelled", "refunded"]).optional(),
+    currency: z.string().length(3).optional(),
+    dueFrom: z.string().min(1).optional(),
+    dueTo: z.string().min(1).optional(),
+    sortBy: z.enum(["issueDate", "dueDate", "invoiceNumber", "customer", "amount", "balance", "status"]).optional(),
+    sortOrder: z.enum(["asc", "desc"]).optional(),
+    page: z.coerce.number().int().min(1).max(100000).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional()
+  }).optional()
+});
+
 const postBookingContributionSchema = z.object({
   params: z.object({
     bookingReference: z.string().min(1).max(180)
@@ -252,6 +271,7 @@ const updateBusinessExpenseSchema = z.object({
 });
 
 module.exports = {
+  accountsReceivableQuerySchema,
   accountsPayableQuerySchema,
   createBusinessExpenseSchema,
   createBusinessIncomeSchema,

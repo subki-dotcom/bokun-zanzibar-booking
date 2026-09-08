@@ -18,6 +18,14 @@ const accountsPayable = asyncHandler(async (req, res) => {
   });
 });
 
+const accountsReceivable = asyncHandler(async (req, res) => {
+  const data = await businessAccountingService.getAccountsReceivableDashboard(req.validated?.query || req.query || {});
+  return successResponse(res, {
+    message: "Accounts receivable dashboard fetched",
+    data
+  });
+});
+
 const postBookingContribution = asyncHandler(async (req, res) => {
   const data = await businessAccountingService.postBookingContribution({
     bookingReference: req.validated.params.bookingReference,
@@ -35,6 +43,7 @@ const postBookingContribution = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  accountsReceivable,
   accountsPayable,
   foundation,
   postBookingContribution

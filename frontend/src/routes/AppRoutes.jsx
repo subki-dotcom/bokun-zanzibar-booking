@@ -42,6 +42,7 @@ import AdminGeneralLedgerRegisterPage from "../pages/admin/AdminGeneralLedgerReg
 import AdminJournalEntriesPage from "../pages/admin/AdminJournalEntriesPage";
 import AdminTrialBalancePage from "../pages/admin/AdminTrialBalancePage";
 import AdminAccountsPayablePage from "../pages/admin/AdminAccountsPayablePage";
+import AdminAccountsReceivablePage from "../pages/admin/AdminAccountsReceivablePage";
 import AdminReportCenterPage from "../pages/admin/AdminReportCenterPage";
 import AdminAuditControlPage from "../pages/admin/AdminAuditControlPage";
 import AdminDataQualityPage from "../pages/admin/AdminDataQualityPage";
@@ -169,6 +170,14 @@ const AppRoutes = () => {
           }
         />
         <Route
+          path="/admin/business-accounting/accounts-receivable"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.BUSINESS_ACCOUNTING_READ]}>
+              <AdminAccountsReceivablePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/business-accounting/accounts-payable"
           element={
             <ProtectedRoute permissions={[ADMIN_PERMISSIONS.BUSINESS_ACCOUNTING_READ]}>
@@ -177,7 +186,6 @@ const AppRoutes = () => {
           }
         />
         {[
-          "/admin/business-accounting/accounts-receivable",
           "/admin/business-accounting/cash-bank",
           "/admin/business-accounting/period-close",
           "/admin/business-accounting/balance-sheet",

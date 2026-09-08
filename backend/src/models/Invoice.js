@@ -6,6 +6,7 @@ const invoiceSchema = new mongoose.Schema(
     invoiceNumber: { type: String, required: true, unique: true, index: true },
     bookingReference: { type: String, required: true, index: true },
     issueDate: { type: Date, default: Date.now },
+    dueDate: { type: Date, default: null, index: true },
     paymentStatus: {
       type: String,
       enum: Object.values(PAYMENT_STATUS),
@@ -67,5 +68,6 @@ const invoiceSchema = new mongoose.Schema(
 invoiceSchema.index({ paymentStatus: 1, issueDate: -1, createdAt: -1 });
 invoiceSchema.index({ bookingReference: 1, paymentStatus: 1 });
 invoiceSchema.index({ bookingStatus: 1, issueDate: -1, createdAt: -1 });
+invoiceSchema.index({ paymentStatus: 1, dueDate: 1 });
 
 module.exports = mongoose.model("Invoice", invoiceSchema);

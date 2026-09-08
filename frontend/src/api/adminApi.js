@@ -604,6 +604,11 @@ export const fetchAccountsPayableDashboard = async (params = {}) => {
   return response.data.data;
 };
 
+export const fetchAccountsReceivableDashboard = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/business-accounting/accounts-receivable${buildQueryString(params)}`);
+  return response.data.data;
+};
+
 export const createBusinessExpense = async (payload = {}) => {
   const response = await axiosClient.post("/admin/business-expenses", payload);
   return response.data.data;
