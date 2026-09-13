@@ -115,6 +115,11 @@ export const syncBokunProductCatalog = async ({ timeout = 15000 } = {}) => {
   return response.data.data;
 };
 
+export const fetchBusinessIntelligence = async (params = {}, signal) => {
+  const response = await axiosClient.get(`/admin/analytics/business-intelligence${buildQueryString(params)}`, { signal });
+  return response.data.data;
+};
+
 export const fetchBokunSyncStatus = async () => {
   const response = await axiosClient.get("/bokun/admin/sync-status");
   return response.data.data;
@@ -503,13 +508,13 @@ export const fetchBusinessExpenses = async (params = {}) => {
   return response.data.data;
 };
 
-export const fetchReportCenterCatalog = async () => {
-  const response = await axiosClient.get("/admin/report-center/catalog");
+export const fetchReportCenterCatalog = async (signal) => {
+  const response = await axiosClient.get("/admin/report-center/catalog", { signal });
   return response.data.data;
 };
 
-export const runReportCenterReport = async (reportType, params = {}) => {
-  const response = await axiosClient.get(`/admin/report-center/reports/${encodeURIComponent(reportType)}${buildQueryString(params)}`);
+export const runReportCenterReport = async (reportType, params = {}, signal) => {
+  const response = await axiosClient.get(`/admin/report-center/reports/${encodeURIComponent(reportType)}${buildQueryString(params)}`, { signal });
   return response.data.data;
 };
 
@@ -522,13 +527,18 @@ export const exportReportCenterReport = async (reportType, params = {}) => {
   const match = disposition.match(/filename="?([^";]+)"?/i);
   return {
     blob: response.data,
-    filename: match?.[1] || `${reportType}.${String(params.format || "csv").toLowerCase()}`,
+    filename: match?.[1] || `${reportType}.${({ PDF: 'pdf', EXCEL: 'xls', CSV: 'csv', PRINT: 'html' })[String(params.format || 'CSV').toUpperCase()] || 'csv'}`,
     contentType: response.headers?.["content-type"] || "application/octet-stream"
   };
 };
 
-export const fetchReportExportHistory = async (params = {}) => {
-  const response = await axiosClient.get(`/admin/report-center/exports/history${buildQueryString(params)}`);
+export const fetchReportExportHistory = async (params = {}, signal) => {
+  const response = await axiosClient.get(`/admin/report-center/exports/history${buildQueryString(params)}`, { signal });
+  return response.data.data;
+};
+
+export const fetchReportCenterSummary = async (params = {}, signal) => {
+  const response = await axiosClient.get(`/admin/report-center/summary${buildQueryString(params)}`, { signal });
   return response.data.data;
 };
 

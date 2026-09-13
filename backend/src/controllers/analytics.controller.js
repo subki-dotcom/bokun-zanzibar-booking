@@ -7,6 +7,11 @@ const {
 } = require("../analytics");
 const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/apiResponse");
+const businessIntelligenceService = require('../analytics/businessIntelligenceService');
+const businessIntelligence = asyncHandler(async (req, res) => successResponse(res, {
+  message: 'Business Intelligence fetched',
+  data: await businessIntelligenceService.getBusinessIntelligence(req.validated?.query || {})
+}));
 
 const executive = asyncHandler(async (req, res) => {
   const data = await executiveAnalyticsService.getExecutiveDashboard(req.validated?.query || {});
@@ -55,6 +60,8 @@ const trends = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  bookingPayment: asyncHandler(async (req, res) => successResponse(res, { message: 'Booking payment and settlement overview', data: await require('../services/bookingPayment/overview').getPaymentOverview(req.validated?.query || {}) })),
+  businessIntelligence,
   channels,
   executive,
   products,

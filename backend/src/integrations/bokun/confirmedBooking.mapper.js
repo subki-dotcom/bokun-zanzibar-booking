@@ -368,17 +368,29 @@ const extractParticipants = (root = {}, activity = {}) => {
 
 const extractMoney = (root = {}, activity = {}) => {
   const invoice = root.customerInvoice || root.invoice || {};
-  const total = firstNumber(
-    root.totalPrice,
-    root.priceWithDiscount,
-    root.total,
-    root.totalAsMoney,
-    invoice.total,
+  const activityInvoice = activity.customerInvoice || activity.invoice || {};
+  const normalizeCurrencyCode = (value) => {
+    const code = normalizeToken(value).toUpperCase();
+    return /^[A-Z]{3}$/.test(code) ? code : "";
+  };
+  const moneyPair = (...candidates) => candidates.find((candidate) =>
+    candidate && typeof candidate === "object" &&
+    Number.isFinite(Number(candidate.amount)) && normalizeCurrencyCode(candidate.currency)
+  );
+  // Bókun root.currency can describe the reseller/seller account currency. A
+  // Money object from the customer invoice carries the original transaction
+  // amount and currency together and therefore has priority.
+  const authoritativeTotal = moneyPair(
     invoice.totalAsMoney,
-    activity.totalPrice,
-    activity.priceWithDiscount,
+    invoice.totalDiscountedAsMoney,
+    activityInvoice.totalAsMoney,
+    activityInvoice.totalDiscountedAsMoney,
+    root.totalAsMoney,
     activity.totalPriceAsMoney
   );
+  const total = authoritativeTotal
+    ? Number(authoritativeTotal.amount)
+    : firstNumber(root.totalPrice, root.priceWithDiscount, root.total, invoice.total, activity.totalPrice, activity.priceWithDiscount);
   const paidAmount = firstNumber(
     root.paidAmount,
     root.totalPaid,
@@ -388,14 +400,26 @@ const extractMoney = (root = {}, activity = {}) => {
     activity.paidAmount
   );
   const discountAmount = firstNumber(root.discountAmount, invoice.totalDiscount, invoice.totalDiscountAsMoney);
-  const currency =
-    normalizeToken(root.currency || invoice.currency || invoice.totalAsMoney?.currency || activity.currency || "USD").toUpperCase() || "USD";
+  const currency = normalizeCurrencyCode(
+    authoritativeTotal?.currency || invoice.currency || activityInvoice.currency || activity.currency || root.currency
+  );
 
   return {
     amount: total,
     paidAmount,
     discountAmount,
-    currency
+    currency,
+    currencySource: authoritativeTotal
+      ? "BOKUN_CUSTOMER_INVOICE_MONEY"
+      : invoice.currency
+        ? "BOKUN_CUSTOMER_INVOICE_CURRENCY"
+        : activityInvoice.currency
+          ? "BOKUN_ACTIVITY_INVOICE_CURRENCY"
+          : activity.currency
+            ? "BOKUN_ACTIVITY_CURRENCY"
+            : root.currency
+              ? "BOKUN_ROOT_CURRENCY"
+              : "MISSING_BOKUN_CURRENCY"
   };
 };
 
@@ -468,6 +492,7 @@ const mapBokunBookingForImport = ({ bokunBooking = {}, fallbackSalesChannel = ""
   if (!bokunOptionId) validationErrors.push("bokunOptionId");
   if (!travelDate) validationErrors.push("travelDate");
   if (!Number.isFinite(money.amount) || money.amount < 0) validationErrors.push("amount");
+  if (!money.currency) validationErrors.push("currency");
 
   return {
     raw,
@@ -510,6 +535,8 @@ const mapBokunBookingForImport = ({ bokunBooking = {}, fallbackSalesChannel = ""
       amount: money.amount,
       amountPaid: money.paidAmount,
       currency: money.currency,
+      transactionCurrency: money.currency,
+      bokunCurrencySource: money.currencySource,
       paymentStatus: paymentStatusFromBokun({ amount: money.amount, paidAmount: money.paidAmount }),
       paymentMethod: normalizeToken(root.paidType || root.paymentType || "bokun_channel"),
       sourceChannel: lowerSalesChannel(channel.salesChannel),

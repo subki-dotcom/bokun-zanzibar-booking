@@ -27,6 +27,22 @@ const bookingSchema = new mongoose.Schema(
     bookingReference: { type: String, required: true, unique: true, index: true },
     bokunBookingId: { type: String, default: "", index: true },
     bokunConfirmationCode: { type: String, default: "" },
+    // Operational customer-payment truth; legacy paymentStatus continues to
+    // serve existing payment/accounting workflows during compatibility rollout.
+    bookingPaymentStatus: { type: String, enum: ["PAID", "PARTIALLY_PAID", "UNPAID", "REFUNDED", "UNKNOWN"], default: "UNKNOWN" },
+    bookingPaymentStatusSource: { type: String, enum: ["BOKUN", "LOCAL", "MANUAL_OVERRIDE", ""], default: "" },
+    bookingPaymentReportedAmount: { type: mongoose.Schema.Types.Decimal128, default: null },
+    bookingPaymentCurrency: { type: String, default: "" },
+    bookingPaymentStatusSyncedAt: { type: Date, default: null },
+    bookingPaymentEvidenceHash: { type: String, default: "" },
+    bokunPaymentSnapshot: { type: mongoose.Schema.Types.Mixed, default: null },
+    bookingPaymentConflict: { type: mongoose.Schema.Types.Mixed, default: null },
+    bookingPaymentPendingAudit: { type: mongoose.Schema.Types.Mixed, default: null },
+    bookingPaymentOverride: {
+      locked: { type: Boolean, default: false },
+      auditReference: { type: String, default: "" },
+      reason: { type: String, default: "" }
+    },
     bokunExternalBookingReference: { type: String, default: "", index: true },
     bokunProductId: { type: String, required: true },
     bokunOptionId: { type: String, required: true },
@@ -173,7 +189,9 @@ const bookingSchema = new mongoose.Schema(
     paymentTransactionId: { type: String, default: undefined },
     dpoTransactionToken: { type: String, default: undefined },
     amount: { type: Number, default: 0 },
-    currency: { type: String, default: "USD" },
+    currency: { type: String, default: "USD", uppercase: true },
+    transactionCurrency: { type: String, default: "", uppercase: true },
+    bokunCurrencySource: { type: String, default: "" },
     paymentMethod: { type: String, default: "pending" },
     refundStatus: {
       type: String,
@@ -308,6 +326,8 @@ bookingSchema.index({ operationalSource: 1, salesChannel: 1, bookingStatus: 1, t
 bookingSchema.index({ salesChannel: 1, bookingStatus: 1, "bokunOperationalDates.bookingCreatedAtBokun.normalizedAt": 1 });
 bookingSchema.index({ salesChannel: 1, bookingStatus: 1, "bokunOperationalDates.travelDate.normalizedAt": 1 });
 bookingSchema.index({ salesChannel: 1, bookingStatus: 1, createdAt: 1 });
+bookingSchema.index({ createdAt: -1, _id: -1 });
+bookingSchema.index({ 'customer.customerId': 1, createdAt: 1 });
 bookingSchema.index({ bokunBookingId: 1, bokunConfirmationCode: 1, "bokunStatus.normalized": 1 });
 bookingSchema.index({ "bokunImport.lastSyncedAt": 1, "bokunImport.lastChangeType": 1 });
 bookingSchema.index({ bokunBookingId: 1, bokunExternalBookingReference: 1, operationalSource: 1 });

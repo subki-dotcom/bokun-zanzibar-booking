@@ -30,7 +30,10 @@ const RecentBookingsTable = ({ bookings = [], onCancel = null }) => {
               <Badge bg={statusBadgeVariant(booking.paymentStatus)}>{booking.paymentStatus}</Badge>
             </td>
             <td className="text-end">
-              {formatCurrency(booking.pricingSnapshot?.finalPayable || booking.pricingSnapshot?.grossAmount || 0, "USD")}
+              {formatCurrency(
+                booking.pricingSnapshot?.finalPayable || booking.pricingSnapshot?.grossAmount || 0,
+                booking.transactionCurrency || booking.currency || booking.pricingSnapshot?.currency
+              )}
             </td>
             {onCancel ? (
               <td className="text-end">

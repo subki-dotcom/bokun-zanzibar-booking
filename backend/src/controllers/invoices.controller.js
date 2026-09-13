@@ -25,7 +25,7 @@ const getByInvoiceNumber = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: "Invoice fetched",
-    data: invoice
+    data: (await require('../services/bookingPayment/view').enrichPaymentViews([invoice]))[0]
   });
 });
 

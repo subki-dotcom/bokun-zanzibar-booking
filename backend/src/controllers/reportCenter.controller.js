@@ -1,5 +1,6 @@
 const reportCenterService = require("../reportCenter/reportQueryService");
 const reportExportService = require("../reportCenter/exportService");
+const summaryService = require("../reportCenter/summaryService");
 const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/apiResponse");
 
@@ -53,7 +54,13 @@ const exportHistory = asyncHandler(async (req, res) => {
   });
 });
 
+const summary = asyncHandler(async (req, res) => successResponse(res, {
+  message: "Report Center summary fetched",
+  data: await summaryService.getSummary(req.validated.query || {})
+}));
+
 module.exports = {
+  summary,
   catalog,
   exportHistory,
   exportReport,

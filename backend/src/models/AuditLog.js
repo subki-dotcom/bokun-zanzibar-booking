@@ -26,6 +26,10 @@ auditLogSchema.index({ entityType: 1, entityId: 1, createdAt: -1 });
 auditLogSchema.index({ action: 1, createdAt: -1 });
 auditLogSchema.index({ actorId: 1, createdAt: -1 });
 auditLogSchema.index({ actorRole: 1, createdAt: -1 });
+auditLogSchema.index({ "metadata.bookingPaymentEventId": 1 }, {
+  unique: true, partialFilterExpression: { "metadata.bookingPaymentEventId": { $type: "string" } },
+  name: "booking_payment_event_unique"
+});
 
 const immutableAuditError = () =>
   new AppError("Audit logs are immutable and cannot be modified or deleted.", 409, "AUDIT_LOG_IMMUTABLE");

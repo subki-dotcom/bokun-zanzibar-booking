@@ -1,0 +1,264 @@
+{
+  "mode": "apply",
+  "appliedAt": "2026-09-13T06:14:44.905Z",
+  "reviewed": 17,
+  "applied": 17,
+  "financialAmountsChanged": false,
+  "rows": [
+    {
+      "bookingId": "6a93fae73fe0090fc0b8a751",
+      "bookingReference": "GYGRFQGYKZ28",
+      "invoiceNumber": "INV-20260909-0050",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "0d67f6f3-a5e6-4202-a1ba-67893be2d6ed"
+    },
+    {
+      "bookingId": "6a93faed3fe0090fc0b8a75d",
+      "bookingReference": "GYG32LY979AB",
+      "invoiceNumber": "INV-20260909-0001",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "5337368b-3de3-44fe-bba4-2b5532ec98dc"
+    },
+    {
+      "bookingId": "6a93fdfc306f986879cfbe69",
+      "bookingReference": "GYGRFQG684Y9",
+      "invoiceNumber": "INV-20260909-0005",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "42248daf-f259-45e9-9b6a-a15eb77da2d1"
+    },
+    {
+      "bookingId": "6a93fdfd306f986879cfbe75",
+      "bookingReference": "GYGVN234W6MQ",
+      "invoiceNumber": "INV-20260909-0006",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "07078046-0af9-4d7b-8458-fb00dbed1616"
+    },
+    {
+      "bookingId": "6a93fe0b306f986879cfbea9",
+      "bookingReference": "GYGN6BYHH5MN",
+      "invoiceNumber": "INV-20260909-0011",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "d357acaf-b625-4ae8-aca6-8baf2fa40877"
+    },
+    {
+      "bookingId": "6a93fe42306f986879cfbf8e",
+      "bookingReference": "GYG996XK5ZAM",
+      "invoiceNumber": "INV-20260909-0034",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "6361bbc2-407f-4795-8fbd-9cc0c7d7967b"
+    },
+    {
+      "bookingId": "6a93fe59306f986879cfbfda",
+      "bookingReference": "GYGKBF7BBL2K",
+      "invoiceNumber": "INV-20260909-0043",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "a3d79f21-100a-4adb-81fd-d58b0c50b449"
+    },
+    {
+      "bookingId": "6a93fe64306f986879cfc00e",
+      "bookingReference": "GYGG45MKB4HG",
+      "invoiceNumber": "INV-20260909-0046",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "3a50469f-5a2b-47c3-9c2d-40c960a7295f"
+    },
+    {
+      "bookingId": "6aa0897cd0cfd3b4c2147a60",
+      "bookingReference": "GYG83W8N2A2H",
+      "invoiceNumber": "INV-20260909-0052",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "7bbf0efe-5605-47b1-92ee-cfa5552ec99a"
+    },
+    {
+      "bookingId": "6aa0f2c5c13148f8b4888e15",
+      "bookingReference": "GYGKBF5YKVV2",
+      "invoiceNumber": "INV-20260909-0063",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "43a22669-148c-4428-965d-e479aae6c5ab"
+    },
+    {
+      "bookingId": "6aa0f2c8c13148f8b4888e43",
+      "bookingReference": "GYGKBF53F282",
+      "invoiceNumber": "INV-20260909-0068",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "a538cefb-e665-43c3-8e4c-c643c1c8a32d"
+    },
+    {
+      "bookingId": "6aa0f2ccc13148f8b4888e6c",
+      "bookingReference": "GYGKBF59W84Y",
+      "invoiceNumber": "INV-20260909-0070",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "8438a96b-f358-43fb-8e4d-56bbb5389f1d"
+    },
+    {
+      "bookingId": "6aa0f30ac13148f8b48891c9",
+      "bookingReference": "GYGLMRVGF6XM",
+      "invoiceNumber": "INV-20260909-0072",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "c8db0b21-2b8e-4d60-a9f0-b55230d0309b"
+    },
+    {
+      "bookingId": "6aa0f30bc13148f8b48891d5",
+      "bookingReference": "GYG7VKQ757HB",
+      "invoiceNumber": "INV-20260909-0073",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "2826ba24-ddc9-489f-9571-3bce92201ada"
+    },
+    {
+      "bookingId": "6aa122bfc13148f8b48a1991",
+      "bookingReference": "GYGRFQGAG2WQ",
+      "invoiceNumber": "INV-20260909-0074",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "18766769-48f5-4c40-818e-43672870319a"
+    },
+    {
+      "bookingId": "6aa4e100c13148f8b48bc3bb",
+      "bookingReference": "GYG2Q9ANMLLL",
+      "invoiceNumber": "INV-20260912-0001",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "5c5f8e03-12a5-4fdc-94b6-8ba7774fa4a8"
+    },
+    {
+      "bookingId": "6aa6258fc13148f8b48cb194",
+      "bookingReference": "GYG2Q9AMY3VQ",
+      "invoiceNumber": "INV-20260913-0001",
+      "before": {
+        "bookingCurrency": "EUR",
+        "transactionCurrency": "EUR",
+        "pricingCurrency": "EUR",
+        "invoiceCurrency": "EUR",
+        "invoiceAccountingCurrency": "EUR"
+      },
+      "currency": "USD",
+      "amountsChanged": false,
+      "eventId": "e537dc2a-5c84-4d4d-b7ab-09ca5c2a261a"
+    }
+  ]
+}

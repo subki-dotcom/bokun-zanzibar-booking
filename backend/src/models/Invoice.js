@@ -51,6 +51,7 @@ const invoiceSchema = new mongoose.Schema(
     amountRefunded: { type: Number, default: 0 },
     netAmountPaid: { type: Number, default: 0 },
     balanceDue: Number,
+    transactionCurrency: { type: String, default: "", uppercase: true },
     accountingCurrency: { type: String, default: "USD", uppercase: true },
     totalAmount: { type: mongoose.Schema.Types.Decimal128, default: null },
     paidAccountingAmount: { type: mongoose.Schema.Types.Decimal128, default: null },

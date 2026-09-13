@@ -1082,6 +1082,9 @@ const serializeReportDefinition = (definition) => ({
   supportedExports: definition.supportedExports,
   permissions: definition.permissions,
   columns: definition.columns,
+  sections: (definition.runner === 'managementPeriod'
+    ? [{ key: 'financial', label: 'Financial performance' }, { key: 'bookingsCreated', label: 'Bookings created' }, { key: 'toursOperating', label: 'Tours operating' }, { key: 'trends', label: 'Business trends' }]
+    : [{ key: 'report', label: definition.title }]),
   periodProfile: definition.periodProfile || null,
   reportView: definition.reportView || null,
   sourceLayer: definition.sourceLayer,

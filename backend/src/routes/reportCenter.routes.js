@@ -6,6 +6,7 @@ const { PERMISSIONS } = require("../security/permissions");
 const validateRequest = require("../middleware/validateRequest");
 const {
   exportHistoryQuerySchema,
+  reportSummaryQuerySchema,
   exportReportQuerySchema,
   reportCatalogQuerySchema,
   runReportQuerySchema
@@ -14,6 +15,7 @@ const {
 const router = express.Router();
 
 router.use(authenticate);
+router.get('/summary', authorizePermission(PERMISSIONS.REPORT_CENTER_READ), validateRequest(reportSummaryQuerySchema), reportCenterController.summary);
 
 router.get(
   "/catalog",

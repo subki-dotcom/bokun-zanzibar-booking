@@ -28,7 +28,7 @@ const PrintableInvoice = ({ invoice }) => {
     return null;
   }
 
-  const currency = invoice.currency || "USD";
+  const currency = invoice.transactionCurrency || invoice.currency || invoice.accountingCurrency || "USD";
   const itemQuantity = Math.max(1, Number(invoice.totalPax || invoice.adults || 1));
   const itemTotal = Number(invoice.subtotal || invoice.total || 0);
   const items = [

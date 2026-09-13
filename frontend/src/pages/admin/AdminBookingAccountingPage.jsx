@@ -1,3 +1,4 @@
+import BookingPaymentOverview from '../../components/invoice/BookingPaymentOverview';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Card, Col, Row, Table } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
@@ -922,7 +923,7 @@ const AdminBookingAccountingPage = () => {
 
   if (mode === "dashboard") {
     return (
-      <BookingAccountingDashboard
+      <><BookingPaymentOverview query={{ period: "CUSTOM", from: dashboardFilters.fromDate, to: dashboardFilters.toDate, ...(dashboardFilters.channel ? { channel: dashboardFilters.channel } : {}) }} refreshKey={refreshing} /><BookingAccountingDashboard
         dashboard={data.dashboard}
         filters={dashboardFilters}
         setFilters={setDashboardFilters}
@@ -930,7 +931,7 @@ const AdminBookingAccountingPage = () => {
         refreshing={refreshing}
         error={error}
         onRefresh={() => load({ silent: true })}
-      />
+      /></>
     );
   }
 

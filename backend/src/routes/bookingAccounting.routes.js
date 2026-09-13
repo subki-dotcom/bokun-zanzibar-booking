@@ -17,6 +17,7 @@ const router = express.Router();
 router.use(authenticate, authorizePermission(PERMISSIONS.BOOKING_ACCOUNTING_READ));
 
 router.get("/dashboard", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.dashboard);
+router.get("/booking-payment", validateRequest(require('../validators/analytics.validation').salesAnalyticsQuerySchema), bookingAccountingController.bookingPayment);
 router.get("/invoices", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.invoices);
 router.get("/refunds", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.refunds);
 router.get("/expenses", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.expenses);

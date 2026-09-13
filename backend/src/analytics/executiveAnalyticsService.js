@@ -446,6 +446,8 @@ const service = createExecutiveAnalyticsService();
 module.exports = {
   ...service,
   createExecutiveAnalyticsService,
+  aggregatePostings,
+  normalizeTotalsForApi,
   __testables: {
     aggregatePostings,
     buildDataQuality,

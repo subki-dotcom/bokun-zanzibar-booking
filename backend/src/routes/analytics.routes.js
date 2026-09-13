@@ -7,6 +7,7 @@ const validateRequest = require("../middleware/validateRequest");
 const {
   channelAnalyticsQuerySchema,
   executiveAnalyticsQuerySchema,
+  businessIntelligenceQuerySchema,
   productAnalyticsQuerySchema,
   salesAnalyticsQuerySchema,
   trendAnalyticsQuerySchema
@@ -15,8 +16,10 @@ const {
 const router = express.Router();
 
 router.use(authenticate, authorizePermission(PERMISSIONS.BUSINESS_INTELLIGENCE_READ));
+router.get("/business-intelligence", validateRequest(businessIntelligenceQuerySchema), analyticsController.businessIntelligence);
 
 router.get("/executive", validateRequest(executiveAnalyticsQuerySchema), analyticsController.executive);
+router.get("/booking-payment", validateRequest(executiveAnalyticsQuerySchema), analyticsController.bookingPayment);
 router.get("/sales", validateRequest(salesAnalyticsQuerySchema), analyticsController.sales);
 router.get("/products", validateRequest(productAnalyticsQuerySchema), analyticsController.products);
 router.get("/products/:productId", validateRequest(productAnalyticsQuerySchema), analyticsController.products);

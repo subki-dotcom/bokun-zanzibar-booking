@@ -5,6 +5,7 @@ const {
   ANALYTICS_PERIOD
 } = require("../analytics/constants");
 const BusinessExpense = require("../models/BusinessExpense");
+const env = require('../config/env');
 const Invoice = require("../models/Invoice");
 const Payment = require("../models/Payment");
 const {
@@ -329,6 +330,8 @@ const createReportCenterService = ({ services = defaultServices, now = () => new
     groups: REPORT_GROUPS,
     reports: listReportDefinitions(),
     filterOptions: listReportFilterOptions(),
+    currency: env.DEFAULT_CURRENCY,
+    currencyNote: 'Configured accounting currency; legacy report totals may combine source currencies. A selected currency filters sources and does not convert amounts.',
     queryRules: {
       reportsUseCanonicalServices: true,
       exportsUseSameQueryDefinition: true,
@@ -368,6 +371,8 @@ const createReportCenterService = ({ services = defaultServices, now = () => new
       filters: normalized.values,
       period: normalized.periodRange,
       comparison: normalized.comparison,
+      currency: null,
+      currencyNote: 'Currency is not verified for combined canonical report totals. Amounts retain source values; no exchange-rate conversion is performed. Review source currencies before using consolidated monetary totals.',
       sourceIntegrity: {
         formulasDuplicatedInReportCenter: false,
         canonicalServices: definition.canonicalServices,

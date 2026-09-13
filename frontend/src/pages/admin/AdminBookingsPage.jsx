@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { PaymentTruthBadge, SettlementBadge } from '../../components/invoice/BookingPaymentState';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   BsArrowClockwise,
@@ -48,7 +49,7 @@ const SOURCE_OPTIONS = [
   { value: "DIRECT_WEBSITE", label: "Direct" },
   { value: "GETYOURGUIDE", label: "GetYourGuide" },
   { value: "VIATOR", label: "Viator" },
-  { value: "BOKUN_MARKETPLACE", label: "Bokun" },
+  { value: "BOKUN_MARKETPLACE", label: "Marketplace" },
   { value: "AGENT", label: "Agent / B2B" },
   { value: "OTHER", label: "Other" }
 ];
@@ -128,7 +129,7 @@ const getCustomerContact = (booking = {}) => {
 
 const getBookingAmount = (booking = {}) => {
   const amount = booking.pricingSnapshot?.finalPayable ?? booking.amount ?? 0;
-  const currency = booking.pricingSnapshot?.currency || booking.currency || "USD";
+  const currency = booking.transactionCurrency || booking.currency || booking.pricingSnapshot?.currency || "USD";
   return { amount: Number(amount || 0), currency };
 };
 
@@ -156,7 +157,7 @@ const getSourceLabel = (value = "") => {
   const found = SOURCE_OPTIONS.find((option) => option.value === token);
   if (found && found.value !== "all") return found.label;
   if (token === "DIRECT_WEBSITE") return "Direct";
-  if (token === "BOKUN_MARKETPLACE") return "Bokun";
+  if (token === "BOKUN_MARKETPLACE") return "Marketplace";
   return value ? titleize(value) : "Unknown";
 };
 
@@ -330,7 +331,7 @@ const FilterFields = ({ filters, onChange }) => (
       </select>
     </label>
     <label className="admin-bookings-filter-field">
-      <span>Payment</span>
+      <span>Legacy payment filter</span>
       <select value={filters.payment} onChange={(event) => onChange("payment", event.target.value)}>
         {PAYMENT_STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
@@ -374,7 +375,7 @@ const RowActions = ({ booking, open, onToggle, onCancel }) => {
           <Link to={`/my-booking/${encodeURIComponent(reference)}`}>View booking</Link>
           <Link to={`/invoice/${encodeURIComponent(reference)}`}>View invoice</Link>
           <Link to={`/admin/audit-control?reference=${encodeURIComponent(reference)}`}>Audit history</Link>
-          <Link to={`/admin/operations/bokun-sync/single-booking?reference=${encodeURIComponent(reference)}`}>Resync from Bokun</Link>
+          <Link to={`/admin/operations/bokun-sync/single-booking?reference=${encodeURIComponent(reference)}`}>Resync</Link>
           <button type="button" disabled={!canCancel} onClick={onCancel}>Request cancellation</button>
         </div>
       ) : null}
@@ -395,7 +396,7 @@ const BookingsTable = ({ bookings, loading, openActionId, onToggleAction, onCanc
             <th><SortButton label="Date" sortBy="travelDate" query={query} onSort={onSort} /></th>
             <th>Customer</th>
             <th>Status</th>
-            <th>Payment</th>
+            <th>Customer payment / settlement</th>
             <th>Source</th>
             <th className="text-end"><SortButton label="Total" sortBy="total" query={query} onSort={onSort} /></th>
             <th className="text-end">Actions</th>
@@ -413,11 +414,6 @@ const BookingsTable = ({ bookings, loading, openActionId, onToggleAction, onCanc
                   <Link className="admin-bookings-reference" to={`/my-booking/${encodeURIComponent(booking.bookingReference || "")}`}>
                     {booking.bookingReference || "-"}
                   </Link>
-                  {booking.bokunBookingId || booking.bokunConfirmationCode ? (
-                    <small title={`Bokun ${booking.bokunBookingId || booking.bokunConfirmationCode}`}>
-                      Bokun {booking.bokunConfirmationCode || booking.bokunBookingId}
-                    </small>
-                  ) : null}
                 </td>
                 <td className="admin-bookings-product-cell">
                   <strong>{booking.productTitle || "-"}</strong>
@@ -432,7 +428,7 @@ const BookingsTable = ({ bookings, loading, openActionId, onToggleAction, onCanc
                   {getCustomerContact(booking) ? <small>{getCustomerContact(booking)}</small> : null}
                 </td>
                 <td><Badge value={booking.bookingStatus} /></td>
-                <td><Badge value={booking.paymentStatus} /></td>
+                <td><PaymentTruthBadge payment={booking.bookingPayment} /><SettlementBadge settlement={booking.settlement} /></td>
                 <td>
                   <span className="admin-bookings-source">
                     <i>{getSourceIcon(source)}</i>
@@ -489,7 +485,7 @@ const MobileBookingsList = ({ bookings, loading, openActionId, onToggleAction, o
             </div>
             <div className="admin-bookings-mobile-badges">
               <Badge value={booking.bookingStatus} />
-              <Badge value={booking.paymentStatus} />
+              <PaymentTruthBadge payment={booking.bookingPayment} /><SettlementBadge settlement={booking.settlement} />
             </div>
             <div className="admin-bookings-mobile-foot">
               <span className="admin-bookings-source"><i>{getSourceIcon(source)}</i>{getSourceLabel(source)}</span>
@@ -576,25 +572,34 @@ const AdminBookingsPage = () => {
     setSearchDraft(next.search);
   }, [searchParams]);
 
-  const loadBookings = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const bookingRequest = useRef(0);
+  const bookingRefreshBusy = useRef(false);
+  const loadBookings = useCallback(async ({ background = false } = {}) => {
+    if (background && bookingRefreshBusy.current) return;
+    const request = ++bookingRequest.current;
+    bookingRefreshBusy.current = true;
+    if (!background) { setLoading(true); setError(""); }
     try {
       const result = await fetchAdminBookings(query);
+      if (request !== bookingRequest.current) return;
       setData({
         items: result.items || [],
         summary: result.summary || {},
         pagination: result.pagination || { page: query.page, limit: query.limit, total: 0, totalPages: 1 }
       });
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || "Failed to load bookings");
+      if (request === bookingRequest.current && !background) setError(err?.response?.data?.message || err.message || "Failed to load bookings");
     } finally {
-      setLoading(false);
+      if (request === bookingRequest.current) { setLoading(false); bookingRefreshBusy.current = false; }
     }
   }, [query]);
 
   useEffect(() => {
     loadBookings();
+    const refresh = () => { if (document.visibilityState === "visible") loadBookings({ background: true }); };
+    const timer = window.setInterval(refresh, 15000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refresh); bookingRequest.current += 1; bookingRefreshBusy.current = false; };
   }, [loadBookings]);
 
   useEffect(() => {
@@ -721,7 +726,7 @@ const AdminBookingsPage = () => {
         <div className="admin-bookings-actions">
           <PageAction as={Link} to="/admin/operations/bokun-sync/confirmed-import">
             <BsArrowClockwise aria-hidden="true" />
-            Sync Bokun
+            Sync bookings
           </PageAction>
           <PageAction as={Link} to="/admin/operations/recovery">
             <BsBell aria-hidden="true" />
@@ -760,7 +765,7 @@ const AdminBookingsPage = () => {
         </section>
         <section className="admin-bookings-card admin-bookings-chart-card">
           <div className="admin-bookings-card-head">
-            <h2>Payment Status</h2>
+            <h2>Legacy Payment Status</h2>
           </div>
           <DonutChart rows={paymentRows} total={paymentTotal} loading={loading} emptyMessage="No payment data available." />
         </section>

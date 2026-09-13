@@ -1,316 +1,131 @@
-import { useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
-import { BsArrowClockwise, BsDownload, BsFileEarmarkBarGraph } from "react-icons/bs";
-import {
-  exportReportCenterReport,
-  fetchReportCenterCatalog,
-  fetchReportExportHistory,
-  runReportCenterReport
-} from "../../api/adminApi";
-import { AdminMetricCard, StatusBadge, formatDateTime } from "../../components/admin/AdminDataWidgets";
-import ErrorAlert from "../../components/common/ErrorAlert";
-import Loader from "../../components/common/Loader";
-import { formatCurrency } from "../../utils/formatters";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BsArrowClockwise, BsCalendar3, BsCheckCircleFill, BsClock, BsFileEarmarkBarGraph, BsInfoCircle } from 'react-icons/bs';
+import { exportReportCenterReport, fetchReportCenterCatalog, fetchReportCenterSummary, fetchReportExportHistory, runReportCenterReport } from '../../api/adminApi';
+import useAuth from '../../hooks/useAuth';
+import { humanize, periodLabel } from '../../components/admin/bi/biHelpers';
+import { ExportHistory, ReportEmpty, ReportError, ReportKpiGrid, ReportNavigator, ReportPreview, ReportSkeleton } from '../../components/admin/reportCenter/ReportCenterComponents';
+import { historicalFilters, validDateRange } from '../../components/admin/reportCenter/reportCenterView';
+import useReportResource from '../../components/admin/reportCenter/useReportResource';
+import './reportCenter.css';
 
-const sourceFromRow = (source = "") => {
-  const prefixes = ["rows.", "items.", "products.", "channels.", "trends.combined."];
-  const matched = prefixes.find((prefix) => source.startsWith(prefix));
-  return matched ? source.slice(matched.length) : source;
-};
-
-const getPath = (source = {}, path = "") =>
-  String(path || "").split(".").filter(Boolean).reduce((current, key) => {
-    if (current === null || current === undefined) return undefined;
-    return current[key];
-  }, source);
-
-const inferRows = (data = {}) => {
-  if (Array.isArray(data.rows)) return data.rows;
-  if (Array.isArray(data.items)) return data.items;
-  if (Array.isArray(data.products)) return data.products;
-  if (Array.isArray(data.channels)) return data.channels;
-  if (Array.isArray(data.trends?.combined)) return data.trends.combined;
-  const summary = {
-    ...(data.totals || {}),
-    ...(data.managementSummary || {}),
-    ...(data.breakdown || {}),
-    ...(data.answers || {})
-  };
-  return Object.keys(summary).length ? [summary] : [];
-};
-
-const displayValue = ({ value, type }) => {
-  const actual = value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "value")
-    ? value.value
-    : value;
-  if (actual === null || actual === undefined || actual === "") return "-";
-  if (type === "money") return formatCurrency(actual, "USD");
-  if (type === "percent") return `${Number(actual || 0).toFixed(1)}%`;
-  if (type === "date") return formatDateTime(actual);
-  if (typeof actual === "object") return JSON.stringify(actual);
-  return String(actual);
-};
-
-const resolveCell = ({ column, row, data }) => {
-  const source = column.source || column.key;
-  const rowValue = getPath(row, sourceFromRow(source));
-  if (rowValue !== undefined) return rowValue;
-  const dataValue = getPath(data, source);
-  if (dataValue !== undefined) return dataValue;
-  return row?.[column.key];
-};
-
-const AdminReportCenterPage = () => {
-  const [catalog, setCatalog] = useState(null);
-  const [selectedType, setSelectedType] = useState("");
-  const [group, setGroup] = useState("");
-  const [period, setPeriod] = useState("THIS_MONTH");
-  const [format, setFormat] = useState("CSV");
-  const [reportResult, setReportResult] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState("");
-
-  const reports = useMemo(() => (catalog?.reports || []).filter((report) => report.availability === "AVAILABLE"), [catalog]);
-  const filteredReports = useMemo(
-    () => reports.filter((report) => !group || report.group === group),
-    [reports, group]
-  );
-  const selectedReport = reports.find((report) => report.type === selectedType) || null;
-  const rows = inferRows(reportResult?.data || {});
-  const columns = selectedReport?.columns?.length
-    ? selectedReport.columns
-    : Object.keys(rows[0] || {}).map((key) => ({ key, label: key, source: key }));
-
-  const runSelected = async ({ nextType = selectedType } = {}) => {
-    if (!nextType) return;
-    setRunning(true);
-    setError("");
-    try {
-      const result = await runReportCenterReport(nextType, { period });
-      const exportHistory = await fetchReportExportHistory({ limit: 10 });
-      setReportResult(result);
-      setHistory(exportHistory.items || []);
-    } catch (err) {
-      setError(err.message || "Failed to run report");
-    } finally {
-      setRunning(false);
-    }
-  };
-
-  const load = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const nextCatalog = await fetchReportCenterCatalog();
-      const nextReports = (nextCatalog.reports || []).filter((report) => report.availability === "AVAILABLE");
-      const firstType = nextReports[0]?.type || "";
-      setCatalog(nextCatalog);
-      setSelectedType(firstType);
-      const [result, exportHistory] = await Promise.all([
-        firstType ? runReportCenterReport(firstType, { period }) : Promise.resolve(null),
-        fetchReportExportHistory({ limit: 10 })
-      ]);
-      setReportResult(result);
-      setHistory(exportHistory.items || []);
-    } catch (err) {
-      setError(err.message || "Failed to load report center");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+const FORMAT_LABELS = { PDF: 'PDF', EXCEL: 'Excel (.xls)', CSV: 'CSV', PRINT: 'Print / HTML' };
+export default function AdminReportCenterPage() {
+  const { user } = useAuth();
+  const canExport = (user?.permissions || []).includes('report_center.export');
+  const [selectedType, setSelectedType] = useState('');
+  const [query, setQuery] = useState({ period: 'THIS_MONTH' });
+  const [dateChoice, setDateChoice] = useState('THIS_MONTH');
+  const [datesOpen, setDatesOpen] = useState(false);
+  const [draftDates, setDraftDates] = useState({ from: '', to: '' });
+  const [dateError, setDateError] = useState('');
+  const [format, setFormat] = useState('PDF');
+  const [granularity, setGranularity] = useState('DAY');
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [notice, setNotice] = useState(null);
+  const generationLock = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const catalog = useReportResource(fetchReportCenterCatalog);
+  const reports = useMemo(() => (catalog.data?.reports || []).filter((report) => report.availability === 'AVAILABLE'), [catalog.data]);
+  const selected = reports.find((report) => report.type === selectedType);
+  const hasGrouping = Boolean(selected?.filters?.includes('granularity'));
+  const formats = selected?.supportedExports || [];
+  const effectiveFormat = formats.includes(format) ? format : formats[0];
+  const periods = catalog.data?.filterOptions?.periods || [];
+  const groups = catalog.data?.filterOptions?.granularities || [];
+  const effectiveGranularity = groups.includes(granularity) ? granularity : selected?.defaultFilters?.granularity;
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!selectedType && reports.length) {
+      const first = reports[0];
+      setSelectedType(first.type);
+      setGranularity(first.defaultFilters?.granularity || 'DAY');
+    }
+  }, [reports, selectedType]);
+  const reportFilters = useMemo(() => ({ ...query, ...(hasGrouping && effectiveGranularity ? { granularity: effectiveGranularity } : {}) }), [query, hasGrouping, effectiveGranularity]);
+  const fetchPreview = useCallback((signal) => runReportCenterReport(selectedType, reportFilters, signal), [selectedType, reportFilters]);
+  const preview = useReportResource(fetchPreview, Boolean(selected));
+  const fetchSummary = useCallback((signal) => fetchReportCenterSummary(query, signal), [query]);
+  const summary = useReportResource(fetchSummary);
+  const fetchHistory = useCallback((signal) => fetchReportExportHistory({ page: historyPage, limit: historyExpanded ? 10 : 5 }, signal), [historyPage, historyExpanded]);
+  const history = useReportResource(fetchHistory);
+  const range = preview.data?.period || summary.data?.period;
+  const busy = generating;
 
-  const selectReport = (value) => {
-    setSelectedType(value);
-    runSelected({ nextType: value });
+  const selectReport = (type) => {
+    setSelectedType(type);
+    setGranularity(reports.find((report) => report.type === type)?.defaultFilters?.granularity || 'DAY');
+    setNotice(null);
   };
-
-  const download = async () => {
-    if (!selectedType) return;
-    setRunning(true);
-    setError("");
+  const choosePeriod = (period) => {
+    setDateChoice(period);
+    setDateError('');
+    if (['CUSTOM', 'MULTI_YEAR'].includes(period)) setDatesOpen(true);
+    else { setQuery({ period }); setDatesOpen(false); }
+  };
+  const applyDates = (event) => {
+    event.preventDefault();
+    if (!validDateRange(draftDates.from, draftDates.to)) { setDateError('Enter valid dates, with the end on or after the start.'); return; }
+    const period = dateChoice === 'MULTI_YEAR' ? 'MULTI_YEAR' : 'CUSTOM';
+    setDateChoice(period);
+    setQuery({ period, ...draftDates });
+    setDateError('');
+    setDatesOpen(false);
+  };
+  const generate = async (historicItem = null) => {
+    if (generationLock.current || !canExport) return;
+    const type = historicItem?.reportType || selectedType;
+    const definition = reports.find((report) => report.type === type);
+    const chosenFormat = historicItem?.format || effectiveFormat;
+    const filters = historicItem ? historicalFilters(historicItem) : reportFilters;
+    if (!definition || !filters || !definition.supportedExports?.includes(chosenFormat)) {
+      setNotice({ kind: 'error', text: 'Select a supported report, format and valid reporting period.' });
+      return;
+    }
+    generationLock.current = true;
+    setGenerating(true);
+    setNotice(null);
     try {
-      const { blob, filename } = await exportReportCenterReport(selectedType, { period, format });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      const exportHistory = await fetchReportExportHistory({ limit: 10 });
-      setHistory(exportHistory.items || []);
-    } catch (err) {
-      setError(err.message || "Failed to export report");
+      const { blob, filename } = await exportReportCenterReport(type, { ...filters, format: chosenFormat });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = filename;
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      if (mounted.current) setNotice({ kind: 'success', text: `${definition.title} generated. Your ${FORMAT_LABELS[chosenFormat] || chosenFormat} download is ready.` });
+    } catch (error) {
+      if (mounted.current) setNotice({ kind: 'error', text: error.timeout ? 'Generation timed out. Check export history before trying again; the server may still be processing the report.' : error.message || 'Report generation failed. Please try again.' });
     } finally {
-      setRunning(false);
+      generationLock.current = false;
+      if (mounted.current) {
+        setGenerating(false);
+        setHistoryPage(1);
+        history.retry(); summary.retry();
+      }
     }
   };
+  const generateDisabled = busy || !selected || !effectiveFormat || !canExport || datesOpen;
+  const generateButton = <button type="button" className="rc-button primary" disabled={generateDisabled} onClick={() => generate()}><BsFileEarmarkBarGraph aria-hidden="true" />{busy ? 'Generating…' : 'Generate Report'}</button>;
+  const historyPanel = <ExportHistory resource={history} reports={reports} page={historyPage} onPage={setHistoryPage} expanded={historyExpanded} onExpand={() => { setHistoryExpanded((value) => !value); setHistoryPage(1); }} onRegenerate={generate} busy={busy} canExport={canExport} />;
 
-  if (loading) return <Loader message="Loading report center..." />;
-
-  return (
-    <div className="admin-report-center-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Report Center</span>
-          <h2>Report Center</h2>
-          <p>Canonical management reports, shared filters, export history, and source-of-truth disclosures.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={load} disabled={running}>
-          <BsArrowClockwise /> Refresh
-        </Button>
+  return <div className="admin-report-center-page rc-page">
+    <header className="rc-header"><div><p className="rc-breadcrumb">Reports &amp; Analytics <span>/</span> Report Center</p><div className="rc-title"><span><BsFileEarmarkBarGraph aria-hidden="true" /></span><div><h1>Report Center</h1><p>Generate management reports, analyze KPIs, export history, and access all business insights.</p></div></div></div><div className="rc-header-actions"><button type="button" className="rc-button rc-date-button" aria-expanded={datesOpen} aria-controls="rc-date-range" disabled={busy} onClick={() => setDatesOpen((value) => !value)}><BsCalendar3 aria-hidden="true" />{range?.isBounded ? periodLabel(range) : humanize(query.period)}<span aria-hidden="true">⌄</span></button>{generateButton}</div></header>
+    {datesOpen && <form className="rc-date-range rc-card" id="rc-date-range" onSubmit={applyDates}><label>Reporting period<select value={dateChoice} onChange={(event) => choosePeriod(event.target.value)} disabled={busy}>{periods.map((period) => <option key={period} value={period}>{humanize(period)}</option>)}</select></label><label>From<input type="date" required value={draftDates.from} onChange={(event) => setDraftDates((draft) => ({ ...draft, from: event.target.value }))} /></label><label>To<input type="date" required min={draftDates.from || undefined} value={draftDates.to} onChange={(event) => setDraftDates((draft) => ({ ...draft, to: event.target.value }))} /></label><button type="submit" className="rc-button primary" disabled={busy}>Apply dates</button><p>Custom dates are inclusive in Africa/Dar_es_Salaam. Apply to update the preview and generated-report count.</p>{dateError && <p role="alert" className="rc-negative">{dateError}</p>}</form>}
+    <ReportKpiGrid resource={summary} />
+    {notice && <div className={`rc-notice ${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}>{notice.kind === 'success' ? <BsCheckCircleFill aria-hidden="true" /> : <BsInfoCircle aria-hidden="true" />}<span>{notice.text}</span><button type="button" aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
+    {catalog.loading ? <ReportSkeleton /> : catalog.error ? <ReportError state={catalog} title="Unable to load report catalog" /> : !reports.length ? <ReportEmpty>No reports are currently available.</ReportEmpty> : <div className="rc-workspace">
+      <ReportNavigator reports={reports} groups={catalog.data.groups || []} selectedType={selectedType} onSelect={selectReport} disabled={busy} />
+      <div className="rc-main">
+        <section className="rc-card rc-selected" aria-label="Selected report configuration"><div className="rc-selected-header"><span className="rc-report-icon"><BsFileEarmarkBarGraph aria-hidden="true" /></span><div><h2>{selected?.title || 'Select a report'}</h2><p>{selected?.description}</p></div><span className={`rc-ready ${busy ? 'processing' : ''}`}><BsCheckCircleFill aria-hidden="true" />{busy ? 'Generating' : canExport ? 'Ready to Generate' : 'Preview only'}</span></div>
+          <div className="rc-info"><BsInfoCircle aria-hidden="true" /><p>{selected?.periodProfile?.primaryQuestion || selected?.description || 'Select a report to explore its available metrics.'}</p></div>
+          <div className="rc-filters"><label>Date Range<select aria-label="Report date range" value={dateChoice} onChange={(event) => choosePeriod(event.target.value)} disabled={busy}>{periods.map((period) => <option key={period} value={period}>{humanize(period)}</option>)}</select></label><label>Format<select value={effectiveFormat || ''} aria-label="Report format" onChange={(event) => setFormat(event.target.value)} disabled={busy || !formats.length}>{formats.map((item) => <option key={item} value={item}>{FORMAT_LABELS[item] || item}</option>)}</select></label><label>Group By<select value={hasGrouping ? effectiveGranularity || '' : ''} aria-label="Group report by" disabled={busy || !hasGrouping} onChange={(event) => setGranularity(event.target.value)}>{hasGrouping ? groups.map((value) => <option key={value} value={value}>{humanize(value)}</option>) : <option value="">Report default</option>}</select></label>{generateButton}<button type="button" className="rc-button" disabled title="Report scheduling is not supported by the current backend"><BsClock aria-hidden="true" />Schedule</button></div>
+          <div className="rc-toolbar-note"><span>{!canExport ? 'Your account can preview reports but does not have export permission.' : 'Scheduling is not available. Generate a report to download it now.'}</span><button type="button" className="rc-link-button" onClick={preview.retry} disabled={busy || preview.loading || !selected}><BsArrowClockwise aria-hidden="true" />Refresh preview</button></div>
+        </section>
+        <ReportPreview state={preview} definition={selected} />
+        {historyPanel}
       </div>
-
-      <ErrorAlert error={error} />
-
-      <Row className="g-3">
-        <Col md={4}>
-          <AdminMetricCard label="Available Reports" value={reports.length} detail={`${catalog?.groups?.length || 0} report groups`} icon={BsFileEarmarkBarGraph} />
-        </Col>
-        <Col md={4}>
-          <AdminMetricCard label="Current Rows" value={rows.length} detail={selectedReport?.title || "No report selected"} icon={BsFileEarmarkBarGraph} />
-        </Col>
-        <Col md={4}>
-          <AdminMetricCard label="Export History" value={history.length} detail="Response-only export records" icon={BsDownload} />
-        </Col>
-      </Row>
-
-      <Row className="g-4 mt-1">
-        <Col xl={3}>
-          <Card className="surface-card h-100">
-            <Card.Body>
-              <h5 className="mb-3">Reports</h5>
-              <Form.Group className="mb-3">
-                <Form.Label>Group</Form.Label>
-                <Form.Select value={group} onChange={(event) => setGroup(event.target.value)}>
-                  <option value="">All groups</option>
-                  {(catalog?.groups || []).map((item) => (
-                    <option key={item.key} value={item.key}>{item.label}</option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-              <div className="d-grid gap-2">
-                {filteredReports.map((report) => (
-                  <Button
-                    key={report.type}
-                    variant={report.type === selectedType ? "dark" : "outline-secondary"}
-                    className="text-start"
-                    onClick={() => selectReport(report.type)}
-                    disabled={running}
-                  >
-                    {report.title}
-                  </Button>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xl={9}>
-          <Card className="surface-card">
-            <Card.Body>
-              <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-                <div>
-                  <h5 className="mb-1">{selectedReport?.title || "Report"}</h5>
-                  <small className="text-muted">{selectedReport?.description}</small>
-                </div>
-                <div className="d-flex flex-wrap gap-2">
-                  <Form.Select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Report period">
-                    {(catalog?.filterOptions?.periods || []).map((item) => <option key={item} value={item}>{item.replaceAll("_", " ")}</option>)}
-                  </Form.Select>
-                  <Button variant="outline-dark" onClick={() => runSelected()} disabled={running || !selectedType}>
-                    Run
-                  </Button>
-                  <Form.Select value={format} onChange={(event) => setFormat(event.target.value)} aria-label="Export format">
-                    {(selectedReport?.supportedExports || catalog?.filterOptions?.exportFormats || ["CSV"]).map((item) => <option key={item} value={item}>{item}</option>)}
-                  </Form.Select>
-                  <Button className="premium-btn text-white" onClick={download} disabled={running || !selectedType}>
-                    <BsDownload /> Export
-                  </Button>
-                </div>
-              </div>
-
-              {reportResult?.dataQuality?.warnings?.length ? (
-                <Alert variant="warning">
-                  {reportResult.dataQuality.warnings.length} data quality warning(s) affect this report.
-                </Alert>
-              ) : null}
-
-              <Table responsive hover className="align-middle mb-0">
-                <thead>
-                  <tr>
-                    {columns.slice(0, 8).map((column) => <th key={column.key}>{column.label || column.key}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.length ? rows.slice(0, 25).map((row, index) => (
-                    <tr key={row.id || row.reference || row.productId || row.channel || index}>
-                      {columns.slice(0, 8).map((column) => (
-                        <td key={column.key}>{displayValue({ value: resolveCell({ column, row, data: reportResult?.data || {} }), type: column.type })}</td>
-                      ))}
-                    </tr>
-                  )) : (
-                    <tr><td colSpan={Math.max(columns.length, 1)} className="text-center text-muted py-4">No rows returned for this report and period.</td></tr>
-                  )}
-                </tbody>
-              </Table>
-            </Card.Body>
-          </Card>
-
-          <Card className="surface-card mt-4">
-            <Card.Body>
-              <h5 className="mb-3">Export History</h5>
-              <Table responsive hover className="align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>Report</th>
-                    <th>Format</th>
-                    <th>Status</th>
-                    <th>Generated</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.length ? history.map((item) => (
-                    <tr key={item.id || `${item.reportType}-${item.generatedAt}`}>
-                      <td>{item.reportType}</td>
-                      <td>{item.format}</td>
-                      <td><StatusBadge value={item.status} /></td>
-                      <td>{formatDateTime(item.generatedAt)}</td>
-                    </tr>
-                  )) : (
-                    <tr><td colSpan={4} className="text-center text-muted py-4">No exports recorded yet.</td></tr>
-                  )}
-                </tbody>
-              </Table>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row className="g-4 mt-1">
-        <Col>
-          <Card className="surface-card">
-            <Card.Body>
-              <h5 className="mb-3">Source Integrity</h5>
-              <div className="d-flex flex-wrap gap-2">
-                <Badge bg="success">Canonical services</Badge>
-                <Badge bg="success">Exports use same query</Badge>
-                <Badge bg="success">No raw database query builder</Badge>
-                <Badge bg="secondary">No statutory reports claimed</Badge>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </div>
-  );
-};
-
-export default AdminReportCenterPage;
+    </div>}
+    {!catalog.loading && (catalog.error || !reports.length) && historyPanel}
+  </div>;
+}

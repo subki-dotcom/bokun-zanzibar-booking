@@ -1,0 +1,20 @@
+.bpt-state { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 4px; max-width: 100%; white-space: normal; }
+.bpt-badge { display: inline-flex; align-items: center; padding: 4px 9px; border: 1px solid transparent; border-radius: 7px; font-family: inherit; font-size: 12px; font-weight: 600; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; }
+.bpt-positive { background: #e7f7ef; color: #11643d; border-color: #bce7cf; }
+.bpt-attention { background: #fff7e3; color: #805509; border-color: #f1dfad; }
+.bpt-neutral { background: #edf3fa; color: #41536c; border-color: #d9e4f1; }
+.bpt-negative { background: #fff0f0; color: #a62332; border-color: #f2c7ce; }
+.bpt-source { font-size: 12px; color: #52627a; line-height: 1.4; }
+.bpt-warning { font-size: 12px; color: #875500; line-height: 1.4; }
+.bpt-details { min-width: 0; padding: 16px; background: #fff; color: #152744; border: 1px solid #dce6ef; border-radius: 10px; }
+.bpt-details h3 { margin: 0 0 14px; font-family: inherit; font-size: 16px; font-weight: 650; }
+.bpt-facts { margin: 0; }
+.bpt-facts > div { display: grid; grid-template-columns: minmax(100px, .85fr) minmax(0, 1.15fr); align-items: start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #edf1f6; }
+.bpt-facts dt { color: #52627a; font-size: 13px; line-height: 1.5; }
+.bpt-facts dd { margin: 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.bpt-amounts { display: flex; flex-direction: column; gap: 3px; }
+.bpt-note, .bpt-review { margin: 12px 0 0; font-size: 12px; line-height: 1.6; color: #52627a; }
+.bpt-review { color: #805509; }
+@media (max-width: 430px) { .bpt-details { padding: 12px; } .bpt-facts > div { grid-template-columns: 1fr; gap: 4px; } }
+
+.bpt-overview{min-width:0;margin:16px 0;padding:20px;background:white;border:1px solid #dce7ef;border-radius:12px}.bpt-overview h2{font-size:18px;font-weight:600}.bpt-overview p{font-size:13px;color:#52657c}.bpt-overview-scroll{overflow-x:auto;max-width:100%}.bpt-overview table{width:100%;min-width:780px;font-size:13px;font-variant-numeric:tabular-nums}.bpt-overview th,.bpt-overview td{padding:12px;text-align:left;border-bottom:1px solid #edf1f5}.bpt-overview button{min-height:44px}

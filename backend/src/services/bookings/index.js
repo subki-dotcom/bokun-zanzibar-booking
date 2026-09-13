@@ -1664,7 +1664,8 @@ const toPublicBookingDetails = ({ booking, productSnapshot = null, cancellationR
     paxSummary: booking.paxSummary || {},
     pricingSnapshot: booking.pricingSnapshot || {},
     amount: booking.amount,
-    currency: booking.currency || booking.pricingSnapshot?.currency || "USD",
+    currency: booking.transactionCurrency || booking.currency || booking.pricingSnapshot?.currency || "USD",
+    transactionCurrency: booking.transactionCurrency || booking.currency || "",
     paymentStatus: booking.paymentStatus,
     paymentMethod: booking.paymentMethod,
     bookingStatus: booking.bookingStatus,
@@ -3083,7 +3084,7 @@ const buildAdminBookingListQuery = (auth, params = {}) => {
 };
 
 const bookingListProjection =
-  "bookingReference bokunBookingId bokunConfirmationCode bokunExternalBookingReference externalChannelReference productTitle optionTitle travelDate startTime bokunOperationalDates bookingStatus paymentStatus pricingSnapshot amount currency customer sourceChannel salesChannel operationalSource paxSummary createdAt updatedAt";
+  "bookingReference bokunBookingId bokunConfirmationCode bokunExternalBookingReference externalChannelReference productTitle optionTitle travelDate startTime bokunOperationalDates bookingStatus paymentStatus pricingSnapshot amount currency transactionCurrency bokunCurrencySource customer sourceChannel salesChannel operationalSource paxSummary createdAt updatedAt";
 
 const buildAdminBookingSummary = async (query) => {
   const [summaryRows, trend, sourceBreakdown, paymentStatusBreakdown, bookingStatusBreakdown] = await Promise.all([

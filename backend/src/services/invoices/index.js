@@ -80,7 +80,9 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
   const discount = Number(discountDecimal.toFixed(2));
   const tax = Number(taxDecimal.toFixed(2));
   const total = Number(totalDecimal.toFixed(2));
-  const invoiceCurrency = normalizeCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD");
+  const invoiceCurrency = normalizeCurrency(
+    booking.transactionCurrency || booking.currency || booking.pricingSnapshot?.currency || "USD"
+  );
   const paidSummary = await paymentsService.getVerifiedAccountingSummary({
     bookingReference: booking.bookingReference,
     fallbackCurrency: invoiceCurrency
@@ -155,6 +157,7 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
     amountRefunded,
     netAmountPaid,
     balanceDue,
+    transactionCurrency: invoiceCurrency,
     accountingCurrency: invoiceCurrency,
     totalAmount: canonical.totalAmount,
     paidAccountingAmount: canonical.paidAccountingAmount,
@@ -214,6 +217,7 @@ const upsertInvoiceFromSnapshot = async (invoiceSnapshot) => {
   existing.amountRefunded = invoiceSnapshot.amountRefunded;
   existing.netAmountPaid = invoiceSnapshot.netAmountPaid;
   existing.balanceDue = invoiceSnapshot.balanceDue;
+  existing.transactionCurrency = invoiceSnapshot.transactionCurrency;
   existing.accountingCurrency = invoiceSnapshot.accountingCurrency;
   existing.totalAmount = invoiceSnapshot.totalAmount;
   existing.paidAccountingAmount = invoiceSnapshot.paidAccountingAmount;

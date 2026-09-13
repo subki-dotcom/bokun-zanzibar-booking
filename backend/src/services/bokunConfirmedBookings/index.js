@@ -59,6 +59,8 @@ const hashSnapshot = (snapshot = {}) =>
       paxSummary: snapshot.paxSummary,
       amount: snapshot.amount,
       currency: snapshot.currency,
+      transactionCurrency: snapshot.transactionCurrency,
+      bokunCurrencySource: snapshot.bokunCurrencySource,
       salesChannel: snapshot.salesChannel
     }))
     .digest("hex");
@@ -120,6 +122,12 @@ const shouldPreserveExistingFinancials = (existing = null) => {
       (sourceChannel === "direct_website" && ["paid", "partial", "processing"].includes(String(existing.paymentStatus || "")))
   );
 };
+
+// Existing Bókun rows predate authoritative currency lineage. Normal polling
+// must not silently rewrite historical financial documents; reviewed backfill
+// is the only path that may establish that lineage retroactively.
+const shouldPreserveUnreviewedHistoricalCurrency = (existing = null) =>
+  Boolean(existing && !String(existing.bokunCurrencySource || "").startsWith("BOKUN_"));
 
 const inferExistingSalesChannel = (existing = null) => {
   const sourceChannel = String(existing?.sourceChannel || "").toLowerCase();
@@ -281,6 +289,8 @@ const buildBookingPatch = ({
     patch.paymentMethod = existing.paymentMethod;
     patch.amount = existing.amount;
     patch.currency = existing.currency;
+    patch.transactionCurrency = existing.transactionCurrency || existing.currency;
+    patch.bokunCurrencySource = existing.bokunCurrencySource || "LOCAL_TRANSACTION_CURRENCY";
     patch.pricingSnapshot = existing.pricingSnapshot;
     patch.invoiceSnapshot = existing.invoiceSnapshot;
   } else {
@@ -288,7 +298,18 @@ const buildBookingPatch = ({
     patch.paymentMethod = snapshot.paymentMethod || "bokun_channel";
     patch.amount = snapshot.amount;
     patch.currency = snapshot.currency;
+    patch.transactionCurrency = snapshot.transactionCurrency;
+    patch.bokunCurrencySource = snapshot.bokunCurrencySource;
     patch.pricingSnapshot = snapshot.pricingSnapshot;
+  }
+
+  if (shouldPreserveUnreviewedHistoricalCurrency(existing)) {
+    patch.amount = existing.amount;
+    patch.currency = existing.currency;
+    patch.transactionCurrency = existing.transactionCurrency || existing.currency;
+    patch.bokunCurrencySource = existing.bokunCurrencySource || "HISTORICAL_REVIEW_REQUIRED";
+    patch.pricingSnapshot = existing.pricingSnapshot;
+    patch.invoiceSnapshot = existing.invoiceSnapshot;
   }
 
   return patch;
@@ -425,6 +446,7 @@ const createBokunConfirmedBookingImportService = ({
       booking = await BookingModel.create(patch);
     }
 
+    await require('../bookingPayment/sync').syncBokunPayment({ booking, payload: snapshot.rawBokunResponse, source, requestId, now: now(), AuditLogModel });
     await customerService.linkBookingToCustomer({ customer, booking });
 
     if (changeType !== "unchanged") {
@@ -502,6 +524,8 @@ const createBokunConfirmedBookingImportService = ({
     });
     Object.assign(existing, patch);
     const booking = typeof existing.save === "function" ? await existing.save() : existing;
+
+    await require('../bookingPayment/sync').syncBokunPayment({ booking, payload: mapped.snapshot.rawBokunResponse, source, requestId, now: now(), AuditLogModel });
 
     await recordAudit({
       action: "bokun_booking_cancelled_synchronized",

@@ -1,4 +1,5 @@
 const ReportExport = require("../models/ReportExport");
+const User = require("../models/User");
 const AppError = require("../utils/AppError");
 const { REPORT_EXPORT_FORMAT } = require("./constants");
 const reportCenterService = require("./reportQueryService");
@@ -320,6 +321,9 @@ const normalizeHistoryRecord = (record = {}) => ({
   filters: record.filters || {},
   status: record.status || "",
   generatedBy: record.generatedBy || "",
+  generatedByLabel: record.generatedByLabel || record.generatedBy || "Unavailable",
+  reportTitle: record.metadata?.reportTitle || "",
+  period: record.metadata?.period || null,
   generatedAt: formatDateTime(record.generatedAt),
   requestId: record.requestId || "",
   rowCount: record.rowCount || 0,
@@ -333,6 +337,7 @@ const normalizeHistoryRecord = (record = {}) => ({
 const createReportExportService = ({
   reportService = reportCenterService,
   ExportModel = ReportExport,
+  UserModel = User,
   now = () => new Date()
 } = {}) => {
   const recordHistory = async (payload) => {
@@ -423,7 +428,7 @@ const createReportExportService = ({
     }
   };
 
-  const listExportHistory = async ({ reportType = "", format = "", limit = 50 } = {}) => {
+  const listExportHistory = async ({ reportType = "", format = "", limit = 50, page = 1 } = {}) => {
     const query = {};
     if (reportType) query.reportType = normalizeUpper(reportType);
     if (format) query.format = normalizeUpper(format);
@@ -437,19 +442,29 @@ const createReportExportService = ({
     }
 
     const findResult = ExportModel.find(query);
+    const offset = (page - 1) * limit;
     let records;
     if (Array.isArray(findResult)) {
-      records = findResult;
+      records = findResult.slice(offset, offset + limit);
     } else {
-      const sorted = findResult.sort ? findResult.sort({ generatedAt: -1 }) : findResult;
-      const limited = sorted.limit ? sorted.limit(limit) : sorted;
+      const sorted = findResult.sort ? findResult.sort({ generatedAt: -1, _id: -1 }) : findResult;
+      const skipped = sorted.skip ? sorted.skip(offset) : sorted;
+      const limited = skipped.limit ? skipped.limit(limit) : skipped;
       records = limited.lean ? await limited.lean() : await limited;
     }
 
     const items = (records || []).slice(0, limit).map(normalizeHistoryRecord);
+    const ids = [...new Set(items.map((row) => row.generatedBy).filter((id) => /^[a-f0-9]{24}$/i.test(id)))];
+    if (ids.length) {
+      const users = await UserModel.find({ _id: { $in: ids } }).select('fullName email').lean();
+      const labels = new Map(users.map((user) => [String(user._id), user.fullName || user.email]));
+      items.forEach((item) => { item.generatedByLabel = labels.get(item.generatedBy) || item.generatedByLabel; });
+    }
+    const total = ExportModel.countDocuments ? await ExportModel.countDocuments(query) : Array.isArray(findResult) ? findResult.length : items.length;
     return {
       items,
       count: items.length,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       retainedFilesSupported: false
     };
   };

@@ -1,0 +1,1427 @@
+{
+  "mode": "audit",
+  "generatedAt": "2026-09-13T06:14:59.184Z",
+  "readOnly": true,
+  "totalMatching": 82,
+  "scanned": 82,
+  "mismatchCount": 0,
+  "totals": {
+    "storedBooking": {
+      "USD": {
+        "count": 82,
+        "amount": 6562.860000000001
+      }
+    },
+    "bokun": {
+      "USD": {
+        "count": 82,
+        "amount": 6221.860000000001
+      }
+    },
+    "invoice": {
+      "USD": {
+        "count": 82,
+        "amount": 6562.860000000001
+      }
+    },
+    "mismatchTypes": {
+      "MATCH": 82
+    }
+  },
+  "rows": [
+    {
+      "bookingId": "6a47812b59814ab149c55e8e",
+      "bookingReference": "ZNZ-1783071019641-1170",
+      "bokunBookingId": "96184328",
+      "channel": "DIRECT_WEBSITE",
+      "storedAmount": 170,
+      "storedCurrency": "USD",
+      "bokunAmount": 0,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260703-0002",
+      "invoiceAmount": 170,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a47878d59814ab149c55f2f",
+      "bookingReference": "ZNZ-1783072653718-9199",
+      "bokunBookingId": "96183956",
+      "channel": "DIRECT_WEBSITE",
+      "storedAmount": 170,
+      "storedCurrency": "USD",
+      "bokunAmount": 0,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260703-0003",
+      "invoiceAmount": 170,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a6ec138877e62c415d99238",
+      "bookingReference": "ZNZ-1785643320297-2340",
+      "bokunBookingId": "99284460",
+      "channel": "DIRECT_WEBSITE",
+      "storedAmount": 1,
+      "storedCurrency": "USD",
+      "bokunAmount": 0,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260802-0001",
+      "invoiceAmount": 1,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fae73fe0090fc0b8a751",
+      "bookingReference": "GYGRFQGYKZ28",
+      "bokunBookingId": "102347155",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 50,
+      "storedCurrency": "USD",
+      "bokunAmount": 50,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0050",
+      "invoiceAmount": 50,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93faed3fe0090fc0b8a75d",
+      "bookingReference": "GYG32LY979AB",
+      "bokunBookingId": "102282757",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 50,
+      "storedCurrency": "USD",
+      "bokunAmount": 50,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0001",
+      "invoiceAmount": 50,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93faf03fe0090fc0b8a769",
+      "bookingReference": "1441863013",
+      "bokunBookingId": "102278804",
+      "channel": "VIATOR",
+      "storedAmount": 68,
+      "storedCurrency": "USD",
+      "bokunAmount": 68,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0002",
+      "invoiceAmount": 68,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fd49306f986879cfbdd4",
+      "bookingReference": "VIA-101658841",
+      "bokunBookingId": "101658841",
+      "channel": "OTHER",
+      "storedAmount": 15,
+      "storedCurrency": "USD",
+      "bokunAmount": 15,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0053",
+      "invoiceAmount": 15,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fd4c306f986879cfbddd",
+      "bookingReference": "VIA-100651976",
+      "bokunBookingId": "100651976",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0054",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fd52306f986879cfbde5",
+      "bookingReference": "VIA-100477559",
+      "bokunBookingId": "100477559",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0055",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fd5b306f986879cfbdf4",
+      "bookingReference": "VIA-99535802",
+      "bokunBookingId": "99535802",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0051",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fd60306f986879cfbe06",
+      "bookingReference": "1423634423",
+      "bokunBookingId": "97376420",
+      "channel": "VIATOR",
+      "storedAmount": 53.6,
+      "storedCurrency": "USD",
+      "bokunAmount": 53.6,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0056",
+      "invoiceAmount": 53.6,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fdf2306f986879cfbe54",
+      "bookingReference": "1441720001",
+      "bokunBookingId": "102234341",
+      "channel": "VIATOR",
+      "storedAmount": 244.8,
+      "storedCurrency": "USD",
+      "bokunAmount": 244.8,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0003",
+      "invoiceAmount": 244.8,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fdf7306f986879cfbe5e",
+      "bookingReference": "VIA-102105574",
+      "bokunBookingId": "102105574",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0004",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fdfc306f986879cfbe69",
+      "bookingReference": "GYGRFQG684Y9",
+      "bokunBookingId": "101870855",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 22,
+      "storedCurrency": "USD",
+      "bokunAmount": 22,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0005",
+      "invoiceAmount": 22,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fdfd306f986879cfbe75",
+      "bookingReference": "GYGVN234W6MQ",
+      "bokunBookingId": "101864137",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 20.9,
+      "storedCurrency": "USD",
+      "bokunAmount": 20.9,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0006",
+      "invoiceAmount": 20.9,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fdff306f986879cfbe7e",
+      "bookingReference": "VIA-101660315",
+      "bokunBookingId": "101660315",
+      "channel": "OTHER",
+      "storedAmount": 15,
+      "storedCurrency": "USD",
+      "bokunAmount": 15,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0007",
+      "invoiceAmount": 15,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe03306f986879cfbe86",
+      "bookingReference": "VIA-101660088",
+      "bokunBookingId": "101660088",
+      "channel": "OTHER",
+      "storedAmount": 60,
+      "storedCurrency": "USD",
+      "bokunAmount": 60,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0008",
+      "invoiceAmount": 60,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe05306f986879cfbe8e",
+      "bookingReference": "VIA-101659298",
+      "bokunBookingId": "101659298",
+      "channel": "OTHER",
+      "storedAmount": 40,
+      "storedCurrency": "USD",
+      "bokunAmount": 40,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0009",
+      "invoiceAmount": 40,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe09306f986879cfbe9e",
+      "bookingReference": "VIA-101658385",
+      "bokunBookingId": "101658385",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0010",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe0b306f986879cfbea9",
+      "bookingReference": "GYGN6BYHH5MN",
+      "bokunBookingId": "101551989",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 110,
+      "storedCurrency": "USD",
+      "bokunAmount": 110,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0011",
+      "invoiceAmount": 110,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe0e306f986879cfbec7",
+      "bookingReference": "1439382645",
+      "bokunBookingId": "101548891",
+      "channel": "VIATOR",
+      "storedAmount": 183.6,
+      "storedCurrency": "USD",
+      "bokunAmount": 183.6,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0012",
+      "invoiceAmount": 183.6,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe10306f986879cfbed3",
+      "bookingReference": "1439277305",
+      "bokunBookingId": "101526394",
+      "channel": "VIATOR",
+      "storedAmount": 183.6,
+      "storedCurrency": "USD",
+      "bokunAmount": 183.6,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0013",
+      "invoiceAmount": 183.6,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe12306f986879cfbedf",
+      "bookingReference": "1439139071",
+      "bokunBookingId": "101485240",
+      "channel": "VIATOR",
+      "storedAmount": 212.16,
+      "storedCurrency": "USD",
+      "bokunAmount": 212.16,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0014",
+      "invoiceAmount": 212.16,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe14306f986879cfbee8",
+      "bookingReference": "VIA-101447139",
+      "bokunBookingId": "101447139",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0015",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe16306f986879cfbef0",
+      "bookingReference": "VIA-101446226",
+      "bokunBookingId": "101446226",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0016",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe18306f986879cfbef8",
+      "bookingReference": "VIA-101446083",
+      "bokunBookingId": "101446083",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0017",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe1b306f986879cfbeff",
+      "bookingReference": "VIA-101445916",
+      "bokunBookingId": "101445916",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0018",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe1e306f986879cfbf09",
+      "bookingReference": "VIA-101241760",
+      "bokunBookingId": "101241760",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0019",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe20306f986879cfbf13",
+      "bookingReference": "VIA-101239934",
+      "bokunBookingId": "101239934",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0020",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe22306f986879cfbf1b",
+      "bookingReference": "VIA-101239553",
+      "bokunBookingId": "101239553",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0021",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe24306f986879cfbf23",
+      "bookingReference": "VIA-101238920",
+      "bokunBookingId": "101238920",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0022",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe25306f986879cfbf2c",
+      "bookingReference": "VIA-101238796",
+      "bokunBookingId": "101238796",
+      "channel": "OTHER",
+      "storedAmount": 15,
+      "storedCurrency": "USD",
+      "bokunAmount": 15,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0023",
+      "invoiceAmount": 15,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe28306f986879cfbf33",
+      "bookingReference": "VIA-101237410",
+      "bokunBookingId": "101237410",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0024",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe2b306f986879cfbf3a",
+      "bookingReference": "VIA-101237313",
+      "bokunBookingId": "101237313",
+      "channel": "OTHER",
+      "storedAmount": 15,
+      "storedCurrency": "USD",
+      "bokunAmount": 15,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0025",
+      "invoiceAmount": 15,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe2d306f986879cfbf44",
+      "bookingReference": "VIA-101125350",
+      "bokunBookingId": "101125350",
+      "channel": "OTHER",
+      "storedAmount": 15,
+      "storedCurrency": "USD",
+      "bokunAmount": 15,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0026",
+      "invoiceAmount": 15,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe30306f986879cfbf4c",
+      "bookingReference": "VIA-101124054",
+      "bokunBookingId": "101124054",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0027",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe32306f986879cfbf54",
+      "bookingReference": "VIA-101123754",
+      "bokunBookingId": "101123754",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0028",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe35306f986879cfbf5b",
+      "bookingReference": "VIA-101123591",
+      "bokunBookingId": "101123591",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0029",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe38306f986879cfbf62",
+      "bookingReference": "VIA-101122881",
+      "bokunBookingId": "101122881",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0030",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe3b306f986879cfbf69",
+      "bookingReference": "VIA-101122398",
+      "bokunBookingId": "101122398",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0031",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe3d306f986879cfbf71",
+      "bookingReference": "VIA-101122079",
+      "bokunBookingId": "101122079",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0032",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe3f306f986879cfbf7b",
+      "bookingReference": "VIA-101121845",
+      "bokunBookingId": "101121845",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0033",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe42306f986879cfbf8e",
+      "bookingReference": "GYG996XK5ZAM",
+      "bokunBookingId": "101017139",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 27,
+      "storedCurrency": "USD",
+      "bokunAmount": 27,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0034",
+      "invoiceAmount": 27,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe45306f986879cfbf99",
+      "bookingReference": "VIA-100844410",
+      "bokunBookingId": "100844410",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0035",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe48306f986879cfbfa1",
+      "bookingReference": "VIA-100794393",
+      "bokunBookingId": "100794393",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0036",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe49306f986879cfbfa9",
+      "bookingReference": "VIA-100794327",
+      "bokunBookingId": "100794327",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0037",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe4b306f986879cfbfb1",
+      "bookingReference": "VIA-100753608",
+      "bokunBookingId": "100753608",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0038",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe50306f986879cfbfb9",
+      "bookingReference": "VIA-100747421",
+      "bokunBookingId": "100747421",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0039",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe53306f986879cfbfc0",
+      "bookingReference": "VIA-100746257",
+      "bokunBookingId": "100746257",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0040",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe56306f986879cfbfc7",
+      "bookingReference": "VIA-100745660",
+      "bokunBookingId": "100745660",
+      "channel": "OTHER",
+      "storedAmount": 15,
+      "storedCurrency": "USD",
+      "bokunAmount": 15,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0041",
+      "invoiceAmount": 15,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe57306f986879cfbfcf",
+      "bookingReference": "VIA-100654370",
+      "bokunBookingId": "100654370",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0042",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe59306f986879cfbfda",
+      "bookingReference": "GYGKBF7BBL2K",
+      "bokunBookingId": "100652045",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 70,
+      "storedCurrency": "USD",
+      "bokunAmount": 70,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0043",
+      "invoiceAmount": 70,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe5e306f986879cfbfee",
+      "bookingReference": "1436245843",
+      "bokunBookingId": "100633349",
+      "channel": "VIATOR",
+      "storedAmount": 183.6,
+      "storedCurrency": "USD",
+      "bokunAmount": 183.6,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0044",
+      "invoiceAmount": 183.6,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe61306f986879cfc003",
+      "bookingReference": "ZNZ-1786608947411-2003",
+      "bokunBookingId": "100595248",
+      "channel": "DIRECT_WEBSITE",
+      "storedAmount": 1,
+      "storedCurrency": "USD",
+      "bokunAmount": 1,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0045",
+      "invoiceAmount": 1,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe64306f986879cfc00e",
+      "bookingReference": "GYGG45MKB4HG",
+      "bokunBookingId": "100548280",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 45,
+      "storedCurrency": "USD",
+      "bokunAmount": 45,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0046",
+      "invoiceAmount": 45,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe67306f986879cfc01a",
+      "bookingReference": "VIA-100480611",
+      "bokunBookingId": "100480611",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0047",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe6a306f986879cfc025",
+      "bookingReference": "1435747845",
+      "bokunBookingId": "100479279",
+      "channel": "VIATOR",
+      "storedAmount": 272,
+      "storedCurrency": "USD",
+      "bokunAmount": 272,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0048",
+      "invoiceAmount": 272,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6a93fe6c306f986879cfc030",
+      "bookingReference": "VIA-100478026",
+      "bokunBookingId": "100478026",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0049",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0897cd0cfd3b4c2147a60",
+      "bookingReference": "GYG83W8N2A2H",
+      "bokunBookingId": "102650679",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 50,
+      "storedCurrency": "USD",
+      "bokunAmount": 50,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0052",
+      "invoiceAmount": 50,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2bfc13148f8b4888d8a",
+      "bookingReference": "VIA-103334641",
+      "bokunBookingId": "103334641",
+      "channel": "OTHER",
+      "storedAmount": 1060,
+      "storedCurrency": "USD",
+      "bokunAmount": 1060,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0057",
+      "invoiceAmount": 1060,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c0c13148f8b4888d9e",
+      "bookingReference": "VIA-103334155",
+      "bokunBookingId": "103334155",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0058",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c0c13148f8b4888db2",
+      "bookingReference": "VIA-103333934",
+      "bokunBookingId": "103333934",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0059",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c2c13148f8b4888dc6",
+      "bookingReference": "VIA-103333571",
+      "bokunBookingId": "103333571",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0060",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c3c13148f8b4888df2",
+      "bookingReference": "VIA-103333440",
+      "bokunBookingId": "103333440",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0061",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c5c13148f8b4888e0a",
+      "bookingReference": "1445126625",
+      "bokunBookingId": "103217551",
+      "channel": "VIATOR",
+      "storedAmount": 115.6,
+      "storedCurrency": "USD",
+      "bokunAmount": 115.6,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0062",
+      "invoiceAmount": 115.6,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c5c13148f8b4888e15",
+      "bookingReference": "GYGKBF5YKVV2",
+      "bokunBookingId": "103060156",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 70,
+      "storedCurrency": "USD",
+      "bokunAmount": 70,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0063",
+      "invoiceAmount": 70,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c6c13148f8b4888e1e",
+      "bookingReference": "VIA-102931808",
+      "bokunBookingId": "102931808",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0064",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c6c13148f8b4888e26",
+      "bookingReference": "VIA-102891929",
+      "bokunBookingId": "102891929",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0065",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c7c13148f8b4888e2d",
+      "bookingReference": "VIA-102891364",
+      "bokunBookingId": "102891364",
+      "channel": "OTHER",
+      "storedAmount": 80,
+      "storedCurrency": "USD",
+      "bokunAmount": 80,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0066",
+      "invoiceAmount": 80,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c7c13148f8b4888e35",
+      "bookingReference": "VIA-102890573",
+      "bokunBookingId": "102890573",
+      "channel": "OTHER",
+      "storedAmount": 30,
+      "storedCurrency": "USD",
+      "bokunAmount": 30,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0067",
+      "invoiceAmount": 30,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2c8c13148f8b4888e43",
+      "bookingReference": "GYGKBF53F282",
+      "bokunBookingId": "102858856",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 22,
+      "storedCurrency": "USD",
+      "bokunAmount": 22,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0068",
+      "invoiceAmount": 22,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2cac13148f8b4888e58",
+      "bookingReference": "1442659613",
+      "bokunBookingId": "102507961",
+      "channel": "VIATOR",
+      "storedAmount": 163.2,
+      "storedCurrency": "USD",
+      "bokunAmount": 163.2,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0069",
+      "invoiceAmount": 163.2,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f2ccc13148f8b4888e6c",
+      "bookingReference": "GYGKBF59W84Y",
+      "bokunBookingId": "102395830",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 340,
+      "storedCurrency": "USD",
+      "bokunAmount": 340,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0070",
+      "invoiceAmount": 340,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f309c13148f8b48891be",
+      "bookingReference": "VIA-100476169",
+      "bokunBookingId": "100476169",
+      "channel": "OTHER",
+      "storedAmount": 70,
+      "storedCurrency": "USD",
+      "bokunAmount": 70,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0071",
+      "invoiceAmount": 70,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f30ac13148f8b48891c9",
+      "bookingReference": "GYGLMRVGF6XM",
+      "bokunBookingId": "100336121",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 180,
+      "storedCurrency": "USD",
+      "bokunAmount": 180,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0072",
+      "invoiceAmount": 180,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa0f30bc13148f8b48891d5",
+      "bookingReference": "GYG7VKQ757HB",
+      "bokunBookingId": "100267289",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 70,
+      "storedCurrency": "USD",
+      "bokunAmount": 70,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0073",
+      "invoiceAmount": 70,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa122bfc13148f8b48a1991",
+      "bookingReference": "GYGRFQGAG2WQ",
+      "bokunBookingId": "103347710",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 370,
+      "storedCurrency": "USD",
+      "bokunAmount": 370,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260909-0074",
+      "invoiceAmount": 370,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa2fccec13148f8b48b96d6",
+      "bookingReference": "1445969483",
+      "bokunBookingId": "103465602",
+      "channel": "VIATOR",
+      "storedAmount": 204,
+      "storedCurrency": "USD",
+      "bokunAmount": 204,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260910-0001",
+      "invoiceAmount": 204,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa2fccfc13148f8b48b96e2",
+      "bookingReference": "1445955279",
+      "bokunBookingId": "103461306",
+      "channel": "VIATOR",
+      "storedAmount": 67,
+      "storedCurrency": "USD",
+      "bokunAmount": 67,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260910-0002",
+      "invoiceAmount": 67,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa2fcd0c13148f8b48b96fa",
+      "bookingReference": "1445915375",
+      "bokunBookingId": "103447076",
+      "channel": "VIATOR",
+      "storedAmount": 142.8,
+      "storedCurrency": "USD",
+      "bokunAmount": 142.8,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260910-0003",
+      "invoiceAmount": 142.8,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa4e100c13148f8b48bc3bb",
+      "bookingReference": "GYG2Q9ANMLLL",
+      "bokunBookingId": "103588457",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 50,
+      "storedCurrency": "USD",
+      "bokunAmount": 50,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260912-0001",
+      "invoiceAmount": 50,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    },
+    {
+      "bookingId": "6aa6258fc13148f8b48cb194",
+      "bookingReference": "GYG2Q9AMY3VQ",
+      "bokunBookingId": "103641299",
+      "channel": "GETYOURGUIDE",
+      "storedAmount": 70,
+      "storedCurrency": "USD",
+      "bokunAmount": 70,
+      "bokunCurrency": "USD",
+      "bokunCurrencySource": "BOKUN_CUSTOMER_INVOICE_MONEY",
+      "invoiceNumber": "INV-20260913-0001",
+      "invoiceAmount": 70,
+      "invoiceCurrency": "USD",
+      "mismatchTypes": [
+        "MATCH"
+      ]
+    }
+  ]
+}

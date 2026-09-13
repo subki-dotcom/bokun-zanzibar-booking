@@ -16,6 +16,7 @@ import PaymentProcessingPage from "../pages/public/PaymentProcessingPage";
 import PaymentCheckoutPage from "../pages/public/PaymentCheckoutPage";
 import MyBookingPage from "../pages/public/MyBookingPage";
 import InvoiceDetailsPage from "../pages/public/InvoiceDetailsPage";
+import AdminInvoicesPage from "../pages/admin/AdminInvoicesPage";
 import LoginPage from "../pages/public/LoginPage";
 import AgentRegisterPage from "../pages/public/AgentRegisterPage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
@@ -120,7 +121,7 @@ const AppRoutes = () => {
         <Route path="/admin/operations/bokun-sync/manual" element={<AdminBokunSyncPage />} />
         <Route path="/admin/operations/bokun-sync/single-booking" element={<AdminBokunSyncPage />} />
         <Route path="/admin/booking-accounting/dashboard" element={<AdminBookingAccountingPage />} />
-        <Route path="/admin/booking-accounting/invoices" element={<AdminBookingAccountingPage />} />
+        <Route path="/admin/booking-accounting/invoices" element={<AdminInvoicesPage />} />
         <Route path="/admin/booking-accounting/payments" element={<AdminPaymentsPage />} />
         <Route path="/admin/booking-accounting/refunds" element={<AdminBookingAccountingPage />} />
         <Route path="/admin/booking-accounting/expenses" element={<AdminBookingAccountingPage />} />

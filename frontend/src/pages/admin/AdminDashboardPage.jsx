@@ -1,3 +1,4 @@
+import { PaymentTruthBadge } from '../../components/invoice/BookingPaymentState';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -44,8 +45,8 @@ const CHANNEL_LABELS = {
   getyourguide: "GetYourGuide",
   VIATOR: "Viator",
   viator: "Viator",
-  BOKUN_MARKETPLACE: "Bokun Marketplace",
-  bokun_marketplace: "Bokun Marketplace",
+  BOKUN_MARKETPLACE: "Marketplace",
+  bokun_marketplace: "Marketplace",
   AGENT: "Agent / B2B",
   agent: "Agent / B2B",
   B2B: "Agent / B2B",
@@ -138,7 +139,7 @@ const getBookingDate = (booking = {}) => {
 
 const getBookingAmount = (booking = {}) => {
   const amount = booking.pricingSnapshot?.finalPayable ?? booking.amount ?? 0;
-  const currency = booking.pricingSnapshot?.currency || booking.currency || "USD";
+  const currency = booking.transactionCurrency || booking.currency || booking.pricingSnapshot?.currency || "USD";
   return formatCurrency(amount, currency);
 };
 
@@ -251,7 +252,7 @@ const RecentBookingsWidget = ({ bookings, loading, error, onRetry }) => {
               <th>Date</th>
               <th>Customer</th>
               <th>Status</th>
-              <th>Payment</th>
+              <th>Customer payment</th>
               <th className="text-end">Amount</th>
               <th className="text-end">Action</th>
             </tr>
@@ -267,7 +268,7 @@ const RecentBookingsWidget = ({ bookings, loading, error, onRetry }) => {
                 <td>{getBookingDate(booking)}</td>
                 <td className="admin-dashboard-truncate">{getBookingCustomerName(booking)}</td>
                 <td><StatusBadge value={booking.bookingStatus} /></td>
-                <td><StatusBadge value={booking.paymentStatus} /></td>
+                <td><PaymentTruthBadge payment={booking.bookingPayment} /></td>
                 <td className="text-end">{getBookingAmount(booking)}</td>
                 <td className="text-end">
                   <button type="button" className="admin-dashboard-icon-action" disabled aria-label="Booking actions unavailable">
@@ -294,7 +295,7 @@ const RecentBookingsWidget = ({ bookings, loading, error, onRetry }) => {
             <div className="admin-dashboard-booking-footer">
               <div>
                 <StatusBadge value={booking.bookingStatus} />
-                <StatusBadge value={booking.paymentStatus} />
+                <PaymentTruthBadge payment={booking.bookingPayment} />
               </div>
               <strong>{getBookingAmount(booking)}</strong>
             </div>
@@ -423,7 +424,7 @@ const AdminDashboardPage = () => {
       requestDashboardWidget("monthlySales", fetchMonthlySalesReport, "Failed to load monthly sales"),
       requestDashboardWidget("operationalAlerts", fetchOperationalAlerts, "Failed to load operational alerts"),
       requestDashboardWidget("operationsOverview", fetchOperationsOverview, "Failed to load operations overview"),
-      requestDashboardWidget("bokunSyncStatus", fetchBokunSyncStatus, "Failed to load Bokun sync status")
+      requestDashboardWidget("bokunSyncStatus", fetchBokunSyncStatus, "Failed to load sync status")
     ]);
 
     const nextData = {};
@@ -550,14 +551,14 @@ const AdminDashboardPage = () => {
       </div>
 
       <div className={`admin-dashboard-sync-strip is-${bokunReady ? "healthy" : bokunMode === "mock" ? "warning" : "muted"}`}>
-        <span><BsCloudCheck aria-hidden="true" /> Bokun source of truth</span>
+        <span><BsCloudCheck aria-label="Synchronization" /></span>
         <strong>{bokunMode === "live" ? "Live API" : titleize(bokunMode)}</strong>
         <small>
           {bokunWorker.lastSuccessAt
             ? `Last import ${formatRelativeTime(bokunWorker.lastSuccessAt)}`
             : latestBokunSync?.completedAt
               ? `Last sync ${formatRelativeTime(latestBokunSync.completedAt)}`
-              : "Waiting for Bokun synchronization."}
+              : "Waiting for synchronization."}
         </small>
         <Link to="/admin/operations/bokun-sync/confirmed-import">Manage sync</Link>
       </div>

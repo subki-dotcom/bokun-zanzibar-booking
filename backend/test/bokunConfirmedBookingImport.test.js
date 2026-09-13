@@ -326,13 +326,35 @@ test("imports confirmed Bokun booking once and repeated sync is idempotent", asy
   assert.equal(harness.state.bookings.length, 1);
   assert.equal(harness.state.bookings[0].operationalSource, "BOKUN");
   assert.equal(harness.state.bookings[0].salesChannel, "VIATOR");
+  assert.equal(harness.state.bookings[0].transactionCurrency, "USD");
+  assert.equal(harness.state.bookings[0].bokunCurrencySource, "BOKUN_ROOT_CURRENCY");
   assert.equal(harness.state.bookings[0].bokunExternalBookingReference, "VTR-1001");
   assert.equal(harness.state.bookings[0].rawChannelSource, "Viator");
   assert.equal(harness.state.bookings[0].externalChannelReference, "VIATOR-CHANNEL");
   assert.equal(harness.state.bookings[0].bokunOperationalDates.travelDate.localDate, "2026-09-12");
   assert.equal(harness.state.bookings[0].bokunOperationalDates.activityStartTime.localTime, "09:30");
   assert.equal(harness.state.syncLogs.length, 2);
-  assert.equal(harness.state.audits.length, 1);
+  assert.equal(harness.state.audits.filter(row => row.action === "bokun_confirmed_booking_imported").length, 1);
+  assert.equal(harness.state.audits.filter(row => row.action === "bokun_payment_status_synchronized").length, 1);
+});
+
+test("manual resync imports customer invoice transaction currency rather than reseller root currency", async () => {
+  const raw = confirmedBooking({
+    currency: "EUR",
+    totalPrice: 70,
+    invoice: { currency: "USD", totalAsMoney: { amount: 70, currency: "USD" } },
+    channel: { title: "GetYourGuide" }
+  });
+  const harness = createHarness({ lookupBooking: async () => ({
+    bokunBookingId: "BOKUN-1001", bookingReference: "VTR-1001",
+    confirmationCode: "CONF-1001", status: "CONFIRMED", raw
+  }) });
+  const result = await harness.service.resyncBooking({ reference: "CONF-1001", source: "manual_resync" });
+  assert.equal(result.action, "imported");
+  assert.equal(harness.state.bookings[0].amount, 70);
+  assert.equal(harness.state.bookings[0].currency, "USD");
+  assert.equal(harness.state.bookings[0].transactionCurrency, "USD");
+  assert.equal(harness.state.bookings[0].pricingSnapshot.currency, "USD");
 });
 
 test("single resync synchronizes Bokun cancellation only for an existing local booking", async () => {

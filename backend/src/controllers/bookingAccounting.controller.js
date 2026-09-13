@@ -12,6 +12,7 @@ const dashboard = asyncHandler(async (req, res) => {
 
 const invoices = asyncHandler(async (req, res) => {
   const data = await bookingAccountingService.listInvoices(req.validated?.query || {});
+  data.items = await require('../services/bookingPayment/view').enrichPaymentViews(data.items);
   return successResponse(res, {
     message: "Booking accounting invoices fetched",
     data
@@ -128,6 +129,7 @@ const reconciliation = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  bookingPayment: asyncHandler(async (req, res) => successResponse(res, { message: 'Booking payment and settlement overview', data: await require('../services/bookingPayment/overview').getPaymentOverview(req.validated?.query || {}) })),
   archiveCostTemplate,
   createCostTemplate,
   costTemplate,

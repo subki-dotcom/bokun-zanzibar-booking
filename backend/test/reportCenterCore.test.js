@@ -901,7 +901,7 @@ test("report export history supports report, format and limit filters", async ()
     reportType: REPORT_TYPE.SALES_SUMMARY,
     format: REPORT_EXPORT_FORMAT.CSV
   });
-  assert.deepEqual(capturedSort, { generatedAt: -1 });
+  assert.deepEqual(capturedSort, { generatedAt: -1, _id: -1 });
   assert.equal(capturedLimit, 10);
   assert.equal(result.count, 1);
   assert.equal(result.items[0].id, "export-history-1");

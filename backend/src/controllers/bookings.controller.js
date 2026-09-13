@@ -40,10 +40,11 @@ const getByReference = asyncHandler(async (req, res) => {
 
 const listRecent = asyncHandler(async (req, res) => {
   const data = await bookingService.listRecentBookings(req.auth || null, req.query || {});
+  const enriched = await require('../services/bookingPayment/view').enrichPaymentViews(Array.isArray(data) ? data : data.items || []);
 
   return successResponse(res, {
     message: "Recent bookings fetched",
-    data
+    data: Array.isArray(data) ? enriched : { ...data, items: enriched }
   });
 });
 

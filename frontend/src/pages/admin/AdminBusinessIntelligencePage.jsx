@@ -1,338 +1,125 @@
-import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
-import { BsArrowClockwise, BsBarChartLine, BsBoxes, BsGraphUpArrow, BsPeople } from "react-icons/bs";
-import {
-  fetchChannelAnalytics,
-  fetchExecutiveAnalytics,
-  fetchProductAnalytics,
-  fetchSalesAnalytics,
-  fetchTrendAnalytics
-} from "../../api/adminApi";
-import ErrorAlert from "../../components/common/ErrorAlert";
-import Loader from "../../components/common/Loader";
-import { formatCurrency } from "../../utils/formatters";
+import BookingPaymentOverview from '../../components/invoice/BookingPaymentOverview';
+import { useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { BsArrowClockwise, BsBarChartLine, BsCashCoin, BsCart3, BsPeople, BsPieChart, BsReceipt, BsLightbulb, BsActivity, BsShieldCheck, BsCalendar3 } from 'react-icons/bs';
+import useBISection from '../../components/admin/bi/useBISection';
+import { BIBlock, BIKpi, BIMetricList, BITopProducts, BIRecentBookings, BIProductProfitability, BIWarnings, BIEmpty, BISkeleton, BIError } from '../../components/admin/bi/BIComponents';
+import { ChannelPerformance, RevenueBookingTrend } from '../../components/admin/bi/BICharts';
+import { PERIOD_OPTIONS, dateLabel, formatMoney, formatNumber, formatPercentage, generateInsights, mergeTrend, mergeWarnings, periodLabel } from '../../components/admin/bi/biHelpers';
+import './businessIntelligence.css';
 
-const PERIOD_OPTIONS = [
-  { value: "TODAY", label: "Today" },
-  { value: "THIS_WEEK", label: "This week" },
-  { value: "THIS_MONTH", label: "This month" },
-  { value: "LAST_MONTH", label: "Last month" },
-  { value: "THIS_QUARTER", label: "This quarter" },
-  { value: "THIS_YEAR", label: "This year" },
-  { value: "LIFETIME", label: "Lifetime" }
-];
-
-const safeNumber = (value = 0) => Number(value || 0);
-
-const formatPercent = (value) => (value === null || value === undefined ? "-" : `${Number(value || 0).toFixed(1)}%`);
-
-const comparisonText = (comparison) => {
-  if (!comparison) return "";
-  if (!comparison.comparisonValid) return comparison.reason === "ZERO_PREVIOUS_VALUE" ? "No previous baseline" : "";
-  const sign = Number(comparison.percentageChange || 0) >= 0 ? "+" : "";
-  return `${sign}${comparison.percentageChange}% vs previous`;
-};
-
-const MetricCard = ({ label, value, detail = "", icon: Icon = BsBarChartLine }) => (
-  <Card className="surface-card h-100">
-    <Card.Body>
-      <div className="d-flex justify-content-between align-items-start gap-3">
-        <div>
-          <small className="text-muted d-block">{label}</small>
-          <strong className="fs-4 d-block">{value}</strong>
-          {detail ? <span className="text-muted small">{detail}</span> : null}
-        </div>
-        <span className="admin-platform-brand-mark d-inline-flex align-items-center justify-content-center">
-          <Icon aria-hidden="true" />
-        </span>
-      </div>
-    </Card.Body>
-  </Card>
-);
-
-const DataWarnings = ({ warnings = [] }) => {
-  if (!warnings.length) return null;
-
-  return (
-    <Card className="surface-card border-warning-subtle">
-      <Card.Body>
-        <h5 className="mb-3">Data Quality</h5>
-        <div className="d-grid gap-2">
-          {warnings.slice(0, 6).map((warning) => (
-            <div key={warning.code} className="d-flex justify-content-between gap-3 border rounded-3 p-2">
-              <div>
-                <strong>{warning.code.replaceAll("_", " ")}</strong>
-                <small className="text-muted d-block">{warning.message}</small>
-              </div>
-              <Badge bg={warning.severity === "warning" ? "warning" : "secondary"} text={warning.severity === "warning" ? "dark" : undefined}>
-                {warning.count}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      </Card.Body>
-    </Card>
-  );
-};
-
-const AdminBusinessIntelligencePage = () => {
-  const [period, setPeriod] = useState("THIS_MONTH");
-  const [data, setData] = useState({
-    executive: null,
-    sales: null,
-    products: null,
-    channels: null,
-    trends: null
-  });
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-
-  const load = async ({ silent = false } = {}) => {
-    if (silent) setRefreshing(true);
-    else setLoading(true);
-    setError("");
-
-    try {
-      const query = {
-        period,
-        compare: "PREVIOUS_PERIOD"
-      };
-      const [executive, sales, products, channels, trends] = await Promise.all([
-        fetchExecutiveAnalytics(query),
-        fetchSalesAnalytics({ ...query, granularity: "MONTH" }),
-        fetchProductAnalytics(query),
-        fetchChannelAnalytics(query),
-        fetchTrendAnalytics({ ...query, granularity: "MONTH" })
-      ]);
-
-      setData({ executive, sales, products, channels, trends });
-    } catch (err) {
-      setError(err.message || "Failed to load Business Intelligence");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+export default function AdminBusinessIntelligencePage() {
+  const [query, setQuery] = useState({ period: 'THIS_MONTH', from: '', to: '' });
+  const [periodChoice, setPeriodChoice] = useState('THIS_MONTH');
+  const [draft, setDraft] = useState({ from: '', to: '' });
+  const [dateError, setDateError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [showAllProducts, setShowAllProducts] = useState(false);
+  const productsRef = useRef(null);
+  const financial = useBISection('financial', query, refreshKey);
+  const operational = useBISection('operations', query, refreshKey);
+  const fin = financial.data, ops = operational.data;
+  const currency = fin?.currency || ops?.currency;
+  const range = fin?.period || ops?.period;
+  const busy = financial.loading || operational.loading;
+  const money = (value) => formatMoney(value, currency);
+  const summary = fin?.financialSummary || {};
+  const customers = ops?.customers || {};
+  const operations = ops?.operations || {};
+  const trends = useMemo(() => mergeTrend(fin?.trend, ops?.trend), [fin, ops]);
+  const warnings = useMemo(() => mergeWarnings(fin?.warnings || [], ops?.warnings || []), [fin, ops]);
+  const insights = useMemo(() => generateInsights(fin, ops), [fin, ops]);
+  const products = useMemo(() => [...(fin?.products || [])].sort((a, b) => Number(b.revenue) - Number(a.revenue)), [fin]);
+  const incompleteCosts = summary.costsIncomplete;
+  const provisional = incompleteCosts ? 'Provisional • direct costs incomplete' : '';
+  const choosePeriod = (value) => {
+    setPeriodChoice(value);
+    setDateError('');
+    if (value !== 'CUSTOM') setQuery({ period: value, from: '', to: '' });
+  };
+  const applyRange = (event) => {
+    event.preventDefault();
+    if (!draft.from || !draft.to || draft.to < draft.from) {
+      setDateError('Choose an end date on or after the start date.');
+      return;
     }
+    setDateError('');
+    setQuery({ period: 'CUSTOM', ...draft });
+  };
+  const viewProducts = () => {
+    setShowAllProducts(true);
+    productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    productsRef.current?.focus({ preventScroll: true });
   };
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period]);
-
-  const warnings = useMemo(() => {
-    const rows = [
-      ...(data.executive?.dataQuality?.warnings || []),
-      ...(data.products?.dataQuality?.warnings || []),
-      ...(data.channels?.dataQuality?.warnings || []),
-      ...(data.trends?.dataQuality?.warnings || [])
-    ];
-    const byCode = new Map();
-    rows.forEach((warning) => {
-      const existing = byCode.get(warning.code);
-      if (existing) {
-        existing.count += Number(warning.count || 0);
-      } else {
-        byCode.set(warning.code, { ...warning, count: Number(warning.count || 0) });
-      }
-    });
-    return Array.from(byCode.values());
-  }, [data]);
-
-  const topProducts = data.products?.rankings?.HIGHEST_NET_PROFIT || [];
-  const channelRows = data.channels?.channels || [];
-  const trendRows = data.trends?.trends?.combined || [];
-  const executive = data.executive;
-  const sales = data.sales;
-  const channelAnswer = data.channels?.answers?.mostNetProfitableChannel;
-
-  if (loading) return <Loader message="Loading business intelligence..." />;
-
-  return (
-    <div className="admin-business-intelligence-page">
-      <div className="admin-recovery-head">
-        <div>
-          <h2>Business Intelligence</h2>
-          <p className="section-subtitle">
-            Executive analytics, sales, product profit, channel profit, and trend reporting from the new accounting foundation.
-          </p>
-        </div>
-        <div className="d-flex flex-wrap gap-2 align-items-center">
-          <Form.Select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Analytics period">
-            {PERIOD_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </Form.Select>
-          <Button className="premium-btn text-white" onClick={() => load({ silent: true })} disabled={refreshing}>
-            <BsArrowClockwise /> {refreshing ? "Refreshing..." : "Refresh"}
-          </Button>
-        </div>
+  return <div className="admin-business-intelligence-page bi-dashboard">
+    <header className="bi-header">
+      <div className="bi-header-copy"><p className="bi-breadcrumb">Reports &amp; Analytics <span>/</span> Business Intelligence</p><div className="bi-title"><span><BsBarChartLine aria-hidden="true" /></span><div><h1>Business Intelligence</h1><p>Executive analytics, sales, product performance, channel insights and financial metrics from the Riser ecosystem.</p></div></div></div>
+      <div className="bi-header-actions">
+        <button className="bi-date-button" type="button" onClick={() => choosePeriod('CUSTOM')} aria-expanded={periodChoice === 'CUSTOM'} aria-controls="bi-custom-range"><BsCalendar3 aria-hidden="true" />{busy ? 'Loading date range…' : periodLabel(range)}</button>
+        <label className="bi-period"><span className="visually-hidden">Reporting period</span><select value={periodChoice} onChange={(event) => choosePeriod(event.target.value)}>{PERIOD_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <button type="button" className="bi-refresh" onClick={() => setRefreshKey((value) => value + 1)} disabled={busy}><BsArrowClockwise aria-hidden="true" />{busy ? 'Loading…' : 'Refresh'}</button>
       </div>
-
-      <ErrorAlert error={error} />
-
-      <Row className="g-3">
-        <Col md={6} xl={3}>
-          <MetricCard
-            label="Collected Revenue"
-            value={formatCurrency(executive?.kpis?.collectedRevenue?.value || 0, "USD")}
-            detail={comparisonText(executive?.kpis?.collectedRevenue?.comparison)}
-            icon={BsGraphUpArrow}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <MetricCard
-            label="Net Profit"
-            value={formatCurrency(executive?.kpis?.netProfit?.value || 0, "USD")}
-            detail={comparisonText(executive?.kpis?.netProfit?.comparison)}
-            icon={BsBarChartLine}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <MetricCard
-            label="Confirmed Bookings"
-            value={sales?.kpis?.confirmedBookings?.value || 0}
-            detail={comparisonText(sales?.kpis?.confirmedBookings?.comparison)}
-            icon={BsPeople}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <MetricCard
-            label="Profit Margin"
-            value={formatPercent(executive?.kpis?.profitMargin?.value)}
-            detail={executive?.kpis?.profitMargin?.supported === false ? executive.kpis.profitMargin.reason : "Business accounting basis"}
-            icon={BsBoxes}
-          />
-        </Col>
-      </Row>
-
-      <Row className="g-4 mt-1">
-        <Col xl={5}>
-          <Card className="surface-card h-100">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-start gap-3 mb-3">
-                <div>
-                  <h5 className="mb-1">Most Net Profitable Channel</h5>
-                  <p className="text-muted mb-0">Ranked by net profit, not only sales.</p>
-                </div>
-                <Badge bg="dark">{channelAnswer?.channel || "-"}</Badge>
-              </div>
-              {channelAnswer ? (
-                <Row className="g-3">
-                  <Col sm={6}><small className="text-muted d-block">Net profit</small><strong>{formatCurrency(channelAnswer.netProfit || 0, "USD")}</strong></Col>
-                  <Col sm={6}><small className="text-muted d-block">Booked revenue</small><strong>{formatCurrency(channelAnswer.bookedRevenue || 0, "USD")}</strong></Col>
-                  <Col sm={6}><small className="text-muted d-block">Margin</small><strong>{formatPercent(channelAnswer.profitMargin)}</strong></Col>
-                  <Col sm={6}><small className="text-muted d-block">Bookings</small><strong>{channelAnswer.confirmedBookings || 0}</strong></Col>
-                </Row>
-              ) : (
-                <p className="text-muted mb-0">No channel profit data for this period.</p>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xl={7}>
-          <Card className="surface-card h-100">
-            <Card.Body>
-              <h5 className="mb-3">Channel Profit Comparison</h5>
-              <Table responsive hover className="align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>Channel</th>
-                    <th className="text-end">Bookings</th>
-                    <th className="text-end">Sales</th>
-                    <th className="text-end">Net Profit</th>
-                    <th className="text-end">Margin</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {channelRows.length ? channelRows.slice(0, 8).map((row) => (
-                    <tr key={row.channel}>
-                      <td>{row.label || row.channel}</td>
-                      <td className="text-end">{row.confirmedBookings}</td>
-                      <td className="text-end">{formatCurrency(row.bookedRevenue || 0, "USD")}</td>
-                      <td className="text-end">{formatCurrency(row.netProfit || 0, "USD")}</td>
-                      <td className="text-end">{formatPercent(row.profitMargin)}</td>
-                    </tr>
-                  )) : (
-                    <tr><td colSpan={5} className="text-center text-muted py-4">No channel data.</td></tr>
-                  )}
-                </tbody>
-              </Table>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row className="g-4 mt-1">
-        <Col xl={6}>
-          <Card className="surface-card h-100">
-            <Card.Body>
-              <h5 className="mb-3">Top Products by Net Profit</h5>
-              <Table responsive hover className="align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th className="text-end">Bookings</th>
-                    <th className="text-end">Revenue</th>
-                    <th className="text-end">Net Profit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topProducts.length ? topProducts.slice(0, 8).map((row) => (
-                    <tr key={row.productId}>
-                      <td>{row.productTitle || row.productId}</td>
-                      <td className="text-end">{row.confirmedBookings}</td>
-                      <td className="text-end">{formatCurrency(row.bookedRevenue || 0, "USD")}</td>
-                      <td className="text-end">{formatCurrency(row.netContribution || 0, "USD")}</td>
-                    </tr>
-                  )) : (
-                    <tr><td colSpan={4} className="text-center text-muted py-4">No product profit data.</td></tr>
-                  )}
-                </tbody>
-              </Table>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xl={6}>
-          <Card className="surface-card h-100">
-            <Card.Body>
-              <h5 className="mb-3">Trend Summary</h5>
-              <Table responsive hover className="align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>Period</th>
-                    <th className="text-end">Bookings</th>
-                    <th className="text-end">Collected</th>
-                    <th className="text-end">Refunds</th>
-                    <th className="text-end">Net Profit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trendRows.length ? trendRows.slice(-8).map((row) => (
-                    <tr key={row.bucket}>
-                      <td>{row.bucket}</td>
-                      <td className="text-end">{safeNumber(row.confirmedBookings)}</td>
-                      <td className="text-end">{formatCurrency(row.collectedRevenue || 0, "USD")}</td>
-                      <td className="text-end">{formatCurrency(row.refundedAmount || 0, "USD")}</td>
-                      <td className="text-end">{formatCurrency(row.netProfit || 0, "USD")}</td>
-                    </tr>
-                  )) : (
-                    <tr><td colSpan={5} className="text-center text-muted py-4">No trend data.</td></tr>
-                  )}
-                </tbody>
-              </Table>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row className="g-4 mt-1">
-        <Col lg={12}>
-          <DataWarnings warnings={warnings} />
-        </Col>
-      </Row>
+    </header>
+    {periodChoice === 'CUSTOM' && <form className="bi-custom-range" id="bi-custom-range" onSubmit={applyRange}><label>From<input type="date" required value={draft.from} onChange={(event) => setDraft((value) => ({ ...value, from: event.target.value }))} /></label><label>To<input type="date" required min={draft.from || undefined} value={draft.to} onChange={(event) => setDraft((value) => ({ ...value, to: event.target.value }))} /></label><button type="submit" className="bi-refresh">Apply range</button><span>Dates use {range?.timeZone || 'Africa/Dar_es_Salaam'}. The current report stays selected until you apply.</span>{dateError && <p role="alert">{dateError}</p>}</form>}
+    <div className="bi-report-context"><span><i />Read-only executive report</span><span>{currency ? `Reporting currency: ${currency}` : 'Reporting currency loading'} · {range?.timeZone || 'Africa/Dar_es_Salaam'}</span></div>
+    <div className="bi-kpi-grid">
+      <BIKpi label="Total Revenue" value={money(fin?.kpis?.revenue?.value)} metric={fin?.kpis?.revenue} icon={BsCashCoin} tone="blue" state={financial} values={fin?.trend?.map((row) => row.revenue)} note="Booked revenue + other business income" />
+      <BIKpi label="Total Bookings" value={formatNumber(ops?.kpis?.totalBookings?.value)} metric={ops?.kpis?.totalBookings} icon={BsCart3} tone="teal" state={operational} values={ops?.trend?.map((row) => row.bookings)} note="All recorded booking statuses" />
+      <BIKpi label="Total Customers" value={formatNumber(ops?.kpis?.totalCustomers?.value)} metric={ops?.kpis?.totalCustomers} icon={BsPeople} tone="rose" state={operational} note="Distinct identified customers in this period" />
+      <BIKpi label="Profit Margin" value={formatPercentage(fin?.kpis?.profitMargin?.value)} metric={fin?.kpis?.profitMargin} icon={BsPieChart} tone="purple" state={financial} note={provisional || 'Net profit / total revenue'} />
     </div>
-  );
-};
-
-export default AdminBusinessIntelligencePage;
+    <BookingPaymentOverview query={query} analytics refreshKey={refreshKey} /><div className="bi-primary-grid">
+      <BIBlock title="Revenue & Bookings Trend" className="bi-trend-panel">
+        {busy ? <BISkeleton /> : !fin && !ops ? <><BIError title="financial trend" state={financial} /><BIError title="booking trend" state={operational} /></> : <>
+          {financial.error && <BIError title="revenue series" state={financial} />}{operational.error && <BIError title="booking series" state={operational} />}
+          {trends.length && trends.some((row) => row.revenue !== 0 || row.bookings !== 0) ? <RevenueBookingTrend rows={trends} currency={currency} granularity={fin?.granularity || ops?.granularity} revenueAvailable={Boolean(fin)} bookingsAvailable={Boolean(ops)} /> : <BIEmpty message="No revenue or booking activity for this period." />}
+        </>}
+        <p className="bi-footnote">Revenue uses accounting transaction dates; bookings use booking creation dates. Each series has its own axis.</p>
+      </BIBlock>
+      <BIBlock title="Channel Performance" state={financial} note="Source-linked booking contributions in the accounting period. Other company income and operating expenses are excluded.">
+        {fin?.channels?.length ? <ChannelPerformance rows={fin.channels} currency={currency} /> : <BIEmpty message="No channel performance available for this period." />}
+      </BIBlock>
+      <BIBlock title="Top Performing Products" state={financial} action={<button type="button" className="bi-text-button" onClick={viewProducts}>View all</button>} note="Ranked by booked revenue. Unavailable profit means cost coverage is incomplete.">
+        <BITopProducts products={products} currency={currency} onViewAll={viewProducts} />
+      </BIBlock>
+    </div>
+    <div className="bi-summary-grid">
+      <BIBlock title="Financial Summary" icon={BsReceipt} state={financial} note={provisional || 'Business Accounting source-linked contribution postings.'}>
+        <BIMetricList rows={[
+          ['Total revenue', money(summary.revenue)], ['Collected revenue', money(summary.collectedRevenue)],
+          ['Refunds', money(summary.refundedAmount)], ['Total cost', money(summary.totalCost)],
+          ['Gross profit', money(summary.grossProfit)], ['Net profit', money(summary.netProfit)],
+          ['Profit margin', formatPercentage(fin?.kpis?.profitMargin?.value)]
+        ]} />
+        <details className="bi-accounting-basis"><summary>How these figures are calculated</summary><p>Total revenue is booked revenue plus other business income. Gross profit is collected revenue plus other business income, less refunds, provider fees, channel commission and posted direct costs. Net profit subtracts operating expenses. Margin is net profit divided by total revenue.</p><p>Template estimates are not posted expenses. Missing costs can overstate profit. No accounting records are created by this dashboard.</p></details>
+      </BIBlock>
+      <BIBlock title="Customer Insights" icon={BsPeople} state={operational} note="Customers are deduplicated by stable customer identity. Bookings without an identity are excluded from customer counts.">
+        <BIMetricList rows={[
+          ['Total customers', formatNumber(customers.totalCustomers)], ['New customers', formatNumber(customers.newCustomers), 'First recorded booking in this period'],
+          ['Returning customers', formatNumber(customers.returningCustomers), 'Had a booking before this period'], ['Bookings per customer', formatNumber(customers.bookingsPerCustomer, 2)],
+          ['Identified bookings', formatNumber(customers.identifiedBookings)],
+          ['Average booking value', formatMoney(operations.averageBookingValue, operations.averageBookingValueCurrency), `${formatNumber(operations.averageBookingValueCount)} confirmed bookings in reporting currency`]
+        ]} />
+      </BIBlock>
+      <BIBlock title="Operational Highlights" icon={BsActivity} state={operational} note="Booking activity uses the selected creation-date period; tours & activities is current catalogue inventory.">
+        <BIMetricList rows={[
+          ['Tours & activities', formatNumber(operations.totalProducts)], ['Confirmed bookings', formatNumber(operations.confirmedBookings)],
+          ['Cancelled bookings', formatNumber(operations.cancelledBookings)], ['Cancellation rate', formatPercentage(operations.cancellationRate)],
+          ['Average group size', formatNumber(operations.averageGroupSize, 1)]
+        ]} />
+      </BIBlock>
+    </div>
+    <div className="bi-lower-grid">
+      <BIBlock title="Recent Bookings" state={operational} action={<Link to="/admin/operations/bookings">View all</Link>} note="Latest five bookings in the selected period. Amounts retain their original booking currency."><BIRecentBookings rows={ops?.recentBookings || []} timeZone={range?.timeZone} /></BIBlock>
+      <BIBlock title="Key Insights" icon={BsLightbulb}>
+        {busy ? <BISkeleton /> : <>{(financial.error || operational.error) && <p className="bi-footnote">Insights reflect only the sections that loaded successfully.</p>}{insights.length ? <ul className="bi-insights">{insights.map((insight) => <li key={insight.id}><span className={insight.tone}><BsBarChartLine aria-hidden="true" /></span><div><strong>{insight.title}</strong><p>{insight.detail}</p></div></li>)}</ul> : <BIEmpty message="More activity is needed to derive reliable insights." />}</>}
+      </BIBlock>
+    </div>
+    <div ref={productsRef} tabIndex={-1} className="bi-profitability-anchor"><BIBlock title="Product Profitability" state={financial} action={products.length > 5 && <button type="button" className="bi-text-button" onClick={() => setShowAllProducts((value) => !value)}>{showAllProducts ? 'Show top 5' : `View all (${products.length})`}</button>} note="Posted costs use the existing contribution ledger. Actual direct costs are recorded booking expenses, shown separately for review. Gross profit and margin stay unavailable when posting costs are incomplete; template estimates and company overhead are never silently substituted."><BIProductProfitability rows={showAllProducts ? products : products.slice(0, 5)} currency={currency} /></BIBlock></div>
+    <BIBlock title="Data Quality & Attention Required" icon={BsShieldCheck} action={<Link to="/admin/audit-control/data-quality">Data quality centre</Link>}>
+      {busy ? <BISkeleton compact /> : <>{financial.error && <BIError title="financial quality checks" state={financial} />}{operational.error && <BIError title="booking quality checks" state={operational} />}{(fin || ops) && <BIWarnings rows={warnings} />}</>}
+    </BIBlock>
+    <footer className="bi-footer"><span>Riser Business Platform · Business Intelligence</span><span>{fin?.generatedAt || ops?.generatedAt ? `Updated ${dateLabel(fin?.generatedAt || ops?.generatedAt, range?.timeZone, { hour: '2-digit', minute: '2-digit' })}` : 'Awaiting analytics'}</span></footer>
+  </div>;
+}

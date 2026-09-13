@@ -93,12 +93,14 @@ const exportHistoryQuerySchema = z.object({
     .object({
       reportType: reportTypeEnum.optional(),
       format: exportFormatEnum.optional(),
+      page: z.coerce.number().int().min(1).max(100000).optional(),
       limit: z.coerce.number().int().min(1).max(200).optional()
     })
     .optional()
 });
 
 module.exports = {
+  reportSummaryQuerySchema: z.object({ query: z.object({ period: periodEnum.optional(), from: optionalDate, to: optionalDate }).optional() }),
   exportHistoryQuerySchema,
   exportReportQuerySchema,
   reportCatalogQuerySchema,

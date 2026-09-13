@@ -190,6 +190,21 @@ const setSyncState = (bookingDoc, { source, status, error = "" }) => {
   };
 };
 
+const applyMappedTransactionCurrency = ({ bookingDoc, mappedBooking }) => {
+  if (!String(bookingDoc?.bokunCurrencySource || "").startsWith("BOKUN_") ||
+      !mappedBooking || mappedBooking.validationErrors.includes("currency")) return false;
+  const snapshot = mappedBooking.snapshot;
+  if (Number(bookingDoc.amount) === Number(snapshot.amount) &&
+      bookingDoc.currency === snapshot.currency &&
+      bookingDoc.transactionCurrency === snapshot.transactionCurrency) return false;
+  bookingDoc.amount = snapshot.amount;
+  bookingDoc.currency = snapshot.currency;
+  bookingDoc.transactionCurrency = snapshot.transactionCurrency;
+  bookingDoc.bokunCurrencySource = snapshot.bokunCurrencySource;
+  bookingDoc.pricingSnapshot = snapshot.pricingSnapshot;
+  return true;
+};
+
 const applyBokunSnapshotToBooking = async ({
   bookingDoc,
   bokunBooking = null,
@@ -210,6 +225,9 @@ const applyBokunSnapshotToBooking = async ({
   const strictStatus = normalizeBokunBookingStatus(bokunBooking?.raw || bokunBooking || { status: resolvedStatus });
   const mappedStatus = strictStatus.known ? strictStatus.localBookingStatus : mapBokunStatusToLocal(resolvedStatus);
   const mappedChannel = mapBokunSalesChannel(bokunBooking?.raw || bokunBooking || {}, bookingDoc.sourceChannel || "");
+  const mappedBooking = bokunBooking
+    ? require("../../integrations/bokun/confirmedBooking.mapper").mapBokunBookingForImport({ bokunBooking })
+    : null;
   let businessChanged = false;
 
   const assignIfChanged = (key, value) => {
@@ -228,6 +246,11 @@ const applyBokunSnapshotToBooking = async ({
   assignIfChanged("bokunConfirmationCode", bokunBooking?.confirmationCode || "");
   assignIfChanged("travelDate", bokunBooking?.travelDate || "");
   assignIfChanged("startTime", bokunBooking?.startTime || "");
+
+  // Only rows whose Bókun currency lineage has already been established may
+  // be updated by routine webhook/polling. Historical rows require reviewed
+  // backfill so accounting documents are never silently rewritten.
+  if (applyMappedTransactionCurrency({ bookingDoc, mappedBooking })) businessChanged = true;
 
   if (mappedStatus && bookingDoc.bookingStatus !== mappedStatus) {
     bookingDoc.bookingStatus = mappedStatus;
@@ -256,7 +279,7 @@ const applyBokunSnapshotToBooking = async ({
     const nextRaw = JSON.stringify(bokunBooking.raw);
     if (previousRaw !== nextRaw) {
       bookingDoc.rawBokunResponse = bokunBooking.raw;
-      businessChanged = true;
+      // Raw payment evidence alone must not rebuild accounting invoices.
     }
   }
 
@@ -291,6 +314,10 @@ const applyBokunSnapshotToBooking = async ({
 
   await bookingDoc.save();
 
+  const paymentSync = bokunBooking ? await require('../bookingPayment/sync').syncBokunPayment({
+    booking: bookingDoc, payload: bokunBooking.raw || bokunBooking, source, requestId
+  }) : null;
+
   if (businessChanged) {
     await updateInvoiceSnapshot(bookingDoc);
     await AuditLog.create({
@@ -317,7 +344,7 @@ const applyBokunSnapshotToBooking = async ({
   }
 
   return {
-    updated: businessChanged,
+    updated: businessChanged || Boolean(paymentSync?.changed),
     bookingId: bookingDoc._id.toString(),
     bookingReference: bookingDoc.bookingReference,
     bookingStatus: bookingDoc.bookingStatus
@@ -786,5 +813,6 @@ const pollBookingUpdates = async ({
 module.exports = {
   handleBokunWebhook,
   pollBookingUpdates,
-  reconcileExistingBokunBooking
+  reconcileExistingBokunBooking,
+  __testables: { applyMappedTransactionCurrency }
 };

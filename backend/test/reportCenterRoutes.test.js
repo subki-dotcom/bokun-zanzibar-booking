@@ -243,3 +243,26 @@ test("report center export history route returns tracked response-only exports",
     await close(server);
   }
 });
+
+test('summary requires authentication and validates the selected period; history validates pagination', async () => {
+  const summaryService = require('../src/reportCenter/summaryService');
+  const original = summaryService.getSummary;
+  const restoreUser = withMockAdmin();
+  let received;
+  summaryService.getSummary = async (filters) => { received = filters; return { kpis: {} }; };
+  const server = await listen();
+  try {
+    const { port } = server.address();
+    const base = `http://127.0.0.1:${port}/api/admin/report-center`;
+    assert.equal((await fetch(`${base}/summary`)).status, 401);
+    const headers = { Authorization: `Bearer ${adminToken()}` };
+    assert.equal((await fetch(`${base}/summary?period=THIS_WEEK`, { headers })).status, 200);
+    assert.equal(received.period, 'THIS_WEEK');
+    assert.equal((await fetch(`${base}/summary?period=INVALID`, { headers })).status, 422);
+    assert.equal((await fetch(`${base}/exports/history?page=0`, { headers })).status, 422);
+  } finally {
+    summaryService.getSummary = original;
+    restoreUser();
+    await close(server);
+  }
+});

@@ -12,6 +12,20 @@ const compareModeEnum = z.enum(Object.values(ANALYTICS_COMPARE_MODE));
 const dateDimensionEnum = z.enum(Object.values(ANALYTICS_DATE_DIMENSION));
 const granularityEnum = z.enum(Object.values(ANALYTICS_GRANULARITY));
 const salesChannelEnum = z.enum(Object.values(SALES_CHANNEL));
+const biDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}, 'Use a valid calendar date (YYYY-MM-DD)');
+const businessIntelligenceQuerySchema = z.object({
+  query: z.object({
+    section: z.enum(['financial', 'operations']).optional(),
+    period: periodEnum.optional(),
+    from: biDate.optional(),
+    to: biDate.optional()
+  }).optional(),
+  params: z.object({}).optional(),
+  body: z.object({}).optional()
+});
 
 const executiveAnalyticsQuerySchema = z.object({
   params: z.object({}).optional(),
@@ -114,6 +128,7 @@ const trendAnalyticsQuerySchema = z.object({
 });
 
 module.exports = {
+  businessIntelligenceQuerySchema,
   channelAnalyticsQuerySchema,
   executiveAnalyticsQuerySchema,
   productAnalyticsQuerySchema,

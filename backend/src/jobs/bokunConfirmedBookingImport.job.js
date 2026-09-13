@@ -20,7 +20,8 @@ const state = {
   lastError: "",
   consecutiveFailures: 0,
   nextAllowedRunAt: "",
-  lastSummary: null
+  lastSummary: null,
+  lastCreationSummary: null
 };
 
 const nowIso = () => new Date().toISOString();
@@ -43,6 +44,7 @@ const buildLookbackRange = () => {
 const isImportConfigured = () => Boolean(isBokunConfigured || env.BOKUN_MOCK_MODE);
 
 const runConfirmedBookingImportCycle = async (trigger = "interval") => {
+  if (state.running) return { skipped: true, reason: "sync_already_running" };
   const nowMs = Date.now();
   if (nextAllowedRunAt && nowMs < nextAllowedRunAt) {
     logger.debug("Bokun confirmed booking import skipped during backoff", {
@@ -61,6 +63,22 @@ const runConfirmedBookingImportCycle = async (trigger = "interval") => {
   state.lastRunAt = nowIso();
   const range = buildLookbackRange();
   try {
+    // Newly created bookings can be absent from Bokun's last-modified index.
+    // Run both searches through the same idempotent importer, sequentially.
+    const createdResult = await bokunConfirmedBookingsService.syncConfirmedBookings({
+      source: "scheduled_confirmed_booking_import",
+      requestId: `bokun_created_import_${Date.now()}`,
+      pageSize: Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_BATCH_SIZE || 50),
+      maxPages: Number(env.BOKUN_CONFIRMED_BOOKING_IMPORT_MAX_PAGES || 5),
+      dateRangeField: "creationDateRange",
+      ...range
+    });
+    state.lastCreationSummary = createdResult.summary || null;
+    logger.info("Bokun newly created booking import cycle finished", {
+      trigger,
+      syncLogId: createdResult.syncLogId,
+      summary: createdResult.summary
+    });
     const result = await bokunConfirmedBookingsService.syncConfirmedBookings({
       source: "scheduled_confirmed_booking_import",
       requestId: `bokun_confirmed_import_${Date.now()}`,
