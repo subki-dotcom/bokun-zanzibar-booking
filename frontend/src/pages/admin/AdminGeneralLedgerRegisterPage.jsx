@@ -250,7 +250,7 @@ const AdminGeneralLedgerRegisterPage = () => {
 
   const summary = ledger?.summary || {};
   const pagination = ledger?.pagination || {};
-  const currency = summary.baseCurrency || ledger?.items?.[0]?.baseCurrency || "USD";
+  const currency = summary.baseCurrency || ledger?.items?.[0]?.baseCurrency || "";
   const isAccountView = filters.view === "account" || Boolean(filters.accountCode);
   const accountSummary = ledger?.accountSummary;
   const rows = ledger?.items || [];

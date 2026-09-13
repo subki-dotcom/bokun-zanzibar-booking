@@ -77,6 +77,7 @@ const accountingPostingSchema = new mongoose.Schema(
     exchangeRate: { type: mongoose.Schema.Types.Decimal128, required: true },
     baseCurrencyAmount: { type: mongoose.Schema.Types.Decimal128, required: true },
     exchangeRateDate: { type: Date, default: null },
+    exchangeRateSource: { type: String, default: "" },
     transactionDate: { type: Date, required: true, index: true },
     status: {
       type: String,

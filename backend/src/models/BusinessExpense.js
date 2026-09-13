@@ -55,6 +55,7 @@ const businessExpenseSchema = new mongoose.Schema(
     baseCurrency: { type: String, required: true, uppercase: true },
     baseCurrencyAmount: { type: mongoose.Schema.Types.Decimal128, required: true },
     exchangeRateDate: { type: Date, default: null },
+    exchangeRateSource: { type: String, default: "" },
     expenseDate: { type: Date, required: true, index: true },
     dueDate: { type: Date, default: null, index: true },
     paymentStatus: {

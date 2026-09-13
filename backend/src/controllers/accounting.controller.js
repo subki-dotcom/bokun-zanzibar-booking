@@ -172,6 +172,11 @@ const generalLedger = asyncHandler(async (req, res) => {
   });
 });
 
+const periodCloseOverview = asyncHandler(async (req, res) => {
+  const data = await ledgerService.getPeriodCloseOverview({ periodId: req.validated.params.id });
+  return successResponse(res, { message: "Period close readiness fetched", data });
+});
+
 const cashBank = asyncHandler(async (req, res) => {
   const data = await ledgerService.getCashBankDashboard(req.validated?.query || req.query || {});
   return successResponse(res, {
@@ -304,6 +309,7 @@ module.exports = {
   listJournals,
   listChartOfAccounts,
   listPeriods,
+  periodCloseOverview,
   postJournal,
   profitLoss,
   reconciliation,

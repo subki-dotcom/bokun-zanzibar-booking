@@ -536,6 +536,9 @@ export const fetchReportExportHistory = async (params = {}, signal) => {
   const response = await axiosClient.get(`/admin/report-center/exports/history${buildQueryString(params)}`, { signal });
   return response.data.data;
 };
+export const fetchBookingReconciliationDetail = async (bookingId) => { const response = await axiosClient.get(`/admin/booking-accounting/reconciliation/${encodeURIComponent(bookingId)}`); return response.data.data; };
+export const runBookingReconciliation = async (bookingId) => { const response = await axiosClient.post(`/admin/booking-accounting/reconciliation/${encodeURIComponent(bookingId)}/run`, {}); return response.data.data; };
+export const exportBookingReconciliation = async (params = {}) => { const response = await axiosClient.get(`/admin/booking-accounting/reconciliation-export${buildQueryString(params)}`, { responseType: "blob" }); return response.data; };
 
 export const fetchReportCenterSummary = async (params = {}, signal) => {
   const response = await axiosClient.get(`/admin/report-center/summary${buildQueryString(params)}`, { signal });
@@ -699,6 +702,31 @@ export const fetchAccountingPeriods = async (params = {}) => {
   return response.data.data;
 };
 
+export const exportLedgerProfitLoss = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/accounting/exports/profit-loss${buildQueryString(params)}`, { responseType: "blob" });
+  return response.data;
+};
+
+export const exportLedgerBalanceSheet = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/accounting/exports/balance-sheet${buildQueryString(params)}`, { responseType: "blob" });
+  return response.data;
+};
+
+export const exportLedgerCashFlow = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/accounting/exports/cash-flow${buildQueryString(params)}`, { responseType: "blob" });
+  return response.data;
+};
+
+export const createAccountingPeriod = async (payload = {}) => {
+  const response = await axiosClient.post("/admin/accounting/periods", payload);
+  return response.data.data;
+};
+
+export const fetchPeriodCloseOverview = async (periodId) => {
+  const response = await axiosClient.get(`/admin/accounting/periods/${encodeURIComponent(periodId)}/readiness`);
+  return response.data.data;
+};
+
 export const closeAccountingPeriod = async (periodId, payload = {}) => {
   const response = await axiosClient.post(`/admin/accounting/periods/${encodeURIComponent(periodId)}/close`, payload);
   return response.data.data;
@@ -733,3 +761,6 @@ export const fetchFixedAssets = async () => {
   const response = await axiosClient.get("/admin/accounting/fixed-assets");
   return response.data.data;
 };
+export const exportAccountingReconciliation = async (params = {}) => { const response = await axiosClient.get(`/admin/accounting/exports/reconciliation${buildQueryString(params)}`, { responseType: "blob" }); return response.data; };
+export const createFixedAsset = async (payload = {}) => { const response = await axiosClient.post("/admin/accounting/fixed-assets", payload); return response.data.data; };
+export const exportFixedAssets = async (params = {}) => { const response = await axiosClient.get(`/admin/accounting/exports/fixed-assets${buildQueryString(params)}`, { responseType: "blob" }); return response.data; };

@@ -242,6 +242,11 @@ test("closed period blocks ordinary posting", async () => {
   });
 
   await assert.rejects(
+    () => service.closePeriod({ periodId: period.period._id, reason: "Duplicate close", auth: { id: "admin-1", role: "admin" } }),
+    (error) => error.code === "GL_PERIOD_ALREADY_CLOSED"
+  );
+
+  await assert.rejects(
     () =>
       service.postCustomerPayment({
         payment: {
@@ -317,6 +322,28 @@ test("provider settlement with fee clears Pesapal balance", async () => {
 
   const ledger = await service.getGeneralLedger({ accountCode: "1030" });
   assert.equal(ledger.items.at(-1).runningBalance, "0");
+});
+
+test("period close readiness is scoped and blocks unsafe closing", async () => {
+  const { service, state } = createFakeModels();
+  const period = await service.createOrGetPeriod({ year: 2026, month: 8, auth: { id: "admin-1", role: "admin" } });
+  state.journals.push({
+    _id: "64f000000000000000000001",
+    postingDate: "2026-08-14T10:00:00.000Z",
+    status: JOURNAL_STATUS.DRAFT,
+    baseTotalDebit: "100",
+    baseTotalCredit: "90"
+  });
+
+  const overview = await service.getPeriodCloseOverview({ periodId: period.period._id });
+  assert.equal(overview.checklist.readyToClose, false);
+  assert.equal(overview.metrics.accountingHealth, "ATTENTION_REQUIRED");
+  assert.equal(overview.checklist.checks.find((check) => check.key === "journal_balance").status, "FAIL");
+  await assert.rejects(
+    () => service.closePeriod({ periodId: period.period._id, reason: "Unsafe close", auth: { id: "admin-1", role: "admin" } }),
+    (error) => error.code === "GL_PERIOD_CLOSE_BLOCKED" && error.details?.checklist?.readyToClose === false
+  );
+  assert.equal(state.periods[0].status, ACCOUNTING_PERIOD_STATUS.OPEN);
 });
 
 test("cash and bank dashboard excludes internal transfers from economic cash flow", async () => {
@@ -399,6 +426,24 @@ test("cash and bank dashboard keeps different currencies separated", async () =>
   assert.equal(dashboard.summary.mixedCurrencies, true);
   assert.deepEqual(dashboard.summary.balanceTotals.map((row) => row.currency).sort(), ["TZS", "USD"]);
   assert.equal(new Set(dashboard.trend.map((row) => row.currency)).size, 2);
+});
+
+test("cash flow reconciles opening, classified movement and closing from posted cash lines", async () => {
+  const { service } = createFakeModels();
+  const auth = { id: "cash-flow-test-admin", role: "admin" };
+  const post = async (input) => {
+    const created = await service.createManualJournal({ input: { ...input, currency: "USD", baseCurrency: "USD", requiresApproval: false }, auth });
+    await service.postJournal({ journalId: created.journal.id, auth });
+  };
+  await post({ description: "Opening cash", postingDate: "2026-07-31T10:00:00.000Z", lines: [{ accountCode: "1020", debit: "100" }, { accountCode: "3010", credit: "100" }] });
+  await post({ description: "Asset cash payment", postingDate: "2026-08-10T10:00:00.000Z", lines: [{ accountCode: "6020", debit: "20" }, { accountCode: "1020", credit: "20", cashFlowCategory: "INVESTING" }] });
+  const report = await service.getCashFlow({ fromDate: "2026-08-01", toDate: "2026-08-31" });
+  assert.equal(report.totals.openingBalance, "100");
+  assert.equal(report.activities.investing, "-20");
+  assert.equal(report.totals.netCashFlow, "-20");
+  assert.equal(report.totals.closingBalance, "80");
+  assert.equal(report.totals.integrityDifference, "0");
+  assert.equal(report.activityLines.investing.length, 1);
 });
 
 test("general ledger register uses posted lines, summaries and account balances", async () => {
@@ -607,7 +652,9 @@ test("multi-currency journal preserves locked historical exchange rate", async (
       description: "EUR bank entry",
       currency: "EUR",
       baseCurrency: "USD",
-      exchangeRate: "1.2",
+       exchangeRate: "1.2",
+       exchangeRateDate: "2026-08-18T00:00:00.000Z",
+       exchangeRateSource: "MANUAL_TREASURY",
       requiresApproval: false,
       lines: [
         { accountCode: "1020", debit: "10" },
@@ -617,7 +664,15 @@ test("multi-currency journal preserves locked historical exchange rate", async (
   });
 
   assert.equal(created.journal.exchangeRate, "1.2");
+  assert.equal(created.journal.exchangeRateSource, "MANUAL_TREASURY");
   assert.equal(state.lines[0].baseCurrencyDebit.$numberDecimal || state.lines[0].baseCurrencyDebit, "12");
+});
+
+test("foreign journals require an explicit rate and missing transaction currency is rejected", async () => {
+  const { service } = createFakeModels();
+  const lines = [{ accountCode: "1020", debit: "70" }, { accountCode: "3010", credit: "70" }];
+  await assert.rejects(() => service.createManualJournal({ input: { description: "GBP without FX", currency: "GBP", baseCurrency: "USD", lines } }), (error) => error.code === "GL_FX_RATE_REQUIRED");
+  await assert.rejects(() => service.createManualJournal({ input: { description: "Unknown currency", lines } }), (error) => error.code === "INVALID_CURRENCY");
 });
 
 test("journal register listing returns summary counts, filters, pagination and lines", async () => {

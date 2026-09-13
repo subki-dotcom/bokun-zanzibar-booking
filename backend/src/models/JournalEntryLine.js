@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const {
   BUSINESS_UNIT,
+  CASH_FLOW_CATEGORY,
   COST_CENTER_TYPE,
   JOURNAL_STATUS
 } = require("../accounting/constants");
@@ -38,9 +39,12 @@ const journalEntryLineSchema = new mongoose.Schema(
     credit: { type: mongoose.Schema.Types.Decimal128, required: true },
     currency: { type: String, required: true, uppercase: true },
     exchangeRate: { type: mongoose.Schema.Types.Decimal128, required: true },
+    exchangeRateDate: { type: Date, default: null },
+    exchangeRateSource: { type: String, default: "" },
     baseCurrencyDebit: { type: mongoose.Schema.Types.Decimal128, required: true },
     baseCurrencyCredit: { type: mongoose.Schema.Types.Decimal128, required: true },
     baseCurrency: { type: String, required: true, uppercase: true },
+    cashFlowCategory: { type: String, enum: Object.values(CASH_FLOW_CATEGORY), default: CASH_FLOW_CATEGORY.NONE, index: true },
     businessUnit: {
       type: String,
       enum: Object.values(BUSINESS_UNIT),

@@ -45,6 +45,13 @@ import AdminTrialBalancePage from "../pages/admin/AdminTrialBalancePage";
 import AdminAccountsPayablePage from "../pages/admin/AdminAccountsPayablePage";
 import AdminAccountsReceivablePage from "../pages/admin/AdminAccountsReceivablePage";
 import AdminCashBankPage from "../pages/admin/AdminCashBankPage";
+import AdminPeriodClosePage from "../pages/admin/AdminPeriodClosePage";
+import AdminBalanceSheetPage from "../pages/admin/AdminBalanceSheetPage";
+import AdminProfitLossPage from "../pages/admin/AdminProfitLossPage";
+import AdminCashFlowPage from "../pages/admin/AdminCashFlowPage";
+import AdminFixedAssetsPage from "../pages/admin/AdminFixedAssetsPage";
+import AdminAccountingReconciliationPage from "../pages/admin/AdminAccountingReconciliationPage";
+import AdminBookingReconciliationPage from "../pages/admin/AdminBookingReconciliationPage";
 import AdminReportCenterPage from "../pages/admin/AdminReportCenterPage";
 import AdminAuditControlPage from "../pages/admin/AdminAuditControlPage";
 import AdminDataQualityPage from "../pages/admin/AdminDataQualityPage";
@@ -130,7 +137,7 @@ const AppRoutes = () => {
         <Route path="/admin/booking-accounting/cost-templates/:templateId" element={<AdminBookingAccountingPage />} />
         <Route path="/admin/booking-accounting/cost-templates/:templateId/edit" element={<AdminBookingAccountingPage />} />
         <Route path="/admin/booking-accounting/profitability" element={<AdminBookingAccountingPage />} />
-        <Route path="/admin/booking-accounting/reconciliation" element={<AdminBookingAccountingPage />} />
+        <Route path="/admin/booking-accounting/reconciliation" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.BOOKING_ACCOUNTING_READ]}><AdminBookingReconciliationPage /></ProtectedRoute>} />
         <Route
           path="/admin/business-accounting"
           element={
@@ -195,24 +202,33 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-        {[
-          "/admin/business-accounting/period-close",
-          "/admin/business-accounting/balance-sheet",
-          "/admin/business-accounting/profit-loss",
-          "/admin/business-accounting/cash-flow",
-          "/admin/business-accounting/fixed-assets",
-          "/admin/business-accounting/accounting-reconciliation"
-        ].map((path) => (
-          <Route
-            key={path}
-            path={path}
-            element={
-              <ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW]}>
-                <AdminGeneralLedgerPage />
-              </ProtectedRoute>
-            }
-          />
-        ))}
+        <Route
+          path="/admin/business-accounting/period-close"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_CLOSE_PERIOD]}>
+              <AdminPeriodClosePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/business-accounting/balance-sheet"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW_BALANCE_SHEET]}>
+              <AdminBalanceSheetPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/business-accounting/profit-loss"
+          element={
+            <ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW_PROFIT_LOSS]}>
+              <AdminProfitLossPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/admin/business-accounting/cash-flow" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW_CASH_FLOW]}><AdminCashFlowPage /></ProtectedRoute>} />
+        <Route path="/admin/business-accounting/fixed-assets" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW]}><AdminFixedAssetsPage /></ProtectedRoute>} />
+        <Route path="/admin/business-accounting/accounting-reconciliation" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW]}><AdminAccountingReconciliationPage /></ProtectedRoute>} />
         <Route
           path="/admin/business-intelligence"
           element={

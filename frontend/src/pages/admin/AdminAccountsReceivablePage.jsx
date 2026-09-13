@@ -42,7 +42,7 @@ const AdminAccountsReceivablePage = () => {
   useEffect(() => { const timer = setTimeout(() => { if (search !== filters.search) updateQuery(setParams, { search, page: 1 }); }, 400); return () => clearTimeout(timer); }, [search, filters.search, setParams]);
   const summary = data?.summary || {};
   const pagination = data?.pagination || {};
-  const currency = summary.reportingCurrency || summary.currencies?.[0]?.currency || "USD";
+  const currency = summary.reportingCurrency || (summary.currencies?.length === 1 ? summary.currencies[0].currency : "");
   const tabs = data?.tabCounts || {};
   const reset = () => { setSearch(""); setParams({ fromDate: monthStart(), toDate: today(), status: "all", page: "1", limit: filters.limit }); };
   const exportCsv = () => {

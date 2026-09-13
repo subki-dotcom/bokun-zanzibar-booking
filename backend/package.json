@@ -9,6 +9,7 @@
     "seed:admin": "node scripts/seedAdmin.js",
     "migrate:multi-currency": "node scripts/migrateMultiCurrencyPayments.js",
     "migrate:multi-currency:write": "node scripts/migrateMultiCurrencyPayments.js --write",
+    "audit:accounting-currency": "node scripts/audit-accounting-currency.js",
     "lint": "eslint 'src/**/*.js' --ext .js",
     "format": "prettier --write 'src/**/*.js' 'scripts/**/*.js' server.js",
     "backup:dry-run": "node scripts/backup-database.js --dry-run",

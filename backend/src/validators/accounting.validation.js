@@ -2,6 +2,7 @@ const { z } = require("zod");
 const {
   ACCOUNTING_PERIOD_STATUS,
   BUSINESS_UNIT,
+  CASH_FLOW_CATEGORY,
   COST_CENTER_TYPE,
   DEPRECIATION_METHOD,
   FIXED_ASSET_STATUS,
@@ -68,6 +69,8 @@ const createChartAccountSchema = z.object({
     parentAccount: z.union([mongoObjectId, z.literal(""), z.null()]).optional(),
     parentCode: accountCode.optional(),
     currency: z.union([z.string().trim().length(3), z.literal("")]).optional(),
+    cashFlowCategory: z.enum(Object.values(CASH_FLOW_CATEGORY)).optional(),
+    cashEquivalent: z.boolean().optional(),
     businessUnit: businessUnitEnum.optional(),
     active: z.boolean().optional(),
     allowManualPosting: z.boolean().optional(),
@@ -89,6 +92,8 @@ const updateChartAccountSchema = z.object({
     parentAccount: z.union([mongoObjectId, z.literal(""), z.null()]).optional(),
     parentCode: accountCode.optional(),
     currency: z.union([z.string().trim().length(3), z.literal("")]).optional(),
+    cashFlowCategory: z.enum(Object.values(CASH_FLOW_CATEGORY)).optional(),
+    cashEquivalent: z.boolean().optional(),
     businessUnit: businessUnitEnum.optional(),
     active: z.boolean().optional(),
     allowManualPosting: z.boolean().optional(),
@@ -116,6 +121,7 @@ const journalLineSchema = z.object({
   credit: moneyInput.optional(),
   currency: z.string().trim().length(3).optional(),
   exchangeRate: moneyInput.optional(),
+  cashFlowCategory: z.enum(Object.values(CASH_FLOW_CATEGORY)).optional(),
   businessUnit: businessUnitEnum.optional(),
   costCenter: costCenterEnum.optional(),
   productId: z.string().trim().max(120).optional(),
@@ -291,6 +297,12 @@ const periodActionSchema = z.object({
   })
 });
 
+const periodActionParamsSchema = z.object({
+  params: z.object({ id: mongoObjectId }),
+  query: z.object({}).optional(),
+  body: z.object({}).optional()
+});
+
 const seedMappingsSchema = z.object({
   params: z.object({}).optional(),
   query: z.object({}).optional(),
@@ -336,7 +348,7 @@ const createFixedAssetSchema = z.object({
 
 const exportLedgerReportSchema = z.object({
   params: z.object({
-    reportType: z.enum(["general-ledger", "trial-balance", "profit-loss", "balance-sheet", "journal-register"])
+    reportType: z.enum(["general-ledger", "trial-balance", "profit-loss", "balance-sheet", "cash-flow", "fixed-assets", "reconciliation", "journal-register"])
   }),
   body: z.object({}).optional(),
   query: z
@@ -364,6 +376,7 @@ module.exports = {
   listChartOfAccountsSchema,
   listJournalsSchema,
   listPeriodsSchema,
+  periodActionParamsSchema,
   periodActionSchema,
   seedChartOfAccountsSchema,
   seedMappingsSchema,

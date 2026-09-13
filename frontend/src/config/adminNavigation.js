@@ -39,6 +39,7 @@ export const ADMIN_ROLES = {
 };
 
 export const ADMIN_PERMISSIONS = {
+  BOOKING_ACCOUNTING_READ: "booking_accounting.read",
   BUSINESS_ACCOUNTING_READ: "business_accounting.read",
   BUSINESS_EXPENSE_WRITE: "business_expense.write",
   BUSINESS_INTELLIGENCE_READ: "business_intelligence.read",

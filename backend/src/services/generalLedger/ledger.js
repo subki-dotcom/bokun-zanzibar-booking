@@ -33,6 +33,7 @@ const {
   DEFAULT_POSTING_RULES
 } = require("../../accounting/defaultAccountingMappings");
 const AppError = require("../../utils/AppError");
+const { configuredBaseCurrency, resolveFxEvidence } = require("../../accounting/currencyPolicy");
 const {
   Decimal,
   decimalString,
@@ -396,10 +397,13 @@ const normalizeJournalForApi = (entry = {}, lines = []) => {
     description: row.description || "",
     status: row.status || JOURNAL_STATUS.DRAFT,
     currency: row.currency || "",
-    exchangeRate: apiMoney(row.exchangeRate || "1"),
+    exchangeRate: apiMoney(row.exchangeRate),
+    exchangeRateDate: row.exchangeRateDate || null,
+    exchangeRateSource: row.exchangeRateSource || "",
     totalDebit: apiMoney(row.totalDebit),
     totalCredit: apiMoney(row.totalCredit),
-    baseCurrency: row.baseCurrency || row.currency || "",
+    baseCurrency: row.baseCurrency || "",
+    cashFlowCategory: row.cashFlowCategory || "NONE",
     baseTotalDebit: apiMoney(row.baseTotalDebit),
     baseTotalCredit: apiMoney(row.baseTotalCredit),
     lineCount: row.lineCount || lines.length || 0,
@@ -439,11 +443,14 @@ const normalizeLineForApi = (line = {}) => {
     debit: apiMoney(row.debit),
     credit: apiMoney(row.credit),
     currency: row.currency || "",
-    exchangeRate: apiMoney(row.exchangeRate || "1"),
+    exchangeRate: apiMoney(row.exchangeRate),
+    exchangeRateDate: row.exchangeRateDate || null,
+    exchangeRateSource: row.exchangeRateSource || "",
     baseCurrencyDebit: apiMoney(row.baseCurrencyDebit),
     baseCurrencyCredit: apiMoney(row.baseCurrencyCredit),
-    baseCurrency: row.baseCurrency || row.currency || "",
+    baseCurrency: row.baseCurrency || "",
     businessUnit: row.businessUnit || BUSINESS_UNIT.UNALLOCATED,
+    cashFlowCategory: row.cashFlowCategory || "NONE",
     costCenter: row.costCenter || COST_CENTER_TYPE.OTHER,
     productId: row.productId || "",
     channel: row.channel || "",
@@ -563,14 +570,15 @@ const createGeneralLedgerService = ({
       normalizeEnumToken(postingType || GL_POSTING_TYPE.MANUAL_JOURNAL)
     ].join(":");
 
-  const normalizeJournalLines = async ({ lines = [], currency = "USD", baseCurrency = "USD", exchangeRate = "1", source = {}, dimensions = {} }) => {
+  const normalizeJournalLines = async ({ lines = [], currency, baseCurrency, exchangeRate, exchangeRateDate, exchangeRateSource, postingDate, source = {}, dimensions = {} }) => {
     if (!asArray(lines).length) {
       throw new AppError("At least two journal lines are required.", 422, "GL_LINES_REQUIRED");
     }
 
-    const normalizedCurrency = requireCurrency(currency);
-    const normalizedBaseCurrency = requireCurrency(baseCurrency || currency);
-    const rate = money(exchangeRate || 1, { allowNegative: false, field: "exchangeRate" });
+    const fx = resolveFxEvidence({ transactionCurrency: currency, baseCurrency, exchangeRate, exchangeRateDate, exchangeRateSource, transactionDate: postingDate });
+    const normalizedCurrency = fx.transactionCurrency;
+    const normalizedBaseCurrency = fx.baseCurrency;
+    const rate = fx.exchangeRate;
 
     const resolved = [];
     for (const line of lines) {
@@ -592,16 +600,21 @@ const createGeneralLedgerService = ({
         throw new AppError("Each journal line must contain a debit or credit amount.", 422, "GL_LINE_AMOUNT_REQUIRED");
       }
 
+      const lineCurrency = normalizeCurrency(line.currency) || normalizedCurrency;
+      const lineFx = resolveFxEvidence({ transactionCurrency: lineCurrency, baseCurrency: normalizedBaseCurrency, exchangeRate: line.exchangeRate ?? (lineCurrency === normalizedCurrency ? rate : undefined), exchangeRateDate: line.exchangeRateDate || fx.exchangeRateDate, exchangeRateSource: line.exchangeRateSource || fx.exchangeRateSource, transactionDate: postingDate });
       resolved.push({
         account,
         description: normalizeToken(line.description || ""),
         debit,
         credit,
-        currency: normalizeCurrency(line.currency) || normalizedCurrency,
-        exchangeRate: money(line.exchangeRate || rate, { allowNegative: false, field: "line.exchangeRate" }),
-        baseCurrencyDebit: multiply(debit, line.exchangeRate || rate),
-        baseCurrencyCredit: multiply(credit, line.exchangeRate || rate),
+        currency: lineCurrency,
+        exchangeRate: lineFx.exchangeRate,
+        exchangeRateDate: lineFx.exchangeRateDate,
+        exchangeRateSource: lineFx.exchangeRateSource,
+        baseCurrencyDebit: multiply(debit, lineFx.exchangeRate),
+        baseCurrencyCredit: multiply(credit, lineFx.exchangeRate),
         baseCurrency: normalizedBaseCurrency,
+        cashFlowCategory: normalizeEnumToken(line.cashFlowCategory || account.cashFlowCategory || "NONE"),
         businessUnit: normalizeEnumToken(line.businessUnit || dimensions.businessUnit || BUSINESS_UNIT.UNALLOCATED),
         costCenter: normalizeEnumToken(line.costCenter || dimensions.costCenter || COST_CENTER_TYPE.OTHER),
         productId: normalizeToken(line.productId || dimensions.productId || ""),
@@ -639,7 +652,9 @@ const createGeneralLedgerService = ({
       baseTotalCredit,
       currency: normalizedCurrency,
       baseCurrency: normalizedBaseCurrency,
-      exchangeRate: rate
+      exchangeRate: rate,
+      exchangeRateDate: fx.exchangeRateDate,
+      exchangeRateSource: fx.exchangeRateSource
     };
   };
 
@@ -661,9 +676,12 @@ const createGeneralLedgerService = ({
       credit: toDecimal128(line.credit),
       currency: line.currency,
       exchangeRate: toDecimal128(line.exchangeRate),
+      exchangeRateDate: line.exchangeRateDate,
+      exchangeRateSource: line.exchangeRateSource,
       baseCurrencyDebit: toDecimal128(line.baseCurrencyDebit),
       baseCurrencyCredit: toDecimal128(line.baseCurrencyCredit),
       baseCurrency: line.baseCurrency,
+      cashFlowCategory: line.cashFlowCategory,
       businessUnit: line.businessUnit,
       costCenter: line.costCenter,
       productId: line.productId,
@@ -724,9 +742,12 @@ const createGeneralLedgerService = ({
     await ensureOpenPeriod(postingDate);
     const normalized = await normalizeJournalLines({
       lines: input.lines,
-      currency: input.currency || "USD",
-      baseCurrency: input.baseCurrency || input.currency || "USD",
-      exchangeRate: input.exchangeRate || 1,
+      currency: input.currency,
+      baseCurrency: input.baseCurrency || configuredBaseCurrency(),
+      exchangeRate: input.exchangeRate,
+      exchangeRateDate: input.exchangeRateDate,
+      exchangeRateSource: input.exchangeRateSource,
+      postingDate,
       source,
       dimensions: input.dimensions || {}
     });
@@ -743,6 +764,8 @@ const createGeneralLedgerService = ({
       status,
       currency: normalized.currency,
       exchangeRate: toDecimal128(normalized.exchangeRate),
+      exchangeRateDate: normalized.exchangeRateDate,
+      exchangeRateSource: normalized.exchangeRateSource,
       totalDebit: toDecimal128(normalized.totalDebit),
       totalCredit: toDecimal128(normalized.totalCredit),
       baseCurrency: normalized.baseCurrency,
@@ -1966,7 +1989,14 @@ const createGeneralLedgerService = ({
   };
 
   const getProfitLoss = async ({ fromDate = "", toDate = "" } = {}) => {
-    const rows = await summarizeAccounts({ fromDate, toDate });
+    const [rows, chartRows, postedLines] = await Promise.all([
+      summarizeAccounts({ fromDate, toDate }),
+      leanMaybe(ChartOfAccountModel.find({})),
+      allPostedLines()
+    ]);
+    const chartByCode = new Map(asArray(chartRows).map((account) => [account.code, account]));
+    const periodLines = postedLines.filter((line) => lineInRange(line, fromDate, toDate));
+    const baseCurrencies = Array.from(new Set(periodLines.map((line) => normalizeEnumToken(line.baseCurrency || line.currency)).filter(Boolean)));
     const section = (types) =>
       rows
         .filter((row) => types.includes(row.accountType))
@@ -1974,6 +2004,8 @@ const createGeneralLedgerService = ({
           accountCode: row.accountCode,
           accountName: row.accountName,
           accountType: row.accountType,
+          accountSubtype: row.accountSubtype,
+          parentCode: chartByCode.get(row.accountCode)?.parentCode || "",
           amount: signedAccountBalance({ ...row, openingDebit: new Decimal(0), openingCredit: new Decimal(0) }).toFixed()
         }));
     const sum = (items) => items.reduce((total, item) => total.plus(toDecimal(item.amount || 0)), new Decimal(0));
@@ -1985,24 +2017,53 @@ const createGeneralLedgerService = ({
     const grossProfit = sum(revenue).minus(sum(costOfSales));
     const operatingProfit = grossProfit.minus(sum(operatingExpenses));
     const netProfit = operatingProfit.plus(sum(otherIncome)).minus(sum(otherExpenses));
+    const totalExpenses = sum(costOfSales).plus(sum(operatingExpenses)).plus(sum(otherExpenses));
+    const totalRevenue = sum(revenue);
+    const profitMargin = totalRevenue.isZero() ? null : netProfit.dividedBy(totalRevenue).times(100).toFixed(2);
+    const trendMap = new Map();
+    periodLines.forEach((line) => {
+      if (![GL_ACCOUNT_TYPE.REVENUE, GL_ACCOUNT_TYPE.COST_OF_SALES, GL_ACCOUNT_TYPE.EXPENSE, GL_ACCOUNT_TYPE.OTHER_EXPENSE].includes(line.accountType)) return;
+      const date = new Date(line.postingDate);
+      const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+      const bucket = trendMap.get(key) || { date: key, revenue: new Decimal(0), expenses: new Decimal(0) };
+      const debit = toDecimal(line.baseCurrencyDebit || 0);
+      const credit = toDecimal(line.baseCurrencyCredit || 0);
+      if (line.accountType === GL_ACCOUNT_TYPE.REVENUE) bucket.revenue = bucket.revenue.plus(credit.minus(debit));
+      else bucket.expenses = bucket.expenses.plus(debit.minus(credit));
+      trendMap.set(key, bucket);
+    });
     return {
       sections: { revenue, costOfSales, operatingExpenses, otherIncome, otherExpenses },
       totals: {
-        revenue: sum(revenue).toFixed(),
+        revenue: totalRevenue.toFixed(),
         costOfSales: sum(costOfSales).toFixed(),
         grossProfit: grossProfit.toFixed(),
         operatingExpenses: sum(operatingExpenses).toFixed(),
         operatingProfit: operatingProfit.toFixed(),
         otherIncome: sum(otherIncome).toFixed(),
         otherExpenses: sum(otherExpenses).toFixed(),
-        netProfit: netProfit.toFixed()
+        netProfit: netProfit.toFixed(),
+        totalExpenses: totalExpenses.toFixed(),
+        profitMargin
       },
+      trend: Array.from(trendMap.values()).sort((a, b) => a.date.localeCompare(b.date)).map((row) => ({ date: row.date, revenue: row.revenue.toFixed(), expenses: row.expenses.toFixed() })),
+      expenseBreakdown: [...costOfSales, ...operatingExpenses, ...otherExpenses].filter((row) => !toDecimal(row.amount || 0).isZero()).sort((a, b) => toDecimal(b.amount).abs().minus(toDecimal(a.amount).abs()).toNumber()),
+      summary: { fromDate: fromDate || null, toDate: toDate || null, baseCurrency: baseCurrencies.length === 1 ? baseCurrencies[0] : "", baseCurrencies, mixedBaseCurrencies: baseCurrencies.length > 1, consolidationAvailable: baseCurrencies.length <= 1 },
       source: "GENERAL_LEDGER"
     };
   };
 
   const getBalanceSheet = async ({ asOfDate = "" } = {}) => {
-    const rows = await summarizeAccounts({ toDate: asOfDate });
+    const [rows, chartRows, postedLines] = await Promise.all([
+      summarizeAccounts({ toDate: asOfDate }),
+      leanMaybe(ChartOfAccountModel.find({})),
+      allPostedLines()
+    ]);
+    const chartByCode = new Map(asArray(chartRows).map((account) => [account.code, account]));
+    const baseCurrencies = Array.from(new Set(postedLines
+      .filter((line) => lineInRange(line, "", asOfDate))
+      .map((line) => normalizeEnumToken(line.baseCurrency || line.currency))
+      .filter(Boolean)));
     const byType = (types) =>
       rows
         .filter((row) => types.includes(row.accountType))
@@ -2011,6 +2072,7 @@ const createGeneralLedgerService = ({
           accountName: row.accountName,
           accountType: row.accountType,
           accountSubtype: row.accountSubtype,
+          parentCode: chartByCode.get(row.accountCode)?.parentCode || "",
           amount: signedAccountBalance(row).toFixed()
         }));
     const sum = (items) => items.reduce((total, item) => total.plus(toDecimal(item.amount || 0)), new Decimal(0));
@@ -2022,7 +2084,8 @@ const createGeneralLedgerService = ({
     const totalAssets = sum(assets);
     const totalLiabilities = sum(liabilities);
     const totalEquity = sum(equity).plus(currentEarnings);
-    const balanced = totalAssets.equals(totalLiabilities.plus(totalEquity));
+    const consolidationAvailable = baseCurrencies.length <= 1;
+    const balanced = consolidationAvailable && totalAssets.equals(totalLiabilities.plus(totalEquity));
     return {
       sections: {
         assets,
@@ -2045,42 +2108,67 @@ const createGeneralLedgerService = ({
         difference: totalAssets.minus(totalLiabilities.plus(totalEquity)).abs().toFixed()
       },
       balanced,
-      accountingError: balanced ? null : "BALANCE_SHEET_OUT_OF_BALANCE"
+      accountingError: !consolidationAvailable ? "MULTIPLE_BASE_CURRENCIES" : balanced ? null : "BALANCE_SHEET_OUT_OF_BALANCE",
+      summary: {
+        asOfDate: asOfDate || null,
+        source: "GENERAL_LEDGER",
+        baseCurrency: baseCurrencies.length === 1 ? baseCurrencies[0] : "",
+        baseCurrencies,
+        mixedBaseCurrencies: baseCurrencies.length > 1,
+        consolidationAvailable
+      }
     };
   };
 
   const getCashFlow = async ({ fromDate = "", toDate = "" } = {}) => {
-    const lines = (await allPostedLines()).filter((line) => lineInRange(line, fromDate, toDate));
-    const cashLines = lines.filter((line) =>
-      [GL_ACCOUNT_SUBTYPE.CASH, GL_ACCOUNT_SUBTYPE.BANK, GL_ACCOUNT_SUBTYPE.MOBILE_MONEY, GL_ACCOUNT_SUBTYPE.PROVIDER_CLEARING].includes(line.accountSubtype)
-    );
+    const allLines = await allPostedLines();
+    const isCashEquivalent = (line) => [GL_ACCOUNT_SUBTYPE.CASH, GL_ACCOUNT_SUBTYPE.BANK, GL_ACCOUNT_SUBTYPE.MOBILE_MONEY].includes(line.accountSubtype);
+    const cashLines = allLines.filter((line) => lineInRange(line, fromDate, toDate) && isCashEquivalent(line));
+    const openingLines = allLines.filter((line) => isCashEquivalent(line) && fromDate && new Date(line.postingDate) < new Date(fromDate));
+    const baseCurrencies = Array.from(new Set([...cashLines, ...openingLines].map((line) => normalizeEnumToken(line.baseCurrency)).filter(Boolean)));
+    const consolidationAvailable = baseCurrencies.length <= 1;
     const buckets = {
       operating: new Decimal(0),
       investing: new Decimal(0),
       financing: new Decimal(0)
     };
+    const activityLines = { operating: [], investing: [], financing: [] };
+    const classify = (line) => {
+      const postingType = normalizeEnumToken(line.postingType);
+      if ([GL_POSTING_TYPE.OWNER_CAPITAL_INJECTION, GL_POSTING_TYPE.OWNER_DRAWING].includes(postingType)) return "financing";
+      if (["OPERATING", "INVESTING", "FINANCING"].includes(normalizeEnumToken(line.cashFlowCategory))) return normalizeEnumToken(line.cashFlowCategory).toLowerCase();
+      return "operating";
+    };
+    const trend = new Map();
+    let inflows = new Decimal(0); let outflows = new Decimal(0);
     cashLines.forEach((line) => {
       const movement = toDecimal(line.baseCurrencyDebit || 0).minus(toDecimal(line.baseCurrencyCredit || 0));
-      const postingType = normalizeEnumToken(line.postingType);
-      if ([GL_POSTING_TYPE.OWNER_CAPITAL_INJECTION, GL_POSTING_TYPE.OWNER_DRAWING].includes(postingType)) {
-        buckets.financing = buckets.financing.plus(movement);
-      } else if ([GL_POSTING_TYPE.DEPRECIATION].includes(postingType)) {
-        buckets.investing = buckets.investing.plus(movement);
-      } else {
-        buckets.operating = buckets.operating.plus(movement);
-      }
+      const activity = classify(line);
+      buckets[activity] = buckets[activity].plus(movement);
+      if (movement.greaterThanOrEqualTo(0)) inflows = inflows.plus(movement); else outflows = outflows.plus(movement.abs());
+      const date = new Date(line.postingDate).toISOString().slice(0, 10);
+      const point = trend.get(date) || { date, inflows: new Decimal(0), outflows: new Decimal(0), net: new Decimal(0) };
+      if (movement.greaterThanOrEqualTo(0)) point.inflows = point.inflows.plus(movement); else point.outflows = point.outflows.plus(movement.abs());
+      point.net = point.net.plus(movement); trend.set(date, point);
+      activityLines[activity].push({ ...normalizeLineForApi(line), movement: movement.toFixed(), activity: activity.toUpperCase() });
     });
     const netChange = buckets.operating.plus(buckets.investing).plus(buckets.financing);
+    const openingBalance = openingLines.reduce((sum, line) => sum.plus(toDecimal(line.baseCurrencyDebit || 0)).minus(toDecimal(line.baseCurrencyCredit || 0)), new Decimal(0));
+    const closingBalance = openingBalance.plus(netChange);
     return {
-      statementType: "CASH_FLOW_FOUNDATION",
-      note: "This is ledger-derived cash movement foundation, distinct from the existing management cash flow report.",
+      statementType: "CASH_FLOW_STATEMENT",
       activities: {
         operating: buckets.operating.toFixed(),
         investing: buckets.investing.toFixed(),
         financing: buckets.financing.toFixed()
       },
+      totals: { inflows: inflows.toFixed(), outflows: outflows.toFixed(), netCashFlow: netChange.toFixed(), openingBalance: openingBalance.toFixed(), closingBalance: closingBalance.toFixed(), integrityDifference: openingBalance.plus(netChange).minus(closingBalance).abs().toFixed() },
       netChange: netChange.toFixed(),
-      lines: cashLines.map(normalizeLineForApi)
+      trend: Array.from(trend.values()).sort((a,b)=>a.date.localeCompare(b.date)).map((row)=>({ date: row.date, inflows: row.inflows.toFixed(), outflows: row.outflows.toFixed(), netCashFlow: row.net.toFixed() })),
+      activityLines,
+      lines: cashLines.map(normalizeLineForApi),
+      summary: { fromDate: fromDate || null, toDate: toDate || null, baseCurrency: baseCurrencies.length === 1 ? baseCurrencies[0] : "", baseCurrencies, mixedBaseCurrencies: baseCurrencies.length > 1, consolidationAvailable, source: "POSTED_GENERAL_LEDGER_CASH_EQUIVALENTS", cashEquivalentSubtypes: [GL_ACCOUNT_SUBTYPE.CASH, GL_ACCOUNT_SUBTYPE.BANK, GL_ACCOUNT_SUBTYPE.MOBILE_MONEY] },
+      warnings: consolidationAvailable ? [] : [{ code: "MULTIPLE_BASE_CURRENCIES", message: "Cash Flow cannot be consolidated until all posted cash movements have one verified base currency." }]
     };
   };
 
@@ -2113,20 +2201,81 @@ const createGeneralLedgerService = ({
   };
 
   const buildPeriodCloseChecklist = async (period) => {
-    const pendingRefunds = RefundModel.countDocuments ? await RefundModel.countDocuments({ status: { $in: ["requested", "approved", "processing", "awaiting_merchant_approval"] } }) : 0;
-    const unpostedExpenses = BusinessExpenseModel.countDocuments ? await BusinessExpenseModel.countDocuments({ accountingPostingId: null, status: { $ne: "VOID" } }) : 0;
-    const unreconciledPayments = PaymentModel.countDocuments ? await PaymentModel.countDocuments({ status: "paid", settlementStatus: { $ne: "settled" } }) : 0;
-    const unbalancedDraftJournals = asArray(await leanMaybe(JournalEntryModel.find({ status: { $ne: JOURNAL_STATUS.POSTED } }))).filter(
+    const range = { $gte: new Date(period.startDate), $lte: new Date(period.endDate) };
+    const [trialBalance, periodJournals, pendingRefunds, unpostedExpenses, unreconciledPayments] = await Promise.all([
+      getTrialBalance({ fromDate: period.startDate, toDate: period.endDate }),
+      leanMaybe(JournalEntryModel.find({ postingDate: range })),
+      RefundModel.countDocuments ? RefundModel.countDocuments({ requestedAt: range, status: { $in: ["requested", "eligible", "pending_approval", "approved", "awaiting_merchant_approval", "processing", "verification_required", "manual_review", "manual_refund_required"] } }) : 0,
+      BusinessExpenseModel.countDocuments ? BusinessExpenseModel.countDocuments({ expenseDate: range, accountingPostingId: null, status: { $ne: "VOID" } }) : 0,
+      PaymentModel.countDocuments ? PaymentModel.countDocuments({ paidAt: range, status: "paid", "reconciliation.reviewed": { $ne: true } }) : 0
+    ]);
+    const journals = asArray(periodJournals);
+    const unbalancedJournals = journals.filter(
       (entry) => !toDecimal(entry.baseTotalDebit || 0).equals(toDecimal(entry.baseTotalCredit || 0))
     ).length;
+    const unpostedJournals = journals.filter(
+      (entry) => ![JOURNAL_STATUS.POSTED, JOURNAL_STATUS.REVERSED, JOURNAL_STATUS.VOID].includes(entry.status)
+    ).length;
+    const checks = [
+      { key: "trial_balance", label: "Trial Balance Balanced", status: trialBalance.balanced ? "PASS" : "FAIL", count: trialBalance.balanced ? 0 : 1, blocking: true, detail: `Difference ${trialBalance.totals?.difference || "0"}` },
+      { key: "journal_balance", label: "Journal Entries Balanced", status: unbalancedJournals ? "FAIL" : "PASS", count: unbalancedJournals, blocking: true },
+      { key: "journal_posting", label: "Journal Entries Posted", status: unpostedJournals ? "FAIL" : "PASS", count: unpostedJournals, blocking: true },
+      { key: "business_expenses", label: "Business Expenses Posted", status: unpostedExpenses ? "FAIL" : "PASS", count: unpostedExpenses, blocking: true },
+      { key: "payments", label: "Payments Reconciled", status: unreconciledPayments ? "FAIL" : "PASS", count: unreconciledPayments, blocking: true },
+      { key: "refunds", label: "Refunds Resolved", status: pendingRefunds ? "FAIL" : "PASS", count: pendingRefunds, blocking: true },
+      { key: "booking_sync", label: "Booking Accounting Sync", status: "NOT_VERIFIED", count: null, blocking: false, detail: "No period-scoped verification is available." },
+      { key: "cash_reconciliation", label: "Bank/Cash Reconciliation", status: "NOT_VERIFIED", count: null, blocking: false, detail: "No period-scoped reconciliation completion record is available." }
+    ];
+    const blockingIssues = checks.filter((check) => check.blocking && check.status === "FAIL").reduce((total, check) => total + Math.max(1, Number(check.count || 0)), 0);
     return {
       period: period.periodKey,
+      readyToClose: blockingIssues === 0,
+      blockingIssues,
+      baseCurrency: trialBalance.summary?.baseCurrency || "",
+      checks,
+      journalCount: journals.length,
       unreconciledPayments,
       pendingRefunds,
       unpostedExpenses,
-      unbalancedJournals: unbalancedDraftJournals,
-      openSupplierBills: unpostedExpenses,
-      dataQualityWarnings: pendingRefunds + unpostedExpenses + unreconciledPayments
+      unbalancedJournals,
+      unpostedJournals,
+      dataQualityWarnings: pendingRefunds + unpostedExpenses + unreconciledPayments + unbalancedJournals + unpostedJournals
+    };
+  };
+
+  const getPeriodCloseOverview = async ({ periodId } = {}) => {
+    const period = await leanMaybe(AccountingPeriodModel.findById(periodId));
+    if (!period) throw new AppError("Accounting period not found.", 404, "GL_PERIOD_NOT_FOUND");
+    const [checklist, accounts, profitLoss, cashFlow, reconciliation] = await Promise.all([
+      buildPeriodCloseChecklist(period),
+      leanMaybe(ChartOfAccountModel.find({})),
+      getProfitLoss({ fromDate: period.startDate, toDate: period.endDate }),
+      getCashFlow({ fromDate: period.startDate, toDate: period.endDate }),
+      getReconciliation({ fromDate: period.startDate, toDate: period.endDate })
+    ]);
+    const accountRows = asArray(accounts);
+    return {
+      period,
+      checklist,
+      metrics: {
+        chartOfAccounts: accountRows.length,
+        activeAccounts: accountRows.filter((account) => account.active !== false).length,
+        journalEntries: checklist.journalCount,
+        trialBalance: reconciliation.trialBalance,
+        accountingHealth: period.status === ACCOUNTING_PERIOD_STATUS.CLOSED || period.status === ACCOUNTING_PERIOD_STATUS.LOCKED
+          ? "CLOSED"
+          : checklist.readyToClose ? "READY_TO_CLOSE" : "ATTENTION_REQUIRED"
+      },
+      financialSummary: {
+        revenue: profitLoss.totals?.revenue ?? null,
+        expenses: toDecimal(profitLoss.totals?.costOfSales || 0).plus(toDecimal(profitLoss.totals?.operatingExpenses || 0)).plus(toDecimal(profitLoss.totals?.otherExpenses || 0)).toFixed(),
+        netProfit: profitLoss.totals?.netProfit ?? null,
+        cashMovement: cashFlow.netChange ?? null,
+        receivables: reconciliation.arControl?.ledgerBalance ?? null,
+        payables: reconciliation.apControl?.ledgerBalance ?? null,
+        baseCurrency: checklist.baseCurrency
+      },
+      reportFilters: { fromDate: period.startDate, toDate: period.endDate }
     };
   };
 
@@ -2134,10 +2283,16 @@ const createGeneralLedgerService = ({
     if (!reason) throw new AppError("Period close reason is required.", 422, "GL_PERIOD_REASON_REQUIRED");
     const period = await leanMaybe(AccountingPeriodModel.findById(periodId));
     if (!period) throw new AppError("Accounting period not found.", 404, "GL_PERIOD_NOT_FOUND");
+    if (period.status === ACCOUNTING_PERIOD_STATUS.CLOSED) {
+      throw new AppError("Accounting period is already closed.", 409, "GL_PERIOD_ALREADY_CLOSED");
+    }
     if (period.status === ACCOUNTING_PERIOD_STATUS.LOCKED) {
       throw new AppError("Locked periods cannot be closed again.", 409, "GL_PERIOD_LOCKED");
     }
     const checklist = await buildPeriodCloseChecklist(period);
+    if (!checklist.readyToClose) {
+      throw new AppError("Period cannot be closed until the accounting issues are resolved.", 409, "GL_PERIOD_CLOSE_BLOCKED", { checklist });
+    }
     const updated = await leanMaybe(AccountingPeriodModel.findByIdAndUpdate(periodId, {
       $set: {
         status: ACCOUNTING_PERIOD_STATUS.CLOSED,
@@ -2158,6 +2313,9 @@ const createGeneralLedgerService = ({
     }
     const period = await leanMaybe(AccountingPeriodModel.findById(periodId));
     if (!period) throw new AppError("Accounting period not found.", 404, "GL_PERIOD_NOT_FOUND");
+    if (period.status === ACCOUNTING_PERIOD_STATUS.OPEN) {
+      throw new AppError("Accounting period is already open.", 409, "GL_PERIOD_ALREADY_OPEN");
+    }
     if (period.status === ACCOUNTING_PERIOD_STATUS.LOCKED) {
       throw new AppError("Locked periods cannot be reopened.", 409, "GL_PERIOD_LOCKED");
     }
@@ -2207,8 +2365,11 @@ const createGeneralLedgerService = ({
   };
 
   const getReconciliation = async ({ fromDate = "", toDate = "" } = {}) => {
-    const trialBalance = await getTrialBalance({ fromDate, toDate });
-    const gl = await getGeneralLedger({ fromDate, toDate, limit: 5000 });
+    const [trialBalance, gl, entries, accounts, invoices, expenses, assets] = await Promise.all([
+      getTrialBalance({ fromDate, toDate }), getGeneralLedger({ fromDate, toDate, limit: 5000 }),
+      leanMaybe(JournalEntryModel.find({})), leanMaybe(ChartOfAccountModel.find({})), InvoiceModel.find ? leanMaybe(InvoiceModel.find({})) : [],
+      BusinessExpenseModel.find ? leanMaybe(BusinessExpenseModel.find({})) : [], getFixedAssets()
+    ]);
     const sumAccount = (code) =>
       gl.items
         .filter((line) => line.accountCode === code)
@@ -2220,6 +2381,29 @@ const createGeneralLedgerService = ({
       balance: sumAccount(code).toFixed()
     }));
     const profitLoss = await getProfitLoss({ fromDate, toDate });
+    const currency = trialBalance.summary?.baseCurrency || configuredBaseCurrency();
+    const mixed = Boolean(trialBalance.summary?.mixedBaseCurrencies);
+    const invoiceRows = asArray(invoices).filter((row)=>!fromDate||new Date(row.issueDate||row.createdAt)>=new Date(fromDate)).filter((row)=>!toDate||new Date(row.issueDate||row.createdAt)<=new Date(`${toDate}T23:59:59.999Z`));
+    const postedInvoiceReferences = new Set(asArray(entries).filter((entry)=>entry.status===JOURNAL_STATUS.POSTED&&entry.sourceModule===SOURCE_MODULE.INVOICE).map((entry)=>normalizeToken(entry.sourceReference)));
+    const unpostedInvoices = invoiceRows.filter((row)=>!postedInvoiceReferences.has(normalizeToken(row.invoiceNumber||row.bookingReference))).length;
+    const arCurrencies = new Set(invoiceRows.map(row=>normalizeEnumToken(row.accountingCurrency||row.transactionCurrency||row.currency)).filter(Boolean));
+    const arSubledger = invoiceRows.reduce((sum,row)=>sum.plus(toDecimal(row.balanceDueAmount??row.balanceDue??0)),new Decimal(0));
+    const expenseRows = asArray(expenses).filter(row=>!["VOID","REJECTED"].includes(normalizeEnumToken(row.status)));
+    const apCurrencies = new Set(expenseRows.map(row=>normalizeEnumToken(row.baseCurrency||row.currency)).filter(Boolean));
+    const apEvidenceComplete = expenseRows.every(row=>normalizeEnumToken(row.paymentStatus)!=="PARTIALLY_PAID");
+    const apSubledger = expenseRows.reduce((sum,row)=>normalizeEnumToken(row.paymentStatus)==="PAID"?sum:sum.plus(toDecimal(row.baseCurrencyAmount||row.amount||0)),new Decimal(0));
+    const fixedAssetGl = gl.items.filter(line=>[GL_ACCOUNT_SUBTYPE.FIXED_ASSET,GL_ACCOUNT_SUBTYPE.ACCUMULATED_DEPRECIATION].includes(line.accountSubtype)).reduce((sum,line)=>sum.plus(toDecimal(line.baseCurrencyDebit||0)).minus(toDecimal(line.baseCurrencyCredit||0)),new Decimal(0));
+    const fixedAssetRegister = assets.summary?.netBookValue==null?null:toDecimal(assets.summary.netBookValue);
+    const statusFor=(sub,ledger,{records=0,evidence=true,currencySafe=true}={})=>{if(!records)return"NOT_EVALUATED";if(!evidence||!currencySafe)return"NEEDS_REVIEW";return toDecimal(sub).equals(toDecimal(ledger))?"BALANCED":"WITH_DIFFERENCES"};
+    const modules=[
+      {key:"general-ledger",label:"General Ledger",records:asArray(entries).filter(e=>e.status===JOURNAL_STATUS.POSTED).length,subledgerBalance:null,glBalance:null,difference:trialBalance.totals.difference,currency,status:trialBalance.summary?.accountsWithActivity?trialBalance.balanced?"BALANCED":"ERROR":"NOT_EVALUATED",route:"/admin/business-accounting/trial-balance",basis:"Period debits equal period credits"},
+      {key:"accounts-receivable",label:"Accounts Receivable",records:invoiceRows.length,subledgerBalance:arSubledger.toFixed(),glBalance:ar.toFixed(),difference:arSubledger.minus(ar).toFixed(),currency:arCurrencies.size===1?[...arCurrencies][0]:currency,status:statusFor(arSubledger,ar,{records:invoiceRows.length,evidence:arCurrencies.size<=1,currencySafe:!mixed}),route:"/admin/business-accounting/accounts-receivable",basis:"Invoice accounting balances vs GL 1100"},
+      {key:"accounts-payable",label:"Accounts Payable",records:expenseRows.length,subledgerBalance:apEvidenceComplete?apSubledger.toFixed():null,glBalance:ap.toFixed(),difference:apEvidenceComplete?apSubledger.minus(ap).toFixed():null,currency:apCurrencies.size===1?[...apCurrencies][0]:currency,status:statusFor(apSubledger,ap,{records:expenseRows.length,evidence:apEvidenceComplete&&apCurrencies.size<=1,currencySafe:!mixed}),route:"/admin/business-accounting/accounts-payable",basis:"Approved supplier balances vs GL 2010"},
+      {key:"cash-bank",label:"Cash & Bank",records:gl.items.filter(line=>[GL_ACCOUNT_SUBTYPE.CASH,GL_ACCOUNT_SUBTYPE.BANK,GL_ACCOUNT_SUBTYPE.MOBILE_MONEY].includes(line.accountSubtype)).length,subledgerBalance:null,glBalance:null,difference:null,currency,status:gl.items.some(line=>[GL_ACCOUNT_SUBTYPE.CASH,GL_ACCOUNT_SUBTYPE.BANK,GL_ACCOUNT_SUBTYPE.MOBILE_MONEY].includes(line.accountSubtype))?"NOT_RECONCILED":"NOT_EVALUATED",route:"/admin/business-accounting/cash-bank",basis:"External statement balances are not stored"},
+      {key:"channel-settlements",label:"Channel Settlements",records:providerClearing.filter(row=>!toDecimal(row.balance).isZero()).length,subledgerBalance:null,glBalance:providerClearing.reduce((sum,row)=>sum.plus(toDecimal(row.balance)),new Decimal(0)).toFixed(),difference:null,currency,status:providerClearing.some(row=>!toDecimal(row.balance).isZero())?"NEEDS_REVIEW":"NOT_EVALUATED",route:"/admin/payments",basis:"Provider clearing balances; customer paid status is not settlement"},
+      {key:"fixed-assets",label:"Fixed Assets",records:assets.count||0,subledgerBalance:fixedAssetRegister?.toFixed()??null,glBalance:fixedAssetGl.toFixed(),difference:fixedAssetRegister?fixedAssetRegister.minus(fixedAssetGl).toFixed():null,currency,status:statusFor(fixedAssetRegister||0,fixedAssetGl,{records:assets.count||0,evidence:!assets.summary?.mixedCurrencies,currencySafe:!mixed}),route:"/admin/business-accounting/fixed-assets",basis:"Scheduled register NBV vs fixed-asset GL accounts; schedule is not posted depreciation"}
+    ];
+    const attention=modules.filter(row=>!["BALANCED","NOT_APPLICABLE","NOT_EVALUATED"].includes(row.status));const evaluated=modules.filter(row=>!["NOT_APPLICABLE","NOT_EVALUATED"].includes(row.status));const balanced=modules.filter(row=>row.status==="BALANCED").length;
     return {
       trialBalance: {
         balanced: trialBalance.balanced,
@@ -2233,9 +2417,12 @@ const createGeneralLedgerService = ({
         ledgerNetProfit: profitLoss.totals.netProfit,
         note: "Management accounting remains separate; detailed reconciliation expands as source events are migrated."
       },
+      modules,
+      summary:{fromDate:fromDate||null,toDate:toDate||null,totalAccounts:asArray(accounts).length,postedJournals:asArray(entries).filter(e=>e.status===JOURNAL_STATUS.POSTED&&(!fromDate||new Date(e.postingDate)>=new Date(fromDate))&&(!toDate||new Date(e.postingDate)<=new Date(`${toDate}T23:59:59.999Z`))).length,unpostedInvoices,baseCurrency:currency,mixedBaseCurrencies:mixed,attentionCount:attention.length,evaluatedCount:evaluated.length,balancedCount:balanced,reconciledPercent:evaluated.length?Number(((balanced/evaluated.length)*100).toFixed(1)):null,health:!evaluated.length?"NOT_EVALUATED":attention.some(row=>row.status==="ERROR")?"CRITICAL":attention.length?"ATTENTION_REQUIRED":"PASS"},
+      activity:[],
       risks: [
         "Historical source events are not backfilled until the controlled migration is run.",
-        "Subledger totals are reported as foundation until full AR/AP backfill is applied."
+        "Invoices without a source-linked posted journal remain visible as reconciliation differences until a reviewed ledger migration is applied."
       ]
     };
   };
@@ -2359,14 +2546,28 @@ const createGeneralLedgerService = ({
     };
   };
 
+  const fixedAssetValues = (asset = {}, asOf = now()) => {
+    const cost = toDecimal(asset.purchaseCost || 0); const salvage = toDecimal(asset.salvageValue || 0);
+    const monthly = cost.minus(salvage).dividedBy(Number(asset.usefulLifeMonths || 1)).toDecimalPlaces(2);
+    const start = new Date(asset.startDate); const end = asset.disposedAt && new Date(asset.disposedAt) < asOf ? new Date(asset.disposedAt) : asOf;
+    const elapsed = end < start ? 0 : Math.max(0, (end.getUTCFullYear()-start.getUTCFullYear())*12+end.getUTCMonth()-start.getUTCMonth());
+    const months = Math.min(Number(asset.usefulLifeMonths || 0), elapsed); const accumulated = Decimal.min(monthly.times(months), cost.minus(salvage));
+    return { scheduledAccumulatedDepreciation: accumulated.toFixed(), netBookValue: cost.minus(accumulated).toFixed(), monthlyDepreciation: monthly.toFixed(), elapsedMonths: months, fullyDepreciated: months >= Number(asset.usefulLifeMonths || 0) };
+  };
+
   const getFixedAssets = async () => {
     const rows = asArray(await leanMaybe(FixedAssetModel.find({})));
+    const items = rows.map((asset) => ({ ...asset, category: asset.metadata?.category || "Uncategorized", location: asset.metadata?.location || "", depreciationPlan: fixedAssetDepreciationPlan(asset), values: fixedAssetValues(asset) }));
+    const currencies = Array.from(new Set(items.map((row)=>normalizeEnumToken(row.currency)).filter(Boolean)));
+    const canCombine = currencies.length <= 1;
+    const sum = (field) => canCombine ? items.reduce((total,row)=>total.plus(toDecimal(field(row)||0)),new Decimal(0)).toFixed() : null;
+    const categoryMap = new Map(); items.forEach((row)=>{const key=row.category;const current=categoryMap.get(key)||{category:key,count:0,cost:new Decimal(0),netBookValue:new Decimal(0)};current.count+=1;current.cost=current.cost.plus(toDecimal(row.purchaseCost||0));current.netBookValue=current.netBookValue.plus(toDecimal(row.values.netBookValue));categoryMap.set(key,current)});
     return {
-      items: rows.map((asset) => ({
-        ...asset,
-        depreciationPlan: fixedAssetDepreciationPlan(asset)
-      })),
-      count: rows.length
+      items,
+      count: items.length,
+      summary: { totalCost: sum(row=>row.purchaseCost), scheduledAccumulatedDepreciation: sum(row=>row.values.scheduledAccumulatedDepreciation), netBookValue: sum(row=>row.values.netBookValue), monthlyDepreciation: sum(row=>row.values.monthlyDepreciation), currency: currencies.length===1?currencies[0]:"", currencies, mixedCurrencies: currencies.length>1, depreciationBasis:"STRAIGHT_LINE_SCHEDULE_NOT_POSTED_GL" },
+      categories: Array.from(categoryMap.values()).map(row=>({category:row.category,count:row.count,cost:row.cost.toFixed(),netBookValue:row.netBookValue.toFixed()})),
+      warnings: ["Scheduled depreciation is an estimate. Automatic depreciation journal posting is not enabled; posted GL depreciation remains the financial-statement authority."]
     };
   };
 
@@ -2377,8 +2578,11 @@ const createGeneralLedgerService = ({
     if (normalizedType === "trial-balance") report = await getTrialBalance(filters);
     else if (normalizedType === "profit-loss") report = await getProfitLoss(filters);
     else if (normalizedType === "balance-sheet") report = await getBalanceSheet(filters);
+    else if (normalizedType === "cash-flow") report = await getCashFlow(filters);
+    else if (normalizedType === "fixed-assets") report = await getFixedAssets(filters);
+    else if (normalizedType === "reconciliation") report = await getReconciliation(filters);
     else report = await getGeneralLedger(filters);
-    const rows = report.items || Object.entries(report.totals || {}).map(([key, value]) => ({ key, value }));
+    const rows = report.items || report.modules || Object.entries(report.totals || {}).map(([key, value]) => ({ key, value }));
     const csv = [
       Object.keys(rows[0] || { report: normalizedType }).join(","),
       ...rows.map((row) => Object.values(row).map((value) => JSON.stringify(value ?? "")).join(","))
@@ -2411,6 +2615,7 @@ const createGeneralLedgerService = ({
     getFixedAssets,
     getGeneralLedger,
     getProfitLoss,
+    getPeriodCloseOverview,
     getReconciliation,
     getTrialBalance,
     listJournals,

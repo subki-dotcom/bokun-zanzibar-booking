@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const {
   BUSINESS_UNIT,
+  CASH_FLOW_CATEGORY,
   GL_ACCOUNT_NORMAL_BALANCE,
   GL_ACCOUNT_SUBTYPE,
   GL_ACCOUNT_TYPE
@@ -67,6 +68,8 @@ const chartOfAccountSchema = new mongoose.Schema(
     },
     parentCode: { type: String, default: "", trim: true, uppercase: true },
     currency: { type: String, default: "", trim: true, uppercase: true },
+    cashFlowCategory: { type: String, enum: Object.values(CASH_FLOW_CATEGORY), default: CASH_FLOW_CATEGORY.NONE, index: true },
+    cashEquivalent: { type: Boolean, default: false, index: true },
     businessUnit: {
       type: String,
       enum: Object.values(BUSINESS_UNIT),
@@ -92,6 +95,7 @@ chartOfAccountSchema.pre("validate", function validateChartOfAccount(next) {
   this.code = normalizeToken(this.code);
   this.parentCode = normalizeToken(this.parentCode);
   this.currency = normalizeToken(this.currency);
+  this.cashFlowCategory = normalizeToken(this.cashFlowCategory || CASH_FLOW_CATEGORY.NONE);
   this.businessUnit = normalizeToken(this.businessUnit || BUSINESS_UNIT.UNALLOCATED);
   this.type = normalizeToken(this.type);
   this.subtype = normalizeToken(this.subtype);

@@ -38,6 +38,8 @@ const journalEntrySchema = new mongoose.Schema(
     },
     currency: { type: String, required: true, uppercase: true },
     exchangeRate: { type: mongoose.Schema.Types.Decimal128, required: true },
+    exchangeRateDate: { type: Date, default: null },
+    exchangeRateSource: { type: String, default: "" },
     totalDebit: { type: mongoose.Schema.Types.Decimal128, required: true },
     totalCredit: { type: mongoose.Schema.Types.Decimal128, required: true },
     baseCurrency: { type: String, required: true, uppercase: true },

@@ -22,6 +22,7 @@ const {
   SOURCE_MODULE
 } = require("../../accounting/constants");
 const AppError = require("../../utils/AppError");
+const { configuredBaseCurrency, resolveFxEvidence } = require("../../accounting/currencyPolicy");
 const {
   Decimal,
   add,
@@ -414,16 +415,7 @@ const buildBusinessIncomeValues = ({ input = {}, existing = null, auth = {}, now
     throw new AppError("Business income amount must be greater than zero", 422, "BUSINESS_INCOME_AMOUNT_INVALID");
   }
 
-  const currency = requireCurrency(input.currency ?? existing?.currency ?? "USD");
-  const baseCurrency = requireCurrency(input.baseCurrency ?? existing?.baseCurrency ?? currency);
-  const exchangeRate = decimalString(input.exchangeRate ?? existing?.exchangeRate ?? 1, {
-    allowNegative: false,
-    field: "businessIncome.exchangeRate"
-  });
-  if (!toDecimal(exchangeRate).greaterThan(0)) {
-    throw new AppError("Business income exchange rate must be greater than zero", 422, "BUSINESS_INCOME_EXCHANGE_RATE_INVALID");
-  }
-  const baseCurrencyAmount = multiply(amount, exchangeRate);
+  const currency = requireCurrency(input.currency ?? existing?.currency);
   const status = normalizeEntryStatus(input.status ?? existing?.status ?? FINANCIAL_ENTRY_STATUS.DRAFT);
   const sourceReference = normalizeToken(input.sourceReference ?? existing?.sourceReference ?? "");
   const reference = normalizeToken(input.reference ?? existing?.reference ?? "");
@@ -441,7 +433,11 @@ const buildBusinessIncomeValues = ({ input = {}, existing = null, auth = {}, now
   if (Number.isNaN(transactionDate.getTime())) {
     throw new AppError("Business income transaction date is invalid", 422, "BUSINESS_INCOME_DATE_INVALID");
   }
-  const exchangeRateDate = input.exchangeRateDate ?? existing?.exchangeRateDate;
+  const fx = resolveFxEvidence({ transactionCurrency: currency, baseCurrency: input.baseCurrency ?? existing?.baseCurrency ?? configuredBaseCurrency(), exchangeRate: input.exchangeRate ?? existing?.exchangeRate, exchangeRateDate: input.exchangeRateDate ?? existing?.exchangeRateDate, exchangeRateSource: input.exchangeRateSource ?? existing?.exchangeRateSource, transactionDate });
+  const baseCurrency = fx.baseCurrency;
+  const exchangeRate = fx.exchangeRate;
+  const baseCurrencyAmount = multiply(amount, exchangeRate);
+  const exchangeRateDate = fx.exchangeRateDate;
 
   return {
     incomeReference,
@@ -460,6 +456,7 @@ const buildBusinessIncomeValues = ({ input = {}, existing = null, auth = {}, now
     baseCurrency,
     baseCurrencyAmount,
     exchangeRateDate: exchangeRateDate ? new Date(exchangeRateDate) : null,
+    exchangeRateSource: fx.exchangeRateSource,
     transactionDate,
     paymentMethod: normalizeToken(input.paymentMethod ?? existing?.paymentMethod ?? ""),
     reference,
@@ -498,17 +495,7 @@ const buildBusinessExpenseValues = ({ input = {}, existing = null, auth = {}, no
     throw new AppError("Business expense amount must be greater than zero", 422, "BUSINESS_EXPENSE_AMOUNT_INVALID");
   }
 
-  const currency = requireCurrency(input.currency ?? existing?.currency ?? "USD");
-  const baseCurrency = requireCurrency(input.baseCurrency ?? existing?.baseCurrency ?? currency);
-  const exchangeRate = decimalString(input.exchangeRate ?? existing?.exchangeRate ?? 1, {
-    allowNegative: false,
-    field: "businessExpense.exchangeRate"
-  });
-  if (!toDecimal(exchangeRate).greaterThan(0)) {
-    throw new AppError("Business expense exchange rate must be greater than zero", 422, "BUSINESS_EXPENSE_EXCHANGE_RATE_INVALID");
-  }
-
-  const baseCurrencyAmount = multiply(amount, exchangeRate);
+  const currency = requireCurrency(input.currency ?? existing?.currency);
   const status = normalizeEntryStatus(input.status ?? existing?.status ?? FINANCIAL_ENTRY_STATUS.DRAFT);
   const paymentStatus = normalizeExpensePaymentStatus(input.paymentStatus ?? existing?.paymentStatus ?? EXPENSE_PAYMENT_STATUS.UNPAID);
   const sourceReference = normalizeToken(input.sourceReference ?? existing?.sourceReference ?? "");
@@ -535,12 +522,11 @@ const buildBusinessExpenseValues = ({ input = {}, existing = null, auth = {}, no
     code: "BUSINESS_EXPENSE_DUE_DATE_INVALID",
     message: "Business expense due date is invalid"
   });
-  const exchangeRateDate = parseDateOrThrow({
-    value: input.exchangeRateDate,
-    fallback: existing?.exchangeRateDate || null,
-    code: "BUSINESS_EXPENSE_EXCHANGE_RATE_DATE_INVALID",
-    message: "Business expense exchange rate date is invalid"
-  });
+  const fx = resolveFxEvidence({ transactionCurrency: currency, baseCurrency: input.baseCurrency ?? existing?.baseCurrency ?? configuredBaseCurrency(), exchangeRate: input.exchangeRate ?? existing?.exchangeRate, exchangeRateDate: input.exchangeRateDate ?? existing?.exchangeRateDate, exchangeRateSource: input.exchangeRateSource ?? existing?.exchangeRateSource, transactionDate: expenseDate });
+  const baseCurrency = fx.baseCurrency;
+  const exchangeRate = fx.exchangeRate;
+  const baseCurrencyAmount = multiply(amount, exchangeRate);
+  const exchangeRateDate = fx.exchangeRateDate;
 
   return {
     expenseReference,
@@ -567,6 +553,7 @@ const buildBusinessExpenseValues = ({ input = {}, existing = null, auth = {}, no
     baseCurrency,
     baseCurrencyAmount,
     exchangeRateDate,
+    exchangeRateSource: fx.exchangeRateSource,
     expenseDate,
     dueDate,
     paymentStatus,
@@ -625,6 +612,7 @@ const normalizeBusinessIncomeForApi = (income = {}) => {
     baseCurrency: row.baseCurrency,
     baseCurrencyAmount: decimalToApi(row.baseCurrencyAmount, row.baseCurrencyAmount || "0"),
     exchangeRateDate: row.exchangeRateDate || null,
+    exchangeRateSource: row.exchangeRateSource || "",
     transactionDate: row.transactionDate,
     paymentMethod: row.paymentMethod || "",
     reference: row.reference || "",
@@ -661,6 +649,7 @@ const normalizeBusinessExpenseForApi = (expense = {}) => {
     baseCurrency: row.baseCurrency,
     baseCurrencyAmount: decimalToApi(row.baseCurrencyAmount, row.baseCurrencyAmount || "0"),
     exchangeRateDate: row.exchangeRateDate || null,
+    exchangeRateSource: row.exchangeRateSource || "",
     expenseDate: row.expenseDate,
     dueDate: row.dueDate || null,
     paymentStatus: row.paymentStatus,
@@ -708,6 +697,7 @@ const buildBusinessIncomePosting = ({ income, nowDate = new Date() } = {}) => {
     exchangeRate,
     baseCurrencyAmount,
     exchangeRateDate: row.exchangeRateDate || row.transactionDate || nowDate,
+    exchangeRateSource: row.exchangeRateSource || (row.currency === row.baseCurrency ? "IDENTITY" : ""),
     transactionDate: row.transactionDate || nowDate,
     status: row.status,
     components: {
@@ -770,6 +760,7 @@ const buildBusinessExpensePosting = ({ expense, nowDate = new Date() } = {}) => 
     exchangeRate,
     baseCurrencyAmount,
     exchangeRateDate: row.exchangeRateDate || row.expenseDate || nowDate,
+    exchangeRateSource: row.exchangeRateSource || (row.currency === row.baseCurrency ? "IDENTITY" : ""),
     transactionDate: row.expenseDate || nowDate,
     status: row.status,
     components: {

@@ -248,7 +248,7 @@ const AdminTrialBalancePage = () => {
   const summary = trialBalance?.summary || {};
   const pagination = trialBalance?.pagination || {};
   const rows = trialBalance?.items || [];
-  const currency = summary.baseCurrency || summary.baseCurrencies?.[0] || "USD";
+  const currency = summary.baseCurrency || (summary.baseCurrencies?.length === 1 ? summary.baseCurrencies[0] : "");
   const hasData = Boolean(summary.hasData);
   const balanceStatus = hasData ? (trialBalance?.balanced ? "Balanced" : "Needs Attention") : "No Data";
 

@@ -785,6 +785,7 @@ test("accounts payable dashboard separates mixed reporting currencies and flags 
       description: "TZS bill",
       amount: "50000",
       currency: "TZS",
+      baseCurrency: "TZS",
       supplier: { name: "TZS Supplier" },
       status: FINANCIAL_ENTRY_STATUS.APPROVED,
       paymentStatus: EXPENSE_PAYMENT_STATUS.UNPAID

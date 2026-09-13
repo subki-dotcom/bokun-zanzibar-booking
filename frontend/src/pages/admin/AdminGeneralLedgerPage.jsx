@@ -68,6 +68,10 @@ const TableCard = ({ title, children }) => (
 const AdminGeneralLedgerPage = () => {
   const location = useLocation();
   const mode = useMemo(() => modeFromPath(location.pathname), [location.pathname]);
+  const reportDates = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return { fromDate: params.get("fromDate") || "", toDate: params.get("toDate") || "" };
+  }, [location.search]);
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -97,9 +101,9 @@ const AdminGeneralLedgerPage = () => {
         fetchGeneralLedgerJournals({ limit: 50 }),
         fetchGeneralLedger({ limit: 250 }),
         fetchTrialBalance(),
-        fetchLedgerBalanceSheet(),
-        fetchLedgerProfitLoss(),
-        fetchLedgerCashFlow(),
+        fetchLedgerBalanceSheet({ asOfDate: reportDates.toDate }),
+        fetchLedgerProfitLoss(reportDates),
+        fetchLedgerCashFlow(reportDates),
         fetchAccountingPeriods(),
         fetchAccountingReconciliation(),
         fetchAccountingHealth(),
@@ -116,7 +120,7 @@ const AdminGeneralLedgerPage = () => {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [reportDates]);
 
   const seedFoundation = async () => {
     setActionMessage("");

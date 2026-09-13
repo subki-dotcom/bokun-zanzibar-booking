@@ -49,5 +49,8 @@ router.post(
 );
 router.get("/profitability", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.profitability);
 router.get("/reconciliation", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.reconciliation);
+router.get("/reconciliation-export", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.exportReconciliation);
+router.get("/reconciliation/:bookingId", bookingAccountingController.reconciliationDetail);
+router.post("/reconciliation/:bookingId/run", authorizePermission(PERMISSIONS.BOOKING_ACCOUNTING_WRITE), bookingAccountingController.runReconciliation);
 
 module.exports = router;

@@ -17,6 +17,7 @@ const {
   listPeriodsSchema,
   ledgerReportQuerySchema,
   journalActionSchema,
+  periodActionParamsSchema,
   periodActionSchema,
   seedChartOfAccountsSchema,
   seedMappingsSchema,
@@ -123,6 +124,13 @@ router.post(
   authorizePermission(PERMISSIONS.GL_PERIOD_CLOSE),
   validateRequest(createPeriodSchema),
   accountingController.createPeriod
+);
+
+router.get(
+  "/periods/:id/readiness",
+  authorizePermission(PERMISSIONS.GL_JOURNAL_READ),
+  validateRequest(periodActionParamsSchema),
+  accountingController.periodCloseOverview
 );
 
 router.post(
