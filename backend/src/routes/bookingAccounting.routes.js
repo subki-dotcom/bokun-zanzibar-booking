@@ -6,7 +6,12 @@ const validateRequest = require("../middleware/validateRequest");
 const { PERMISSIONS } = require("../security/permissions");
 const {
   archiveCostTemplateSchema,
+  bookingExpenseParamsSchema,
+  bookingExpenseCompletionSchema,
+  bookingExpenseVoidSchema,
+  bookingExpenseWriteSchema,
   bookingAccountingQuerySchema,
+  bokunFinancialPreviewParamsSchema,
   costTemplateParamsSchema,
   costTemplatePreviewSchema,
   costTemplateWriteSchema
@@ -21,6 +26,31 @@ router.get("/booking-payment", validateRequest(require('../validators/analytics.
 router.get("/invoices", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.invoices);
 router.get("/refunds", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.refunds);
 router.get("/expenses", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.expenses);
+router.get("/expenses/:expenseId", validateRequest(bookingExpenseParamsSchema), bookingAccountingController.bookingExpense);
+router.post(
+  "/expenses",
+  authorizePermission(PERMISSIONS.BOOKING_ACCOUNTING_WRITE),
+  validateRequest(bookingExpenseWriteSchema),
+  bookingAccountingController.createBookingExpense
+);
+router.put(
+  "/expenses/:expenseId",
+  authorizePermission(PERMISSIONS.BOOKING_ACCOUNTING_WRITE),
+  validateRequest(bookingExpenseWriteSchema),
+  bookingAccountingController.updateBookingExpense
+);
+router.post(
+  "/expenses/:expenseId/void",
+  authorizePermission(PERMISSIONS.BOOKING_ACCOUNTING_WRITE),
+  validateRequest(bookingExpenseVoidSchema),
+  bookingAccountingController.voidBookingExpense
+);
+router.post(
+  "/expenses/:expenseId/completion",
+  authorizePermission(PERMISSIONS.BOOKING_ACCOUNTING_WRITE),
+  validateRequest(bookingExpenseCompletionSchema),
+  bookingAccountingController.updateBookingExpenseCompletion
+);
 router.get("/cost-templates", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.costTemplates);
 router.post(
   "/cost-templates/sync-bokun-products",
@@ -50,6 +80,8 @@ router.post(
 router.get("/profitability", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.profitability);
 router.get("/reconciliation", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.reconciliation);
 router.get("/reconciliation-export", validateRequest(bookingAccountingQuerySchema), bookingAccountingController.exportReconciliation);
+router.get("/reconciliation/:bookingId/bokun-financial-preview", validateRequest(bokunFinancialPreviewParamsSchema), bookingAccountingController.bokunFinancialPreview);
+router.get("/reconciliation/:bookingId/bokun-financial-preview/refresh", validateRequest(bokunFinancialPreviewParamsSchema), bookingAccountingController.refreshBokunFinancialPreview);
 router.get("/reconciliation/:bookingId", bookingAccountingController.reconciliationDetail);
 router.post("/reconciliation/:bookingId/run", authorizePermission(PERMISSIONS.BOOKING_ACCOUNTING_WRITE), bookingAccountingController.runReconciliation);
 

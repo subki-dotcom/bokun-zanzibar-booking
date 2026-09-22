@@ -2,6 +2,9 @@ const chartOfAccountsService = require("../services/generalLedger/chartOfAccount
 const ledgerService = require("../services/generalLedger/ledger");
 const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/apiResponse");
+const { createGlPreviewService } = require("../services/glPosting/preview");
+const customerAccounting = require("../services/customerAccounting");
+const glPreviewService = createGlPreviewService();
 
 const listChartOfAccounts = asyncHandler(async (req, res) => {
   const data = await chartOfAccountsService.listAccounts(req.validated?.query || req.query || {});
@@ -10,6 +13,10 @@ const listChartOfAccounts = asyncHandler(async (req, res) => {
     data
   });
 });
+
+const previewPosting = asyncHandler(async (req, res) => successResponse(res, { message: "Accounting posting preview evaluated", data: await glPreviewService.previewRevenue(req.validated.body) }));
+const previewCustomerInvoicePosting = asyncHandler(async (req, res) => successResponse(res, { message: "Customer invoice posting preview evaluated", data: await customerAccounting.previewInvoice(req.validated.body) }));
+const previewCustomerPaymentPosting = asyncHandler(async (req, res) => successResponse(res, { message: "Customer payment posting preview evaluated", data: await customerAccounting.previewPayment(req.validated.body) }));
 
 const createChartAccount = asyncHandler(async (req, res) => {
   const data = await chartOfAccountsService.createAccount({
@@ -280,6 +287,34 @@ const createFixedAsset = asyncHandler(async (req, res) => {
   });
 });
 
+const createFixedAssetDepreciationJournal = asyncHandler(async (req, res) => {
+  const data = await ledgerService.createFixedAssetDepreciationJournal({
+    assetId: req.validated.params.id,
+    ...(req.validated?.body || {}),
+    auth: req.auth,
+    requestId: req.requestId
+  });
+  return successResponse(res, {
+    message: "Fixed asset depreciation journal created for review",
+    data,
+    statusCode: 201
+  });
+});
+
+const createFixedAssetAcquisitionJournal = asyncHandler(async (req, res) => {
+  const data = await ledgerService.createFixedAssetAcquisitionJournal({
+    assetId: req.validated.params.id,
+    ...(req.validated?.body || {}),
+    auth: req.auth,
+    requestId: req.requestId
+  });
+  return successResponse(res, {
+    message: "Fixed asset acquisition journal created for review",
+    data,
+    statusCode: 201
+  });
+});
+
 const exportLedgerReport = asyncHandler(async (req, res) => {
   const data = await ledgerService.exportLedgerReport({
     reportType: req.validated.params.reportType,
@@ -300,6 +335,8 @@ module.exports = {
   closePeriod,
   createChartAccount,
   createFixedAsset,
+  createFixedAssetDepreciationJournal,
+  createFixedAssetAcquisitionJournal,
   createJournal,
   createPeriod,
   exportLedgerReport,
@@ -308,6 +345,9 @@ module.exports = {
   listFixedAssets,
   listJournals,
   listChartOfAccounts,
+  previewPosting,
+  previewCustomerInvoicePosting,
+  previewCustomerPaymentPosting,
   listPeriods,
   periodCloseOverview,
   postJournal,

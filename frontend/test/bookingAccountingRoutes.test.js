@@ -61,3 +61,13 @@ test("Booking Accounting dashboard has mobile financial cards and small-screen r
   assert.ok(stylesSource.includes("@media (max-width: 340px)"));
   assert.ok(stylesSource.includes("grid-template-columns: 1fr"));
 });
+
+test("Booking Expenses exposes server filters, pagination and evidence actions", () => {
+  assert.ok(bookingAccountingPageSource.includes("ExpenseFilters"));
+  assert.ok(bookingAccountingPageSource.includes("ExpensePagination"));
+  assert.ok(bookingAccountingPageSource.includes("fetchBookingAccountingExpense"));
+  assert.ok(bookingAccountingPageSource.includes("voidBookingAccountingExpense"));
+  assert.ok(bookingAccountingPageSource.includes("BookingExpenseDetailsOffcanvas"));
+  assert.ok(bookingAccountingPageSource.includes("fromDate: expenseFilters.fromDate"));
+  assert.ok(bookingAccountingPageSource.includes("onPageChange"));
+});

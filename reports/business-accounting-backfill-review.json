@@ -1,0 +1,199 @@
+{
+  "readOnly": true,
+  "dryRun": true,
+  "strategy": "CLASSIFY_REVIEW_APPROVE_APPLY_VERIFY",
+  "generatedAt": "2026-09-18T06:26:04.458Z",
+  "scanned": 136,
+  "summary": {
+    "UNCHANGED": 99,
+    "REVIEW_REQUIRED": 37
+  },
+  "writes": 0,
+  "rows": [
+    {
+      "bookingReference": "GYGRFQGYKZ28",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG32LY979AB",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1441863013",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1423634423",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1441720001",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGRFQG684Y9",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGVN234W6MQ",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGN6BYHH5MN",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1439382645",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1439277305",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1439139071",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG996XK5ZAM",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGKBF7BBL2K",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1436245843",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGG45MKB4HG",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1435747845",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG83W8N2A2H",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1445126625",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGKBF5YKVV2",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGKBF53F282",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1442659613",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGKBF59W84Y",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGLMRVGF6XM",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG7VKQ757HB",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGRFQGAG2WQ",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1445969483",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1445955279",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1445915375",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG2Q9ANMLLL",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG2Q9AMY3VQ",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1447020877",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGMX389AARY",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1447193175",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGKBF5B24VG",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGWZALRMG68",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1448345653",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1448421203",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    }
+  ]
+}

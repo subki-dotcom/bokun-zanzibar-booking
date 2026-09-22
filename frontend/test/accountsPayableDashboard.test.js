@@ -19,10 +19,16 @@ test("accounts payable route uses the dedicated production page", () => {
 test("accounts payable dashboard uses canonical business expense and GL APIs without screenshot data", () => {
   assert.match(api, /fetchAccountsPayableDashboard/);
   assert.match(api, /createBusinessExpense/);
+  assert.match(api, /createSupplierPayment/);
   assert.match(page, /fetchAccountsPayableDashboard\(filters\)/);
   assert.match(service, /BusinessExpenseModel\.find\(query\)/);
   assert.match(service, /controlAccountCode: "2010"/);
   assert.doesNotMatch(page, /125,480,000|42,350,000|83,130,000|Zanzibar Supplies Co\./);
+});
+
+test("accounts payable capability contract exposes supplier payment posting", () => {
+  assert.match(service, /recordSupplierPayment: true/);
+  assert.match(service, /Approved business-accounting bills can be allocated and posted/);
 });
 
 test("accounts payable page exposes accounting-specific register, reconciliation and safe actions", () => {
@@ -31,8 +37,9 @@ test("accounts payable page exposes accounting-specific register, reconciliation
   assert.match(page, /AP Subledger/);
   assert.match(page, /General Ledger AP/);
   assert.match(page, /New Bill \/ Invoice/);
-  assert.doesNotMatch(page, /Record Payment/);
-  assert.match(service, /recordSupplierPayment: false/);
+  assert.match(page, /Record Payment/);
+  assert.match(page, /canRecordPayment/);
+  assert.match(api, /business-expenses\/supplier-payments/);
 });
 
 test("accounts payable layout uses mobile bill cards and 320px-safe rules", () => {

@@ -34,6 +34,14 @@ test("AR page exposes receivables register, currency safety and safe capabilitie
   assert.match(service, /AR_MIXED_REPORTING_CURRENCIES/);
 });
 
+test("AR invoice preview can show existing journal lines without enabling posting", () => {
+  assert.match(api, /fetchGeneralLedgerJournals/);
+  assert.match(page, /includeLines: true/);
+  assert.match(page, /Recorded journal audit/);
+  assert.match(page, /Promise\.allSettled/);
+  assert.match(page, /Automatic posting: \{preview\.automationEnabled/);
+});
+
 test("AR layout replaces the table with mobile cards and supports 320px", () => {
   assert.match(page, /ap-mobile-list/);
   assert.match(css, /\.accounts-receivable-page/);

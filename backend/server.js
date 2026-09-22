@@ -17,9 +17,12 @@ const {
   startBokunConfirmedBookingImportPoller,
   stopBokunConfirmedBookingImportPoller
 } = require("./src/jobs/bokunConfirmedBookingImport.job");
+const { startInvoiceSyncPoller, stopInvoiceSyncPoller } = require("./src/jobs/invoiceSync.job");
+const revenueRecognitionWorker = require("./src/jobs/revenueRecognition.job");
 
 const bootstrap = async () => {
   await connectDB();
+  revenueRecognitionWorker.start();
 
   app.listen(env.PORT, () => {
     logger.info("Server started", {
@@ -36,21 +39,26 @@ const bootstrap = async () => {
     startBookingSyncPoller();
     startBokunConfirmedBookingImportPoller();
     startBookingFinalizationPoller();
+    startInvoiceSyncPoller();
     startRefundReconciliationPoller();
   });
 };
 
 process.on("SIGINT", () => {
+  revenueRecognitionWorker.stop();
   stopBookingSyncPoller();
   stopBokunConfirmedBookingImportPoller();
   stopBookingFinalizationPoller();
+  stopInvoiceSyncPoller();
   stopRefundReconciliationPoller();
 });
 
 process.on("SIGTERM", () => {
+  revenueRecognitionWorker.stop();
   stopBookingSyncPoller();
   stopBokunConfirmedBookingImportPoller();
   stopBookingFinalizationPoller();
+  stopInvoiceSyncPoller();
   stopRefundReconciliationPoller();
 });
 

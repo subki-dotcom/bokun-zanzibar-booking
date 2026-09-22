@@ -1,0 +1,14 @@
+import { useState } from "react";
+import { Badge, Button, Card, Form, Table } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import { commitSettlementImport, previewSettlementImport } from "../../api/adminApi";
+
+export default function AdminSettlementImportPage() {
+  const [csv, setCsv] = useState("");
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const runPreview = async () => { setBusy(true); setError(""); try { setPreview(await previewSettlementImport(csv)); } catch (err) { setError(err.message || "Preview failed."); } finally { setBusy(false); } };
+  const commit = async () => { setBusy(true); setError(""); try { setPreview({ ...preview, committed: await commitSettlementImport(preview.token) }); } catch (err) { setError(err.message || "Commit failed."); } finally { setBusy(false); } };
+  return <main className="admin-page-container"><p><Link to="/admin/business-accounting/settlements">Settlements</Link> / Import</p><h1>Import Settlement Statement</h1><p className="text-muted">Preview validates references, providers, currencies, duplicate identities, and booking matches before any records are written.</p>{error ? <div className="alert alert-danger">{error}</div> : null}<Card className="mb-4"><Card.Body><Form.Group><Form.Label>CSV statement</Form.Label><Form.Control as="textarea" rows={8} value={csv} onChange={(event) => setCsv(event.target.value)} placeholder="settlement_reference,provider,amount,currency,evidence_reference,booking_reference" /></Form.Group><Button className="mt-3" onClick={runPreview} disabled={busy || !csv.trim()}>Preview Import</Button></Card.Body></Card>{preview ? <Card><Card.Body><div className="d-flex justify-content-between align-items-center"><h2 className="h5">Preview: {preview.status}</h2>{preview.token && preview.status === "READY" ? <Button onClick={commit} disabled={busy}>Commit Valid Rows</Button> : null}</div><div className="mb-3">{Object.entries(preview.summary || {}).map(([key, value]) => <Badge bg={key === "READY" ? "success" : "warning"} className="me-2" key={key}>{key}: {value}</Badge>)}</div><Table responsive><thead><tr><th>Row</th><th>Settlement</th><th>Provider</th><th>Booking</th><th>Amount</th><th>Classification</th><th>Reasons</th></tr></thead><tbody>{(preview.rows || []).map((row) => <tr key={row.rowNumber}><td>{row.rowNumber}</td><td>{row.settlementReference || "Missing"}</td><td>{row.provider}</td><td>{row.bookingReference || "-"}</td><td>{row.amount} {row.currency}</td><td>{row.classification}</td><td>{row.reasons.join(", ") || "-"}</td></tr>)}</tbody></Table>{preview.committed ? <div className="alert alert-success">Committed {preview.committed.committed} settlement rows.</div> : null}</Card.Body></Card> : null}</main>;
+}

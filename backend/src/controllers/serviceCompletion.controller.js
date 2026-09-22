@@ -1,0 +1,15 @@
+const asyncHandler = require("../utils/asyncHandler");
+const { successResponse } = require("../utils/apiResponse");
+const service = require("../services/serviceCompletion");
+const list = asyncHandler(async (req, res) => successResponse(res, { message: "Service completions fetched", data: await service.list(req.validated?.query || req.query || {}) }));
+const detail = asyncHandler(async (req, res) => successResponse(res, { message: "Service completion detail fetched", data: await service.detail(req.params.completionId) }));
+const review = asyncHandler(async (req, res) => successResponse(res, { message: "Service completion review fetched", data: await service.review(req.params.bookingReference) }));
+const create = asyncHandler(async (req, res) => successResponse(res, { message: "Service completion recorded", data: await service.create({ input: req.validated.body, auth: req.auth, requestId: req.requestId }) }));
+const verify = asyncHandler(async (req, res) => successResponse(res, { message: "Service completion verified", data: await service.verify({ completionId: req.params.completionId, input: req.validated.body, auth: req.auth, requestId: req.requestId }) }));
+const reverse = asyncHandler(async (req, res) => successResponse(res, { message: "Service completion reversed", data: await service.reverse({ completionId: req.params.completionId, reason: req.validated.body.reason, auth: req.auth, requestId: req.requestId }) }));
+const previewRevenue = asyncHandler(async (req, res) => successResponse(res, { message: "Revenue recognition preview evaluated", data: await service.recognitionPreview({ completionId: req.params.completionId }) }));
+const revenue = require("../services/revenueRecognition");
+const postRevenue = asyncHandler(async (req, res) => successResponse(res, { message: "Revenue recognition evaluated", data: await revenue.post({ completionId: req.params.completionId, origin: "AUTOMATIC", auth: req.auth }) }));
+const verifyRevenueEvidence = asyncHandler(async (req, res) => successResponse(res, { message: "Revenue evidence verified", data: await revenue.verifyEvidence({ completionId: req.params.completionId, input: req.validated.body, auth: req.auth }) }));
+const reverseRevenue = asyncHandler(async (req, res) => successResponse(res, { message: "Revenue reversal evaluated", data: await revenue.reverse({ recognitionId: req.validated.body.recognitionId, completionId: req.params.completionId, input: req.validated.body, auth: req.auth }) }));
+module.exports = { list, detail, review, create, verify, reverse, previewRevenue, postRevenue, verifyRevenueEvidence, reverseRevenue };

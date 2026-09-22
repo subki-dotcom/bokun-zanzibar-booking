@@ -1,5 +1,7 @@
 const Payment = require("../../models/Payment");
 const PaymentAllocation = require("../../models/PaymentAllocation");
+const Settlement = require("../../models/Settlement");
+const SettlementAllocation = require("../../models/SettlementAllocation");
 const { toDecimal, normalizeCurrency } = require("../../utils/money");
 
 const decimal = (value) => {
@@ -101,15 +103,26 @@ const summarizeSettlement = (payments = [], allocations = [], context = {}) => {
 const loadSettlementViews = async (references = [], contexts = new Map()) => {
   const refs = [...new Set(references.map((reference) => String(reference || "").trim()).filter(Boolean))];
   if (!refs.length) return new Map();
-  const [payments, allocations] = await Promise.all([
+  const [payments, allocations, settlementAllocations] = await Promise.all([
     Payment.find({ bookingReference: { $in: refs } }).select("bookingReference provider verificationStatus settlementAmount settlementCurrency settledAt providerFeeAmount providerFeeCurrency reconciliation.reviewed").lean(),
-    PaymentAllocation.find({ bookingReference: { $in: refs }, status: "applied" }).select("bookingReference paymentId allocationKey amount currency status").lean()
+    PaymentAllocation.find({ bookingReference: { $in: refs }, status: "applied" }).select("bookingReference paymentId allocationKey amount currency status").lean(),
+    SettlementAllocation.find({ bookingReference: { $in: refs }, status: "APPLIED" }).select("bookingReference settlementId amount currency status").lean()
   ]);
+  const settlementIds = [...new Set(settlementAllocations.map((row) => String(row.settlementId)).filter(Boolean))];
+  const settlements = settlementIds.length ? await Settlement.find({ _id: { $in: settlementIds } }).select("provider status expectedNet received allocated unallocated settlementDate evidenceSource settlementReference").lean() : [];
+  const settlementById = new Map(settlements.map((row) => [String(row._id), row]));
   const groupedPayments = new Map(refs.map((ref) => [ref, []]));
   const groupedAllocations = new Map(refs.map((ref) => [ref, []]));
   for (const payment of payments) groupedPayments.get(payment.bookingReference)?.push(payment);
   for (const allocation of allocations) groupedAllocations.get(allocation.bookingReference)?.push(allocation);
-  return new Map(refs.map((ref) => [ref, summarizeSettlement(groupedPayments.get(ref), groupedAllocations.get(ref), contexts.get?.(ref) || contexts[ref] || {})]));
+  return new Map(refs.map((ref) => {
+    const rows = settlementAllocations.filter((allocation) => allocation.bookingReference === ref).map((allocation) => ({ allocation, settlement: settlementById.get(String(allocation.settlementId)) })).filter(({ settlement }) => settlement);
+    if (!rows.length) return [ref, summarizeSettlement(groupedPayments.get(ref), groupedAllocations.get(ref), contexts.get?.(ref) || contexts[ref] || {})];
+    const first = rows[0].settlement;
+    const received = rows.reduce((sum, row) => sum.plus(toDecimal(row.allocation.amount || 0)), toDecimal(0));
+    const currency = rows.every((row) => currencyCode(row.allocation.currency) === currencyCode(first.received?.currency || row.allocation.currency)) ? currencyCode(first.received?.currency || rows[0].allocation.currency) : null;
+    return [ref, { status: first.status || "UNKNOWN", expectedAmount: first.expectedNet?.amount?.toString?.() || null, expectedCurrency: first.expectedNet?.currency || null, receivedAmount: received.toFixed(), currency, receivedByCurrency: currency ? [{ amount: received.toFixed(), currency }] : [], allocatedByCurrency: [{ amount: received.toFixed(), currency: currency || rows[0].allocation.currency }], provider: first.provider, settlementReferences: rows.map(() => first.settlementReference), lastSettlementDate: first.settlementDate || null, evidenceSource: first.evidenceSource, evidenceCount: rows.length, reconciliation: { status: first.status === "RECONCILED" ? "RECONCILED" : "UNAVAILABLE", supported: first.status === "RECONCILED" }, reconciliationStatus: first.status === "RECONCILED" ? "RECONCILED" : "UNAVAILABLE", source: "SETTLEMENT_DOMAIN", cashReceipt: { status: first.received ? "CONFIRMED" : "NONE", amount: received.toFixed(), currency } }];
+  }));
 };
 
 module.exports = { summarizeSettlement, loadSettlementViews };

@@ -30,6 +30,7 @@ const enrichPaymentViews = async (rows = []) => {
     const booking = byReference.get(row.bookingReference);
     return { ...row, bookingPayment: presentBookingPayment(booking || {}),
       salesChannel: booking?.salesChannel || '',
+      guestPaymentCollector: row.guestPaymentCollector || '',
       settlement: settlements.get(row.bookingReference),
       cashReceipt: settlements.get(row.bookingReference)?.cashReceipt,
       accountingPaymentStatus: row.paymentStatus,

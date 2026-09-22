@@ -1,0 +1,1406 @@
+{
+  "readOnly": true,
+  "dryRun": true,
+  "strategy": "CLASSIFY_REVIEW_APPROVE_APPLY_VERIFY",
+  "generatedAt": "2026-09-17T18:18:59.935Z",
+  "scanned": 134,
+  "summary": {
+    "WOULD_CREATE_REVIEW_PLAN": 40,
+    "REVIEW_REQUIRED": 94
+  },
+  "writes": 0,
+  "rows": [
+    {
+      "bookingReference": "ZNZ-1783068400084-3278",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783068400084-3278",
+      "sourceIds": {
+        "bookingId": "6a4776f0448436a55c9cac7b",
+        "invoiceId": "6a4776f0448436a55c9cac83",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783071019641-1170",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783071019641-1170",
+      "sourceIds": {
+        "bookingId": "6a47812b59814ab149c55e8e",
+        "invoiceId": "6a47812b59814ab149c55e97",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783072653718-9199",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783072653718-9199",
+      "sourceIds": {
+        "bookingId": "6a47878d59814ab149c55f2f",
+        "invoiceId": "6a47878d59814ab149c55f38",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783075062164-2808",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783075062164-2808",
+      "sourceIds": {
+        "bookingId": "6a4790f6313e4ee145b8b35c",
+        "invoiceId": "6a4790f6313e4ee145b8b365",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783093363061-7495",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783093363061-7495",
+      "sourceIds": {
+        "bookingId": "6a47d87362ce693f2e8a738e",
+        "invoiceId": "6a47d87362ce693f2e8a7397",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783093384503-3418",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783093384503-3418",
+      "sourceIds": {
+        "bookingId": "6a47d88862ce693f2e8a73a5",
+        "invoiceId": "6a47d88862ce693f2e8a73ae",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783093637342-1323",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783093637342-1323",
+      "sourceIds": {
+        "bookingId": "6a47d98562ce693f2e8a73c9",
+        "invoiceId": "6a47d98562ce693f2e8a73d2",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783094946270-5328",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783094946270-5328",
+      "sourceIds": {
+        "bookingId": "6a47dea227b90974d0a1c521",
+        "invoiceId": "6a47dea227b90974d0a1c529",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783096757501-8584",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783096757501-8584",
+      "sourceIds": {
+        "bookingId": "6a47e5b527b90974d0a1c5a9",
+        "invoiceId": "6a47e5b527b90974d0a1c5b3",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783097246955-2831",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783097246955-2831",
+      "sourceIds": {
+        "bookingId": "6a47e79e9e70be68b81b8522",
+        "invoiceId": "6a47e79f9e70be68b81b852c",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783098016490-1425",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783098016490-1425",
+      "sourceIds": {
+        "bookingId": "6a47eaa09e70be68b81b8568",
+        "invoiceId": "6a47eaa09e70be68b81b8572",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783098349610-2293",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783098349610-2293",
+      "sourceIds": {
+        "bookingId": "6a47ebed66a96d56a07d2774",
+        "invoiceId": "6a47ebed66a96d56a07d277d",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783100132099-8284",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783100132099-8284",
+      "sourceIds": {
+        "bookingId": "6a47f2e4edf6067efe354556",
+        "invoiceId": "6a47f2e4edf6067efe35455f",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783103045959-3350",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "ZNZ-1783286113157-1302",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "ZNZ-1783324159463-2470",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783324159463-2470",
+      "sourceIds": {
+        "bookingId": "6a4b5dff3a452fd3ddb7665e",
+        "invoiceId": "6a4b5dff3a452fd3ddb76666",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783458202515-8156",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783458202515-8156",
+      "sourceIds": {
+        "bookingId": "6a4d699a00c6c2ca358bd858",
+        "invoiceId": "6a4d699a00c6c2ca358bd860",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783491621778-8830",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "ZNZ-1783491629380-7708",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "ZNZ-1783495966038-9570",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "ZNZ-1783499765564-1348",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "ZNZ-1783499785434-3825",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "ZNZ-1783702348928-7732",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783702348928-7732",
+      "sourceIds": {
+        "bookingId": "6a51234c8fe5402dea698bef",
+        "invoiceId": "6a51234c8fe5402dea698bfb",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783702405302-5579",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783702405302-5579",
+      "sourceIds": {
+        "bookingId": "6a5123858fe5402dea698c06",
+        "invoiceId": "6a5123858fe5402dea698c12",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783703828538-2542",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783703828538-2542",
+      "sourceIds": {
+        "bookingId": "6a5129148fe5402dea698c3f",
+        "invoiceId": "6a5129148fe5402dea698c4b",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783927655437-9063",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783927655437-9063",
+      "sourceIds": {
+        "bookingId": "6a5493677550162ca926ee2a",
+        "invoiceId": "6a5493677550162ca926ee34",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783944538290-1855",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783944538290-1855",
+      "sourceIds": {
+        "bookingId": "6a54d55a7550162ca926ef38",
+        "invoiceId": "6a54d55a7550162ca926ef42",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783950352641-8615",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783950352641-8615",
+      "sourceIds": {
+        "bookingId": "6a54ec107550162ca926ef78",
+        "invoiceId": "6a54ec107550162ca926ef85",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783950738360-7118",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783950738360-7118",
+      "sourceIds": {
+        "bookingId": "6a54ed927550162ca926efad",
+        "invoiceId": "6a54ed927550162ca926efb7",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783954125767-9817",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783954125767-9817",
+      "sourceIds": {
+        "bookingId": "6a54facd7550162ca926f088",
+        "invoiceId": "6a54facd7550162ca926f092",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783965248638-9910",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783965248638-9910",
+      "sourceIds": {
+        "bookingId": "6a5526407550162ca926f16d",
+        "invoiceId": "6a5526407550162ca926f177",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784214431513-2211",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1784214431513-2211",
+      "sourceIds": {
+        "bookingId": "6a58f39fcc3abe98f08f6a64",
+        "invoiceId": "6a58f39fcc3abe98f08f6a6f",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784214567367-7693",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1784214567367-7693",
+      "sourceIds": {
+        "bookingId": "6a58f427cc3abe98f08f6a98",
+        "invoiceId": "6a58f427cc3abe98f08f6aa3",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784214657183-3277",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1784214657183-3277",
+      "sourceIds": {
+        "bookingId": "6a58f481cc3abe98f08f6aae",
+        "invoiceId": "6a58f481cc3abe98f08f6ab9",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784218724204-2703",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1784218724204-2703",
+      "sourceIds": {
+        "bookingId": "6a590464cc3abe98f08f6b39",
+        "invoiceId": "6a590464cc3abe98f08f6b44",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784219065056-4919",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1784219065056-4919",
+      "sourceIds": {
+        "bookingId": "6a5905b9cc3abe98f08f6b78",
+        "invoiceId": "6a5905b9cc3abe98f08f6b83",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784223776928-6722",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1784223776928-6722",
+      "sourceIds": {
+        "bookingId": "6a591820cc3abe98f08f6c4d",
+        "invoiceId": "6a591820cc3abe98f08f6c57",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784224104668-9931",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1784224104668-9931",
+      "sourceIds": {
+        "bookingId": "6a591968cc3abe98f08f6c92",
+        "invoiceId": "6a591968cc3abe98f08f6c9c",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785309942749-8549",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1785309942749-8549",
+      "sourceIds": {
+        "bookingId": "6a69aaf6eea4cf829eed7354",
+        "invoiceId": "6a69aaf6eea4cf829eed735f",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785309956347-5736",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1785309956347-5736",
+      "sourceIds": {
+        "bookingId": "6a69ab04eea4cf829eed736f",
+        "invoiceId": "6a69ab04eea4cf829eed737a",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785566862582-9223",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1785566862582-9223",
+      "sourceIds": {
+        "bookingId": "6a6d968e53ebfa01e983276b",
+        "invoiceId": "6a6d968e53ebfa01e9832776",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785566977883-2069",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1785566977883-2069",
+      "sourceIds": {
+        "bookingId": "6a6d970153ebfa01e983287c",
+        "invoiceId": "6a6d970153ebfa01e9832887",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785567414326-3370",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1785567414326-3370",
+      "sourceIds": {
+        "bookingId": "6a6d98b653ebfa01e98329b9",
+        "invoiceId": "6a6d98b653ebfa01e98329c4",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785594711340-4634",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1785594711340-4634",
+      "sourceIds": {
+        "bookingId": "6a6e035753ebfa01e9832a0a",
+        "invoiceId": "6a6e035753ebfa01e9832a15",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785643320297-2340",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1785643320297-2340",
+      "sourceIds": {
+        "bookingId": "6a6ec138877e62c415d99238",
+        "invoiceId": "6a6ec138877e62c415d99243",
+        "paymentIds": [
+          "6a6ec138877e62c415d99246"
+        ],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGRFQGYKZ28",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG32LY979AB",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1441863013",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101658841",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100651976",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100477559",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-99535802",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1423634423",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1441720001",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-102105574",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGRFQG684Y9",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGVN234W6MQ",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101660315",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101660088",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101659298",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101658385",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGN6BYHH5MN",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1439382645",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1439277305",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1439139071",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101447139",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101446226",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101446083",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101445916",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101241760",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101239934",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101239553",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101238920",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101238796",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101237410",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101237313",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101125350",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101124054",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101123754",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101123591",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101122881",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101122398",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101122079",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-101121845",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG996XK5ZAM",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100844410",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100794393",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100794327",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100753608",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100747421",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100746257",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100745660",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100654370",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGKBF7BBL2K",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1436245843",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "ZNZ-1786608947411-2003",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1786608947411-2003",
+      "sourceIds": {
+        "bookingId": "6a93fe61306f986879cfc003",
+        "invoiceId": "6aa0ed72fab0437216708710",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGG45MKB4HG",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100480611",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1435747845",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100478026",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG83W8N2A2H",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-103334641",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-103334155",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-103333934",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-103333571",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-103333440",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1445126625",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGKBF5YKVV2",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-102931808",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-102891929",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-102891364",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-102890573",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGKBF53F282",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1442659613",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGKBF59W84Y",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-100476169",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGLMRVGF6XM",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG7VKQ757HB",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGRFQGAG2WQ",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1445969483",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1445955279",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1445915375",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG2Q9ANMLLL",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYG2Q9AMY3VQ",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1447020877",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGMX389AARY",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "1447193175",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "ZNZ-1789376512918-9322",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1789376512918-9322",
+      "sourceIds": {
+        "bookingId": "6aa7b8004719cb671f319a77",
+        "invoiceId": "6aa7b8014719cb671f319a82",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGKBF5B24VG",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-104116229",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-104115290",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-104114606",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "VIA-104114494",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    },
+    {
+      "bookingReference": "GYGWZALRMG68",
+      "action": "REVIEW_REQUIRED",
+      "reason": "AWAITING_SETTLEMENT_EVIDENCE"
+    }
+  ]
+}

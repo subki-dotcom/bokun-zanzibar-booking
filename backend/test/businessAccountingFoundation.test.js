@@ -107,7 +107,8 @@ const createFakeModels = ({
   invoice = baseInvoice(),
   payments = basePayments(),
   refunds = baseRefunds(),
-  commissions = baseCommissions()
+  commissions = baseCommissions(),
+  ExpenseAccountingService
 } = {}) => {
   const state = {
     booking: clone(booking),
@@ -272,6 +273,7 @@ const createFakeModels = ({
     PaymentModel,
     RefundModel,
     CommissionRecordModel,
+    ExpenseAccountingService,
     GeneralLedgerService: {
       getTrialBalance: async () => ({
         baseCurrency: "USD",
@@ -304,11 +306,77 @@ test("builds one source-linked booking contribution without duplicating booking 
   assert.equal(posting.components.collectedRevenue, "100");
   assert.equal(posting.components.refundedAmount, "20");
   assert.equal(posting.components.providerFees, "3");
+  assert.equal(posting.components.agentCommission, "10");
+  assert.equal(posting.components.internalAgentCommission, "10");
+  assert.equal(posting.components.otaCommission, "0");
+  assert.equal(posting.metadata.otaCommissionStatus, "NEEDS_REVIEW");
+  assert.equal(posting.reviewStatus, "NEEDS_REVIEW");
   assert.equal(posting.components.channelCommission, "10");
+  assert.equal(posting.sourceSnapshot.financialEvidenceStatus, "NEEDS_REVIEW");
   assert.equal(posting.components.directBookingCosts, "0");
   assert.equal(posting.components.otherBusinessIncome, "0");
   assert.equal(posting.components.operatingExpenses, "0");
   assert.equal(posting.amount, "67");
+});
+
+test("verified Bokun financial evidence is preferred over local booking amount", () => {
+  const posting = __testables.buildBookingContributionPosting({
+    booking: {
+      ...baseBooking(),
+      pricingSnapshot: { finalPayable: 100, currency: "USD" },
+      bokunFinancialEvidence: {
+        source: "BOKUN",
+        status: "VERIFIED",
+        grossAmount: 125,
+        currency: "USD",
+        evidenceHash: "bokun-evidence-1"
+      }
+    },
+    invoice: baseInvoice(),
+    payments: [],
+    refunds: [],
+    commissions: []
+  });
+
+  assert.equal(posting.components.bookedRevenue, "0");
+  assert.equal(posting.sourceSnapshot.revenueEvidenceStatus, "UNKNOWN");
+  assert.equal(posting.sourceSnapshot.financialEvidenceSource, "BOKUN");
+  assert.equal(posting.sourceSnapshot.financialEvidenceHash, "bokun-evidence-1");
+});
+
+test("booking contribution includes approved booking direct costs once", () => {
+  const posting = __testables.buildBookingContributionPosting({
+    booking: baseBooking(),
+    invoice: baseInvoice(),
+    payments: basePayments(),
+    refunds: baseRefunds(),
+    commissions: baseCommissions(),
+    expenses: [
+      {
+        _id: "expense-booking-1",
+        expenseReference: "BEXP-1",
+        status: FINANCIAL_ENTRY_STATUS.APPROVED,
+        accountingScope: ACCOUNTING_SCOPE.BOOKING,
+        bookingReference: "ZNZ-BA-1001",
+        baseCurrency: "USD",
+        baseCurrencyAmount: "15"
+      },
+      {
+        _id: "expense-booking-2",
+        expenseReference: "BEXP-2",
+        status: FINANCIAL_ENTRY_STATUS.DRAFT,
+        accountingScope: ACCOUNTING_SCOPE.BOOKING,
+        bookingReference: "ZNZ-BA-1001",
+        baseCurrency: "USD",
+        baseCurrencyAmount: "50"
+      }
+    ]
+  });
+
+  assert.equal(posting.components.directBookingCosts, "15");
+  assert.equal(posting.amount, "52");
+  assert.equal(posting.metadata.directBookingCostsIncluded, true);
+  assert.deepEqual(posting.sourceSnapshot.bookingExpenseIds, ["expense-booking-1"]);
 });
 
 test("dry-run builds a booking contribution plan without writing postings or audits", async () => {
@@ -325,16 +393,51 @@ test("dry-run builds a booking contribution plan without writing postings or aud
   assert.equal(harness.state.audits.length, 0);
 });
 
+test("booking contribution apply requires explicit approval and never writes when it is missing", async () => {
+  const harness = createFakeModels();
+
+  await assert.rejects(
+    () => harness.service.postBookingContribution({
+      bookingReference: "ZNZ-BA-1001",
+      idempotencyKey: "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-BA-1001:BOOKING_NET_CONTRIBUTION"
+    }),
+    (error) => error.code === "BUSINESS_ACCOUNTING_APPROVAL_REQUIRED"
+  );
+  assert.equal(harness.state.postings.length, 0);
+  assert.equal(harness.state.audits.length, 0);
+});
+
+test("booking contribution apply rejects a mismatched idempotency key before writing", async () => {
+  const harness = createFakeModels();
+
+  await assert.rejects(
+    () => harness.service.postBookingContribution({
+      bookingReference: "ZNZ-BA-1001",
+      approvalId: "review-znz-ba-1001",
+      idempotencyKey: "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:WRONG-REFERENCE:BOOKING_NET_CONTRIBUTION"
+    }),
+    (error) => error.code === "BUSINESS_ACCOUNTING_IDEMPOTENCY_KEY_MISMATCH"
+  );
+  assert.equal(harness.state.postings.length, 0);
+  assert.equal(harness.state.audits.length, 0);
+});
+
 test("repeated booking contribution posting is idempotent and counted once in company totals", async () => {
   const harness = createFakeModels();
+  const approval = {
+    approvalId: "review-znz-ba-1001",
+    idempotencyKey: "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-BA-1001:BOOKING_NET_CONTRIBUTION"
+  };
 
   const first = await harness.service.postBookingContribution({
     bookingReference: "ZNZ-BA-1001",
+    ...approval,
     auth: { id: "admin-1", role: "admin" },
     requestId: "step3a-1"
   });
   const second = await harness.service.postBookingContribution({
     bookingReference: "ZNZ-BA-1001",
+    ...approval,
     auth: { id: "admin-1", role: "admin" },
     requestId: "step3a-2"
   });
@@ -345,17 +448,54 @@ test("repeated booking contribution posting is idempotent and counted once in co
   assert.equal(harness.state.postings.length, 1);
   assert.equal(harness.state.audits.length, 1);
   assert.equal(summary.totals.bookingNetContribution, 67);
+
+test("booking contribution dry-run loads approved direct costs from Booking Accounting", async () => {
+  const harness = createFakeModels();
+  harness.state.businessExpenses.push({
+    _id: "64f00000000000000000e99",
+    expenseReference: "BEXP-DRY-RUN",
+    accountingScope: ACCOUNTING_SCOPE.BOOKING,
+    bookingReference: "ZNZ-BA-1001",
+    status: FINANCIAL_ENTRY_STATUS.PAID,
+    baseCurrency: "USD",
+    baseCurrencyAmount: "12"
+  });
+  harness.state.businessExpenses.push({
+    _id: "64f00000000000000000e98",
+    expenseReference: "BEXP-VOID",
+    accountingScope: ACCOUNTING_SCOPE.BOOKING,
+    bookingReference: "ZNZ-BA-1001",
+    status: FINANCIAL_ENTRY_STATUS.VOID,
+    baseCurrency: "USD",
+    baseCurrencyAmount: "500"
+  });
+
+  const result = await harness.service.postBookingContribution({
+    bookingReference: "ZNZ-BA-1001",
+    dryRun: true
+  });
+
+  assert.equal(result.posting.components.directBookingCosts, "12");
+  assert.deepEqual(result.posting.sourceSnapshot.bookingExpenseIds, ["64f00000000000000000e99"]);
+  assert.equal(result.posting.metadata.excludedBookingExpenseCount, 0);
+});
   assert.equal(summary.bookingContributionPostingCount, 1);
 });
 
 test("booking contribution refresh updates the existing source-linked posting without creating a duplicate", async () => {
   const harness = createFakeModels();
 
-  await harness.service.postBookingContribution({ bookingReference: "ZNZ-BA-1001" });
+  await harness.service.postBookingContribution({
+    bookingReference: "ZNZ-BA-1001",
+    approvalId: "review-znz-ba-1001",
+    idempotencyKey: "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-BA-1001:BOOKING_NET_CONTRIBUTION"
+  });
   harness.state.refunds[0].confirmedRefundedAmount = 30;
 
   const refreshed = await harness.service.postBookingContribution({
     bookingReference: "ZNZ-BA-1001",
+    approvalId: "review-znz-ba-1001-refresh",
+    idempotencyKey: "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-BA-1001:BOOKING_NET_CONTRIBUTION",
     auth: { id: "admin-1", role: "admin" },
     requestId: "step3a-refresh"
   });
@@ -601,7 +741,11 @@ test("voided operating expense keeps history but stops counting in company total
 test("management accounting dashboard snapshot uses counted postings without duplicating booking revenue", async () => {
   const harness = createFakeModels();
 
-  await harness.service.postBookingContribution({ bookingReference: "ZNZ-BA-1001" });
+  await harness.service.postBookingContribution({
+    bookingReference: "ZNZ-BA-1001",
+    approvalId: "review-znz-ba-1001-dashboard",
+    idempotencyKey: "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-BA-1001:BOOKING_NET_CONTRIBUTION"
+  });
   await harness.service.createBusinessIncome({
     input: {
       incomeCategory: INCOME_CATEGORY.COMMISSION_INCOME,
@@ -801,6 +945,46 @@ test("accounts payable dashboard separates mixed reporting currencies and flags 
   assert.equal(result.dataQuality.some((issue) => issue.code === "AP_MIXED_REPORTING_CURRENCIES"), true);
   assert.equal(result.dataQuality.some((issue) => issue.code === "PARTIAL_PAYMENT_AMOUNT_MISSING"), true);
   assert.equal(result.reconciliation.status, "UNAVAILABLE");
+});
+
+test("automatic expense trigger is approval-scoped and leaves drafts untouched", async () => {
+  const previousEnabled = process.env.EXPENSE_AUTOMATIC_POSTING_ENABLED;
+  const previousMode = process.env.EXPENSE_POSTING_MODE;
+  process.env.EXPENSE_AUTOMATIC_POSTING_ENABLED = "true";
+  process.env.EXPENSE_POSTING_MODE = "AUTOMATIC_NEW_EXPENSE_POSTING";
+  const calls = [];
+  const harness = createFakeModels({
+    ExpenseAccountingService: {
+      postExpense: async ({ expense }) => {
+        calls.push(expense);
+        return { action: "posted", eligibility: { eligible: true } };
+      }
+    }
+  });
+  await harness.service.createBusinessExpense({
+    input: {
+      category: EXPENSE_CATEGORY.SOFTWARE,
+      description: "Draft expense",
+      amount: "10",
+      currency: "USD",
+      status: FINANCIAL_ENTRY_STATUS.DRAFT
+    }
+  });
+  await harness.service.createBusinessExpense({
+    input: {
+      category: EXPENSE_CATEGORY.SOFTWARE,
+      description: "Approved expense",
+      amount: "20",
+      currency: "USD",
+      status: FINANCIAL_ENTRY_STATUS.APPROVED
+    }
+  });
+  if (previousEnabled === undefined) delete process.env.EXPENSE_AUTOMATIC_POSTING_ENABLED;
+  else process.env.EXPENSE_AUTOMATIC_POSTING_ENABLED = previousEnabled;
+  if (previousMode === undefined) delete process.env.EXPENSE_POSTING_MODE;
+  else process.env.EXPENSE_POSTING_MODE = previousMode;
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].description, "Approved expense");
 });
 
 test("accounts receivable dashboard uses canonical invoice balances, verified collections and AR control account", async () => {

@@ -1,0 +1,301 @@
+﻿diff --git a/reports/booking-expenses-medium-baseline/policy.js b/backend/src/accounting/bookingExpensePolicy.js
+index 8400265..3301151 100644
+--- a/reports/booking-expenses-medium-baseline/policy.js
++++ b/backend/src/accounting/bookingExpensePolicy.js
+@@ -1,6 +1,7 @@
+ const { createHash } = require("node:crypto");
+ const AppError = require("../utils/AppError");
+ const { configuredBaseCurrency } = require("./currencyPolicy");
++const { ACCOUNTING_SCOPE } = require("./constants");
+ const { normalizeCurrency, toDecimal } = require("../utils/money");
+ 
+ // Separate from business operating expenses; existing records are not reclassified.
+@@ -50,7 +51,9 @@ const bookingExpenseRequestHash = (values, requestedReference = "") => {
+ };
+ 
+ const isCountedBookingExpense = (expense) =>
++  expense.accountingScope === ACCOUNTING_SCOPE.BOOKING &&
+   ["APPROVED", "PAID"].includes(String(expense.status || "").trim().toUpperCase()) &&
+-  String(expense.accountingStatus || "").trim().toUpperCase() !== "REVERSED";
++  !["REVERSED", "NEEDS_REVIEW"].includes(String(expense.accountingStatus || "").trim().toUpperCase()) &&
++  String(expense.completionStatus || "").trim().toUpperCase() !== "NEEDS_REVIEW";
+ 
+ module.exports = { BOOKING_DIRECT_COST_CATEGORIES, validateBookingExpenseCategory, resolveBookingExpenseFx, bookingExpenseRequestHash, isCountedBookingExpense };
+diff --git a/reports/booking-expenses-medium-baseline/service.js b/backend/src/services/bookingAccounting/index.js
+index 9f53bfe..94f3b29 100644
+--- a/reports/booking-expenses-medium-baseline/service.js
++++ b/backend/src/services/bookingAccounting/index.js
+@@ -1800,6 +1800,8 @@ const createBookingAccountingService = ({
+       resolveBookingExpenseFx(payload, toDate(payload.expenseDate || existing.expenseDate));
+     }
+     const values = buildBookingExpenseValues({ input: { ...existing, ...payload }, booking, auth, nowDate: new Date() });
++    // Creation identity is immutable; the existing audit event identifies the editor.
++    delete values.createdBy;
+     if (!values.description) throw new AppError("Booking expense description is required", 422, "BOOKING_EXPENSE_DESCRIPTION_REQUIRED");
+     const updated = await updateByIdRow(BusinessExpenseModel, expenseId, values);
+     const before = normalizeExpense(existing);
+@@ -1884,20 +1886,20 @@ const createBookingAccountingService = ({
+     };
+   };
+ 
+-  const loadSnapshot = async (filters = {}) => {
++  const loadSnapshot = async (filters = {}, expenseQuery = {}) => {
+     const scanLimit = Math.max(50, Math.min(MAX_LIMIT, Number(filters.limit || 250)));
+     const [bookings, invoices, payments, refunds, expenses] = await Promise.all([
+       findRows(BookingModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
+       findRows(InvoiceModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
+       findRows(PaymentModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
+       findRows(RefundModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
+-      findRows(BusinessExpenseModel, bookingLinkedExpenseQuery({}), { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit })
++      findRows(BusinessExpenseModel, bookingLinkedExpenseQuery(expenseQuery), { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit })
+     ]);
+     return { bookings, invoices, payments, refunds, expenses, scanLimit };
+   };
+ 
+   const getProfitability = async (filters = {}) => {
+-    const { bookings, invoices, payments, refunds, expenses, scanLimit } = await loadSnapshot(filters);
++    const { bookings, invoices, payments, refunds, expenses, scanLimit } = await loadSnapshot(filters, { accountingScope: ACCOUNTING_SCOPE.BOOKING });
+     const templates = await loadCostTemplates();
+     const bookingsByReference = buildMap(bookings, (booking) => booking.bookingReference);
+     const invoicesByReference = buildMap(invoices, (invoice) => invoice.bookingReference);
+diff --git a/reports/booking-expenses-medium-baseline/core.test.js b/backend/test/bookingAccountingCore.test.js
+index f3b9004..951502d 100644
+--- a/reports/booking-expenses-medium-baseline/core.test.js
++++ b/backend/test/bookingAccountingCore.test.js
+@@ -220,6 +220,7 @@ const createService = ({
+     BusinessExpenseModel: BusinessExpenseModel || createModel([
+       {
+         _id: "expense-1",
++        accountingScope: "BOOKING_ACCOUNTING",
+         expenseReference: "EXP-BA-1",
+         bookingReference: "ZNZ-BA-1",
+         category: "OTHER_OPERATING_EXPENSE",
+@@ -234,6 +235,7 @@ const createService = ({
+       },
+       {
+         _id: "expense-2",
++        accountingScope: "BOOKING_ACCOUNTING",
+         expenseReference: "EXP-BA-DRAFT",
+         bookingReference: "ZNZ-BA-1",
+         category: "OTHER_OPERATING_EXPENSE",
+@@ -248,6 +250,7 @@ const createService = ({
+       },
+       {
+         _id: "expense-3",
++        accountingScope: "BUSINESS_ACCOUNTING",
+         expenseReference: "EXP-GENERAL-1",
+         bookingReference: "",
+         category: "OFFICE_RENT",
+@@ -305,9 +308,9 @@ test("booking accounting profitability uses only confirmed refund amounts", asyn
+ 
+ test("reversed booking expenses do not contribute costs, currency evidence, count or completion", async () => {
+   const expenses = createModel([
+-    { _id: "active", bookingReference: "ZNZ-BA-1", status: "APPROVED", accountingStatus: "POSTED", amount: 25, baseCurrencyAmount: 25, currency: "USD", baseCurrency: "USD", completionStatus: "COMPLETE" },
+-    { _id: "reversed-approved", bookingReference: "ZNZ-BA-1", status: "APPROVED", accountingStatus: "REVERSED", amount: 500, baseCurrencyAmount: 500, currency: "EUR", baseCurrency: "EUR", completionStatus: "NEEDS_REVIEW" },
+-    { _id: "reversed-paid", bookingReference: "ZNZ-BA-1", status: "PAID", accountingStatus: "REVERSED", amount: 100, baseCurrencyAmount: 100, currency: "USD", baseCurrency: "USD" }
++    { _id: "active", accountingScope: "BOOKING_ACCOUNTING", bookingReference: "ZNZ-BA-1", status: "APPROVED", accountingStatus: "POSTED", amount: 25, baseCurrencyAmount: 25, currency: "USD", baseCurrency: "USD", completionStatus: "COMPLETE" },
++    { _id: "reversed-approved", accountingScope: "BOOKING_ACCOUNTING", bookingReference: "ZNZ-BA-1", status: "APPROVED", accountingStatus: "REVERSED", amount: 500, baseCurrencyAmount: 500, currency: "EUR", baseCurrency: "EUR", completionStatus: "NEEDS_REVIEW" },
++    { _id: "reversed-paid", accountingScope: "BOOKING_ACCOUNTING", bookingReference: "ZNZ-BA-1", status: "PAID", accountingStatus: "REVERSED", amount: 100, baseCurrencyAmount: 100, currency: "USD", baseCurrency: "USD" }
+   ]);
+   const before = clone(expenses.__store);
+   const service = createService({ BusinessExpenseModel: expenses });
+@@ -321,7 +324,7 @@ test("reversed booking expenses do not contribute costs, currency evidence, coun
+ 
+ test("only reversed expenses provide no actual-cost evidence", async () => {
+   const service = createService({ BusinessExpenseModel: createModel([
+-    { _id: "reversed", bookingReference: "ZNZ-BA-1", status: "PAID", accountingStatus: "REVERSED", amount: 20, baseCurrencyAmount: 20, currency: "USD", baseCurrency: "USD", completionStatus: "COMPLETE" }
++    { _id: "reversed", accountingScope: "BOOKING_ACCOUNTING", bookingReference: "ZNZ-BA-1", status: "PAID", accountingStatus: "REVERSED", amount: 20, baseCurrencyAmount: 20, currency: "USD", baseCurrency: "USD", completionStatus: "COMPLETE" }
+   ]) });
+   const { items } = await service.getProfitability({ limit: 20 });
+   assert.equal(items[0].actualDirectCost, 0);
+@@ -329,11 +332,69 @@ test("only reversed expenses provide no actual-cost evidence", async () => {
+   assert.equal(items[0].expenseCompletionStatus, "NOT_STARTED");
+ });
+ 
++for (const reviewState of [
++  { status: "NEEDS_REVIEW" },
++  { status: "APPROVED", accountingStatus: "NEEDS_REVIEW" },
++  { status: "PAID", accountingStatus: "NEEDS_REVIEW" },
++  { status: "APPROVED", completionStatus: "NEEDS_REVIEW" }
++]) {
++  test(`booking expense review state cannot affect Actual Direct Costs or Actual Profit: ${JSON.stringify(reviewState)}`, async () => {
++    const eligible = { _id: "eligible", accountingScope: "BOOKING_ACCOUNTING", bookingReference: "ZNZ-BA-1", category: "DIRECT_GUIDE_COST", status: "APPROVED", accountingStatus: "READY_TO_POST", completionStatus: "COMPLETE", amount: 20, baseCurrencyAmount: 20, currency: "USD", baseCurrency: "USD" };
++    const expenses = createModel([eligible, { ...eligible, _id: "review", amount: 250, baseCurrencyAmount: 250, ...reviewState }]);
++    const before = clone(expenses.__store);
++    const service = createService({ BusinessExpenseModel: expenses });
++    let row = (await service.getProfitability({ limit: 20 })).items[0];
++    assert.equal(row.actualDirectCost, 20);
++    assert.equal(row.actualProfit, 80);
++    assert.equal(row.actualExpenseCount, 1);
++    assert.deepEqual(expenses.__store, before);
++
++    // Simulate validated approval in the isolated fixture; no new workflow is introduced.
++    Object.assign(expenses.__store[1], { status: "APPROVED", accountingStatus: "READY_TO_POST", completionStatus: "COMPLETE" });
++    row = (await service.getProfitability({ limit: 20 })).items[0];
++    assert.equal(row.actualDirectCost, 270);
++    assert.equal(row.actualProfit, -170);
++    assert.equal(row.actualExpenseCount, 2);
++  });
++}
++
++test("Actual Direct Costs query requires booking scope and excludes business, missing and invalid scope", async () => {
++  const bookingExpense = { _id: "booking-expense", accountingScope: "BOOKING_ACCOUNTING", bookingReference: "ZNZ-BA-1", category: "DIRECT_GUIDE_COST", status: "APPROVED", accountingStatus: "READY_TO_POST", amount: 20, baseCurrencyAmount: 20, currency: "USD", baseCurrency: "USD" };
++  const expenses = createModel([
++    bookingExpense,
++    ...["BUSINESS_ACCOUNTING", "", undefined, "BOOKING"].map((scope, index) => ({ ...bookingExpense, _id: `out-of-scope-${index}`, accountingScope: scope, bookingId: "booking-1", sourceModule: "BOOKING_ACCOUNTING", amount: 300, baseCurrencyAmount: 300 }))
++  ]);
++  let capturedQuery;
++  const find = expenses.find;
++  expenses.find = (query) => { capturedQuery = query; return find(query); };
++  const before = clone(expenses.__store);
++  const service = createService({ BusinessExpenseModel: expenses });
++  const row = (await service.getProfitability({ limit: 20 })).items[0];
++  assert.equal(row.actualDirectCost, 20);
++  assert.equal(row.actualProfit, 80);
++  assert.equal(row.actualExpenseCount, 1);
++  assert.equal(capturedQuery.accountingScope, "BOOKING_ACCOUNTING");
++  assert.deepEqual(expenses.__store, before);
++});
++
++test("booking expense eligibility independently rejects non-booking scope and review markers", () => {
++  const { isCountedBookingExpense } = require("../src/accounting/bookingExpensePolicy");
++  const valid = { accountingScope: "BOOKING_ACCOUNTING", status: "APPROVED", accountingStatus: "READY_TO_POST", completionStatus: "COMPLETE" };
++  assert.equal(isCountedBookingExpense(valid), true);
++  assert.equal(isCountedBookingExpense({ ...valid, status: "PAID" }), true);
++  for (const patch of [
++    { accountingScope: "BUSINESS_ACCOUNTING" }, { accountingScope: undefined }, { accountingScope: "BOOKING" },
++    { status: "DRAFT" }, { status: "SUBMITTED" }, { status: "REJECTED" }, { status: "VOID" }, { status: "NEEDS_REVIEW" },
++    { accountingStatus: "NEEDS_REVIEW" }, { accountingStatus: "REVERSED" }, { completionStatus: "NEEDS_REVIEW" }
++  ]) assert.equal(isCountedBookingExpense({ ...valid, ...patch }), false, JSON.stringify(patch));
++});
++
+ test("booking accounting treats an explicit zero actual cost as valid profitability evidence", async () => {
+   const service = createService({
+     BusinessExpenseModel: createModel([
+       {
+         _id: "expense-zero",
++        accountingScope: "BOOKING_ACCOUNTING",
+         expenseReference: "EXP-ZERO",
+         bookingReference: "ZNZ-BA-1",
+         category: "OTHER_OPERATING_EXPENSE",
+@@ -382,6 +443,7 @@ test("booking accounting marks profitability final when counted expenses are com
+     BusinessExpenseModel: createModel([
+       {
+         _id: "expense-complete",
++        accountingScope: "BOOKING_ACCOUNTING",
+         expenseReference: "EXP-COMPLETE",
+         bookingReference: "ZNZ-BA-1",
+         category: "OTHER_OPERATING_EXPENSE",
+@@ -404,11 +466,12 @@ test("booking accounting marks profitability final when counted expenses are com
+   assert.equal(row.profitabilityStatus, "FINAL");
+ });
+ 
+-test("booking accounting flags profitability for review when a counted expense needs review", async () => {
++test("booking accounting excludes completion NEEDS_REVIEW expenses from actual profit", async () => {
+   const service = createService({
+     BusinessExpenseModel: createModel([
+       {
+         _id: "expense-review",
++        accountingScope: "BOOKING_ACCOUNTING",
+         expenseReference: "EXP-REVIEW",
+         bookingReference: "ZNZ-BA-1",
+         category: "OTHER_OPERATING_EXPENSE",
+@@ -426,9 +489,10 @@ test("booking accounting flags profitability for review when a counted expense n
+   const result = await service.getProfitability({ limit: 20 });
+   const row = result.items.find((item) => item.bookingReference === "ZNZ-BA-1");
+ 
+-  assert.equal(row.actualExpenseCount, 1);
+-  assert.equal(row.expenseCompletionStatus, "NEEDS_REVIEW");
+-  assert.equal(row.profitabilityStatus, "NEEDS_REVIEW");
++  assert.equal(row.actualExpenseCount, 0);
++  assert.equal(row.actualDirectCost, 0);
++  assert.equal(row.actualProfit, null);
++  assert.equal(row.costStatus, "estimated");
+ });
+ 
+ test("booking accounting excludes negative direct costs and flags review", async () => {
+@@ -436,6 +500,7 @@ test("booking accounting excludes negative direct costs and flags review", async
+     BusinessExpenseModel: createModel([
+       {
+         _id: "expense-negative",
++        accountingScope: "BOOKING_ACCOUNTING",
+         expenseReference: "EXP-NEGATIVE",
+         bookingReference: "ZNZ-BA-1",
+         category: "OTHER_OPERATING_EXPENSE",
+diff --git a/reports/booking-expenses-medium-baseline/safety.test.js b/backend/test/bookingExpenseSafety.test.js
+index ace6243..5f758f9 100644
+--- a/reports/booking-expenses-medium-baseline/safety.test.js
++++ b/backend/test/bookingExpenseSafety.test.js
+@@ -14,18 +14,25 @@ const payload = (overrides = {}) => ({
+ const setup = () => {
+   const rows = [];
+   const audits = [];
++  const updates = [];
+   const expenses = {
+     findOne: async (query) => rows.find((row) => Object.entries(query).every(([key, value]) => row[key] === value)) || null,
+     create: async (values) => {
+       if (rows.some((row) => row.idempotencyKey === values.idempotencyKey || row.expenseReference === values.expenseReference)) {
+         throw Object.assign(new Error("duplicate"), { code: 11000 });
+       }
+-      const row = { _id: `expense-${rows.length + 1}`, ...values };
++      const row = { _id: `expense-${rows.length + 1}`, createdAt: new Date("2026-09-20T08:00:00Z"), ...values };
+       rows.push(row);
+       return row;
+     },
+-    findById: async (id) => rows.find((row) => row._id === id),
+-    findByIdAndUpdate: async (id, update) => Object.assign(rows.find((row) => row._id === id), update.$set)
++    findById: async (id) => {
++      const row = rows.find((item) => item._id === id);
++      return row ? { ...row } : null;
++    },
++    findByIdAndUpdate: async (id, update) => {
++      updates.push(update);
++      return { ...Object.assign(rows.find((row) => row._id === id), update.$set) };
++    }
+   };
+   const service = createBookingAccountingService({
+     BookingModel: {
+@@ -35,7 +42,7 @@ const setup = () => {
+     BusinessExpenseModel: expenses,
+     AuditLogModel: { create: async (row) => { audits.push(row); } }
+   });
+-  return { service, rows, audits };
++  return { service, rows, audits, updates };
+ };
+ 
+ test("Booking Expenses requires a stable key before creating anything", async () => {
+@@ -144,3 +151,34 @@ test("Booking Expenses API validates category, date and stable key", () => {
+     assert.equal(bookingExpenseWriteSchema.safeParse({ body: payload(change) }).success, false);
+   }
+ });
++
++test("Booking Expense editing preserves User A as creator and attributes User B through the existing audit log", async () => {
++  const { service, rows, audits, updates } = setup();
++  await service.createBookingExpense({ payload: payload(), auth: { id: "user-a", role: "admin" } });
++  assert.equal(rows[0].createdBy, "user-a");
++  const createdAt = rows[0].createdAt.toISOString();
++  await service.updateBookingExpense({
++    expenseId: rows[0]._id, payload: { description: "Corrected guide description" },
++    auth: { id: "user-b", role: "admin" }, requestId: "edit-request-1"
++  });
++  assert.equal(rows[0].createdBy, "user-a");
++  assert.equal(rows[0].createdAt.toISOString(), createdAt);
++  assert.equal(Object.hasOwn(updates[0].$set, "createdBy"), false);
++  assert.equal(Object.hasOwn(updates[0].$set, "createdAt"), false);
++  const edit = audits.find((row) => row.action === "booking_expense_updated");
++  assert.equal(edit.actorId, "user-b");
++  assert.equal(edit.entityId, rows[0]._id);
++  assert.equal(edit.requestId, "edit-request-1");
++  assert.equal(edit.before.description, "Guide service");
++  assert.equal(edit.after.description, "Corrected guide description");
++  assert.equal(audits.length, 2);
++});
++
++test("Booking Expense update ignores attempted creator/timestamp replacement", async () => {
++  const { service, rows } = setup();
++  await service.createBookingExpense({ payload: payload(), auth: { id: "user-a" } });
++  const createdAt = rows[0].createdAt.toISOString();
++  await service.updateBookingExpense({ expenseId: rows[0]._id, payload: { createdBy: "forged-creator", createdAt: "2099-01-01" } });
++  assert.equal(rows[0].createdBy, "user-a");
++  assert.equal(rows[0].createdAt.toISOString(), createdAt);
++});

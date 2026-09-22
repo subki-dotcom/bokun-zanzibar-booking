@@ -36,6 +36,31 @@ const queryBoolean = z.preprocess((value) => {
   return value;
 }, z.boolean());
 
+const previewPostingSchema = z.object({
+  params: z.object({}).optional(),
+  query: z.object({}).optional(),
+  body: z.object({
+    completionId: z.string().min(1).optional(),
+    bookingReference: z.string().min(1).optional(),
+    policyVersion: z.coerce.number().int().min(1).optional()
+  }).refine((body) => body.completionId || body.bookingReference, { message: "completionId or bookingReference is required" })
+});
+
+const customerInvoicePreviewSchema = z.object({
+  params: z.object({}).optional(),
+  query: z.object({}).optional(),
+  body: z.object({
+    invoiceNumber: z.string().trim().min(1).optional(),
+    bookingReference: z.string().trim().min(1).optional()
+  }).refine((body) => body.invoiceNumber || body.bookingReference, { message: "invoiceNumber or bookingReference is required" })
+});
+
+const customerPaymentPreviewSchema = z.object({
+  params: z.object({}).optional(),
+  query: z.object({}).optional(),
+  body: z.object({ paymentId: mongoObjectId })
+});
+
 const listChartOfAccountsSchema = z.object({
   params: z.object({}).optional(),
   body: z.object({}).optional(),
@@ -346,6 +371,26 @@ const createFixedAssetSchema = z.object({
   })
 });
 
+const createFixedAssetDepreciationJournalSchema = z.object({
+  params: z.object({ id: mongoObjectId }),
+  query: z.object({}).optional(),
+  body: z.object({
+    postingDate: z.string().min(1).optional(),
+    reason: z.string().trim().max(1000).optional()
+  }).default({})
+});
+
+const createFixedAssetAcquisitionJournalSchema = z.object({
+  params: z.object({ id: mongoObjectId }),
+  query: z.object({}).optional(),
+  body: z.object({
+    fundingAccountCode: accountCode.optional(),
+    postingDate: z.string().min(1).optional(),
+    reason: z.string().trim().max(1000).optional(),
+    evidence: z.record(z.any()).optional()
+  }).default({})
+});
+
 const exportLedgerReportSchema = z.object({
   params: z.object({
     reportType: z.enum(["general-ledger", "trial-balance", "profit-loss", "balance-sheet", "cash-flow", "fixed-assets", "reconciliation", "journal-register"])
@@ -366,8 +411,13 @@ const exportLedgerReportSchema = z.object({
 module.exports = {
   cashBankQuerySchema,
   createFixedAssetSchema,
+  createFixedAssetDepreciationJournalSchema,
+  createFixedAssetAcquisitionJournalSchema,
   createChartAccountSchema,
   createJournalSchema,
+  previewPostingSchema,
+  customerInvoicePreviewSchema,
+  customerPaymentPreviewSchema,
   createPeriodSchema,
   exportLedgerReportSchema,
   historicalMigrationSchema,

@@ -5,6 +5,7 @@ const Booking = require("../../models/Booking");
 const Invoice = require("../../models/Invoice");
 const { env, isDpoConfigured, isPesapalConfigured, isPaypalConfigured } = require("../../config/env");
 const AppError = require("../../utils/AppError");
+const logger = require("../../config/logger");
 const {
   Decimal,
   decimalOrNull,
@@ -22,6 +23,30 @@ const toNumber = (value = 0) => {
 };
 
 const normalizeToken = (value = "") => String(value || "").trim();
+
+const recoverProviderDuplicate = async ({ error, provider = "", providerTransactionId = "", orderTrackingId = "", bookingReference = "" }) => {
+  if (error?.code !== 11000) throw error;
+  const transactionId = normalizeToken(providerTransactionId);
+  const orderId = normalizeToken(orderTrackingId);
+  const query = { provider: normalizeToken(provider) };
+  query.$or = [
+    transactionId ? { providerTransactionId: transactionId } : null,
+    orderId ? { orderTrackingId: orderId } : null
+  ].filter(Boolean);
+  if (!query.provider || !query.$or.length) throw error;
+  const canonical = await Payment.findOne(query);
+  if (!canonical) throw error;
+  if (bookingReference && normalizeToken(canonical.bookingReference) !== normalizeToken(bookingReference)) {
+    throw new AppError("Provider transaction is already linked to another booking", 409, "PAYMENT_PROVIDER_IDENTITY_CONFLICT", {
+      provider: query.provider, canonicalBookingReference: canonical.bookingReference
+    });
+  }
+  logger.warn("PAYMENT_DUPLICATE_PREVENTED", {
+    provider: query.provider, transactionId: transactionId || orderId,
+    bookingReference: canonical.bookingReference, canonicalRecordId: String(canonical._id)
+  });
+  return canonical;
+};
 
 const SENSITIVE_PROVIDER_KEY = /(?:access[_-]?token|refresh[_-]?token|client[_-]?secret|consumer[_-]?secret|company[_-]?token|authorization|password|passcode|card[_-]?(?:number|pan)|cvv|cvc|payment[_-]?account|email[_-]?address)/i;
 
@@ -286,7 +311,8 @@ const createPaymentIntent = async ({
   const canonicalCurrency = requireCurrency(orderCurrency || currency);
   const intentId = `pay_${uuidv4()}`;
   const createdAt = new Date();
-  return Payment.create({
+  try {
+    return await Payment.create({
     bookingReference,
     customerId,
     amount: toLegacyNumber(canonicalAmount),
@@ -329,7 +355,10 @@ const createPaymentIntent = async ({
         description: "Payment intent created before gateway redirect"
       })
     ]
-  });
+    });
+  } catch (error) {
+    return recoverProviderDuplicate({ error, provider, providerTransactionId: providerTransactionId || orderTrackingId, orderTrackingId, bookingReference });
+  }
 };
 
 const updatePaymentStatus = async ({
@@ -392,7 +421,19 @@ const updatePaymentStatus = async ({
     query.status = { $ne: "paid" };
   }
 
-  const updated = await Payment.findOneAndUpdate(query, update, { new: true });
+  let updated;
+  try {
+    updated = await Payment.findOneAndUpdate(query, update, { new: true });
+  } catch (error) {
+    const originalPayment = await Payment.findOne({ intentId });
+    return recoverProviderDuplicate({
+      error,
+      provider: originalPayment?.provider || canonical.provider || "",
+      providerTransactionId,
+      orderTrackingId,
+      bookingReference: originalPayment?.bookingReference || canonical.bookingReference || ""
+    });
+  }
   return updated || Payment.findOne({ intentId });
 };
 
@@ -484,11 +525,16 @@ const updatePaymentByBookingReference = async ({
     protectedQuery.status = { $ne: "paid" };
   }
 
-  const updated = await Payment.findOneAndUpdate(
-    protectedQuery,
-    update,
-    { new: true, sort: { createdAt: -1 } }
-  );
+  let updated;
+  try {
+    updated = await Payment.findOneAndUpdate(
+      protectedQuery,
+      update,
+      { new: true, sort: { createdAt: -1 } }
+    );
+  } catch (error) {
+    return recoverProviderDuplicate({ error, provider, providerTransactionId, orderTrackingId, bookingReference });
+  }
 
   return updated || Payment.findOne(query).sort({ createdAt: -1 });
 };
@@ -627,6 +673,10 @@ const applyVerifiedPaymentAllocation = async ({ paymentId, bookingReference = ""
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
 
+  if (allocation.status === "applied") {
+    logger.info("ALLOCATION_REPLAY", { bookingReference: payment.bookingReference, paymentId: String(payment._id), allocationKey });
+  }
+
   if (
     decimalToApi(allocation.amount) !== amount ||
     normalizeCurrency(allocation.currency) !== currency ||
@@ -741,6 +791,17 @@ const markPaymentReviewed = async ({ bookingReference, reviewedBy = "", reviewNo
     },
     { new: true, sort: { createdAt: -1 } }
   );
+
+const recheckPaymentByBookingReference = async ({ bookingReference, requestId = "", source = "admin_recheck" } = {}) => {
+  const payment = await Payment.findOne({ bookingReference: normalizeToken(bookingReference) }).sort({ createdAt: -1 }).lean();
+  if (!payment) throw new AppError("Payment not found", 404, "PAYMENT_NOT_FOUND");
+  const provider = normalizeToken(payment.provider).toLowerCase();
+  if (provider !== "pesapal") {
+    return { bookingReference: normalizeToken(bookingReference), provider: provider || "UNKNOWN", status: "NOT_SUPPORTED", requestId, source };
+  }
+  const pesapal = require("./pesapal");
+  return pesapal.recheckPaymentByBookingReference({ bookingReference, requestId, source });
+};
 
 const extractProviderStatus = (payment = {}) => {
   const response = payment.rawResponse || payment.providerResponse?.response || {};
@@ -946,6 +1007,7 @@ module.exports = {
   linkAllocationsToInvoice,
   sanitizeProviderPayload,
   markPaymentReviewed,
+  recheckPaymentByBookingReference,
   listPaymentReconciliation,
   listPayments,
   getPublicPaymentProviders,

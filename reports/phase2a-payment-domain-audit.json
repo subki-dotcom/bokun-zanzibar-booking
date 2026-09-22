@@ -1,0 +1,5017 @@
+{
+  "readOnly": true,
+  "generatedAt": "2026-09-15T13:54:13.784Z",
+  "databaseName": "bokun_zanzibar_booking",
+  "batchSize": 100,
+  "scannedBookings": 128,
+  "scannedPayments": 51,
+  "salesChannel": {
+    "counts": {
+      "CONFIRMED_RISER_DIRECT": 47,
+      "CONFIRMED_GETYOURGUIDE": 18,
+      "CONFIRMED_VIATOR": 15,
+      "CONFIRMED_OTHER": 0,
+      "UNKNOWN": 0,
+      "AMBIGUOUS": 48
+    },
+    "evidenceTypes": {
+      "EXISTING_SALES_CHANNEL": 80,
+      "MIXED_METADATA": 48
+    },
+    "reasonCodes": {
+      "CANONICAL_DIRECT_VALUE": 47,
+      "CANONICAL_GYG_VALUE": 18,
+      "CANONICAL_VIATOR_VALUE": 15,
+      "OTHER_REQUIRES_REVIEW": 48
+    }
+  },
+  "collector": {
+    "counts": {
+      "PESAPAL": 0,
+      "DPO": 0,
+      "PAYPAL": 0,
+      "GETYOURGUIDE": 18,
+      "VIATOR": 15,
+      "OTHER": 0,
+      "UNKNOWN": 95
+    },
+    "evidenceSources": {
+      "LOCAL": 43,
+      "BOKUN": 85
+    }
+  },
+  "customerPayment": {
+    "counts": {
+      "PAID": 49,
+      "PARTIALLY_PAID": 0,
+      "UNPAID / PENDING": 78,
+      "PARTIALLY_REFUNDED": 0,
+      "REFUNDED": 0,
+      "UNKNOWN": 1
+    },
+    "directVerifiedPayment": 0,
+    "otaBokunEvidence": 85
+  },
+  "currency": {
+    "booking": {
+      "USD": 128
+    },
+    "payment": {
+      "USD": 46
+    },
+    "invoice": {
+      "USD": 83
+    },
+    "bokun": {
+      "USD": 85
+    },
+    "mismatchCounts": {
+      "bookingPayment": 0,
+      "bookingInvoice": 0,
+      "bookingBokun": 0
+    },
+    "missing": {
+      "booking": 0,
+      "payment": 82,
+      "invoice": 45,
+      "bokun": 43
+    },
+    "ambiguous": 0
+  },
+  "paymentCompatibility": {
+    "counts": {
+      "CANONICAL": 0,
+      "LEGACY_BUT_INTERPRETABLE": 2,
+      "MISSING_VERIFICATION_EVIDENCE": 40,
+      "MISSING_CURRENCY": 0,
+      "AMBIGUOUS": 0,
+      "NEEDS_MANUAL_REVIEW": 9
+    }
+  },
+  "rows": [
+    {
+      "bookingId": "6a4776f0448436a55c9cac7b",
+      "bookingReference": "ZNZ-1783068400084-3278",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a4776f0448436a55c9cac86",
+          "classification": "NEEDS_MANUAL_REVIEW",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47812b59814ab149c55e8e",
+      "bookingReference": "ZNZ-1783071019641-1170",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47812b59814ab149c55e9a",
+          "classification": "NEEDS_MANUAL_REVIEW",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47878d59814ab149c55f2f",
+      "bookingReference": "ZNZ-1783072653718-9199",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47878d59814ab149c55f3b",
+          "classification": "NEEDS_MANUAL_REVIEW",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a4790f6313e4ee145b8b35c",
+      "bookingReference": "ZNZ-1783075062164-2808",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a4790f6313e4ee145b8b368",
+          "classification": "NEEDS_MANUAL_REVIEW",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47d87362ce693f2e8a738e",
+      "bookingReference": "ZNZ-1783093363061-7495",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47d87362ce693f2e8a739a",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47d88862ce693f2e8a73a5",
+      "bookingReference": "ZNZ-1783093384503-3418",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47d88862ce693f2e8a73b1",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47d98562ce693f2e8a73c9",
+      "bookingReference": "ZNZ-1783093637342-1323",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47d98562ce693f2e8a73d5",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47dea227b90974d0a1c521",
+      "bookingReference": "ZNZ-1783094946270-5328",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47dea227b90974d0a1c52c",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47e5b527b90974d0a1c5a9",
+      "bookingReference": "ZNZ-1783096757501-8584",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47e5b527b90974d0a1c5b7",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47e79e9e70be68b81b8522",
+      "bookingReference": "ZNZ-1783097246955-2831",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47e79f9e70be68b81b8530",
+          "classification": "NEEDS_MANUAL_REVIEW",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47eaa09e70be68b81b8568",
+      "bookingReference": "ZNZ-1783098016490-1425",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47eaa09e70be68b81b8576",
+          "classification": "NEEDS_MANUAL_REVIEW",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47ebed66a96d56a07d2774",
+      "bookingReference": "ZNZ-1783098349610-2293",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47ebed66a96d56a07d2780",
+          "classification": "NEEDS_MANUAL_REVIEW",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47f2e4edf6067efe354556",
+      "bookingReference": "ZNZ-1783100132099-8284",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47f2e4edf6067efe354562",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a47fe45a555d254fc04fcc4",
+      "bookingReference": "ZNZ-1783103045959-3350",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a47fe45a555d254fc04fccf",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a4ac961c9ff93eaefeae597",
+      "bookingReference": "ZNZ-1783286113157-1302",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a4ac961c9ff93eaefeae5a3",
+          "classification": "NEEDS_MANUAL_REVIEW",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a4b5dff3a452fd3ddb7665e",
+      "bookingReference": "ZNZ-1783324159463-2470",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a4b5dff3a452fd3ddb76669",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a4d699a00c6c2ca358bd858",
+      "bookingReference": "ZNZ-1783458202515-8156",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a4d699a00c6c2ca358bd863",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a4dec2500c6c2ca358bd8ed",
+      "bookingReference": "ZNZ-1783491621778-8830",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a4dec2600c6c2ca358bd8f8",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a4dec2d00c6c2ca358bd906",
+      "bookingReference": "ZNZ-1783491629380-7708",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a4dec2d00c6c2ca358bd911",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a4dfd1e00c6c2ca358bd9c7",
+      "bookingReference": "ZNZ-1783495966038-9570",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a4dfd1e00c6c2ca358bd9d3",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a4e0bf500c6c2ca358bda41",
+      "bookingReference": "ZNZ-1783499765564-1348",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a4e0bf500c6c2ca358bda4d",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a4e0c0900c6c2ca358bda5b",
+      "bookingReference": "ZNZ-1783499785434-3825",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a4e0c0900c6c2ca358bda67",
+          "classification": "NEEDS_MANUAL_REVIEW",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a51234c8fe5402dea698bef",
+      "bookingReference": "ZNZ-1783702348928-7732",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a51234c8fe5402dea698bfe",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a5123858fe5402dea698c06",
+      "bookingReference": "ZNZ-1783702405302-5579",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a5123858fe5402dea698c15",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a5129148fe5402dea698c3f",
+      "bookingReference": "ZNZ-1783703828538-2542",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a5129148fe5402dea698c4e",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a5493677550162ca926ee2a",
+      "bookingReference": "ZNZ-1783927655437-9063",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a5493677550162ca926ee37",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a54d55a7550162ca926ef38",
+      "bookingReference": "ZNZ-1783944538290-1855",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a54d55a7550162ca926ef45",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a54ec107550162ca926ef78",
+      "bookingReference": "ZNZ-1783950352641-8615",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a54ec107550162ca926ef88",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a54ed927550162ca926efad",
+      "bookingReference": "ZNZ-1783950738360-7118",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a54ed927550162ca926efba",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a54facd7550162ca926f088",
+      "bookingReference": "ZNZ-1783954125767-9817",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a54facd7550162ca926f095",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a5526407550162ca926f16d",
+      "bookingReference": "ZNZ-1783965248638-9910",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a5526407550162ca926f17a",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a58f39fcc3abe98f08f6a64",
+      "bookingReference": "ZNZ-1784214431513-2211",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a58f39fcc3abe98f08f6a72",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        },
+        {
+          "paymentId": "6a58f3a1cc3abe98f08f6a78",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "paypal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a58f427cc3abe98f08f6a98",
+      "bookingReference": "ZNZ-1784214567367-7693",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a58f427cc3abe98f08f6aa6",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a58f481cc3abe98f08f6aae",
+      "bookingReference": "ZNZ-1784214657183-3277",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a58f481cc3abe98f08f6abc",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a590464cc3abe98f08f6b39",
+      "bookingReference": "ZNZ-1784218724204-2703",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a590464cc3abe98f08f6b47",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        },
+        {
+          "paymentId": "6a590465cc3abe98f08f6b4d",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "paypal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a5905b9cc3abe98f08f6b78",
+      "bookingReference": "ZNZ-1784219065056-4919",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a5905b9cc3abe98f08f6b86",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a591820cc3abe98f08f6c4d",
+      "bookingReference": "ZNZ-1784223776928-6722",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a591820cc3abe98f08f6c5a",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a591968cc3abe98f08f6c92",
+      "bookingReference": "ZNZ-1784224104668-9931",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a591968cc3abe98f08f6c9f",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        },
+        {
+          "paymentId": "6a59196acc3abe98f08f6ca5",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "paypal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a69aaf6eea4cf829eed7354",
+      "bookingReference": "ZNZ-1785309942749-8549",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a69aaf6eea4cf829eed7362",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a69ab04eea4cf829eed736f",
+      "bookingReference": "ZNZ-1785309956347-5736",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a69ab04eea4cf829eed737d",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        },
+        {
+          "paymentId": "6a69ab06eea4cf829eed7384",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "paypal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a6d968e53ebfa01e983276b",
+      "bookingReference": "ZNZ-1785566862582-9223",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a6d968e53ebfa01e9832779",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a6d970153ebfa01e983287c",
+      "bookingReference": "ZNZ-1785566977883-2069",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a6d970153ebfa01e983288a",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a6d98b653ebfa01e98329b9",
+      "bookingReference": "ZNZ-1785567414326-3370",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a6d98b653ebfa01e98329c7",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a6e035753ebfa01e9832a0a",
+      "bookingReference": "ZNZ-1785594711340-4634",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": null,
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a6e035753ebfa01e9832a18",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a6ec138877e62c415d99238",
+      "bookingReference": "ZNZ-1785643320297-2340",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6a6ec138877e62c415d99246",
+          "classification": "MISSING_VERIFICATION_EVIDENCE",
+          "provider": "pesapal",
+          "currency": "USD"
+        }
+      ]
+    },
+    {
+      "bookingId": "6a93fae73fe0090fc0b8a751",
+      "bookingReference": "GYGRFQGYKZ28",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93faed3fe0090fc0b8a75d",
+      "bookingReference": "GYG32LY979AB",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93faf03fe0090fc0b8a769",
+      "bookingReference": "1441863013",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fd49306f986879cfbdd4",
+      "bookingReference": "VIA-101658841",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fd4c306f986879cfbddd",
+      "bookingReference": "VIA-100651976",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fd52306f986879cfbde5",
+      "bookingReference": "VIA-100477559",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fd5b306f986879cfbdf4",
+      "bookingReference": "VIA-99535802",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fd60306f986879cfbe06",
+      "bookingReference": "1423634423",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fdf2306f986879cfbe54",
+      "bookingReference": "1441720001",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fdf7306f986879cfbe5e",
+      "bookingReference": "VIA-102105574",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fdfc306f986879cfbe69",
+      "bookingReference": "GYGRFQG684Y9",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fdfd306f986879cfbe75",
+      "bookingReference": "GYGVN234W6MQ",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fdff306f986879cfbe7e",
+      "bookingReference": "VIA-101660315",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe03306f986879cfbe86",
+      "bookingReference": "VIA-101660088",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe05306f986879cfbe8e",
+      "bookingReference": "VIA-101659298",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe09306f986879cfbe9e",
+      "bookingReference": "VIA-101658385",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe0b306f986879cfbea9",
+      "bookingReference": "GYGN6BYHH5MN",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe0e306f986879cfbec7",
+      "bookingReference": "1439382645",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe10306f986879cfbed3",
+      "bookingReference": "1439277305",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "UNKNOWN",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe12306f986879cfbedf",
+      "bookingReference": "1439139071",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe14306f986879cfbee8",
+      "bookingReference": "VIA-101447139",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe16306f986879cfbef0",
+      "bookingReference": "VIA-101446226",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe18306f986879cfbef8",
+      "bookingReference": "VIA-101446083",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe1b306f986879cfbeff",
+      "bookingReference": "VIA-101445916",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe1e306f986879cfbf09",
+      "bookingReference": "VIA-101241760",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe20306f986879cfbf13",
+      "bookingReference": "VIA-101239934",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe22306f986879cfbf1b",
+      "bookingReference": "VIA-101239553",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe24306f986879cfbf23",
+      "bookingReference": "VIA-101238920",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe25306f986879cfbf2c",
+      "bookingReference": "VIA-101238796",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe28306f986879cfbf33",
+      "bookingReference": "VIA-101237410",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe2b306f986879cfbf3a",
+      "bookingReference": "VIA-101237313",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe2d306f986879cfbf44",
+      "bookingReference": "VIA-101125350",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe30306f986879cfbf4c",
+      "bookingReference": "VIA-101124054",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe32306f986879cfbf54",
+      "bookingReference": "VIA-101123754",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe35306f986879cfbf5b",
+      "bookingReference": "VIA-101123591",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe38306f986879cfbf62",
+      "bookingReference": "VIA-101122881",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe3b306f986879cfbf69",
+      "bookingReference": "VIA-101122398",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe3d306f986879cfbf71",
+      "bookingReference": "VIA-101122079",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe3f306f986879cfbf7b",
+      "bookingReference": "VIA-101121845",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe42306f986879cfbf8e",
+      "bookingReference": "GYG996XK5ZAM",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe45306f986879cfbf99",
+      "bookingReference": "VIA-100844410",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe48306f986879cfbfa1",
+      "bookingReference": "VIA-100794393",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe49306f986879cfbfa9",
+      "bookingReference": "VIA-100794327",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe4b306f986879cfbfb1",
+      "bookingReference": "VIA-100753608",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe50306f986879cfbfb9",
+      "bookingReference": "VIA-100747421",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe53306f986879cfbfc0",
+      "bookingReference": "VIA-100746257",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe56306f986879cfbfc7",
+      "bookingReference": "VIA-100745660",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe57306f986879cfbfcf",
+      "bookingReference": "VIA-100654370",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe59306f986879cfbfda",
+      "bookingReference": "GYGKBF7BBL2K",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe5e306f986879cfbfee",
+      "bookingReference": "1436245843",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe61306f986879cfc003",
+      "bookingReference": "ZNZ-1786608947411-2003",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe64306f986879cfc00e",
+      "bookingReference": "GYGG45MKB4HG",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe67306f986879cfc01a",
+      "bookingReference": "VIA-100480611",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe6a306f986879cfc025",
+      "bookingReference": "1435747845",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6a93fe6c306f986879cfc030",
+      "bookingReference": "VIA-100478026",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0897cd0cfd3b4c2147a60",
+      "bookingReference": "GYG83W8N2A2H",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2bfc13148f8b4888d8a",
+      "bookingReference": "VIA-103334641",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c0c13148f8b4888d9e",
+      "bookingReference": "VIA-103334155",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c0c13148f8b4888db2",
+      "bookingReference": "VIA-103333934",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c2c13148f8b4888dc6",
+      "bookingReference": "VIA-103333571",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c3c13148f8b4888df2",
+      "bookingReference": "VIA-103333440",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c5c13148f8b4888e0a",
+      "bookingReference": "1445126625",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c5c13148f8b4888e15",
+      "bookingReference": "GYGKBF5YKVV2",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c6c13148f8b4888e1e",
+      "bookingReference": "VIA-102931808",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c6c13148f8b4888e26",
+      "bookingReference": "VIA-102891929",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c7c13148f8b4888e2d",
+      "bookingReference": "VIA-102891364",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c7c13148f8b4888e35",
+      "bookingReference": "VIA-102890573",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2c8c13148f8b4888e43",
+      "bookingReference": "GYGKBF53F282",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2cac13148f8b4888e58",
+      "bookingReference": "1442659613",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f2ccc13148f8b4888e6c",
+      "bookingReference": "GYGKBF59W84Y",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f309c13148f8b48891be",
+      "bookingReference": "VIA-100476169",
+      "currentSalesChannel": "OTHER",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "AMBIGUOUS",
+        "evidenceType": "MIXED_METADATA",
+        "reason": "OTHER_REQUIRES_REVIEW",
+        "confidence": "LOW"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "BOKUN",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f30ac13148f8b48891c9",
+      "bookingReference": "GYGLMRVGF6XM",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa0f30bc13148f8b48891d5",
+      "bookingReference": "GYG7VKQ757HB",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa122bfc13148f8b48a1991",
+      "bookingReference": "GYGRFQGAG2WQ",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa2fccec13148f8b48b96d6",
+      "bookingReference": "1445969483",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa2fccfc13148f8b48b96e2",
+      "bookingReference": "1445955279",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa2fcd0c13148f8b48b96fa",
+      "bookingReference": "1445915375",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa4e100c13148f8b48bc3bb",
+      "bookingReference": "GYG2Q9ANMLLL",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa6258fc13148f8b48cb194",
+      "bookingReference": "GYG2Q9AMY3VQ",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": "USD",
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa76b904719cb671f303558",
+      "bookingReference": "1447020877",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": null,
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa774014719cb671f308304",
+      "bookingReference": "GYGMX389AARY",
+      "currentSalesChannel": "GETYOURGUIDE",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_GETYOURGUIDE",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_GYG_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "GETYOURGUIDE",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": null,
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa7afc14719cb671f314f64",
+      "bookingReference": "1447193175",
+      "currentSalesChannel": "VIATOR",
+      "operationalSource": "BOKUN",
+      "channelAudit": {
+        "classification": "CONFIRMED_VIATOR",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_VIATOR_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "VIATOR",
+        "evidenceSource": "BOKUN",
+        "provider": "NOT_APPLICABLE"
+      },
+      "customerPayment": {
+        "status": "PAID",
+        "source": "BOKUN",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": true
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [],
+        "invoice": null,
+        "bokun": "USD",
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": []
+    },
+    {
+      "bookingId": "6aa7b8004719cb671f319a77",
+      "bookingReference": "ZNZ-1789376512918-9322",
+      "currentSalesChannel": "DIRECT_WEBSITE",
+      "operationalSource": "LOCAL",
+      "channelAudit": {
+        "classification": "CONFIRMED_RISER_DIRECT",
+        "evidenceType": "EXISTING_SALES_CHANNEL",
+        "reason": "CANONICAL_DIRECT_VALUE",
+        "confidence": "HIGH"
+      },
+      "collector": {
+        "code": "UNKNOWN",
+        "evidenceSource": "LOCAL",
+        "provider": "UNKNOWN"
+      },
+      "customerPayment": {
+        "status": "UNPAID / PENDING",
+        "source": "LOCAL",
+        "directVerifiedPayment": false,
+        "otaBokunEvidence": false
+      },
+      "currencies": {
+        "booking": "USD",
+        "payment": [
+          "USD"
+        ],
+        "invoice": "USD",
+        "bokun": null,
+        "mismatches": {
+          "bookingPayment": false,
+          "bookingInvoice": false,
+          "bookingBokun": false
+        }
+      },
+      "paymentCompatibility": [
+        {
+          "paymentId": "6aa7b8014719cb671f319a86",
+          "classification": "LEGACY_BUT_INTERPRETABLE",
+          "provider": "pesapal",
+          "currency": "USD"
+        },
+        {
+          "paymentId": "6aa7b8034719cb671f319ab9",
+          "classification": "LEGACY_BUT_INTERPRETABLE",
+          "provider": "paypal",
+          "currency": "USD"
+        }
+      ]
+    }
+  ]
+}

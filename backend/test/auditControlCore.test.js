@@ -168,6 +168,37 @@ test("audit query builders support financial evidence and reference filtering", 
   assert.equal(financialQuery.$and.length, 2);
 });
 
+test("financial change view includes supplier payment audit events", async () => {
+  const harness = createFakeAuditModel([
+    {
+      _id: "audit-supplier-payment-1",
+      actorId: "admin-3",
+      actorRole: "admin",
+      action: "supplier_payment_posted",
+      entityType: "SupplierPayment",
+      entityId: "payment-1",
+      reference: "SP-1001",
+      requestId: "req-payment-1",
+      before: { status: "POSTING", accountingStatus: "POSTING" },
+      after: { status: "POSTED", accountingStatus: "POSTED" },
+      metadata: { baseCurrencyAmount: "100", journalEntryId: "journal-1" },
+      createdAt: "2026-08-16T08:00:00.000Z"
+    }
+  ]);
+  const service = createAuditControlService({
+    AuditLogModel: harness.model,
+    now: () => fixedNow
+  });
+
+  const result = await service.listFinancialChanges({ limit: 20 });
+
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0].entity.type, "SupplierPayment");
+  assert.equal(result.items[0].entity.id, "payment-1");
+  assert.equal(result.items[0].reference, "SP-1001");
+  assert.equal(result.items[0].correlationId, "req-payment-1");
+});
+
 test("AuditLog model blocks direct update and delete operations", async () => {
   await assert.rejects(
     () => AuditLog.updateOne({ entityId: "audit-immutable-1" }, { $set: { reason: "changed" } }).exec(),

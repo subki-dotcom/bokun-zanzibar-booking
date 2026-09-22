@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/apiResponse");
 const paymentsService = require("../services/payments");
+const bookingReconciliationService = require("../services/bookingReconciliation");
 const pesapalService = require("../services/payments/pesapal");
 const bookingsService = require("../services/bookings");
 
@@ -24,15 +25,16 @@ const listPayments = asyncHandler(async (_req, res) => {
 
 const listReconciliation = asyncHandler(async (req, res) => {
   const query = req.validated?.query || req.query || {};
-  const data = await paymentsService.listPaymentReconciliation({
-    limit: Number(query.limit || 100)
+  const data = await bookingReconciliationService.getReconciliation({
+    ...query,
+    limit: Number(query.limit || 10)
   });
 
   return successResponse(res, {
     message: "Payment reconciliation fetched",
     data,
     meta: {
-      count: data.length
+      count: data.items.length
     }
   });
 });
@@ -48,6 +50,19 @@ const recheckPesapalStatus = asyncHandler(async (req, res) => {
     message: data.paymentVerified
       ? "Pesapal payment verified and local invoice synced"
       : "Pesapal payment status rechecked",
+    data
+  });
+});
+
+const recheckPayment = asyncHandler(async (req, res) => {
+  const data = await paymentsService.recheckPaymentByBookingReference({
+    bookingReference: req.validated.params.bookingReference,
+    requestId: req.requestId,
+    source: "admin_recheck"
+  });
+
+  return successResponse(res, {
+    message: data.status === "NOT_SUPPORTED" ? "Payment provider recheck is not supported" : "Payment rechecked",
     data
   });
 });
@@ -97,6 +112,7 @@ module.exports = {
   listPublicProviders,
   listPayments,
   listReconciliation,
+  recheckPayment,
   recheckPesapalStatus,
   syncInvoice,
   retryBokunFinalization,

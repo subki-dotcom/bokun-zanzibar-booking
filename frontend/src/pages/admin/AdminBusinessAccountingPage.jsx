@@ -253,6 +253,36 @@ const StatusPill = ({ value }) => (
   </span>
 );
 
+const AuthoritativeFactsSummary = ({ facts }) => {
+  const items = facts?.items || [];
+  if (!items.length) return <EmptyState message="No authoritative booking facts are available for this period." />;
+  return (
+    <div className="management-accounting-authoritative-facts">
+      <p className="text-muted small mb-3">Read-only booking facts are grouped by currency and are kept separate from posting totals.</p>
+      <div className="table-responsive">
+        <table className="table table-sm align-middle mb-0">
+          <thead><tr><th>Currency</th><th className="text-end">Bookings</th><th className="text-end">Gross revenue</th><th className="text-end">Collected</th><th className="text-end">OTA payout</th><th className="text-end">Refunds</th><th className="text-end">Direct costs</th><th>Evidence</th></tr></thead>
+          <tbody>{items.map((item) => {
+            const payout = item.otaPayoutsReceived === null ? "Awaiting evidence" : money(item.otaPayoutsReceived, item.currency);
+            const pending = (item.evidence?.unknownOtaPayoutBookings || 0) + (item.evidence?.unknownCommissionBookings || 0);
+            return <tr key={item.currency}>
+              <td><strong>{item.currency}</strong></td>
+              <td className="text-end">{item.bookings}</td>
+              <td className="text-end">{money(item.grossBookingRevenue, item.currency)}</td>
+              <td className="text-end">{money(item.guestPaymentsCollected, item.currency)}</td>
+              <td className="text-end">{payout}</td>
+              <td className="text-end">{money(item.refunds, item.currency)}</td>
+              <td className="text-end">{money(item.directCosts, item.currency)}</td>
+              <td><StatusPill value={pending ? `${pending} awaiting evidence` : "available"} /></td>
+            </tr>;
+          })}</tbody>
+        </table>
+      </div>
+      <small className="text-muted d-block mt-2">Net profit remains unavailable until approved operating expenses are allocated.</small>
+    </div>
+  );
+};
+
 const TransactionTable = ({ rows = [], type = "income", currency = "USD" }) => {
   const emptyMessage = type === "income"
     ? "No business income recorded for this period."
@@ -428,6 +458,10 @@ const AdminBusinessAccountingPage = () => {
           {foundation.currencySummary.warning}
         </div>
       ) : null}
+
+      <CardShell title="Authoritative Booking Facts" action={<span className="management-accounting-period-pill">Read-only</span>}>
+        {loading ? <Skeleton type="table" /> : <AuthoritativeFactsSummary facts={foundation?.authoritativeFinancialFacts} />}
+      </CardShell>
 
       <div className="management-accounting-kpi-grid">
         {loading ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} />) : (

@@ -12,7 +12,8 @@ const FINANCIAL_ENTITY_TYPES = Object.freeze([
   "CommissionRecord",
   "Invoice",
   "Payment",
-  "Refund"
+  "Refund",
+  "SupplierPayment"
 ]);
 const FINANCIAL_ACTION_PATTERN =
   /(accounting|posting|invoice|payment|refund|expense|income|commission|payroll|cash|cost|fee|profit|receivable|payable|settlement|financial|snapshot|adjustment)/i;

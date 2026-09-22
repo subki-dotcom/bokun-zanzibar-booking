@@ -262,22 +262,11 @@ test("closed period blocks ordinary posting", async () => {
   );
 });
 
-test("invoice and payment create balanced trial balance and balance sheet", async () => {
+test("verified revenue journal and payment create balanced trial balance and balance sheet", async () => {
   const { service } = createFakeModels();
-  await service.postCustomerInvoice({
-    invoice: {
-      _id: "invoice-1",
-      invoiceNumber: "INV-GL-1",
-      bookingReference: "ZNZ-GL-1",
-      total: 100,
-      currency: "USD"
-    },
-    booking: {
-      bookingReference: "ZNZ-GL-1",
-      productTitle: "Stone Town Tour",
-      currency: "USD"
-    }
-  });
+  await assert.rejects(service.postCustomerInvoice({ invoice: { total: 100 } }), /Invoice-gross recognition is disabled/);
+  const earned = await service.createManualJournal({ input: { postingDate: "2026-08-20T10:00:00Z", description: "Verified service revenue fixture", currency: "USD", requiresApproval: false, lines: [{ accountCode: "1100", debit: "100" }, { accountCode: "4010", credit: "100" }] }, auth: { id: "admin-1", role: "admin" } });
+  await service.postJournal({ journalId: earned.journal.id, auth: { id: "admin-1", role: "admin" } });
   await service.postCustomerPayment({
     payment: {
       _id: "payment-1",

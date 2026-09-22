@@ -2,6 +2,7 @@ const dayjs = require("dayjs");
 const { v4: uuidv4 } = require("uuid");
 const Booking = require("../../models/Booking");
 const Customer = require("../../models/Customer");
+const Invoice = require("../../models/Invoice");
 const ProductSnapshot = require("../../models/ProductSnapshot");
 const BookingRequest = require("../../models/BookingRequest");
 const AuditLog = require("../../models/AuditLog");
@@ -24,6 +25,7 @@ const legacyBokunRecoveryService = require("./legacyBokunRecovery.service");
 const { decimalString, equalsWithin, normalizeCurrency } = require("../../utils/money");
 const { normalizeBokunBookingStatus } = require("../../integrations/bokun/bookingStatus.adapter");
 const { mapBokunSalesChannel } = require("../../integrations/bokun/salesChannel.adapter");
+const bookingAccountingService = require("../bookingAccounting");
 
 const normalizeTicketCategory = (value = "") => {
   const token = String(value).toLowerCase();
@@ -1763,6 +1765,10 @@ const persistBookingRecord = async ({
   const nowDate = new Date();
   const bokunStatus = bokunBooking ? normalizeBokunBookingStatus(bokunBooking.raw || bokunBooking) : null;
   const bokunChannel = mapBokunSalesChannel(bokunBooking?.raw || {}, sourceContext.sourceChannel);
+  const bokunFinancialRoot = bokunBooking?.raw?.booking || bokunBooking?.raw || {};
+  const bokunGrossAmount = Number(bokunFinancialRoot.totalPrice ?? bokunFinancialRoot.total ?? bokunBooking?.amount);
+  const bokunReportedPaidAmount = Number(bokunFinancialRoot.totalPaid ?? bokunFinancialRoot.paidAmount ?? bokunBooking?.amountPaid);
+  const bokunCurrency = String(bokunFinancialRoot.currency || bokunBooking?.currency || "").toUpperCase();
 
   const bookingReference =
     existingBooking?.bookingReference ||
@@ -1846,6 +1852,21 @@ const persistBookingRecord = async ({
     createdByRole: sourceContext.createdByRole,
     createdByUser: sourceContext.createdByUser,
     agentId: sourceContext.agentId,
+    bokunFinancialEvidence: bokunBooking
+      ? {
+          source: "BOKUN",
+          status: Number.isFinite(bokunGrossAmount) && bokunGrossAmount >= 0 && Boolean(bokunCurrency) ? "VERIFIED" : "NEEDS_REVIEW",
+          grossAmount: Number.isFinite(bokunGrossAmount) ? bokunGrossAmount : null,
+          currency: bokunCurrency,
+          reportedPaidAmount: Number.isFinite(bokunReportedPaidAmount) ? bokunReportedPaidAmount : null,
+          paymentStatus: String(bokunFinancialRoot.paymentStatus || bokunFinancialRoot.paymentType || bokunBooking.paymentStatus || "").toUpperCase(),
+          paymentMethod: String(bokunFinancialRoot.paidType || bokunFinancialRoot.paymentType || bokunBooking.paymentMethod || "").toUpperCase(),
+          bookingStatus: String(bokunBooking.status || "").toUpperCase(),
+          cancellationStatus: String(bokunBooking.status || "").toUpperCase() === "CANCELLED" ? "CANCELLED" : "NOT_CANCELLED",
+          evidenceHash: "",
+          syncedAt: nowDate
+        }
+      : existingBooking?.bokunFinancialEvidence || null,
     cancellationPolicySnapshot,
     rawBokunResponse: bokunBooking?.raw || existingBooking?.rawBokunResponse || null
   };
@@ -1887,6 +1908,12 @@ const persistBookingRecord = async ({
   }
 
   let bookingDoc = existingBooking || null;
+  if (!existingBooking?.estimatedCostSnapshot) {
+    bookingPatch.estimatedCostSnapshot = await bookingAccountingService.captureEstimatedCostSnapshot({
+      booking: bookingPatch,
+      asOfDate: nowDate
+    });
+  }
   if (bookingDoc) {
     Object.assign(bookingDoc, bookingPatch);
     await bookingDoc.save();
@@ -2666,6 +2693,45 @@ const syncInvoiceForBookingReference = async ({
   };
 };
 
+const syncMissingInvoices = async ({ limit = 100, requestId = "", source = "invoice_sync_job" } = {}) => {
+  const batchSize = Math.max(1, Math.min(1000, Number(limit) || 100));
+  const candidates = await Booking.aggregate([
+    {
+      $lookup: {
+        from: Invoice.collection.name,
+        localField: "bookingReference",
+        foreignField: "bookingReference",
+        as: "invoice"
+      }
+    },
+    { $match: { invoice: { $eq: [] } } },
+    { $sort: { createdAt: 1, _id: 1 } },
+    { $limit: batchSize },
+    { $project: { _id: 1, bookingReference: 1 } }
+  ]);
+
+  const summary = { scanned: candidates.length, synced: 0, failed: 0, failures: [] };
+  for (const candidate of candidates) {
+    try {
+      await syncInvoiceForBookingReference({
+        bookingId: candidate._id.toString(),
+        auth: { id: null, role: "system" },
+        requestId: `${requestId || source}_${candidate._id}`,
+        reason: "Automatic sync for booking missing an invoice"
+      });
+      summary.synced += 1;
+    } catch (error) {
+      summary.failed += 1;
+      summary.failures.push({
+        bookingReference: candidate.bookingReference,
+        error: error.message
+      });
+    }
+  }
+
+  return summary;
+};
+
 const createBooking = async () => {
   throw new AppError(
     "Payment must be confirmed before a booking can be created. Start a payment checkout instead.",
@@ -2919,6 +2985,8 @@ const recoverPaidBookingFromBokun = async ({
     },
     rawBokunResponse: recoverySnapshot.rawBokunResponse
   };
+
+  bookingPatch.estimatedCostSnapshot = await bookingAccountingService.captureEstimatedCostSnapshot({ booking: bookingPatch });
 
   let booking;
   try {
@@ -3714,6 +3782,7 @@ module.exports = {
   normalizeBokunRecoverySnapshot,
   recoverPaidBookingFromBokun,
   syncInvoiceForBookingReference,
+  syncMissingInvoices,
   listPendingFinalizations,
   retryBookingFinalization,
   reconcilePendingFinalizations,

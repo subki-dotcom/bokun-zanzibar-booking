@@ -45,6 +45,7 @@ export const mergeWarnings = (...groups) => {
 };
 
 export const warningAction = (code = '') => {
+  if (code === 'DIRECT_BOOKING_COSTS_INCOMPLETE') return ['/admin/booking-accounting/expenses', 'Review booking expenses'];
   if (/COST|TEMPLATE/.test(code)) return ['/admin/booking-accounting/cost-templates', 'Review costs'];
   if (/INVOICE/.test(code)) return ['/admin/booking-accounting/invoices', 'Review invoices'];
   if (/PAYMENT|RECONCIL|CURRENCY|FX/.test(code)) return ['/admin/booking-accounting/reconciliation', 'Reconcile'];

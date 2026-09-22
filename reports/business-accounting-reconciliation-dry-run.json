@@ -1,0 +1,3875 @@
+{
+  "readOnly": true,
+  "dryRun": true,
+  "generatedAt": "2026-09-17T18:18:54.821Z",
+  "scanned": 134,
+  "issueCount": 134,
+  "totals": {
+    "MISSING_ACCOUNTING_LINK": 134,
+    "AWAITING_SETTLEMENT_EVIDENCE": 94
+  },
+  "rows": [
+    {
+      "bookingReference": "ZNZ-1783068400084-3278",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783068400084-3278"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a4776f0448436a55c9cac7b",
+        "invoiceId": "6a4776f0448436a55c9cac83",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783071019641-1170",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783071019641-1170"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47812b59814ab149c55e8e",
+        "invoiceId": "6a47812b59814ab149c55e97",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783072653718-9199",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783072653718-9199"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47878d59814ab149c55f2f",
+        "invoiceId": "6a47878d59814ab149c55f38",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783075062164-2808",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783075062164-2808"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a4790f6313e4ee145b8b35c",
+        "invoiceId": "6a4790f6313e4ee145b8b365",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783093363061-7495",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783093363061-7495"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47d87362ce693f2e8a738e",
+        "invoiceId": "6a47d87362ce693f2e8a7397",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783093384503-3418",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783093384503-3418"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47d88862ce693f2e8a73a5",
+        "invoiceId": "6a47d88862ce693f2e8a73ae",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783093637342-1323",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783093637342-1323"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47d98562ce693f2e8a73c9",
+        "invoiceId": "6a47d98562ce693f2e8a73d2",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783094946270-5328",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783094946270-5328"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47dea227b90974d0a1c521",
+        "invoiceId": "6a47dea227b90974d0a1c529",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783096757501-8584",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783096757501-8584"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47e5b527b90974d0a1c5a9",
+        "invoiceId": "6a47e5b527b90974d0a1c5b3",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783097246955-2831",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783097246955-2831"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47e79e9e70be68b81b8522",
+        "invoiceId": "6a47e79f9e70be68b81b852c",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783098016490-1425",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783098016490-1425"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47eaa09e70be68b81b8568",
+        "invoiceId": "6a47eaa09e70be68b81b8572",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783098349610-2293",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783098349610-2293"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47ebed66a96d56a07d2774",
+        "invoiceId": "6a47ebed66a96d56a07d277d",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783100132099-8284",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783100132099-8284"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47f2e4edf6067efe354556",
+        "invoiceId": "6a47f2e4edf6067efe35455f",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783103045959-3350",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "ZNZ-1783103045959-3350"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783103045959-3350"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a47fe45a555d254fc04fcc4",
+        "invoiceId": "6a47fe45a555d254fc04fccc",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783286113157-1302",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "ZNZ-1783286113157-1302"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783286113157-1302"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a4ac961c9ff93eaefeae597",
+        "invoiceId": "6a4ac961c9ff93eaefeae5a0",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783324159463-2470",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783324159463-2470"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a4b5dff3a452fd3ddb7665e",
+        "invoiceId": "6a4b5dff3a452fd3ddb76666",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783458202515-8156",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783458202515-8156"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a4d699a00c6c2ca358bd858",
+        "invoiceId": "6a4d699a00c6c2ca358bd860",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783491621778-8830",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "ZNZ-1783491621778-8830"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783491621778-8830"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a4dec2500c6c2ca358bd8ed",
+        "invoiceId": "6a4dec2600c6c2ca358bd8f5",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783491629380-7708",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "ZNZ-1783491629380-7708"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783491629380-7708"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a4dec2d00c6c2ca358bd906",
+        "invoiceId": "6a4dec2d00c6c2ca358bd90e",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783495966038-9570",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "ZNZ-1783495966038-9570"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783495966038-9570"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a4dfd1e00c6c2ca358bd9c7",
+        "invoiceId": "6a4dfd1e00c6c2ca358bd9d0",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783499765564-1348",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "ZNZ-1783499765564-1348"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783499765564-1348"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a4e0bf500c6c2ca358bda41",
+        "invoiceId": "6a4e0bf500c6c2ca358bda4a",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783499785434-3825",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "ZNZ-1783499785434-3825"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783499785434-3825"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a4e0c0900c6c2ca358bda5b",
+        "invoiceId": "6a4e0c0900c6c2ca358bda64",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783702348928-7732",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783702348928-7732"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a51234c8fe5402dea698bef",
+        "invoiceId": "6a51234c8fe5402dea698bfb",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783702405302-5579",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783702405302-5579"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a5123858fe5402dea698c06",
+        "invoiceId": "6a5123858fe5402dea698c12",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783703828538-2542",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783703828538-2542"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a5129148fe5402dea698c3f",
+        "invoiceId": "6a5129148fe5402dea698c4b",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783927655437-9063",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783927655437-9063"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a5493677550162ca926ee2a",
+        "invoiceId": "6a5493677550162ca926ee34",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783944538290-1855",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783944538290-1855"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a54d55a7550162ca926ef38",
+        "invoiceId": "6a54d55a7550162ca926ef42",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783950352641-8615",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783950352641-8615"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a54ec107550162ca926ef78",
+        "invoiceId": "6a54ec107550162ca926ef85",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783950738360-7118",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783950738360-7118"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a54ed927550162ca926efad",
+        "invoiceId": "6a54ed927550162ca926efb7",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783954125767-9817",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783954125767-9817"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a54facd7550162ca926f088",
+        "invoiceId": "6a54facd7550162ca926f092",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783965248638-9910",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1783965248638-9910"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a5526407550162ca926f16d",
+        "invoiceId": "6a5526407550162ca926f177",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784214431513-2211",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1784214431513-2211"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a58f39fcc3abe98f08f6a64",
+        "invoiceId": "6a58f39fcc3abe98f08f6a6f",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784214567367-7693",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1784214567367-7693"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a58f427cc3abe98f08f6a98",
+        "invoiceId": "6a58f427cc3abe98f08f6aa3",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784214657183-3277",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1784214657183-3277"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a58f481cc3abe98f08f6aae",
+        "invoiceId": "6a58f481cc3abe98f08f6ab9",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784218724204-2703",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1784218724204-2703"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a590464cc3abe98f08f6b39",
+        "invoiceId": "6a590464cc3abe98f08f6b44",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784219065056-4919",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1784219065056-4919"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a5905b9cc3abe98f08f6b78",
+        "invoiceId": "6a5905b9cc3abe98f08f6b83",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784223776928-6722",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1784223776928-6722"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a591820cc3abe98f08f6c4d",
+        "invoiceId": "6a591820cc3abe98f08f6c57",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1784224104668-9931",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1784224104668-9931"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a591968cc3abe98f08f6c92",
+        "invoiceId": "6a591968cc3abe98f08f6c9c",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785309942749-8549",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1785309942749-8549"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a69aaf6eea4cf829eed7354",
+        "invoiceId": "6a69aaf6eea4cf829eed735f",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785309956347-5736",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1785309956347-5736"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a69ab04eea4cf829eed736f",
+        "invoiceId": "6a69ab04eea4cf829eed737a",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785566862582-9223",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1785566862582-9223"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a6d968e53ebfa01e983276b",
+        "invoiceId": "6a6d968e53ebfa01e9832776",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785566977883-2069",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1785566977883-2069"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a6d970153ebfa01e983287c",
+        "invoiceId": "6a6d970153ebfa01e9832887",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785567414326-3370",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1785567414326-3370"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a6d98b653ebfa01e98329b9",
+        "invoiceId": "6a6d98b653ebfa01e98329c4",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785594711340-4634",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1785594711340-4634"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a6e035753ebfa01e9832a0a",
+        "invoiceId": "6a6e035753ebfa01e9832a15",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1785643320297-2340",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1785643320297-2340"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a6ec138877e62c415d99238",
+        "invoiceId": "6a6ec138877e62c415d99243",
+        "paymentIds": [
+          "6a6ec138877e62c415d99246"
+        ],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGRFQGYKZ28",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGRFQGYKZ28"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGRFQGYKZ28"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fae73fe0090fc0b8a751",
+        "invoiceId": "6aa0ed77fab043721670875b",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYG32LY979AB",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYG32LY979AB"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYG32LY979AB"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93faed3fe0090fc0b8a75d",
+        "invoiceId": "6aa0ed00fab04372167083c8",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1441863013",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1441863013"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1441863013"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93faf03fe0090fc0b8a769",
+        "invoiceId": "6aa0ed02fab04372167083d6",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101658841",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101658841"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101658841"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fd49306f986879cfbdd4",
+        "invoiceId": "6aa0ed7bfab043721670878e",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100651976",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100651976"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100651976"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fd4c306f986879cfbddd",
+        "invoiceId": "6aa0ed7cfab043721670879b",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100477559",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100477559"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100477559"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fd52306f986879cfbde5",
+        "invoiceId": "6aa0ed7efab04372167087a8",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-99535802",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-99535802"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-99535802"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fd5b306f986879cfbdf4",
+        "invoiceId": "6aa0ed79fab0437216708774",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1423634423",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1423634423"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1423634423"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fd60306f986879cfbe06",
+        "invoiceId": "6aa0ed7efab04372167087b5",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1441720001",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1441720001"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1441720001"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fdf2306f986879cfbe54",
+        "invoiceId": "6aa0ed03fab04372167083e3",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-102105574",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-102105574"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-102105574"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fdf7306f986879cfbe5e",
+        "invoiceId": "6aa0ed04fab04372167083f0",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGRFQG684Y9",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGRFQG684Y9"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGRFQG684Y9"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fdfc306f986879cfbe69",
+        "invoiceId": "6aa0ed04fab04372167083fd",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGVN234W6MQ",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGVN234W6MQ"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGVN234W6MQ"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fdfd306f986879cfbe75",
+        "invoiceId": "6aa0ed06fab043721670840c",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101660315",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101660315"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101660315"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fdff306f986879cfbe7e",
+        "invoiceId": "6aa0ed07fab0437216708419",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101660088",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101660088"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101660088"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe03306f986879cfbe86",
+        "invoiceId": "6aa0ed09fab043721670842f",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101659298",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101659298"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101659298"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe05306f986879cfbe8e",
+        "invoiceId": "6aa0ed0afab0437216708445",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101658385",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101658385"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101658385"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe09306f986879cfbe9e",
+        "invoiceId": "6aa0ed0bfab043721670845a",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGN6BYHH5MN",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGN6BYHH5MN"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGN6BYHH5MN"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe0b306f986879cfbea9",
+        "invoiceId": "6aa0ed0cfab0437216708473",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1439382645",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1439382645"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1439382645"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe0e306f986879cfbec7",
+        "invoiceId": "6aa0ed0dfab0437216708480",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1439277305",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1439277305"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1439277305"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe10306f986879cfbed3",
+        "invoiceId": "6aa0ed0efab043721670848e",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1439139071",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1439139071"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1439139071"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe12306f986879cfbedf",
+        "invoiceId": "6aa0ed0ffab04372167084a2",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101447139",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101447139"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101447139"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe14306f986879cfbee8",
+        "invoiceId": "6aa0ed0ffab04372167084b1",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101446226",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101446226"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101446226"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe16306f986879cfbef0",
+        "invoiceId": "6aa0ed10fab04372167084be",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101446083",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101446083"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101446083"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe18306f986879cfbef8",
+        "invoiceId": "6aa0ed11fab04372167084cb",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101445916",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101445916"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101445916"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe1b306f986879cfbeff",
+        "invoiceId": "6aa0ed11fab04372167084d8",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101241760",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101241760"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101241760"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe1e306f986879cfbf09",
+        "invoiceId": "6aa0ed30fab0437216708524",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101239934",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101239934"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101239934"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe20306f986879cfbf13",
+        "invoiceId": "6aa0ed30fab0437216708542",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101239553",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101239553"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101239553"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe22306f986879cfbf1b",
+        "invoiceId": "6aa0ed32fab0437216708550",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101238920",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101238920"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101238920"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe24306f986879cfbf23",
+        "invoiceId": "6aa0ed32fab043721670855d",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101238796",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101238796"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101238796"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe25306f986879cfbf2c",
+        "invoiceId": "6aa0ed34fab0437216708572",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101237410",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101237410"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101237410"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe28306f986879cfbf33",
+        "invoiceId": "6aa0ed35fab043721670858c",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101237313",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101237313"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101237313"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe2b306f986879cfbf3a",
+        "invoiceId": "6aa0ed36fab0437216708599",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101125350",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101125350"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101125350"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe2d306f986879cfbf44",
+        "invoiceId": "6aa0ed36fab04372167085ad",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101124054",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101124054"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101124054"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe30306f986879cfbf4c",
+        "invoiceId": "6aa0ed37fab04372167085ba",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101123754",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101123754"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101123754"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe32306f986879cfbf54",
+        "invoiceId": "6aa0ed38fab04372167085c7",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101123591",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101123591"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101123591"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe35306f986879cfbf5b",
+        "invoiceId": "6aa0ed39fab04372167085d6",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101122881",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101122881"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101122881"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe38306f986879cfbf62",
+        "invoiceId": "6aa0ed3afab04372167085e3",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101122398",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101122398"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101122398"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe3b306f986879cfbf69",
+        "invoiceId": "6aa0ed3cfab04372167085f0",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101122079",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101122079"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101122079"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe3d306f986879cfbf71",
+        "invoiceId": "6aa0ed3dfab04372167085fd",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-101121845",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-101121845"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-101121845"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe3f306f986879cfbf7b",
+        "invoiceId": "6aa0ed3efab043721670860a",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYG996XK5ZAM",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYG996XK5ZAM"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYG996XK5ZAM"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe42306f986879cfbf8e",
+        "invoiceId": "6aa0ed3ffab0437216708617",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100844410",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100844410"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100844410"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe45306f986879cfbf99",
+        "invoiceId": "6aa0ed40fab0437216708624",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100794393",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100794393"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100794393"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe48306f986879cfbfa1",
+        "invoiceId": "6aa0ed40fab0437216708631",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100794327",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100794327"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100794327"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe49306f986879cfbfa9",
+        "invoiceId": "6aa0ed42fab043721670863e",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100753608",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100753608"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100753608"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe4b306f986879cfbfb1",
+        "invoiceId": "6aa0ed43fab043721670864b",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100747421",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100747421"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100747421"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe50306f986879cfbfb9",
+        "invoiceId": "6aa0ed6cfab043721670869c",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100746257",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100746257"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100746257"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe53306f986879cfbfc0",
+        "invoiceId": "6aa0ed6dfab04372167086b2",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100745660",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100745660"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100745660"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe56306f986879cfbfc7",
+        "invoiceId": "6aa0ed6efab04372167086c7",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100654370",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100654370"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100654370"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe57306f986879cfbfcf",
+        "invoiceId": "6aa0ed6ffab04372167086d5",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGKBF7BBL2K",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGKBF7BBL2K"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGKBF7BBL2K"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe59306f986879cfbfda",
+        "invoiceId": "6aa0ed70fab04372167086ea",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1436245843",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1436245843"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1436245843"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe5e306f986879cfbfee",
+        "invoiceId": "6aa0ed71fab04372167086f7",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1786608947411-2003",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1786608947411-2003"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe61306f986879cfc003",
+        "invoiceId": "6aa0ed72fab0437216708710",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGG45MKB4HG",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGG45MKB4HG"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGG45MKB4HG"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe64306f986879cfc00e",
+        "invoiceId": "6aa0ed72fab043721670871e",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100480611",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100480611"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100480611"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe67306f986879cfc01a",
+        "invoiceId": "6aa0ed74fab0437216708734",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1435747845",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1435747845"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1435747845"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe6a306f986879cfc025",
+        "invoiceId": "6aa0ed74fab0437216708741",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100478026",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100478026"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100478026"
+        }
+      ],
+      "trace": {
+        "bookingId": "6a93fe6c306f986879cfc030",
+        "invoiceId": "6aa0ed76fab043721670874e",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYG83W8N2A2H",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYG83W8N2A2H"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYG83W8N2A2H"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0897cd0cfd3b4c2147a60",
+        "invoiceId": "6aa0ed7afab0437216708781",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-103334641",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-103334641"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-103334641"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2bfc13148f8b4888d8a",
+        "invoiceId": "6aa0f2e6c13148f8b4888f9e",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-103334155",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-103334155"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-103334155"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c0c13148f8b4888d9e",
+        "invoiceId": "6aa0f2e7c13148f8b4888fbb",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-103333934",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-103333934"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-103333934"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c0c13148f8b4888db2",
+        "invoiceId": "6aa0f2e8c13148f8b4888fcf",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-103333571",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-103333571"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-103333571"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c2c13148f8b4888dc6",
+        "invoiceId": "6aa0f2e9c13148f8b4888feb",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-103333440",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-103333440"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-103333440"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c3c13148f8b4888df2",
+        "invoiceId": "6aa0f2eac13148f8b4889000",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1445126625",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1445126625"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1445126625"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c5c13148f8b4888e0a",
+        "invoiceId": "6aa0f2ecc13148f8b4889013",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGKBF5YKVV2",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGKBF5YKVV2"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGKBF5YKVV2"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c5c13148f8b4888e15",
+        "invoiceId": "6aa0f2edc13148f8b488905a",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-102931808",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-102931808"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-102931808"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c6c13148f8b4888e1e",
+        "invoiceId": "6aa0f2edc13148f8b4889067",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-102891929",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-102891929"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-102891929"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c6c13148f8b4888e26",
+        "invoiceId": "6aa0f2eec13148f8b488907a",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-102891364",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-102891364"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-102891364"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c7c13148f8b4888e2d",
+        "invoiceId": "6aa0f2efc13148f8b488908f",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-102890573",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-102890573"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-102890573"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c7c13148f8b4888e35",
+        "invoiceId": "6aa0f2f0c13148f8b48890a4",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGKBF53F282",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGKBF53F282"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGKBF53F282"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2c8c13148f8b4888e43",
+        "invoiceId": "6aa0f2f1c13148f8b48890b1",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1442659613",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1442659613"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1442659613"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2cac13148f8b4888e58",
+        "invoiceId": "6aa0f2f1c13148f8b48890be",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGKBF59W84Y",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGKBF59W84Y"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGKBF59W84Y"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f2ccc13148f8b4888e6c",
+        "invoiceId": "6aa0f2f2c13148f8b48890d3",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-100476169",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-100476169"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-100476169"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f309c13148f8b48891be",
+        "invoiceId": "6aa0f321c13148f8b488927a",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGLMRVGF6XM",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGLMRVGF6XM"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGLMRVGF6XM"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f30ac13148f8b48891c9",
+        "invoiceId": "6aa0f321c13148f8b4889287",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYG7VKQ757HB",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYG7VKQ757HB"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYG7VKQ757HB"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa0f30bc13148f8b48891d5",
+        "invoiceId": "6aa0f322c13148f8b4889294",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGRFQGAG2WQ",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGRFQGAG2WQ"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGRFQGAG2WQ"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa122bfc13148f8b48a1991",
+        "invoiceId": "6aa122fac13148f8b48a1cfe",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1445969483",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1445969483"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1445969483"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa2fccec13148f8b48b96d6",
+        "invoiceId": "6aa2fd08c13148f8b48b99e2",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1445955279",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1445955279"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1445955279"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa2fccfc13148f8b48b96e2",
+        "invoiceId": "6aa2fd09c13148f8b48b99f7",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1445915375",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1445915375"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1445915375"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa2fcd0c13148f8b48b96fa",
+        "invoiceId": "6aa2fd0ac13148f8b48b9a0c",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYG2Q9ANMLLL",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYG2Q9ANMLLL"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYG2Q9ANMLLL"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa4e100c13148f8b48bc3bb",
+        "invoiceId": "6aa4e13ac13148f8b48bc682",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYG2Q9AMY3VQ",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYG2Q9AMY3VQ"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYG2Q9AMY3VQ"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa6258fc13148f8b48cb194",
+        "invoiceId": "6aa625cac13148f8b48cb47c",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1447020877",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1447020877"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1447020877"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa76b904719cb671f303558",
+        "invoiceId": "6aac004c7dfac950927087ed",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGMX389AARY",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGMX389AARY"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGMX389AARY"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa774014719cb671f308304",
+        "invoiceId": "6aac004c7dfac950927087ee",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "1447193175",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "1447193175"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "1447193175"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa7afc14719cb671f314f64",
+        "invoiceId": "6aac004d7dfac950927087ef",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1789376512918-9322",
+      "issues": [
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "ZNZ-1789376512918-9322"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aa7b8004719cb671f319a77",
+        "invoiceId": "6aa7b8014719cb671f319a82",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGKBF5B24VG",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGKBF5B24VG"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGKBF5B24VG"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aaa1bc86beeaca6d54cd921",
+        "invoiceId": "6aac004d7dfac950927087f0",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-104116229",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-104116229"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-104116229"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aabf8b5c4b3290f9373492b",
+        "invoiceId": "6aac004d7dfac950927087f1",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-104115290",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-104115290"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-104115290"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aabf8b7c4b3290f9373493f",
+        "invoiceId": "6aac004d7dfac950927087f2",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-104114606",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-104114606"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-104114606"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aabf8b8c4b3290f93734953",
+        "invoiceId": "6aac004d7dfac950927087f3",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "VIA-104114494",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "VIA-104114494"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "VIA-104114494"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aabf8b9c4b3290f93734966",
+        "invoiceId": "6aabfdab7dfac950927087ec",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "GYGWZALRMG68",
+      "issues": [
+        {
+          "code": "AWAITING_SETTLEMENT_EVIDENCE",
+          "reference": "GYGWZALRMG68"
+        },
+        {
+          "code": "MISSING_ACCOUNTING_LINK",
+          "reference": "GYGWZALRMG68"
+        }
+      ],
+      "trace": {
+        "bookingId": "6aabf8bac4b3290f93734982",
+        "invoiceId": "6aac004d7dfac950927087f4",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": true,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    }
+  ]
+}

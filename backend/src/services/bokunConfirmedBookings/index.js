@@ -6,6 +6,7 @@ const AuditLog = require("../../models/AuditLog");
 const bokunService = require("../bokun");
 const AppError = require("../../utils/AppError");
 const { env } = require("../../config/env");
+const logger = require("../../config/logger");
 const {
   mapBokunBookingForImport,
   resolveBookingLookupReference
@@ -268,6 +269,7 @@ const buildBookingPatch = ({
       mappedAt: nowDate
     },
     bokunOperationalDates,
+    bokunOperationalEvidence: snapshot.bokunOperationalEvidence || {},
     bokunImport: {
       ...(existing?.bokunImport || {}),
       firstImportedAt,
@@ -283,6 +285,14 @@ const buildBookingPatch = ({
     },
     rawBokunResponse: snapshot.rawBokunResponse
   };
+
+  if (snapshot.bokunFinancialEvidence) {
+    patch.bokunFinancialEvidence = {
+      ...snapshot.bokunFinancialEvidence,
+      evidenceHash: snapshot.bokunFinancialEvidence.evidenceHash || snapshotHash,
+      syncedAt: nowDate
+    };
+  }
 
   if (preserveFinancials) {
     patch.paymentStatus = existing.paymentStatus;
@@ -333,6 +343,7 @@ const buildCancellationPatch = ({ mapped, existing, source, requestId, nowDate }
     rawChannelSource: snapshot.rawChannelSource || channel.rawChannel || existing.rawChannelSource || "",
     externalChannelReference: snapshot.externalChannelReference || existing.externalChannelReference || "",
     bokunOperationalDates,
+    bokunOperationalEvidence: snapshot.bokunOperationalEvidence || {},
     bookingStatus: "cancelled",
     supplierStatus: existing.supplierStatus === "confirmed" ? "confirmed" : existing.supplierStatus,
     cancellation: {
@@ -443,7 +454,20 @@ const createBokunConfirmedBookingImportService = ({
       Object.assign(existing, patch);
       booking = typeof existing.save === "function" ? await existing.save() : existing;
     } else {
-      booking = await BookingModel.create(patch);
+      try {
+        booking = await BookingModel.create(patch);
+      } catch (error) {
+        if (error?.code !== 11000) throw error;
+        const canonical = await BookingModel.findOne(buildBookingLookupQuery(snapshot));
+        if (!canonical) throw error;
+        logger.warn("BOKUN_IMPORT_REPLAY", {
+          bookingReference: canonical.bookingReference,
+          bokunBookingId: snapshot.bokunBookingId,
+          canonicalRecordId: String(canonical._id)
+        });
+        Object.assign(canonical, patch);
+        booking = typeof canonical.save === "function" ? await canonical.save() : canonical;
+      }
     }
 
     await require('../bookingPayment/sync').syncBokunPayment({ booking, payload: snapshot.rawBokunResponse, source, requestId, now: now(), AuditLogModel });

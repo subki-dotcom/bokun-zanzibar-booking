@@ -1,0 +1,2394 @@
+﻿[
+    {
+        "Path":  "frontend/test\\accountingReconciliation.test.js",
+        "Hash":  "E2CAB3522437DF2A889920C921DC13020F8AB63717F6CF305ADEED0C5073B877"
+    },
+    {
+        "Path":  "frontend/src\\utils\\validators.js",
+        "Hash":  "823AEB405022A96BEC1E63C32775AA65F4290D380D297BAD8A9ACAE0DE6C4EA3"
+    },
+    {
+        "Path":  "frontend/src\\utils\\publicPaymentResult.js",
+        "Hash":  "FFDC8C5B47F4CA1B9AA7A2564A2191D88885AE121AE1B2F8F665B2F8BC0ECDB7"
+    },
+    {
+        "Path":  "frontend/src\\utils\\phoneCodes.js",
+        "Hash":  "C72368EE771FFD80DF6F7A8729E9F09F6308026047BFCE0FD733160522E1FF1C"
+    },
+    {
+        "Path":  "frontend/src\\utils\\pesapalProcessing.js",
+        "Hash":  "112289F19B522CB17750BEEC33A157AFD354FB8A9B2984361AED11AA80B5BE96"
+    },
+    {
+        "Path":  "frontend/src\\utils\\paymentMethods.js",
+        "Hash":  "E5E47783E854ED6576AD5FFAE58EDDF22CDB4D66F71259E6530120DA5E7B1D16"
+    },
+    {
+        "Path":  "frontend/src\\utils\\mockBokunMappedTours.js",
+        "Hash":  "CFD40C7EA6E1067FCD39EDE29192F07F20CFD90DDBDD2515E0B65C5A50399CD2"
+    },
+    {
+        "Path":  "frontend/src\\utils\\mockBokunMappedProduct.js",
+        "Hash":  "BD9D72297EA8C8BD7D596CC4AEB2747F588F464F1A0C355E24852ADB3DA3AB49"
+    },
+    {
+        "Path":  "frontend/src\\utils\\marketingAttribution.js",
+        "Hash":  "C917C1A809888E18577AC4219E296A331FB43DC053A558E859B103DC1E068E7E"
+    },
+    {
+        "Path":  "frontend/src\\utils\\formatters.js",
+        "Hash":  "BB8DBC4D5F218811D3C126F773A2BE17B0A84A6B97560B6FD05336F5707257EF"
+    },
+    {
+        "Path":  "frontend/src\\utils\\constants.js",
+        "Hash":  "EEB72DE0098B04E45C83F42F940BDA18B13F41D84C2BF74CCFD1373FD22054F5"
+    },
+    {
+        "Path":  "frontend/src\\utils\\checkoutFlow.js",
+        "Hash":  "8773254B261BA7851152CDB47EB2DE958400089BD0A2C12CFC488AF501F65179"
+    },
+    {
+        "Path":  "frontend/src\\utils\\cancellationPolicy.js",
+        "Hash":  "A491A95B487BB4F6F5C51BC79EF7736C02291135DD65FA91F8CF913E706539D1"
+    },
+    {
+        "Path":  "frontend/src\\utils\\bookingStatus.js",
+        "Hash":  "4404D9F621319A65653F0C9A7718DBB6234E5015828CA90955C7344F2EA27EF3"
+    },
+    {
+        "Path":  "frontend/src\\utils\\bookingSession.js",
+        "Hash":  "9B6E9A9E7E9C83A21A6DE58CB5D37D45C473685DDB25D87EBE4608020D95B322"
+    },
+    {
+        "Path":  "frontend/src\\utils\\bookingQuestions.js",
+        "Hash":  "BE8EA3D0B5E683AB87AC92479FA5ED7CB6E9EC978B4B77250AA338D36C540FE6"
+    },
+    {
+        "Path":  "frontend/src\\utils\\analytics.js",
+        "Hash":  "AFB2151ADC1C42BA80F79EFDE87AD60D1B7C5C1F0E36D54F877002E42790741D"
+    },
+    {
+        "Path":  "frontend/src\\context\\PaymentProvidersContext.jsx",
+        "Hash":  "B2E52A75A9AB65382FA3416D1605E6886E5235D590E47483592ADC8B0E4F9086"
+    },
+    {
+        "Path":  "frontend/src\\context\\BookingFlowContext.jsx",
+        "Hash":  "616B06013C6CD5BAEB0BD4438F0929102104CEC6ED3F9A79ED22DF08A868596D"
+    },
+    {
+        "Path":  "frontend/src\\context\\AuthContext.jsx",
+        "Hash":  "890F9141021C7F9CFCFD26DCDDD4ACFE743E5A8E9C877A19D12483E8180CC5EB"
+    },
+    {
+        "Path":  "frontend/src\\routes\\AppRoutes.jsx",
+        "Hash":  "8F7E61359E8045AA0B27851C6A375698B432CBDA9BB89D12423D50D81085A542"
+    },
+    {
+        "Path":  "frontend/src\\config\\brand.js",
+        "Hash":  "86F414B7B3BBAECA7DE13A3E73036B9812A7B5BDC339E889D1037D40DE5D83A0"
+    },
+    {
+        "Path":  "frontend/src\\config\\api.js",
+        "Hash":  "040612DAB75BA4A37787BB2C4E2322000FB56F904630943843869ADC9C3B720F"
+    },
+    {
+        "Path":  "frontend/src\\config\\adminNavigation.js",
+        "Hash":  "062B289DAD96F706FF47DAC5DAEE025121325476311ED20965309D7AC0B45B03"
+    },
+    {
+        "Path":  "backend/src\\validators\\webhooks.validation.js",
+        "Hash":  "DE7A28C3E4A35056BC62C7FD40C031D828374912D3D1446FE8011B53EE6009EF"
+    },
+    {
+        "Path":  "backend/src\\validators\\tours.validation.js",
+        "Hash":  "473C9A7F76D95A26242B1ED536C696B6F75C997826162E5FA912CFA5B35E2ABB"
+    },
+    {
+        "Path":  "backend/src\\validators\\systemHealth.validation.js",
+        "Hash":  "BBD0102AF74635AAE08BD724AC6CDED4226CC1BB1BB62C9EC755F1FC014E493A"
+    },
+    {
+        "Path":  "backend/src\\validators\\settlements.validation.js",
+        "Hash":  "25B251245A612BA55370DD419AD06BAB5284F72479235F20FA82EC19ECACDC3F"
+    },
+    {
+        "Path":  "backend/src\\validators\\serviceCompletion.validation.js",
+        "Hash":  "70E243EE21E060F47AB02FB4E0313A383CEED13B2D767B961D7F79C5D68876B4"
+    },
+    {
+        "Path":  "backend/src\\validators\\reportCenter.validation.js",
+        "Hash":  "BB70BB15C375103A101986C0E59F195094A24CBD5B104108E4016C9FB6A757BC"
+    },
+    {
+        "Path":  "backend/src\\validators\\productionReadiness.validation.js",
+        "Hash":  "3D53621720199098071A8E5DE306BDA6ADE6F8B9679A696788255509751A28A7"
+    },
+    {
+        "Path":  "backend/src\\validators\\performanceReview.validation.js",
+        "Hash":  "B1EC1854B09BEC6E990AD3FF397F1141EE077C92A06A0752F5F9DE8AC5CECBC6"
+    },
+    {
+        "Path":  "frontend/test\\trialBalanceDashboard.test.js",
+        "Hash":  "2DAEC0EDC2722432146D5242ACEFD54F5A0473F3D4B506A5F2F2C152BC30648A"
+    },
+    {
+        "Path":  "frontend/test\\settlementOperations.test.js",
+        "Hash":  "753B044B56C02382A2534E4BA8D79D16BDB79971FC0C134F0FA281E15122BDCB"
+    },
+    {
+        "Path":  "frontend/test\\serviceCompletion.test.js",
+        "Hash":  "9602E6465C4489431CE1B14E686B9F2DFB63F8B85396464C4771973344A269C8"
+    },
+    {
+        "Path":  "frontend/test\\reportCenterRendering.test.js",
+        "Hash":  "E3F4345EC971F7195BF3B74F1D8F823D86BB301D1583C8FA4CB6D928A1B3A83D"
+    },
+    {
+        "Path":  "frontend/test\\reportCenter.test.js",
+        "Hash":  "427102FD6CE1275DE51F1A078182CFBB9A46D479BBD03E498B7DB0ED3E9E5CAC"
+    },
+    {
+        "Path":  "frontend/test\\publicPaymentResult.test.js",
+        "Hash":  "F2E57C6571D202751EAB05D062CF34FDB12B16F4811F5917892E63CC38C338A0"
+    },
+    {
+        "Path":  "frontend/test\\profitLoss.test.js",
+        "Hash":  "8EFBA73E9683A69CC4F19056A1571B2FEDC27A1388393A1A095D7C3230EBD311"
+    },
+    {
+        "Path":  "frontend/test\\phoneCodes.test.js",
+        "Hash":  "1C97516347D402BF42D095154AF68F5617A300A68F2D9F8415142EA8CE6BC6B7"
+    },
+    {
+        "Path":  "frontend/test\\pesapalProcessing.test.js",
+        "Hash":  "9F84ABB3390F17E59E39926DCDF14F5919DDC751BE8B3AF0E4A6B0B7D3A20269"
+    },
+    {
+        "Path":  "frontend/test\\periodClose.test.js",
+        "Hash":  "7E33B9929095A51D06B0A59753821C7AA3A8ECD8A19D2E900EA0E0A5BE9AE5D8"
+    },
+    {
+        "Path":  "frontend/test\\paymentReconciliationContract.test.js",
+        "Hash":  "C715D88DF0721965FE685EEB2F86D3E057DE9E6432B5CE12EA43A76B81293267"
+    },
+    {
+        "Path":  "frontend/test\\managementAccountingDashboard.test.js",
+        "Hash":  "AFDAF16569AEB23E90DCF5483EECE155EC6AF949C69AFEA3EB62B242A3613C4F"
+    },
+    {
+        "Path":  "frontend/test\\journalEntriesDashboard.test.js",
+        "Hash":  "C67079E04B45249659532D1F6C32CCC44FA6A746837347B1F4E4CC2954B26412"
+    },
+    {
+        "Path":  "frontend/test\\invoices.test.js",
+        "Hash":  "11DFCAA4D0ECDF5780AEEA2B29B8E19C78B5930120FE179289757CCA661B5FAF"
+    },
+    {
+        "Path":  "frontend/test\\invoiceRendering.test.js",
+        "Hash":  "DB6C972DB0A9E8B13D57B83E7F1F9DBB6EFB6AA92E387AD932529EF04D785F3B"
+    },
+    {
+        "Path":  "frontend/test\\glPostingPreview.test.js",
+        "Hash":  "1B1C95F2223E3F604BBA723E5D247C459242B27F551C80A7E7A01AAB50505E07"
+    },
+    {
+        "Path":  "frontend/test\\generalLedgerRegister.test.js",
+        "Hash":  "34A29FD7A2FB42CA0BFDE3E8D78D036C3BC8BBC685343060EB6AF5AA454ACE84"
+    },
+    {
+        "Path":  "frontend/test\\fixedAssets.test.js",
+        "Hash":  "558688B3EA403DF3B7B815141665919B9FF15F72D3EF7020076AF6A089C71545"
+    },
+    {
+        "Path":  "frontend/test\\chartOfAccountsDashboard.test.js",
+        "Hash":  "0753CE771338DE9A3268155050992D1932A4D201B2B8738CE3D08250CEF72A9A"
+    },
+    {
+        "Path":  "frontend/test\\cashFlow.test.js",
+        "Hash":  "75D6A31B84FDC043D18F9179696F0C5866AC95974EF6218C3BEC721CE4CB7DAC"
+    },
+    {
+        "Path":  "frontend/test\\cashBankDashboard.test.js",
+        "Hash":  "FA1765035FBA44AE5B5D824E257C004F889831232D4E91F27837604DC00F1CFF"
+    },
+    {
+        "Path":  "frontend/test\\cancellationPolicy.test.js",
+        "Hash":  "441315E7C153A3671EC8C6510F056959CD0F0BFA6FDCC3F247B179F2CE4B457A"
+    },
+    {
+        "Path":  "frontend/test\\businessIntelligenceRendering.test.js",
+        "Hash":  "AB9060B6FEF8AF9ACDB5A35A4DAD4645A71C6E249C68AF42AE719CB17D104722"
+    },
+    {
+        "Path":  "frontend/test\\businessIntelligence.test.js",
+        "Hash":  "A9A36812F8FB2C63401975F10A7CCF40CAA137EC5526A6FB08A28E1B7ED0E592"
+    },
+    {
+        "Path":  "frontend/test\\bookingStatus.test.js",
+        "Hash":  "AE012E2794D913E5F6CFADBF350B8CD8CC679DD26C5F1E904339DA0EE31AAA57"
+    },
+    {
+        "Path":  "frontend/test\\bookingReconciliation.test.js",
+        "Hash":  "9C34E14222692D380DA741A0C80BB9473862C8CB5DD2C930C4BFA2EBC8EA1B47"
+    },
+    {
+        "Path":  "frontend/test\\bookingQuestions.test.js",
+        "Hash":  "DFEC2C84988D95F8B8B981A5E5F8AAECE18996A6571E847918485D78B64EFFC4"
+    },
+    {
+        "Path":  "frontend/test\\bookingPaymentStateRendering.test.js",
+        "Hash":  "B47A3980FD84511EC973FDAC50178EC3A5EC8711A6CE4E49CCBDF63BB5BD62D8"
+    },
+    {
+        "Path":  "frontend/test\\bookingExpenseSafety.test.js",
+        "Hash":  "3CC64C24EBCD6EB8CA7CE018BAE2C777FD74C988B1F2B7F25D763ED4A6C97BC6"
+    },
+    {
+        "Path":  "frontend/test\\bookingCostTemplates.test.js",
+        "Hash":  "16D0F72BA286075B69DAF8D2DE9A7B063468C58B25CBAEFD3C8C578821F6C458"
+    },
+    {
+        "Path":  "frontend/test\\bookingAccountingRoutes.test.js",
+        "Hash":  "19F92034D4690946357E897B6B4B25C642FF7A66BF4072F9F57D3F97B60F2AF7"
+    },
+    {
+        "Path":  "frontend/test\\bokunSyncRoutes.test.js",
+        "Hash":  "E50291C79486CE4FF3D865E2E2963BB4424A3B8F5E00C21191C5A3EF4098E1D2"
+    },
+    {
+        "Path":  "frontend/test\\balanceSheet.test.js",
+        "Hash":  "8BB0C5BD54E51D61F51E2661DA2E5FF6F27E1E1BC87DA1ECE1DB25FB245EA77E"
+    },
+    {
+        "Path":  "frontend/test\\authTimeout.test.js",
+        "Hash":  "3952334282913EFBEFC4271F1D72D51825D838AABF85DC8A1E2D5C669D635DE1"
+    },
+    {
+        "Path":  "frontend/test\\adminSidebarResponsive.test.js",
+        "Hash":  "B41EF32DF2E978222F86A66B415610A2193D746AD91E4ADF6B91595351FC1F54"
+    },
+    {
+        "Path":  "frontend/test\\adminNavigation.test.js",
+        "Hash":  "86A69B7C683A4F4AC7855B156843FDD7A4A670CA514EC3AF6563F750E4655C38"
+    },
+    {
+        "Path":  "frontend/test\\adminDashboardRedesign.test.js",
+        "Hash":  "B6CD0AD672C153F4E6BFE7F38B84AFDD5F0D4EB274F42F5F8644C62F78A2F5FF"
+    },
+    {
+        "Path":  "frontend/test\\adminBookingsRedesign.test.js",
+        "Hash":  "7271DACBD3B11571704913EBA772A7293328FD650490D88195F05452E69C5729"
+    },
+    {
+        "Path":  "frontend/test\\accountsReceivableDashboard.test.js",
+        "Hash":  "FE5478544D83D51B25EC4147EDCC9700DB9F6B96F48376B08C69A40B19388C1E"
+    },
+    {
+        "Path":  "frontend/test\\accountsPayableDashboard.test.js",
+        "Hash":  "88764CA3E8982317747C53574AC0BF54EF3F70A4076DABC4EFBBEE844781486C"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\HomePage.jsx",
+        "Hash":  "7E9A351C21437251C953C0D6B4ADE8D9FAA6B08985391A810A0DCFCA24917B61"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\BookingFlowPage.jsx",
+        "Hash":  "9F9012850C12300EF8E93DB6A906FC8ED5937BC8F970B3AF20F07BA4FEF2A314"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\BookingConfirmationPage.jsx",
+        "Hash":  "1B507244A3CF276DDB6E5DB6BC534C22BDB04879532DFCDD315AF66A2E078520"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\AgentRegisterPage.jsx",
+        "Hash":  "24D27BA65C4F5365067EE654AC1A55060DB79A0DB3E28A77E19DFEA5D5F17EBD"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\TourHighlights.jsx",
+        "Hash":  "BA47B15194F057685D12773925EB8C515ADC7CA1CE83A3A6AEF9E696BDB9D967"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\TourGallery.jsx",
+        "Hash":  "3BFCDA571A6A5ACA38133F8A9BE326F13AAE44DE9474186E6A142DD2F5AF27A3"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\TourCard.jsx",
+        "Hash":  "5E38E2796856C2067FC4961104F2BA7A9C240C195E1BFE55BF9E1859BA980EFF"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\ToursPage.jsx",
+        "Hash":  "7161B3747F3469B0C2F1A8031636526798BF62EEB96C709046D9547D1CBB7A0B"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\TourDetailsPage.jsx",
+        "Hash":  "5D304C0E870F082CBDE5856FE4A3C1DF1EFBC9E0CB6FBF8EA939A9F62035C550"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\PaymentSuccessPage.jsx",
+        "Hash":  "DF19DA08B4CA9AB6629BF8D37BEB3C53ECD45355FC021F55CD996258E3D5C2FF"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\PaymentStatusPage.jsx",
+        "Hash":  "57DF34E926E26C96688094B1C417DA71A55CDF9CB5BE38168966E79F0CF43B74"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\PaymentProcessingPage.jsx",
+        "Hash":  "7AE256F3FF068130714062AE28C582CBE1CF9D7B0BFE61DA8C7E80A9672EEF23"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\PaymentFailurePage.jsx",
+        "Hash":  "36F346B6719198D88511384F34DD37F4DEEB30BFD7A42E992FCBBD9C661D61A9"
+    },
+    {
+        "Path":  "backend/src\\validators\\payments\\reconciliation.validation.js",
+        "Hash":  "F7EB0215B5761A366B7EE95A03DB4C75EA976E4132F1969A01F9B9FCA50B1A65"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\PaymentCheckoutPage.jsx",
+        "Hash":  "C6372839F035021C3956B8F1BF83F4FE960858DCFD86A079EC6ACADC211FAC0D"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\MyBookingPage.jsx",
+        "Hash":  "E17E3417F5CD8000B6BEB4FAFD622C1A5FD8F9FF60F445AD8A1AF2B9200DBDFB"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\LoginPage.jsx",
+        "Hash":  "8E34DBDAC8F7AAF33F7654D61CA9F9C17199F366E39E3E0C3AC535D9AE9664DF"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\LegalPage.jsx",
+        "Hash":  "7F9974CE250EC333A91DC4DC9B82A079BB528E1146A092FAF92300DDE0F9C9C8"
+    },
+    {
+        "Path":  "frontend/src\\pages\\public\\InvoiceDetailsPage.jsx",
+        "Hash":  "958F177417897DE0F5537FCCCA8CD7E295AF569F0A59C9C611C12308D069FC0E"
+    },
+    {
+        "Path":  "backend/src\\validators\\agents.validation.js",
+        "Hash":  "6DCE00117B0239E1F629DFE8FEC249316236FAD0476EB7CA772930ED2DF58898"
+    },
+    {
+        "Path":  "backend/src\\validators\\accounting.validation.js",
+        "Hash":  "61B821601585D408676345E96261F18D19ACDDF0D4E31740B105DA239CD5BB01"
+    },
+    {
+        "Path":  "backend/src\\validators\\payments\\pesapal.validation.js",
+        "Hash":  "A96DDC3ADF340FE08E36574E5B67C615D8824F227DD62A3A5E2790B675960B8E"
+    },
+    {
+        "Path":  "backend/src\\validators\\payments\\paypal.validation.js",
+        "Hash":  "2EB6F72209FC4EE5A2DCDE9D6F79AFA26D948169C203E08267DF86526446FB1B"
+    },
+    {
+        "Path":  "backend/src\\validators\\payments\\dpo.validation.js",
+        "Hash":  "8313A0EE170335B3EE6610B2481FCAA46C9682D21C8D5F61D7BA33F6F293C663"
+    },
+    {
+        "Path":  "backend/src\\validators\\opsControl.validation.js",
+        "Hash":  "AF4546CA538DEC0EDBB3E2CDE625417FD24914F806BFBFCF82825C8CEF18C13D"
+    },
+    {
+        "Path":  "backend/src\\validators\\offers.validation.js",
+        "Hash":  "4F6B220092BC6F8ED3EED5B73836AC46139CD2066CCD853425D605F3ECFA7264"
+    },
+    {
+        "Path":  "backend/src\\validators\\marketing.validation.js",
+        "Hash":  "F5B402676FC1B6F70B561B1E0DE5D2580F72857D45AF5AF49549A82D331494BE"
+    },
+    {
+        "Path":  "backend/src\\validators\\disasterRecovery.validation.js",
+        "Hash":  "283064031204332877D33248529D6F6389530E5D97B1C431D73B1F1AB1CC8298"
+    },
+    {
+        "Path":  "backend/src\\validators\\dataQuality.validation.js",
+        "Hash":  "E9E1D5BF031CDBD3DC3F601D140B4A63ADC67ADF4589F241A7A59D41C42A0368"
+    },
+    {
+        "Path":  "backend/src\\validators\\customer.validation.js",
+        "Hash":  "5CCD8C56ECA7A2A755746F4393439A1BB8ED609CF3B39939DF937285294F0E21"
+    },
+    {
+        "Path":  "backend/src\\validators\\crm.validation.js",
+        "Hash":  "FE96F1D09A9588BF5666AD5C829AE20589F3244DE45BD1EC04E9A08DE8DD3B0F"
+    },
+    {
+        "Path":  "backend/src\\validators\\businessAccounting.validation.js",
+        "Hash":  "25C30EA6A0D566ABD9CCC1DEF411257E5D1A3F08F30BF133295AC3AE77E97A50"
+    },
+    {
+        "Path":  "backend/src\\validators\\bookings.validation.js",
+        "Hash":  "234914EBFB404D636201E60B6B3461E2F195BF6DF8C9829E3A442669905CD45D"
+    },
+    {
+        "Path":  "backend/src\\validators\\bookingRequests.validation.js",
+        "Hash":  "A58E4B75DDD234AF6CA5D0212B9399039C10C0D6FCE001BFC47FAE0CC28B0E87"
+    },
+    {
+        "Path":  "backend/src\\validators\\bookingAccounting.validation.js",
+        "Hash":  "D816C61205539DEBD1C9F7828CCC7B4A17B36A63984E32C0661A121E84144354"
+    },
+    {
+        "Path":  "backend/src\\validators\\bokun.validation.js",
+        "Hash":  "6216D9F26623272CA8A0B039F24ADADCFE8BE26A71F5D07EFD2B8D0D948FB826"
+    },
+    {
+        "Path":  "backend/src\\validators\\auth.validation.js",
+        "Hash":  "5ACFC40621E742895272AE16A50DCDE5BFBEB2783AC517ABE467729281473880"
+    },
+    {
+        "Path":  "backend/src\\validators\\auditControl.validation.js",
+        "Hash":  "1D10B1417BFAAB5CD870147E3DB7E707D9D7DD49099CD3A1457AE3CAA45479D4"
+    },
+    {
+        "Path":  "backend/src\\validators\\analytics.validation.js",
+        "Hash":  "93BAAFB4575C656AB8EDDCCE4FF3838745373952FDF996F4933ED2F1334775F5"
+    },
+    {
+        "Path":  "frontend/src\\components\\checkout\\CheckoutLayout.jsx",
+        "Hash":  "A8800E93FF75275ACF0DD1B6EF46330D5094D8A3F6213B76EBA7E14436F5EA49"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentVouchersPage.jsx",
+        "Hash":  "4A9758753F419687985F652BB7FA7389682EBD29E04B03B148BB0489F0A99556"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentVoucherPage.jsx",
+        "Hash":  "AF8CAD245A0C8FA059228669A6B619B50408A5D1C2DCFDA86F3AD4185AE2987D"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentTourBookingPage.jsx",
+        "Hash":  "4C05811EFAC48616CDCD19B6EB3FF2B4B7BABFD2656D5C3571C756DC6889EADD"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentTermsPage.jsx",
+        "Hash":  "22AF0854F4B690BDCA4DD2B5446FE2873042E018B33FBB371EBE0D9E7C20C216"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentSupportPage.jsx",
+        "Hash":  "535619680C5240C466EF6A0ED9C7014067B27773C839D72B54D63A7DF928160E"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentSettingsPage.jsx",
+        "Hash":  "989323D5F59133215E87C764C5B3F86B9150306377BBD107D51C9748F6AB9AD7"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentReportsPage.jsx",
+        "Hash":  "DD6BF7E45E28BE050F6D175DF62540A3B5D93AEB4F984F8F8C0896D77BDF3E5D"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentProfilePage.jsx",
+        "Hash":  "F07D1C2ABF0E7C9803D1CA6A0E30203E9D2ADB79345AE66DEF736855F4FCFBFA"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentProductsPage.jsx",
+        "Hash":  "36AB787C849A20F3E0FF876CDACFF91C9A55EF5F5168691AF42687234FEAE072"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentPendingApprovalPage.jsx",
+        "Hash":  "F1FA831520C4672670AF4ABFFC25FBEE653E4862AA2A63A7D72D1653EEEB1F01"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentPayoutMethodPage.jsx",
+        "Hash":  "9BC64992E4A4A480D1551D9CEF49398B48C311289E6CA08D30B57761CF4FAEBE"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentNotificationsPage.jsx",
+        "Hash":  "B0DA9E767217F3EFD28D4DC97DB80F1611B00062DA498CCFDC27E4DF28FF1FE7"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentNewBookingPage.jsx",
+        "Hash":  "C1EB7DCC51314DB7C67EFE4D6370297461E962CDE5A333B57D58035FA2E25942"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentDraftsPage.jsx",
+        "Hash":  "CD207716A0DCF559AD4CB31F2EE4A5405A1DCEEE6E5FDC9D89E1B458F56DAA81"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentDashboardPage.jsx",
+        "Hash":  "D576D5A576B0BF7EA8879728960A84EE7FFCB5E878DE460458DCFC56D8C9B5EA"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentCommissionPage.jsx",
+        "Hash":  "965797132A6B8B75D69200F1CD14DBA0AA3E7BA3C909B0F08811DF20CD67DE5C"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentBookingsPage.jsx",
+        "Hash":  "1B8C9B60683E8D1E4A5EBAC1928AD44B83D21C738040B6C09675CA0BD36639CC"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentBookingDetailsPage.jsx",
+        "Hash":  "B7F2D63CC31924285631F5A9608A9FD39E1BDB60002621F2E55F8254D86C6A54"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentBookingDeskPage.jsx",
+        "Hash":  "5D15C9C9DD3DA0A9BA1B42A00651A1EFD0BF37D316E2654666FA6ED7334A7E80"
+    },
+    {
+        "Path":  "frontend/src\\pages\\agent\\AgentActivityPage.jsx",
+        "Hash":  "8B69651146667354FA7DB1C412B93AC199D53DAF90B0C50DD17B2196667E6F0F"
+    },
+    {
+        "Path":  "frontend/src\\components\\cancellation\\CancellationPolicyPanel.jsx",
+        "Hash":  "66D682CCF1035D634D55577681BD9B3F04BFE1926EB2CE4319F65E2280122FC8"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\TourItinerarySection.jsx",
+        "Hash":  "2451489AA5A44175E48ACC54F0C317F9358C1734CB4EA5DD833D63D192DBBE76"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\StickyBookingCard.jsx",
+        "Hash":  "42898B9730EA143A76E2C3EBBCAB266D49EFF8C5C9DB605C4B82A529B677C5B5"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\StickyAvailabilityCard.jsx",
+        "Hash":  "AB36B499EBA033A4BEECCA54E4CA3DA49AC1DA771E522C28C93C63952F87E5C3"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\SingleTourPage.jsx",
+        "Hash":  "034383EB9D15A824BC18349A84C5E02E92EC6D01D1204BE0404F4785CB88FA39"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\singleTour.helpers.js",
+        "Hash":  "FB6A30AC3C0F8D3259CF6422A86141CB2AAAD3C95144B9A698E42E62B211D153"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\RelatedToursSection.jsx",
+        "Hash":  "06A63F1F1A7DAFC934026227B81920CB1163AE88FD52EAF7D304DAD947BA6132"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\QuickHighlightsStrip.jsx",
+        "Hash":  "00296F6D70700349407DEB385EEAD443B17EB70386310DFD53FF617C2CD3AB69"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\QuickFactCards.jsx",
+        "Hash":  "126D3DEA05545560C14A2A0D210BFBDC29A9822E8D7C39AA80F1BB3137988293"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\ProductTopRow.jsx",
+        "Hash":  "65E5EB211CC00FB969640538D496EC63F9578E14744B5A92A0A9625FD255F2F1"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\ProductSidebarInfo.jsx",
+        "Hash":  "754476F98DF0703E2C262CE76157D7478BBFC96F1A4237E03A02D69F14F6B792"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\ProductHeader.jsx",
+        "Hash":  "CF8BCCE82F92F9A2429D171BE45F1F656298A139BFD4A378BB25283322B3F3E8"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\ProductGallery.jsx",
+        "Hash":  "9A4A377BB0553F42EFC74F7CAAAD8FBB76CC46C70170B6B2C4462046B684418D"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\ProductDetailTabs.jsx",
+        "Hash":  "7154F4419F18A1DEA8F32BC35C472B83078AB76F765DDCD4C296B0CD56D9C9DF"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\ProductBadgeList.jsx",
+        "Hash":  "3AD252F8D9DC209C9661DBFBF4BE85D31130FD814498AC93DD64F64F32604C6F"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\PriceDisplay.jsx",
+        "Hash":  "D642394DD0E072835D82F4924DFB9F92709D3E8B4178FE528924ED29A7BFD82C"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\OptionMetaRow.jsx",
+        "Hash":  "A75F157ECA71ABA5C46E7DA99EB07611521B6F29A036F0FE0EE1775DE7D4FC2A"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\OptionCard.jsx",
+        "Hash":  "A3C521F03A960E7DB82D90614FBCD75DF3A176D629EA144AE299B49EA0561F74"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\MobileBookingBar.jsx",
+        "Hash":  "C9786C58F604A54AA16F8D398EB5726EF9580E0CF9471B2579D63D7646BA5BD7"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\MeetingPickupSection.jsx",
+        "Hash":  "78A734830058DA15017794F31825BB181E109F889079D46AE95CFB7B084A10BF"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\MeetingPickupCards.jsx",
+        "Hash":  "08417FB479EDFEB81DDC9054C585863C86B330710872676E068E70B343A7C7BD"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\ItineraryTimeline.jsx",
+        "Hash":  "151DD90BA5AAFE4839B6EA63E45E1CC255486EDCB19017C20ABBA638A00F29AD"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\IncludedExcludedSection.jsx",
+        "Hash":  "0D7B5430AED2172601A228DB0003BCA3802F12E5ACE3A0319C9C014D67EB42E3"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\IncludedExcludedCards.jsx",
+        "Hash":  "213CB3406D4197917981F7423B4BF9F1CE99FF626A64972C9EBB9144C0CC5EB3"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\ImportantInformationSection.jsx",
+        "Hash":  "7BDBEDDBEE81087F2D7E49AFF4812EE4040319B664DD2F68AC86506C249CF275"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\ImportantInfoCard.jsx",
+        "Hash":  "4B6C41199203EDE071686BA6BD5FF02C4034FB34A872C42F147EC77216E501D5"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\ExperienceDetailsGrid.jsx",
+        "Hash":  "6F6029FA8F558D41B2C150CAE103F14F45F890349FAC90CE22FBD4ABD0201257"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\bookingCard.helpers.js",
+        "Hash":  "972783A1F4E37D9A2204D00EE54AEEEE15CD5D95B00663B7F265B802CE19D6DB"
+    },
+    {
+        "Path":  "backend/src\\utils\\quoteToken.js",
+        "Hash":  "705702F5418A5C33E480EA05A7DD0CA2A1F457FEDC6D037259FEB4BAA09E1E86"
+    },
+    {
+        "Path":  "frontend/src\\components\\bookingRequests\\ManageBookingCard.jsx",
+        "Hash":  "2F0E251E555048D0D0EF9BF7D906CF4F7CEF1516DA7C9EF73B0ECFE46EBFCD3E"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\bookingCard\\StartingPriceBox.jsx",
+        "Hash":  "9055EE79F8F11062B62D0963878955CEFF01B012C2907AE847D4086B4785DD18"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\bookingCard\\PassengerCategorySelector.jsx",
+        "Hash":  "312B4CB5430AE5D6BF6D1BE41337FF4F278E3A6B7273A258880D3745B3CF5B46"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\bookingCard\\DateAvailabilityPicker.jsx",
+        "Hash":  "B2BBEFCD43F98BF77A8216B9B128968436C04D6E8A6EBAD9F9C05008B1033AB2"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\bookingCard\\BookingTrustNotes.jsx",
+        "Hash":  "B9057CE7BE9DA032FAD00FBCC6057273FC6A56CAF30BDDA962E6472036B133C0"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\bookingCard\\BookingAvailabilityCard.jsx",
+        "Hash":  "49E733333C44BE4513C2329E071400DA4FE8E35A3137E78F4B9DD1BA53285992"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\AvailableOptionsSection.jsx",
+        "Hash":  "8EB7E2D929F6F265CD06E25389DF7E0B72560EF62DC94A80D74E1068EDA8F49D"
+    },
+    {
+        "Path":  "backend/src\\utils\\mongo.js",
+        "Hash":  "CC481C63E317CF161F3F6FA1F375F303A423C0C93A38C627BBE70CBC6FB11001"
+    },
+    {
+        "Path":  "backend/src\\utils\\money.js",
+        "Hash":  "C32AD2051488738900E29BA080C4BC2B34EE97843378711D468CF188B9C7C5BC"
+    },
+    {
+        "Path":  "backend/src\\utils\\asyncHandler.js",
+        "Hash":  "8DB7A5F3ACAFA3B551BE9400112AAC9261F992062FB8F357B1BCA34D40FF8909"
+    },
+    {
+        "Path":  "backend/src\\utils\\AppError.js",
+        "Hash":  "ED2B96A894504C8272B694912ADDB98170F45B51B15604B72EF675FE6F0C616B"
+    },
+    {
+        "Path":  "backend/src\\utils\\apiResponse.js",
+        "Hash":  "0663BF1EFDE819858D08C76F4447993D0D88F768B23F2C3499FF96C48BC49599"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\availabilityPicker\\AvailabilitySummaryBar.jsx",
+        "Hash":  "5F7ADC94A7FC23F74F72DD6FEB9C78D5B6B6B2596E01A042F6493C3777D31CF4"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\SmartCheckoutInitializer.jsx",
+        "Hash":  "58C795F4B2649F79DA98F5663CE957C45688B0D6C4647563AB0CA284DCCF9866"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\ReviewStep.jsx",
+        "Hash":  "1E1D73D90BC99D425A2CA87FD43FBA6E33C568A21A8A4EE22C10B05F7744C8C2"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\ReviewOrderSummarySidebar.jsx",
+        "Hash":  "3603DC507E7B5C94443DE4E8F44BAA8D2D006934B2A6199B745F3E6B916E2B97"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\ReviewConfirmStep.jsx",
+        "Hash":  "799E61848607BA9A07C81EA3923F0F88D3F64022EA083B35F35DB13273630816"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\PaymentMethodSelector.jsx",
+        "Hash":  "92A62A555D63CC289F513C62534DAF2DAA993018E10D1CBACFFA44DCC6FBFAF8"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\PaxExtrasStep.jsx",
+        "Hash":  "4A4C76BF091FAFE31015923D8D0BA2CFBBF06ED6AC695E0E88866CA7C8BB17B9"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\OptionStep.jsx",
+        "Hash":  "E67347DD62A47A4BDF2149935BF31319FC360812F00D488EF3395BD4F8BAAC9F"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\FinalPayableCard.jsx",
+        "Hash":  "86C8E3565F6666C41B6498470B8D1A6BF018844F26C665CF1CD44642B075979F"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\ExtrasSummaryCard.jsx",
+        "Hash":  "AF66C50F3CF5E4F005C9FF238D8976697CF5F356A6D1B8F6BB667501B3B6C356"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\ExtrasStep.jsx",
+        "Hash":  "0C20631D86944D6F7C5CAEC6E52500597AE22950124E39D2A7AE89F93124B8C8"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\CustomerSummaryCard.jsx",
+        "Hash":  "A20C5B75EB6C4A9A39D734B5B4C253BD9AEE146D08A9129FFD2427F31C8E17D4"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\CustomerStep.jsx",
+        "Hash":  "06BC41A3F7E555D3262DA4F337ED1F97E746104CF982DA9AEEA542DBBAFA368F"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\CustomerDetailsStep.jsx",
+        "Hash":  "E894CF293E4F45D92EF0FCA5254484B9B435F5D061901E9215AD30985F8FD433"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\ConfirmationStep.jsx",
+        "Hash":  "F99A858C911DDD90182E32631C93E1104A4099E8E741F9E2D294BD9AD7DB7D01"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\ConfirmActionRow.jsx",
+        "Hash":  "436F5B313686C988A7B67360EDB51A06636B03D2F31432924FEFFF359BDB4F88"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\CompletedTripDetailsCard.jsx",
+        "Hash":  "35330FE2D7269E6BB61831B81571CBA93068DC08F6DCF3F577323FED48BD88B5"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\CheckoutPaymentSummaryCard.jsx",
+        "Hash":  "AD2A55E1D5ED5F8D39AE08297A4A190DF1F36EE7CDEE7AE48BB2F435994561B4"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\ChangeTripDetailsAction.jsx",
+        "Hash":  "980F76830A3F91F4E33292A23C836A14F3E37D7A49719D765459CFB8DAEA0926"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\BookingSummarySidebar.jsx",
+        "Hash":  "4D2A113CC9691F06463D72BE1E10A5EBB414E2AC5F87191DD070E8A5A138DAEC"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\BookingStepper.jsx",
+        "Hash":  "DA68AFBE4BD7DD78A72E33BFC5AE1DDE6C58EC7D0393DF40BA1CF7A92F4281D6"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\BookingFlowLayout.jsx",
+        "Hash":  "59BCF161F84FDBD402E9AECFE6CF84FCCCE0A43155709264513AE3BC8CE36C50"
+    },
+    {
+        "Path":  "frontend/src\\components\\booking\\AvailabilityStep.jsx",
+        "Hash":  "2E5728D068B1C667BAB062C133701D3CD4D652C05A98E449CA32DF970066F718"
+    },
+    {
+        "Path":  "frontend/src\\components\\agents\\CommissionSummaryCard.jsx",
+        "Hash":  "250D92610FB231BDB11067C8EB49FEE318D1EB76C38811F9498CFA7728091BF6"
+    },
+    {
+        "Path":  "frontend/src\\components\\agents\\AgentBookingTable.jsx",
+        "Hash":  "4C0A79BAAE0054CD7AAD6F42E28339CF660D80DEB547E9C47686ECF245399758"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\SyncLogsPage.jsx",
+        "Hash":  "D706CFBEBCBC51E4F480D4A9FF0342596154C75B5B7807F04F50141638562C1F"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\reportCenter.css",
+        "Hash":  "A862C0A07A7FCFA16B68578D88664D8DEE7A112E5CBC2EDAE32AC0AE0D959320"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\profitLoss.css",
+        "Hash":  "23FDB7239A90B8671E105885CC1509C2DBD45CBF7F4E2091DAFB8DB11B4C401E"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\periodClose.css",
+        "Hash":  "598FA32004906D6D0861DAAC82CE2F3393987149F3E7FDFADC0F6E09E18AFA97"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\invoices.css",
+        "Hash":  "98875ADC1BF0B3985677D1B693C4B4026F750D72E752E7FAD034557F71B95FEB"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\fixedAssets.css",
+        "Hash":  "4938C7AF2B359AF65D526D1FCAC51F0C77BA6F820611E4BDC6AE877217E5F9FF"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\cashFlow.css",
+        "Hash":  "36E84AE2A5A8FD4C83EA95F3BD68BADC1F7735F35A89F55E2141401FF647991E"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\businessIntelligence.css",
+        "Hash":  "D46F034B08465108119A2D1469FC3B366D2148EF753D1F2C694FCFD7AC3B21FA"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\bookingReconciliation.css",
+        "Hash":  "FF97AF734C6FF72FFB733A6AA0898CF108DA1C934009932FB5A04405F8D3AD1B"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\bookingExpenseForm.js",
+        "Hash":  "37DF5286CDC43E69BEB84AA27EAC432F43CC4EC90EAF1E3BCCE5B9F566D61CBA"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\BookingCostTemplates.jsx",
+        "Hash":  "8582689AEE9ACCA39CB44F3E4B5A5C68AD32B54F088EC57ACED1521EBCAF81B0"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\bookingAccountingView.js",
+        "Hash":  "5C84401016B48EE651902B1CAC031D5F9491AC0C7D6E3A29D3FBC611D92232A4"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\bokunSyncView.js",
+        "Hash":  "993B2D38D1DBE675BA286B84A807565255480FE10E2F4658D6883921D6CECC00"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\balanceSheet.css",
+        "Hash":  "6B4D3089406EBE7540931C09DE6F17A73658AECFF8A468A2D64311AAA4DB607C"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminTrialBalancePage.jsx",
+        "Hash":  "52DCD15709465804A378A4A9F9D34518EFA769F4E7C1DF86EC85D839BA343EFF"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminSystemHealthPage.jsx",
+        "Hash":  "80F9A6AC1CCB2BB804DEDB6826B36283ACCE9D5E6098D5FC89EB9E2613162B9D"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminSettlementsPage.jsx",
+        "Hash":  "9C4F348826D3E26EB832EC3DC6E2EF93C753824E70BA379ABA08BFD7F7AED593"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminSettlementImportPage.jsx",
+        "Hash":  "A5E6EB1AF85DBCAF01476D5B773C427FFE4AEFA22528214AE9F6C39ACB3C0A85"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminSettlementDetailPage.jsx",
+        "Hash":  "D9FB863284039BEB186D8CF7C7741D55EA98D7923FEFCC0672AB7553F07DC25A"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminServiceCompletionPage.jsx",
+        "Hash":  "3061ED93366846614B6C6559272819F1A980812EE829E9C458B61868451B8BB1"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminReportCenterPage.jsx",
+        "Hash":  "90B5A634D5B3D5165EDB3FEE7D9F48FE6B0754CE11AA6DA0ADB519E72C1CA4A1"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminRecoveryPage.jsx",
+        "Hash":  "FA3BE448F9F6155CDE5F063FB8B47EC3867541DF27D3B1D718E946C08CA95E68"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminProfitLossPage.jsx",
+        "Hash":  "4EA07E85952A387CFC000BD39B957358EED4B5F563C00BF172DB1F108F8E8AA2"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminProductionReadinessPage.jsx",
+        "Hash":  "4C282924622123FB097751774BA55759B8CBBAEECC1DDAA64DE6BA8B15E62B6B"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminPeriodClosePage.jsx",
+        "Hash":  "4E2593450C62095F2D78D963831F83368DEE123D8AB10FE019A7176F09C1763C"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminPerformanceReviewPage.jsx",
+        "Hash":  "03196FDF1AFA74F8FD451433AD584DEEA10BA5FFC6619CF84B5A3BEA51BA80EF"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminPaymentsPage.jsx",
+        "Hash":  "5B4D7EA79695AAF44BE83D81D74F7F848054B814267BBB8BE3F3B1E3615B4E30"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminPaymentsControlCenter.jsx",
+        "Hash":  "C681D099F486EBC8CD0625367D17B245D03A3C986DADC7CD1DE75035C011B6C1"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminOpsControlPage.jsx",
+        "Hash":  "C2F761C3ECBCF10C210DEC97B822F82B08290EA980DA096C668771D8D29E37CE"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminOperationsPage.jsx",
+        "Hash":  "43C2868CE50006B59494C4757EE96FF57DCA0E1268989C1124B809628DB5F2B1"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminJournalEntriesPage.jsx",
+        "Hash":  "603AF24DE52B32DEB795A87BC932399B5629C9F8DC3A7048CB24D2F81DBEA55D"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminInvoicesPage.jsx",
+        "Hash":  "B0AD0C66C842B5FEEAB673465AC56786A58B7A121A9CAB2CCB7A8F87BD9C6AB5"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminGlPostingPreviewPage.jsx",
+        "Hash":  "49B9DC868245638B77B6AE6562821A05F4919B1AE9A52FF2CB02F7B631D35B44"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminGeneralLedgerRegisterPage.jsx",
+        "Hash":  "35FB9D6ACAA8D07638FCBEB91C53AC92EF39D28EBA58CAB4281D34A12CD1B4EE"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminGeneralLedgerPage.jsx",
+        "Hash":  "E693B5513B41E8172BBE399EC3F280D1D88BA89FED68401C342CC1507DF850B3"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminFixedAssetsPage.jsx",
+        "Hash":  "45A339BD66F44762CA80FB14011BBCCEC726E187A36FE97EB6FC85118A9930EA"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminDisasterRecoveryPage.jsx",
+        "Hash":  "2CE8CB7816DC1B0423221A77761279A6A52576CE2F55CBF90C28338AFE8ED2F2"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminDataQualityPage.jsx",
+        "Hash":  "A10C3F331C8992914B0AF65E939E35A5D2276C5C7AAA7B2E67ED7A0E27A2E2AE"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminDashboardPage.jsx",
+        "Hash":  "EFACECA125E15467374D4E4E0FF05BCD1E4D6661989C974D62B2BF9DF2D68E25"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminCrmPage.jsx",
+        "Hash":  "3BF7155A9932249E90202F3D28D44A0BFDBA83500FB973ECED38F3554EDEDC07"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminChartOfAccountsPage.jsx",
+        "Hash":  "E4115D3B327C322DE983E5F188DA77739733F9B4757757313A6857B506272160"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminCashFlowPage.jsx",
+        "Hash":  "5F99D349F51BAB38B0021A838217E2EECCE689CA6778FEDE909C5C46AA4180AC"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminCashBankPage.jsx",
+        "Hash":  "49E014CCED91F3EC84CE366FB115E33A16AB69010F2C79E210C7ACCC15FCD893"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminBusinessIntelligencePage.jsx",
+        "Hash":  "72423718392B749A0498708730029A3C206DA5EE03D7CDB57DB978CBA695C6AD"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminBusinessAccountingPage.jsx",
+        "Hash":  "CADD2A44A4D5EBCDB87E529D72F2AB419554370BC50965288F577B2A6A4AB307"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminBookingsPage.jsx",
+        "Hash":  "ED7F850D1ABFB58ED2411EDEC6DD29C357AF7A9F7D30B98840F872F0064CA167"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminBookingRequestsPage.jsx",
+        "Hash":  "C8EF5053C47638EC644E5FCFAE1F0B80E5E4E06B0D446CBA4E92721C952884B3"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminBookingRequestDetailsPage.jsx",
+        "Hash":  "46D50A4E90BD8276B3F8097454F2A4A71878C20E603C98967135FC74AE8BC444"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminBookingReconciliationPage.jsx",
+        "Hash":  "B8ED6E7E18DB692D5027A84FBCE383D12862A5255D8F459569FA260804CF7F6A"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminBookingAccountingPage.jsx",
+        "Hash":  "30E3B4C2E932F7F452B6D687923DE4ABA013CA2DF7BB157B6549F1EB49DB700F"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminBokunSyncPage.jsx",
+        "Hash":  "2B16B08AD3FA90CC58760072AE92A04D1195CD951284B00A04788908103B2E18"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminBalanceSheetPage.jsx",
+        "Hash":  "733053F6E3A6C6261E57E2C9C18965314ED457C160B24717FB07FBE01165E4AA"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminAuditControlPage.jsx",
+        "Hash":  "6AFE82FBB57E7C9E09634AB4F0D3DA58219487EC8AAE9002642FA0947041796B"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminAgentsPage.jsx",
+        "Hash":  "353CAD375448641EF947D51BB8DBBD529B42E745418433DC74B5BB6C2D3DFA52"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminAccountsReceivablePage.jsx",
+        "Hash":  "F62EEFCF23146A7530A877E545C4656BB6FFD6C4DEF5F62927E8FA23AE3671CA"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminAccountsPayablePage.jsx",
+        "Hash":  "63A5B0AD77B5C2028CE8CF5104A9995B6E9BBF6F0FEB7AD698B3B707C69A895A"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\AdminAccountingReconciliationPage.jsx",
+        "Hash":  "9ED0BD25B9E51DCE05E1FF22375A4F3ACFFD839A9C7E6245AF7957E2F6F9C7CD"
+    },
+    {
+        "Path":  "frontend/src\\pages\\admin\\accountingReconciliation.css",
+        "Hash":  "AD5EF6F8B87198DC0A1D36027681F0EA601C14E391A7E5C0557FF93F6203627F"
+    },
+    {
+        "Path":  "frontend/src\\main.jsx",
+        "Hash":  "DA1C0421E82FFD45EE9F231F7678726591B6F7E6D64F6B092FA4C041E077A65A"
+    },
+    {
+        "Path":  "frontend/src\\layouts\\PublicLayout.jsx",
+        "Hash":  "B411D7363C918B3BA4AD0D668CEF7037CBCA9393B902277ACC4D003D9DE953E3"
+    },
+    {
+        "Path":  "frontend/src\\layouts\\DashboardLayout.jsx",
+        "Hash":  "F92478F4FE61EB5D1EC0F0F20134536ABD921BEEC5F755AC0EE1DE0952399DEB"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\reportCenter\\useReportResource.js",
+        "Hash":  "B08D2F2E0AA310A1D4D742C29175C0CBE3EC5A674AAF9F06092E133B4D80EB1F"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\reportCenter\\reportCenterView.js",
+        "Hash":  "8B9E688A0AC1DBB272282A2675A23BCC802D5DD26C7E39DC1B913A03DAE00F28"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\reportCenter\\ReportCenterComponents.jsx",
+        "Hash":  "8754359586C4FF68219EBCC9039ABBEB7E4E3C7DF37D3AE76ACE706314BF8AF6"
+    },
+    {
+        "Path":  "frontend/src\\layouts\\admin\\AdminLayout.jsx",
+        "Hash":  "DD7DAC2C4E67D05E6CC298C7ADB888989AEF9818F72EDDC0DC5B71C167034398"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\profitLoss\\profitLossView.js",
+        "Hash":  "0FADE1A3AE42D134FF1F0976454E5B3763B2B96076744C1777CBD371C429282E"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\profitLoss\\ProfitLossComponents.jsx",
+        "Hash":  "0A93F2E658D76816182A269227E56991D57ED68DC2455A3478A29AE55529B24D"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\PageHeader.jsx",
+        "Hash":  "A9D543ECEFEA57047E0AA63F5313525459FBF15BB5CB2095D595506AA8247EF7"
+    },
+    {
+        "Path":  "frontend/src\\hooks\\useBookingFlow.js",
+        "Hash":  "754C281567B05ADDF8ED90A203B3FEBF243DC61BA1E8B50318B2B8604031BDE5"
+    },
+    {
+        "Path":  "frontend/src\\hooks\\useAuth.js",
+        "Hash":  "3F4743A846517890B2CC0D795B754FE438D1B05413A0E0A0F326D0DF0CCE866C"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\bi\\useBISection.js",
+        "Hash":  "08C699B024554B43CF4F75C3E6F0519E9029CBFD89878E629CF41734DA8C4E21"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\bi\\biHelpers.js",
+        "Hash":  "54F782EDB2434CE501719BCAC4E2D38A4F0B61242913510E94F94092B71F63FB"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\bi\\BIComponents.jsx",
+        "Hash":  "46D80D1FF9F5F4F50EBD3A4BCC6B27F86D236A273724FDACA6174693E7EA8767"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\bi\\BICharts.jsx",
+        "Hash":  "27765585FBE000BF7F316B38838C20FF161A87BF7B6EC1F3A8E1C64981991F3F"
+    },
+    {
+        "Path":  "backend/src\\jobs\\refundReconciliation.job.js",
+        "Hash":  "0CF3272B6426434154F2DDF3C6566CD80659A76B195FB528BDEE83798B09C204"
+    },
+    {
+        "Path":  "backend/src\\jobs\\invoiceSync.job.js",
+        "Hash":  "39DC8A04E65F3A4197B988883CA0E80EBD4BE10F94A416A2EB2204FEAD91CD78"
+    },
+    {
+        "Path":  "backend/src\\jobs\\bookingSync.job.js",
+        "Hash":  "9DEC91FFB7B587DA807633DA010BD9B83689CBBA4362CA23F52C59924F1F293E"
+    },
+    {
+        "Path":  "backend/src\\jobs\\bookingFinalization.job.js",
+        "Hash":  "61152CF36ED8EE9B00313DF2CBE82BD67FDD2AA7D8B9E1F740908BA8513B4CC1"
+    },
+    {
+        "Path":  "backend/src\\jobs\\bokunConfirmedBookingImport.job.js",
+        "Hash":  "B08A37A9239522C8026E06351F9F6E67DD7CB846F41161F9F0D44D759F871CEF"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\balanceSheet\\BalanceSheetComponents.jsx",
+        "Hash":  "4E4172F685018D4B4EDFA463585615C105A56AC945D7B565B1CD9B8CD1624B25"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\AdminUnavailablePage.jsx",
+        "Hash":  "4EEF322543216EDBFBDBC789AC937BDA82E4FFF1A84EC4592FB9BC15E62CDD8C"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\AdminTopBar.jsx",
+        "Hash":  "D491B990B12CB342CE2146DD80D32A07215342EAB85632906C94193AC0CCCC8F"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\AdminSidebar.jsx",
+        "Hash":  "0D57A63A870D778E1282C6B929363DEDE834F3C5B74834E8FE8DDC1D480A9FC1"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\AdminDataWidgets.jsx",
+        "Hash":  "6A3F1850628271F91FE0F45FDDFD79BFD530F4F6F623692ACD196B40567CC04F"
+    },
+    {
+        "Path":  "frontend/src\\components\\admin\\AdminBreadcrumbs.jsx",
+        "Hash":  "D3D2AAFB451FF62CABB05416E3A98EDC9ABA68BAC972175A974A8D11C969A974"
+    },
+    {
+        "Path":  "frontend/src\\app\\styles.css",
+        "Hash":  "814DF0CCF76BEB4D26AD8BED4B0555AC47F2B7C2302B4551BCE22E6968A9D55C"
+    },
+    {
+        "Path":  "frontend/src\\app\\App.jsx",
+        "Hash":  "8B92D10843A55F8BAF7A78C844913F06860F298681100E1563293E3F03D8FD09"
+    },
+    {
+        "Path":  "backend/src\\integrations\\pesapal\\pesapal.utils.js",
+        "Hash":  "50CBF60C7DFA3945233EF3568FB4215092690B365FAC307CBA6749D8C147A29D"
+    },
+    {
+        "Path":  "backend/src\\integrations\\dpo\\dpo.utils.js",
+        "Hash":  "5012E75503D96F9FE109D201F4DE11EAFA5347682F4F14E594BCE1ABD6050CB1"
+    },
+    {
+        "Path":  "frontend/src\\api\\toursApi.js",
+        "Hash":  "E183AD903387B019876840EF84417682DD10A5222C8E9D2AAEE93618FFB97A33"
+    },
+    {
+        "Path":  "frontend/src\\api\\reviewsApi.js",
+        "Hash":  "FECC1D2B00677EB71ACF5F0DF1FE10964BAC2634630F9F444E557BA0BC5AC39B"
+    },
+    {
+        "Path":  "frontend/src\\api\\paymentsApi.js",
+        "Hash":  "EACBA151F9E518EC344379F0EEB7B3BBD891C7DE41CC1B054587A11E0CD7EFF4"
+    },
+    {
+        "Path":  "frontend/src\\api\\paymentReconciliationQuery.js",
+        "Hash":  "19F1D0CC12BDD73FBE6A53AEB71CD82295337BD130CDD61B2C1B8F271B0B8AA5"
+    },
+    {
+        "Path":  "frontend/src\\api\\marketingApi.js",
+        "Hash":  "98EEFABACC691004DBB4CFB54A78880915F6C60275614E669B05CFE4808F074F"
+    },
+    {
+        "Path":  "frontend/src\\api\\invoicesApi.js",
+        "Hash":  "05E3EE30902EE3EA95C4527427BFEB6478A64A09BB526316DDE42189785361A5"
+    },
+    {
+        "Path":  "frontend/src\\api\\bookingsApi.js",
+        "Hash":  "6D549B8DD5CDB7F7D347EAE5EDB2C83A610E50B6B0A19B1DC5DEF94715A24EA0"
+    },
+    {
+        "Path":  "frontend/src\\api\\bookingRequestsApi.js",
+        "Hash":  "65E105749525E073F0430C4A4FA38F7B7E80FF0B78F0A7784A831630F7345A43"
+    },
+    {
+        "Path":  "frontend/src\\api\\bokunApi.js",
+        "Hash":  "11E5460A6A4F11803692F9E64A3F855EB15ECDD7007706B842EEB4D49856977F"
+    },
+    {
+        "Path":  "frontend/src\\api\\axiosClient.js",
+        "Hash":  "19A28344238EC9ED604EB6E0EC79B0EED0C73F26AE81D2F2F736AF49128A04A0"
+    },
+    {
+        "Path":  "frontend/src\\api\\authApi.js",
+        "Hash":  "EC35D30AAF90C6CE89FEC86CA8D045F1D98B1FB4F34EC0A512C4152FFE249326"
+    },
+    {
+        "Path":  "frontend/src\\api\\agentApi.js",
+        "Hash":  "E25A5D160B05377223195487496FAB4B02D9274AE13316F352580A87A602A9F4"
+    },
+    {
+        "Path":  "frontend/src\\api\\adminApi.js",
+        "Hash":  "D573949FBDB1D7947389B502565EFC5FEEA070062DCDC7FA7C901B923CCED7C4"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\AboutTourSection.jsx",
+        "Hash":  "FFE60F39166E390A2FB6F63F4CDF0F27A0C2BB859728E2A83DFACF94B2D677FD"
+    },
+    {
+        "Path":  "backend/src\\integrations\\bokun\\salesChannel.adapter.js",
+        "Hash":  "E916E37C4E098305E5FFEB69DB638462FDE4C01982C3726400EDF6809F3617FB"
+    },
+    {
+        "Path":  "backend/src\\integrations\\bokun\\mockBokunData.js",
+        "Hash":  "17FDA092FC9997FBAFCDCE76136CFCE002321C1F0B13321077625601E58B75E8"
+    },
+    {
+        "Path":  "backend/src\\integrations\\bokun\\index.js",
+        "Hash":  "82B35A8B883CAEA0466E599379B26329ACA5F47A00BBD5A164C1E9EC4EC34BDA"
+    },
+    {
+        "Path":  "backend/src\\integrations\\bokun\\financialEvidence.js",
+        "Hash":  "741745AB67A0D10E292E6132E0F16CBCA4C1374A94602B28C03DD5D297DBEEED"
+    },
+    {
+        "Path":  "backend/src\\integrations\\bokun\\confirmedBooking.mapper.js",
+        "Hash":  "C42B5CE2DD0DB7A19CFCE67D2F64294583E115A42FDBBD2912DF8EDC6AF4EC56"
+    },
+    {
+        "Path":  "backend/src\\integrations\\bokun\\bookingStatus.adapter.js",
+        "Hash":  "AAE68332DDACCC3B8E284587046F525AB008249EF4F9BE5FE5D7FADDBDC19D81"
+    },
+    {
+        "Path":  "backend/src\\integrations\\bokun\\bookingPayment.mapper.js",
+        "Hash":  "A26E277F5F3846814E8872738F3FF1B524D084BFA7DE450EBCC53B1C790D36FC"
+    },
+    {
+        "Path":  "backend/src\\integrations\\bokun\\bokun.mapper.js",
+        "Hash":  "2CC17E4AEBBC80EB48B5AD99DC5228DD9DA114EDF0067643055F60CD07EE30A5"
+    },
+    {
+        "Path":  "backend/src\\integrations\\bokun\\bokun.client.js",
+        "Hash":  "C9D72CB95B8DE9D5CB52F1300984C9A7515BFBCA51AE8FEEC721522A8ADE9664"
+    },
+    {
+        "Path":  "backend/src\\crm\\constants.js",
+        "Hash":  "FAA7F58AE2F29623A87E6B546E70F0CC5D0230A7FA275059115FE14A7A8A6E77"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\listing\\ToursListingPage.jsx",
+        "Hash":  "B453E27EA5673863BF690D4258CE480E358E239A1070166AEEB684B7D80176A2"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\listing\\TourMetaRow.jsx",
+        "Hash":  "8A8935F755A12DA3F1F937655E67B50900AB9D59FF90FEA002C978C8D462ACBA"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\listing\\TourGrid.jsx",
+        "Hash":  "6F6E2C920EA584948B79A54771FF926D2F577A58D06866EACB022DF18F04BE92"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\listing\\TourCard.jsx",
+        "Hash":  "AB1E23CD7615D59FCD732F7B1EA39681A48294726FAFDA034184339D2729FE24"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\listing\\ListingPagination.jsx",
+        "Hash":  "D08CA8222D48A677845491731F5E069636E32134AA82D369BBCC27DB0D499998"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\listing\\ListingHeader.jsx",
+        "Hash":  "79983CE4154F3680253B86749F65418E89E70606F34002D832511D9DA5BC85FE"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\listing\\listing.helpers.js",
+        "Hash":  "021754B8D531C786A9119B9992753225C1366FE16BF1D7E8346E041568467D73"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\listing\\FilterSortBar.jsx",
+        "Hash":  "C96E15414E75AD4D292DD66618F3F5812F0F110267D37C904A7CA4E11C0A5465"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\availabilityPicker\\AvailabilityOptionModal.jsx",
+        "Hash":  "9E8E7E4BD9E3BAE2467409FA86F72D66C516885CD7F110647DADBBC3C89BA69E"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\availabilityPicker\\AvailabilityOptionCard.jsx",
+        "Hash":  "ACA731E652E11E7DA4BB2A3F22760C01E664355761BC502360D2E5C33F0A9AF4"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\availabilityPicker\\AvailabilityLoadingState.jsx",
+        "Hash":  "74151B4C2FE980AC11E84348292E931D19F6B5D8F6BCD6681E9909ECEA688759"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\availabilityPicker\\AvailabilityErrorState.jsx",
+        "Hash":  "9B6179E22C27359D4317D27CE5717FC28697CCDF41D0B774C20AB1253ED6945E"
+    },
+    {
+        "Path":  "frontend/src\\components\\tours\\single\\availabilityPicker\\AvailabilityEmptyState.jsx",
+        "Hash":  "ADD70DC708A95958C67B37C75EFA55D0ABB5B3A8C3341A078B8AECDE13D41389"
+    },
+    {
+        "Path":  "frontend/src\\components\\invoice\\PrintableInvoice.jsx",
+        "Hash":  "D9222CB947749A044EE4947D99A54ACB93BD19B8B38C90DDD5C0398C45D10DF2"
+    },
+    {
+        "Path":  "frontend/src\\components\\invoice\\invoiceView.js",
+        "Hash":  "EDE935648A1976E59F2E119450776586719CFA861D25EF132B50B210D48BDA36"
+    },
+    {
+        "Path":  "frontend/src\\components\\invoice\\InvoiceRegisterComponents.jsx",
+        "Hash":  "4E514517276951412485022AD5904833AFC14647C5CE1E8AD2DB53729847D54C"
+    },
+    {
+        "Path":  "frontend/src\\components\\invoice\\BookingPaymentState.jsx",
+        "Hash":  "242BFD11BDEEC089DE0BA25EFE0592478BC6028884AC03DBA7510C05109520B2"
+    },
+    {
+        "Path":  "frontend/src\\components\\invoice\\bookingPaymentState.css",
+        "Hash":  "8739CE0A7342F36D7F8829CACB3885E53CBFDA3B21D240B2F3632BDD6BB2D349"
+    },
+    {
+        "Path":  "frontend/src\\components\\invoice\\BookingPaymentOverview.jsx",
+        "Hash":  "FFB9847F4ED15125352D1930F4A8C6B5FC8293F7AF6DD3AD6F245694FAEFDA34"
+    },
+    {
+        "Path":  "backend/src\\analytics\\trendAnalyticsService.js",
+        "Hash":  "0C2978764977F79B60115A3BDEA08D056C1BFB6D19CFD622C5A68DA151773F48"
+    },
+    {
+        "Path":  "backend/src\\analytics\\salesAnalyticsService.js",
+        "Hash":  "48797E990687DA6ACEEE9EAD27E99500763858B3F4414892A5CAC262FA919890"
+    },
+    {
+        "Path":  "backend/src\\analytics\\productAnalyticsService.js",
+        "Hash":  "F51D8E6DA45A9F007791C81F9EE3CF06639D3A05DEA2285969E6FFECA5630AD1"
+    },
+    {
+        "Path":  "backend/src\\analytics\\periods.js",
+        "Hash":  "432BE0A6561278872C519379A01E8DCE83D9AB0CE7C05260E4F7998CD2141D05"
+    },
+    {
+        "Path":  "backend/src\\analytics\\index.js",
+        "Hash":  "4DAEA34E8F3FE3F80228513E398929ABF3943C767935ABE7E09A077E8CE6A2B8"
+    },
+    {
+        "Path":  "backend/src\\analytics\\executiveAnalyticsService.js",
+        "Hash":  "ADFDAA0CA7743A6F61606DA5D2A92713699E97977B4AE6F20885117BE1A1245F"
+    },
+    {
+        "Path":  "backend/src\\analytics\\dateDimensions.js",
+        "Hash":  "CF689C8C929C922BBA85AEE73793156AB783274522F734A696F9CD82B52B037A"
+    },
+    {
+        "Path":  "backend/src\\analytics\\constants.js",
+        "Hash":  "3532C31F8557E24D2462A56A58B20080D75357D42AE7F4A29FA6B7ECE6B19D96"
+    },
+    {
+        "Path":  "backend/src\\analytics\\channelAnalyticsService.js",
+        "Hash":  "B9B6B282BB955819F6144588F025AD3F3924372450471C287ACDB2F421BE6356"
+    },
+    {
+        "Path":  "backend/src\\analytics\\businessIntelligenceService.js",
+        "Hash":  "04CC44A1A43FAA7F3C4288FC40476BB4BE34E2C1CF1851C8B9F5A26698887B1B"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\WhyBookUsSection.jsx",
+        "Hash":  "5E64DD725E85664E8F61BEDE7C0698D1FDBA8136C00C94C9A60E514EDFB23769"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\TourCategoriesSection.jsx",
+        "Hash":  "A82975479DEE58FE2663225D5FAF06A1880BD8D014557E2C771A843F8481349E"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\TestimonialsSection.jsx",
+        "Hash":  "659D1665493942FC40854C7128C15D888D3EC7306AEA1C34F9A6DDA2A7317888"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\InspirationSection.jsx",
+        "Hash":  "F8E2DB1548D1E6E2DA019C79322F830D5A68CC15969F7BF05B241D6F8492B1B3"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\HowItWorksSection.jsx",
+        "Hash":  "595CA4B4D7510C77A781686B3929C2FA9A2088E4908DA7FE1C468F548A425465"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\home.helpers.js",
+        "Hash":  "4616954C9EBDE7E640B50708788B564B0BD10728E9E7DCE225B33E4A6DDF09F7"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\HeroSection.jsx",
+        "Hash":  "097A61710247BDA6E745B0A2713F5C1C57746F2B3452C21A5F72950FB2D6DAD6"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\HeroSearchCard.jsx",
+        "Hash":  "F3DEEFE67BE77229CB80605A8A7AF20F29CD76D454FDD50F18A3EAA9AD083C19"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\FinalCTASection.jsx",
+        "Hash":  "61E0497C0AF7751F692FCA17AC16CEDDF207D4CAA3C59A5162A8830AC00FAF7C"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\FeaturedToursSection.jsx",
+        "Hash":  "D8BF32C6CC77C58AC6DFEF1D02368CA3379E334025C662A06074A6834AB34637"
+    },
+    {
+        "Path":  "frontend/src\\components\\home\\BestSellersSection.jsx",
+        "Hash":  "65575EC6BE8D889927FB75EB56FA7568C12C0C64008BF6B52E2F044A82E43930"
+    },
+    {
+        "Path":  "backend/src\\controllers\\webhooks.controller.js",
+        "Hash":  "2A76C3253D0015511C10C79CE49D87B8DFB97DDE0CF5AA32A7D23B6849836F9D"
+    },
+    {
+        "Path":  "backend/src\\controllers\\users.controller.js",
+        "Hash":  "423BAA68FB4F7067B1C59CF662147B85FC4470D7F156515E4F7FA0784679C310"
+    },
+    {
+        "Path":  "backend/src\\controllers\\tours.controller.js",
+        "Hash":  "3B1641E588352E78F182ABF55A597A0B4CDA48B806712DF584F1A4F55944CF02"
+    },
+    {
+        "Path":  "backend/src\\controllers\\systemHealth.controller.js",
+        "Hash":  "B57EA7104A77AE1D61C21CE3B0F3C1B896CB686262EA949259EBDEE8DC289C55"
+    },
+    {
+        "Path":  "backend/src\\controllers\\settlements.controller.js",
+        "Hash":  "FEE40C0C302C9054E5ABF3A97C55862F2DB48840DB59C3B344E1583BEF84C9B6"
+    },
+    {
+        "Path":  "backend/src\\controllers\\serviceCompletion.controller.js",
+        "Hash":  "2BF0522E33ED8E943F6DA1555A49E3D005CD3C2F1D5C883A61288F006FC4E9EB"
+    },
+    {
+        "Path":  "backend/src\\controllers\\reviews.controller.js",
+        "Hash":  "3BB39B176B3F0A0C892FAAE240C31DD06E0EE108C31FF246FFE444D62B4524A2"
+    },
+    {
+        "Path":  "backend/src\\controllers\\reports.controller.js",
+        "Hash":  "8164E9F7A8757EF1877FEB20C194E309B01C17B8FE53569A592F4A5EBD29F20C"
+    },
+    {
+        "Path":  "backend/src\\controllers\\reportCenter.controller.js",
+        "Hash":  "B94173CA68BCA7BED3A0054665C37A16BE4C77D6EC9A9002A7E8B4CC9B04EA02"
+    },
+    {
+        "Path":  "backend/src\\controllers\\productionReadiness.controller.js",
+        "Hash":  "4C820A403810EDEB762113BA971C382067B6463763343C0230459AC01FAC0D95"
+    },
+    {
+        "Path":  "backend/src\\controllers\\performanceReview.controller.js",
+        "Hash":  "85862F808E0CA5946EDC5CCCD3139391A17BC3BF5546B32E795F501E64AC724F"
+    },
+    {
+        "Path":  "backend/src\\controllers\\payments.controller.js",
+        "Hash":  "FEA1BB7B1733BA4349BEA497E1F397D0F62E10350121F39F0925F616F53D9B0D"
+    },
+    {
+        "Path":  "frontend/src\\components\\dashboard\\SalesChartPlaceholder.jsx",
+        "Hash":  "B71029A18F44DB41963282005D903B96A4E2D92824DBF53D83147AA18916233F"
+    },
+    {
+        "Path":  "frontend/src\\components\\dashboard\\RecentBookingsTable.jsx",
+        "Hash":  "8BCDA22959869FC090BF3058663698985EA4053AC6025F0853703A1E43D332FC"
+    },
+    {
+        "Path":  "frontend/src\\components\\dashboard\\KpiCards.jsx",
+        "Hash":  "2548BFDA4FC7F3828CE8E9D03FA4D2115F61FAEF629994E71A35E9BC63CFE4D5"
+    },
+    {
+        "Path":  "backend/src\\controllers\\payments\\pesapal.controller.js",
+        "Hash":  "7C021C586035D2CE5D9EC4087B7EACCC98A99C3E31D770ACD825235C08773460"
+    },
+    {
+        "Path":  "backend/src\\controllers\\payments\\paypal.controller.js",
+        "Hash":  "71C2F42CEEB6A60D0D14E10472830CC6E3017220D42660AA7EFF5416884645A1"
+    },
+    {
+        "Path":  "backend/src\\controllers\\payments\\dpo.controller.js",
+        "Hash":  "9048E5463E16CDE26487135D698C2C35CF0107AF6997283B6442EA95678A548D"
+    },
+    {
+        "Path":  "backend/src\\controllers\\opsControl.controller.js",
+        "Hash":  "27978E26301B8DDCE2AECB18FC8A7627C3A3D7CB057B8ACB854419FDA45E3DD5"
+    },
+    {
+        "Path":  "backend/src\\controllers\\offers.controller.js",
+        "Hash":  "5F308BBEDD8281B8D51626E1DB34C506C61A6D437ADD48622F61E79BF2AFAE0B"
+    },
+    {
+        "Path":  "backend/src\\controllers\\marketing.controller.js",
+        "Hash":  "6471F0520042043868F31AC2276F518DEA514DBA9E0A7B8EF934286D62ED35B2"
+    },
+    {
+        "Path":  "backend/src\\controllers\\invoices.controller.js",
+        "Hash":  "F3CC2FB221EF2C67B87D90630F609B12F911572757D1FC86EF35D63B159F7338"
+    },
+    {
+        "Path":  "backend/src\\controllers\\disasterRecovery.controller.js",
+        "Hash":  "93DD5105472D6D69B537501BB6E8C5DB74E566E484ACBD181C7A4E0317929857"
+    },
+    {
+        "Path":  "backend/src\\controllers\\dataQuality.controller.js",
+        "Hash":  "CC2456A302FFE6F4B9B43761A677600FC817029A91519BC11AE3E7441A92F13A"
+    },
+    {
+        "Path":  "backend/src\\controllers\\customers.controller.js",
+        "Hash":  "7E0826F81EB0E6B58D78741BCA3A4677985F876C260FD3E7195A0AFEE5181AD9"
+    },
+    {
+        "Path":  "backend/src\\controllers\\crm.controller.js",
+        "Hash":  "2100C17FD7F9BE06F401EBCD112FC67E47735A06B9E36521DBF8B0514450B498"
+    },
+    {
+        "Path":  "backend/src\\controllers\\commissions.controller.js",
+        "Hash":  "2A39A449B2F5DD5F614923AD1A418DC3D3F91245104F355BE6E85CBF35245F44"
+    },
+    {
+        "Path":  "backend/src\\controllers\\businessIncome.controller.js",
+        "Hash":  "9050993655EAFCC58668EA1D847E0C3FEAACBE1D54B8129D85C5D8A4DB2616AC"
+    },
+    {
+        "Path":  "backend/src\\controllers\\businessExpenses.controller.js",
+        "Hash":  "F5C0267966608537B854D0359D4DA9990B55F661FDA6D768209F6A2720B27905"
+    },
+    {
+        "Path":  "backend/src\\controllers\\businessAccounting.controller.js",
+        "Hash":  "C3911958C53352160D2F4F068764A79C185FCD53BFE65B3A161D8877BEEBDAF0"
+    },
+    {
+        "Path":  "backend/src\\controllers\\bookings.controller.js",
+        "Hash":  "EABBD1BEF6279B538B1CCDFDB0DB306036D5101FF3C95D7847F0619D545405B7"
+    },
+    {
+        "Path":  "backend/src\\controllers\\bookingRequests.controller.js",
+        "Hash":  "1AD49114E414D92AB8527032C68B34DCC56A29073FFED4EE3F59C3D90F6A01B1"
+    },
+    {
+        "Path":  "backend/src\\controllers\\bookingAccounting.controller.js",
+        "Hash":  "2E738957950AF97C0AC4E7FF47B548F14F56EB31ADE91904E98F71086A1288E7"
+    },
+    {
+        "Path":  "backend/src\\controllers\\bokun.controller.js",
+        "Hash":  "0DE53F6B9B90F82B25AEF29C276D97C930E4E68C5BA1FB9083DCC48F47C2B28C"
+    },
+    {
+        "Path":  "backend/src\\controllers\\auth.controller.js",
+        "Hash":  "522C7D36B524C0066FE886B6B75BCDB5FCBB02CDF238382B737D7C36EE4DE758"
+    },
+    {
+        "Path":  "backend/src\\controllers\\auditControl.controller.js",
+        "Hash":  "78AB43331B84089B76BA0C666BC5BB187DEB128F501F2DC37675805E3672244C"
+    },
+    {
+        "Path":  "backend/src\\controllers\\analytics.controller.js",
+        "Hash":  "E854700AC46971AD74B2DC733E7B6843DED8264BBF184CEDB832BC637124EB4B"
+    },
+    {
+        "Path":  "backend/src\\controllers\\agents.controller.js",
+        "Hash":  "2290287CB231A6F8845AD4CB5D633F79998F0C67C3E427A4631C05A837BA35D3"
+    },
+    {
+        "Path":  "backend/src\\controllers\\adminBookingRequests.controller.js",
+        "Hash":  "5F6FD8F39B2104012C8AB40E3EC4BB978EB280880E1292AFB7D1157DC40DAC90"
+    },
+    {
+        "Path":  "backend/src\\controllers\\accounting.controller.js",
+        "Hash":  "DC1A1A3C8DAFD96F6CCB8C2BBE704677DC8142C5DBE84625CE0ABB53342BDC79"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\StatCard.jsx",
+        "Hash":  "5171992A1DEBA3BBEB09AA915941E248BCA7623F31621471B14C65C48CA62AEF"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\SeoHead.jsx",
+        "Hash":  "2483BF3B21AE46BAAA17A9187EA863BDCB880578AC6AFDF2AB2CDCC9A5D74CF6"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\ProtectedRoute.jsx",
+        "Hash":  "1B30B44DFF858D2C684CCA7D77229E6FA16A3FE2D125487222D39FF7368F1203"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\Loader.jsx",
+        "Hash":  "1DD8E7AC4DDCBB3C7BF50A174FC94947DACF268B79DD975BB7D9FAAE6B9D8A47"
+    },
+    {
+        "Path":  "backend/src\\config\\logger.js",
+        "Hash":  "2DB36B059D9820B9692DCC261DFA4AE64B812A7E8CC84EB8478A81A992856BC8"
+    },
+    {
+        "Path":  "backend/src\\config\\env.js",
+        "Hash":  "56CC4E5A0A5587AD2780187DD558F8292C97179982AEC20F94388EF8F8B49517"
+    },
+    {
+        "Path":  "backend/src\\config\\db.js",
+        "Hash":  "D4ABC7AB27E202D4A64497F9B9D6D3C0C992233CE0005F1597423C0CA7F6D65B"
+    },
+    {
+        "Path":  "backend/src\\config\\constants.js",
+        "Hash":  "C9B88A090321C1803280808048717FD89F3EA6486F79DFE4169A305A260E54BF"
+    },
+    {
+        "Path":  "backend/src\\app.js",
+        "Hash":  "5BF056BFBD21C20238DB7399DDFA83AF70CCBB4779B6ED85BAA6B6F48BA092BB"
+    },
+    {
+        "Path":  "backend/src\\services\\crmQuotes\\index.js",
+        "Hash":  "C296E6B5CCBB24A782E9DDB9DAE7EC55859C01C273B0D709D3D6D81EBCEDBF20"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\footer\\FooterTrustStrip.jsx",
+        "Hash":  "CFB1F350C999F2BABE20B60D5819BE9686F6B58506108A4313BB1C9F1A7C4834"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\footer\\FooterPaymentRow.jsx",
+        "Hash":  "1A8EDB658D952A729ED6156D82A811E1B87652B3DC6CA6BD3BE397FDAFAD5F4B"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\footer\\FooterNewsletter.jsx",
+        "Hash":  "CA7B90B07DD0459A44F7F91F87E5981BA5E98112BF661E28AF9448CAA22A02E8"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\footer\\FooterLinksSection.jsx",
+        "Hash":  "D3EC0E32AC94E38288863EB72B9C1F44A9225D0EBA053D7E753B1027CDE85309"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\footer\\FooterContactSection.jsx",
+        "Hash":  "53027AEA46B845ACAE1C782F2820E5DF69CFE1A5E8BE4F7F773063A6D171D54B"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\footer\\FooterBrandSection.jsx",
+        "Hash":  "2C8F967A7FCDD4FEBDEB6D64229E945B0CF230AA2F2A44733B5A19CE90ED56D0"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\footer\\FooterBottom.jsx",
+        "Hash":  "8FC56529DEE125B267BE898F0AAE02B392AA93ECAB64A3C73B26051FD8C5C812"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\footer\\Footer.jsx",
+        "Hash":  "FE7F8C3288D5B531422E6E3DB63D48C22A1B83F823DA1D228FB4E89EBD81CFE4"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\footer\\FloatingWhatsAppButton.jsx",
+        "Hash":  "1D06E4D7E98E0924290AC6482442C21F0E4D54D1F8682F98F810EBBA3F2541A2"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\ErrorAlert.jsx",
+        "Hash":  "7BAE95141923E105021E417E1A83A084D6F9AE0BAE526A23169E3077E116331C"
+    },
+    {
+        "Path":  "frontend/src\\components\\common\\AnalyticsTracker.jsx",
+        "Hash":  "80D592B2BB02819892D21CDF074E3D7B4EE83A4B73C0A89DDC270F084919133C"
+    },
+    {
+        "Path":  "backend/src\\services\\crmOpportunities\\index.js",
+        "Hash":  "B67F91DC61C25735F072B1AC5DC872EE125D2754FE2D3303D69C5B138DA6D0DD"
+    },
+    {
+        "Path":  "backend/src\\services\\bookingAccounting\\index.js",
+        "Hash":  "A4F14A54385083C7D6DE01A76A0F6552C24F193259C82255DBBBBF174BC8062C"
+    },
+    {
+        "Path":  "backend/src\\services\\crmLeads\\index.js",
+        "Hash":  "E8EA4F4E839E1A6B3623068605C07BB4454F020085216099B35833BD2D09212A"
+    },
+    {
+        "Path":  "backend/src\\services\\bokunSyncStatus\\index.js",
+        "Hash":  "87EC45CBBE110103B368CDED9866D70EBF0EB10DFC969E7C1ECDC0C1DBB83723"
+    },
+    {
+        "Path":  "backend/src\\services\\crmImports\\index.js",
+        "Hash":  "AC57DBEA928F4A8A650A6BCEA71775E92CCC2C25F097F5724C75F53849056F99"
+    },
+    {
+        "Path":  "backend/src\\services\\bokunFinancialReconciliation\\index.js",
+        "Hash":  "22604059112E7C520E4AAFEF03C15797AA6229B96D6CEA6CEE2A2E2D8326E6AF"
+    },
+    {
+        "Path":  "backend/src\\services\\crmFollowUps\\index.js",
+        "Hash":  "3662B00346B1C71E6FD80252CC9455D90DF239089E18D9B44B85B96FC2993D29"
+    },
+    {
+        "Path":  "backend/src\\services\\bokunConfirmedBookings\\index.js",
+        "Hash":  "F5A0A6041662D2C65CF3922A646EA7B58E7BC1D8305554FA3D91CC8A6DA0DA8D"
+    },
+    {
+        "Path":  "backend/src\\services\\crmControls\\index.js",
+        "Hash":  "B0621AA5526BC8AA1AF38DAE2CB725684E8E4FCE44A031AFCEDC12D0B976343D"
+    },
+    {
+        "Path":  "backend/src\\services\\bokun\\index.js",
+        "Hash":  "F2F97015F07F740CE2402EEC249E33B0E61EE5C2AE7B5037A001FDA64D22E391"
+    },
+    {
+        "Path":  "backend/src\\services\\crmBookingEvidence\\index.js",
+        "Hash":  "5636223F6E0E979F9B61A31C6B22A1F5DC0CD12618C7923DBF30AADA5F24893A"
+    },
+    {
+        "Path":  "backend/src\\services\\auth\\index.js",
+        "Hash":  "F6FAED8860D6B18267270767DA1FDEE40649B01AE9A31FF9C5D4FA7C6503C0C7"
+    },
+    {
+        "Path":  "backend/src\\services\\crmB2BPartners\\index.js",
+        "Hash":  "28B956D3A946B2016F7334C3A9FC4D71C18346F952A23A0E5D32560012830590"
+    },
+    {
+        "Path":  "backend/src\\services\\auditControl\\index.js",
+        "Hash":  "6CAEEFE43206A77F6D7D39F28C4A3CDB204BAF16063906C4DB8D7C43729F2E3B"
+    },
+    {
+        "Path":  "backend/src\\accounting\\defaultChartOfAccounts.js",
+        "Hash":  "E049C6BCF687E39BECD147B509EDBD69170D518722EB9CC8424FC871D5FE50B8"
+    },
+    {
+        "Path":  "backend/src\\accounting\\defaultAccountingMappings.js",
+        "Hash":  "53CA040AAF6F074338F7925D682275EB2EF6B2186DFE4D9105AA19D26021C208"
+    },
+    {
+        "Path":  "backend/src\\accounting\\currencyPolicy.js",
+        "Hash":  "76464EAE0EEE23926C4438639244B557DFDC1528F70EBF596E33EBF0E7A424F6"
+    },
+    {
+        "Path":  "backend/src\\accounting\\constants.js",
+        "Hash":  "EBFA4C0FC33EDF137E0E971FE15B18212C4DF565A8B39C574A231BAA3DDC083D"
+    },
+    {
+        "Path":  "backend/src\\services\\crmAnalytics\\index.js",
+        "Hash":  "466FA7E6E626A316A664AD0F1CF87EA2474601B80E94C7EDCB1DBE58769BD16C"
+    },
+    {
+        "Path":  "backend/src\\services\\agents\\index.js",
+        "Hash":  "1FD9BBA7F659FBB8A6A494204D0AE3B65972305547EB58C63A896B6575FCCBB7"
+    },
+    {
+        "Path":  "backend/src\\accounting\\bookingExpensePolicy.js",
+        "Hash":  "99FDAF3825C1D1051B4F4C8B4C3C300D3F85FE2458BD7CCBD5486382A0D1333C"
+    },
+    {
+        "Path":  "backend/src\\security\\permissions.js",
+        "Hash":  "5ADCB3722099542615CAF4FAA26B76DB0FBB8EA0E78D9AC530653931E6C865F0"
+    },
+    {
+        "Path":  "backend/src\\services\\crmAlerts\\index.js",
+        "Hash":  "1AE4D77ABAA07FA6C7B7045CB24CF4C4038002D882D54F169477E84155A6D709"
+    },
+    {
+        "Path":  "backend/src\\services\\bookings\\legacyBokunRecovery.service.js",
+        "Hash":  "E5212CF9A484D206ABD92D8E4A7DBBCCE06057A2FC18F355FE3F3E5405C95131"
+    },
+    {
+        "Path":  "backend/src\\services\\bookings\\index.js",
+        "Hash":  "FB46438CA48E177F7BF974F94EF0901BA2DF828101AAD7D4612D9E1A91BCBB17"
+    },
+    {
+        "Path":  "backend/src\\scripts\\bokunIdentityMigrate.js",
+        "Hash":  "2DCA8C73418E8B5E61ED450E4EB0EA4CDC653D8EAD57F606AC4C712FA46AC440"
+    },
+    {
+        "Path":  "backend/src\\scripts\\bokunIdentityAudit.js",
+        "Hash":  "454D929AD63235239176465F2B6D4D1E4327CB83F3586D12B463266579DE6336"
+    },
+    {
+        "Path":  "backend/src\\services\\webhooks\\poller.js",
+        "Hash":  "5297A5EB135268329CDA5DC47310C075EB590BE703E77B1C8B161F31DBB52E54"
+    },
+    {
+        "Path":  "backend/src\\services\\commissions\\index.js",
+        "Hash":  "944044191A26AF468ED45C9F18D011ECB48ADC982CA7D9EE5C050297F44EC4DC"
+    },
+    {
+        "Path":  "backend/src\\services\\webhooks\\index.js",
+        "Hash":  "80BCAFFEEEE43876B2996A5862CBB8633EC386BDD9B540FD208EBDCB3FBF379A"
+    },
+    {
+        "Path":  "backend/src\\services\\bookingRequests\\status.js",
+        "Hash":  "3B8D826761CC62D363413A2138011816ECD09A6605969488C9F826A747A20187"
+    },
+    {
+        "Path":  "backend/src\\services\\bookingRequests\\index.js",
+        "Hash":  "3FF719E72FC8FAF4BF0DF1B2C937DF7E2F58BF682AD46A83AC96787239C9DF43"
+    },
+    {
+        "Path":  "backend/src\\services\\bookingRequests\\cancellationPolicy.js",
+        "Hash":  "80FE02AFC74F68479A9E4122037E5D83BDE0B3E2B4E0B6E721DB77D47AE7825D"
+    },
+    {
+        "Path":  "backend/src\\services\\webhookIdempotency\\index.js",
+        "Hash":  "57B6171B6C9AD8179AE48E4EB0378D386505D53C158EB252D29F45809394C71F"
+    },
+    {
+        "Path":  "backend/src\\services\\cancellations\\policy.js",
+        "Hash":  "344A8221BAA59538DA615E0EB5796960BFE44929497AE6208DD9451422F36CBF"
+    },
+    {
+        "Path":  "backend/src\\services\\users\\index.js",
+        "Hash":  "FE0DE58C1D457C6FF9CEC25CD21D7F4898111E0AA694C74C5F949BBF4353A439"
+    },
+    {
+        "Path":  "backend/src\\services\\bookingReconciliation\\index.js",
+        "Hash":  "CEB8D3526BB6E9BD7CC8D67BA787A74262AAC7D2274B7AD177A01D1EB7F607D9"
+    },
+    {
+        "Path":  "backend/src\\services\\businessAccounting\\index.js",
+        "Hash":  "D5BCE718EB3D8FB851386D3D12A9FDE5EC7A25C25B1045FF7C461C3B6899CE50"
+    },
+    {
+        "Path":  "backend/src\\services\\tours\\index.js",
+        "Hash":  "2E69573ADE5505116EA96282B23F80174FB3132BE19452638E87F40195AB22AD"
+    },
+    {
+        "Path":  "backend/src\\services\\notifications\\index.js",
+        "Hash":  "532008C92F9CBC58F8407AFFD4CE2086203A7122F6F7505D6E8A6FA37FAB7393"
+    },
+    {
+        "Path":  "backend/src\\routes\\webhooks.routes.js",
+        "Hash":  "20348586770849571DEF8CCC67875F8532775F884FB3E2976F56AA1089D8C3FA"
+    },
+    {
+        "Path":  "backend/src\\routes\\users.routes.js",
+        "Hash":  "CAD0FC93AA30E71A6FEA34856F23D8D6F8D9E698118E3ED6F0993D9556017CCE"
+    },
+    {
+        "Path":  "backend/src\\routes\\tours.routes.js",
+        "Hash":  "239E31FA8DFCB61772E586CA09EE29D57D66E2C4550CFEE8D8E6925227D6738D"
+    },
+    {
+        "Path":  "backend/src\\routes\\systemHealth.routes.js",
+        "Hash":  "0EDA30EC0D9DA831C327806B054C65903F4369961CA8EA43462FEFB08A92BFC2"
+    },
+    {
+        "Path":  "backend/src\\routes\\settlements.routes.js",
+        "Hash":  "A4109D81C971890712337B0218EBDC113E44D0D0BD445322B353C57042CE370F"
+    },
+    {
+        "Path":  "backend/src\\routes\\serviceCompletion.routes.js",
+        "Hash":  "E7C78BBDCFD7EDCB9983A936C52CCF4EFD766BF88F40FE0F4F7EA0A2403174D1"
+    },
+    {
+        "Path":  "backend/src\\routes\\reviews.routes.js",
+        "Hash":  "0F6D31ED2E56F3B2BB6A679CE991045DA25D42C5690DB5A7F056959B223179D3"
+    },
+    {
+        "Path":  "backend/src\\routes\\reports.routes.js",
+        "Hash":  "6F62B39AEE9F528B9B4782C960795D3F6F956D69534EB852FAB379127996F5D7"
+    },
+    {
+        "Path":  "backend/src\\routes\\reportCenter.routes.js",
+        "Hash":  "14F4CAE9329B98C7BDE8F260E66BCE20763D7BCDC856E0A65FA130C7CA6EBB7F"
+    },
+    {
+        "Path":  "backend/src\\routes\\productionReadiness.routes.js",
+        "Hash":  "39E7249C46B405C1B83972CD99D41C5BC790B68A5B5D5F208EC616AAA363CBE6"
+    },
+    {
+        "Path":  "backend/src\\routes\\performanceReview.routes.js",
+        "Hash":  "26149BA959665A5AADDC5B1C7B2CE297EA3FDE78C8B96C440941A3E5F26944F3"
+    },
+    {
+        "Path":  "backend/src\\routes\\payments.routes.js",
+        "Hash":  "455D9D350CE785E02E62243F2BB0FA8A1339FB3E75067F5502BECD783C1942B7"
+    },
+    {
+        "Path":  "backend/src\\services\\systemHealth\\index.js",
+        "Hash":  "6A6A92688BE20DEB5087AE79FCA833CBC26F6FB89F0E7BCC4ACA2A3ED877E5FE"
+    },
+    {
+        "Path":  "backend/src\\services\\bookingPayment\\view.js",
+        "Hash":  "D09554FF0038517C452B1359A616197FED9213BEDD1091B600ABD920F8EE5776"
+    },
+    {
+        "Path":  "backend/src\\services\\bookingPayment\\sync.js",
+        "Hash":  "88C389FE1612CD423890E0DFEE75233A3FD20EDF07B530DB0A1E994FB7532439"
+    },
+    {
+        "Path":  "backend/src\\services\\marketing\\index.js",
+        "Hash":  "0D45DC08D49BC72AB425693810998E3478F56B89F25924F9B521CBB95027F480"
+    },
+    {
+        "Path":  "backend/src\\services\\bookingPayment\\settlementView.js",
+        "Hash":  "6E614F692B2CC619B52C5BAA54B3E3007FDA0F249471225B862756936D598159"
+    },
+    {
+        "Path":  "backend/src\\services\\bookingPayment\\policy.js",
+        "Hash":  "363FE61819272CDC2C93C96B6F56DD16CF0DF5A7022BD612EC6FEDB88E661E1F"
+    },
+    {
+        "Path":  "backend/src\\services\\bookingPayment\\overview.js",
+        "Hash":  "1380A6F8D3401CEE21532F74838CFE1F651A575AE2C57A2F046B3489380BF468"
+    },
+    {
+        "Path":  "backend/src\\services\\supplierPayments\\index.js",
+        "Hash":  "949FD3D4A11B1D327C22D9390809DDA76593B2A9E985108D67B3F248DC8EEE7B"
+    },
+    {
+        "Path":  "backend/src\\routes\\payments\\pesapal.routes.js",
+        "Hash":  "833EB37DAA5ED08E4562FD966794002A411BB00D6443F9BC6B8C39AABB8489C6"
+    },
+    {
+        "Path":  "backend/src\\routes\\payments\\paypal.routes.js",
+        "Hash":  "782BB21C8487CBB3AC27D1B1C1845AF5389E52E8A1E25B53F26BACF1A560AA02"
+    },
+    {
+        "Path":  "backend/src\\routes\\payments\\dpo.routes.js",
+        "Hash":  "4DF7A75A166D30C0F0194921576BC1C9282027DBF316014E0E880C0965FED663"
+    },
+    {
+        "Path":  "backend/src\\routes\\opsControl.routes.js",
+        "Hash":  "5A29A0E3A81D36EB4FE4F8ACF3DC6EDE2AB1BB0192334C9D13EB397AB5D7B4B4"
+    },
+    {
+        "Path":  "backend/src\\routes\\offers.routes.js",
+        "Hash":  "CEAB924A30C99D02F087ABB5F7F7A3F756D8C75C8D42C3545519E38C6F6E2144"
+    },
+    {
+        "Path":  "backend/src\\routes\\marketing.routes.js",
+        "Hash":  "7AB2BA8E1470F8D9492E20D84061BF8D27A88911126AE6793F6B0D211262651E"
+    },
+    {
+        "Path":  "backend/src\\routes\\invoices.routes.js",
+        "Hash":  "E01972E52F3440DDC0160E9C45EA54A0D21FA82C0BEC2DA7CA828CB563365C73"
+    },
+    {
+        "Path":  "backend/src\\routes\\index.js",
+        "Hash":  "396DBDEF8003F51FEEA188CF34669BDBE82990E575AFCD682C577E3B218CDA13"
+    },
+    {
+        "Path":  "backend/src\\routes\\disasterRecovery.routes.js",
+        "Hash":  "A5FC97042DA277BA5924208E0F162AD21C32E6C9D5A6DAB7640C19487EE19E3B"
+    },
+    {
+        "Path":  "backend/src\\routes\\dataQuality.routes.js",
+        "Hash":  "8BB48BD686B21CFFDE800A8A276D141AF2CB3683BBD8C8EB1EB308A2109E3BD4"
+    },
+    {
+        "Path":  "backend/src\\routes\\customers.routes.js",
+        "Hash":  "34BF827F3CEA1D7640857C955E159D231AEADD268B7EADCECE4F54FC041B6330"
+    },
+    {
+        "Path":  "backend/src\\routes\\crm.routes.js",
+        "Hash":  "E80D2789AB431A98EEB065F401CDC3AE18D189FD3F9B9DCE71510BAC2365AE91"
+    },
+    {
+        "Path":  "backend/src\\routes\\commissions.routes.js",
+        "Hash":  "69988F9CECD1B1D730AFF786AF9377F6068C2F78F2454FECDF275B7F385E29B9"
+    },
+    {
+        "Path":  "backend/src\\routes\\businessIncome.routes.js",
+        "Hash":  "E01AED8C5369D460ED119AB1A685C460FF1254B7C114AB0ABFE31EC1EE22EF6F"
+    },
+    {
+        "Path":  "backend/src\\routes\\businessExpenses.routes.js",
+        "Hash":  "02E93003E52E9581356400E6A677279A6D986FBB3FC04810268764108C180321"
+    },
+    {
+        "Path":  "backend/src\\routes\\businessAccounting.routes.js",
+        "Hash":  "310BDB96D34C0612D303915FFDDACE23AA64CDC4CCB18E5D0409B9BA27E81D3F"
+    },
+    {
+        "Path":  "backend/src\\routes\\bookings.routes.js",
+        "Hash":  "04E4B4D3C0887242259ACB1992384D2384C24DA10DC6F5F9E92395CB7C10A688"
+    },
+    {
+        "Path":  "backend/src\\routes\\bookingRequests.routes.js",
+        "Hash":  "75AD6214B94B436D7C9E9848AE1544ECF12C044D4A1BE74F03AA31D7622F8018"
+    },
+    {
+        "Path":  "backend/src\\routes\\bookingAccounting.routes.js",
+        "Hash":  "8E2FE0FA2CEF09605265A3D4B9E68F74384477290B79FFD23F68488025A75C0B"
+    },
+    {
+        "Path":  "backend/src\\routes\\bokun.routes.js",
+        "Hash":  "F07996A89DE1C4378FFD88A3E4B4F6A3FF439A0B5DBB50F64086C0175F5F4947"
+    },
+    {
+        "Path":  "backend/src\\routes\\auth.routes.js",
+        "Hash":  "2FFB83F6935832C5148B462A33353C9C2FDABE4672D15019040F325DAE4217D8"
+    },
+    {
+        "Path":  "backend/src\\routes\\auditControl.routes.js",
+        "Hash":  "43707B23B137532328C167594D8F2000A7ED3A6F5A48DDA1D09DD3C153766677"
+    },
+    {
+        "Path":  "backend/src\\routes\\analytics.routes.js",
+        "Hash":  "F7A1D97F791DC960EF492CFF1650EBE5CE3CCF9E89DE05C3B94CE42BE2FC0436"
+    },
+    {
+        "Path":  "backend/src\\routes\\agents.routes.js",
+        "Hash":  "99580EE574944519DE5A2387E8F05B156545FD576CD71B783B5EA1C57BCD6D76"
+    },
+    {
+        "Path":  "backend/src\\routes\\adminBookingRequests.routes.js",
+        "Hash":  "57A7051471EE808F83B315CAA3BE09E932077C6E28484F307C770828E8C0BB52"
+    },
+    {
+        "Path":  "backend/src\\routes\\accounting.routes.js",
+        "Hash":  "393590DE7D89257BD0FA9F23D528C004952329E99C03CDC210221E6AC81DF9F3"
+    },
+    {
+        "Path":  "backend/src\\services\\settlements\\index.js",
+        "Hash":  "E87FD38593E315DA7D671E442E15EBD1294E988AA2F80A76B526A83652455F6C"
+    },
+    {
+        "Path":  "backend/src\\services\\invoices\\index.js",
+        "Hash":  "D7A38CF13C56724E6F5F1AF702238E5C0DEEC523BC13A0193A83E55207E9DE9D"
+    },
+    {
+        "Path":  "backend/src\\services\\email\\index.js",
+        "Hash":  "33B1CD63755F94B8B78A008589F4026F9168CAF70DD6610FCEA7F523EDB69F23"
+    },
+    {
+        "Path":  "backend/src\\services\\serviceCompletion\\index.js",
+        "Hash":  "C85D7B195EBA20CE4990BD052694096FE47CB3D8ADE00275C98FAE159EF6988E"
+    },
+    {
+        "Path":  "backend/src\\reportCenter\\summaryService.js",
+        "Hash":  "B78A92D632E0FB5DF6F12662D20E3463DD67DF9DF57268254204731B73A8B1E6"
+    },
+    {
+        "Path":  "backend/src\\reportCenter\\reportRegistry.js",
+        "Hash":  "67006E0C16DC0BCC3114859CDD6E4C9FD0AED104816F26F8D40B58ABB19F4226"
+    },
+    {
+        "Path":  "backend/src\\reportCenter\\reportQueryService.js",
+        "Hash":  "FCB962F60A71431F694C9B0ACF112BB8591CBDF6615B34AEC576895CC055492B"
+    },
+    {
+        "Path":  "backend/src\\reportCenter\\productChannelProfitabilityReport.js",
+        "Hash":  "5CE145EB0670C356ECBCC336CE0402D7DBA8F2D64462CEFC887AC8C45BCFFFD6"
+    },
+    {
+        "Path":  "backend/src\\reportCenter\\managementPeriodReport.js",
+        "Hash":  "BF133C7D347ABDE3D597260C22720699E92405A3DA3EA5F8A8322AD99E369EE6"
+    },
+    {
+        "Path":  "backend/src\\reportCenter\\exportService.js",
+        "Hash":  "70D17743B270A50D008FDB9A34F24E87DA0A2CE3857381B1EE9ECDF8795E72E2"
+    },
+    {
+        "Path":  "backend/src\\reportCenter\\constants.js",
+        "Hash":  "343C72829435767568C70453196982B99FAA4135A5AD6C51840CF95A4D20C4A2"
+    },
+    {
+        "Path":  "backend/src\\reportCenter\\accountingReport.js",
+        "Hash":  "0018ED554554C52A7EBF9436DD81BF29641F6592E66B570A3A85D65BEB549387"
+    },
+    {
+        "Path":  "backend/src\\README.md",
+        "Hash":  "07FEC1E0E931BE8276049A3A7306B42EA661991F9F19E313A55E1472FE6B1A10"
+    },
+    {
+        "Path":  "backend/src\\services\\identityAudit\\index.js",
+        "Hash":  "C4E8CD5713BF29BB66B17E96D1D2D94116A892EBC7CA558E4E76754EF5E7844D"
+    },
+    {
+        "Path":  "backend/src\\services\\reviews\\index.js",
+        "Hash":  "F5479B806CA56E3BF5F01A38800B6BFB9B0D66AED64FA717E295A8E06AB45BA3"
+    },
+    {
+        "Path":  "backend/src\\services\\disasterRecovery\\index.js",
+        "Hash":  "805F4E977104DE63C0E5EB878978B731D397212FB1D1CC3324679256A4950099"
+    },
+    {
+        "Path":  "backend/src\\services\\glPosting\\preview.js",
+        "Hash":  "E1EE9E866C4491F63E5B2AAFDFA9618AF12C224986F04EF26F1523E383196540"
+    },
+    {
+        "Path":  "backend/src\\services\\glPosting\\policy.js",
+        "Hash":  "D05E9FC9960A3DC8B94202CE6C6CC10153095EA6ADFDF27A1CFFABDEB65B3E70"
+    },
+    {
+        "Path":  "backend/src\\services\\revenueRecognition\\policyReadiness.js",
+        "Hash":  "7859BEB0887BD747C5F5E1C681B22C85E44E8EE376BF378BEABDFF1F1F384282"
+    },
+    {
+        "Path":  "backend/src\\services\\generalLedger\\ledger.js",
+        "Hash":  "BDEA7E155C05D690C80C14688A94007DB6898FAAF4E2E3958D376A69743C89C2"
+    },
+    {
+        "Path":  "backend/src\\services\\generalLedger\\index.js",
+        "Hash":  "57B88AB4603B1A3212F27B804B8382A5E9927135732DEBDA7962D863CD318C5B"
+    },
+    {
+        "Path":  "backend/src\\services\\generalLedger\\chartOfAccounts.js",
+        "Hash":  "C3AC4D114584527A511DEE6221D5A76C09C0BFAACDEF5CFBB7A26549EC93A774"
+    },
+    {
+        "Path":  "backend/src\\services\\reports\\index.js",
+        "Hash":  "9BFD7DFEB14DB70B6E9246C1E59CAD2521C7C1A76C427C63532DF1E188642E27"
+    },
+    {
+        "Path":  "backend/src\\services\\financialReporting\\index.js",
+        "Hash":  "09CA94A7A01B6A69D4D3344D0D58EC50BDA802D4053285C5710948AF6B0E3DC7"
+    },
+    {
+        "Path":  "backend/src\\services\\refunds\\index.js",
+        "Hash":  "1764F7AB3014FB16ECA1306A8F0109DDB405936EACBE8763000C29B7B01E13B8"
+    },
+    {
+        "Path":  "backend/src\\services\\expenseAccounting\\index.js",
+        "Hash":  "E32E7D611A77C4FE23794F15D1E981819412B1CAF8D8397F96A375CBEA5C1440"
+    },
+    {
+        "Path":  "backend/src\\services\\profitability\\revenueBasis.js",
+        "Hash":  "13968F98E337C30250A24712159C9B59AA3F68E4589AB2994DE75D4BDA25FBAB"
+    },
+    {
+        "Path":  "backend/src\\models\\User.js",
+        "Hash":  "5BE15223D269C375E55D2A36E260FA473CCC6BADE66FCC2CEAD2431160C42F5D"
+    },
+    {
+        "Path":  "backend/src\\models\\SystemAlert.js",
+        "Hash":  "E8E6E3474FFBDC8512C95FCFEF328147ADA761314A476498FDF05EE0A86EF3B2"
+    },
+    {
+        "Path":  "backend/src\\models\\SyncLog.js",
+        "Hash":  "99D3287009E6FD64AA17A430F07D68B7C154D27DF2143BD002B64BE96647E2AE"
+    },
+    {
+        "Path":  "backend/src\\models\\SupplierPayment.js",
+        "Hash":  "36DD9A8933E27BD275D87C2568E85A72E3CFF8D7C65FEC71061F080F2EC7AD82"
+    },
+    {
+        "Path":  "backend/src\\models\\SettlementAllocation.js",
+        "Hash":  "1AE5A4C57477AAAF134A7B5F933E9C9454312EB9218050BD3A742FF2EED27F15"
+    },
+    {
+        "Path":  "backend/src\\models\\Settlement.js",
+        "Hash":  "90DD400D1964397CB4E1E651968E154C7D626E7C277AB9C7F4DD9840C59D3D60"
+    },
+    {
+        "Path":  "backend/src\\models\\ServiceCompletion.js",
+        "Hash":  "10E22E6582BD840B58791AB5DE452EC5CE8E1DD1A4339561FF4A73FF1A81A8CF"
+    },
+    {
+        "Path":  "backend/src\\models\\SalesOpportunity.js",
+        "Hash":  "A740328EFB0F8979BDD76F58ECE243031B410D5A1E4DC817FEAD09F7E3F36F6F"
+    },
+    {
+        "Path":  "backend/src\\models\\RevenueRecognition.js",
+        "Hash":  "91E4DAA71675958A7D67B2CA04B776C036609CF81802FE5AD46FF6C5D986B2B4"
+    },
+    {
+        "Path":  "backend/src\\models\\ReportExport.js",
+        "Hash":  "2D54152E79D41660DCF7B281FED49A217D01DC823421E47AAA3A50A7D616EC4F"
+    },
+    {
+        "Path":  "backend/src\\models\\Refund.js",
+        "Hash":  "EF078FA50C7FACBF255FC7A3DAC4BF965CD6959D00D5B4F541420C85E8FDA5D4"
+    },
+    {
+        "Path":  "backend/src\\models\\Quote.js",
+        "Hash":  "0B239D1B9CC2438DFEAB2522D0DDCC15515A619F3902871D66B8202D3E5E6BCC"
+    },
+    {
+        "Path":  "backend/src\\models\\ProviderWebhookEvent.js",
+        "Hash":  "60B07C9F540BF911D48976C23E8C26C7A93F7FF7AE0D43A869761DC5504B0C4C"
+    },
+    {
+        "Path":  "backend/src\\models\\ProductSnapshot.js",
+        "Hash":  "2BA778D2D710606303D8B48B247A38751A1594C7B56C7C7D621991907FEF68F5"
+    },
+    {
+        "Path":  "backend/src\\models\\ProductCostTemplate.js",
+        "Hash":  "71E206B435F04EE6FF3E9F8FA17DF77324389D5A636D82E5CAE2D1E0A067FD6B"
+    },
+    {
+        "Path":  "backend/src\\models\\PostingRule.js",
+        "Hash":  "722F3ACA149C5ED6A3CE1193FC2150A3FBAE01747643752289F4275E5ED39878"
+    },
+    {
+        "Path":  "backend/src\\models\\PaymentAllocation.js",
+        "Hash":  "F8C420089F52051AEE2B79A295EEC723A732F8A1B1FA627D31CC18531F8FB5CA"
+    },
+    {
+        "Path":  "backend/src\\services\\payments\\providerNormalization.js",
+        "Hash":  "9F0F299F76C1399B75F9A7A9CEDC0B68312C5AFB1407AE7131A8664E3B01CE32"
+    },
+    {
+        "Path":  "backend/src\\models\\PaymentAdjustment.js",
+        "Hash":  "A798B67331C377957E2CBB4B3499E42FD9E4A62B143C6929B374CB2ACE4C431E"
+    },
+    {
+        "Path":  "backend/src\\models\\Payment.js",
+        "Hash":  "BDB98A3D2D24938969908059E34467B50A6B73D92A78EDC479B809BD0CA46C0A"
+    },
+    {
+        "Path":  "backend/src\\models\\Offer.js",
+        "Hash":  "1C6416EDD33B1D79A63843A8A3CF24E4CF8188FBBDD81A32A328A463EDC1FF8F"
+    },
+    {
+        "Path":  "backend/src\\models\\MarketingLead.js",
+        "Hash":  "334F0B39FF69432A9F4E0559B6D17967F2D8438088950345D27D1803972307A4"
+    },
+    {
+        "Path":  "backend/src\\models\\LedgerMigrationRun.js",
+        "Hash":  "EA0355AC550825F3C5CF9D5A8C65CC3246CDB0E3790EB14B63969EFB508FD0BC"
+    },
+    {
+        "Path":  "backend/src\\models\\Lead.js",
+        "Hash":  "E54C6E8330B57F4EFFD54A1CF8E970ADE4180822FA24A42F6060002F7D9C9D1C"
+    },
+    {
+        "Path":  "backend/src\\models\\JournalEntryLine.js",
+        "Hash":  "8A06C4501934858E6C93B0F216D221361FF90474A50E58A4ABE01BE9F9111DDF"
+    },
+    {
+        "Path":  "backend/src\\models\\JournalEntry.js",
+        "Hash":  "2A8A172B694C962CF23B323B1A887DA3F7FE143E36125120D20F7AF66E516D55"
+    },
+    {
+        "Path":  "backend/src\\models\\Invoice.js",
+        "Hash":  "1A1D4C769F16A578FF28C081A0249B22319BB7436A168AF6FEDB4EB99354007B"
+    },
+    {
+        "Path":  "backend/src\\models\\FollowUp.js",
+        "Hash":  "0D956D103C3FE37E5111F682E703134440E92BDF5E5CF7FC7C34E20A3360E050"
+    },
+    {
+        "Path":  "backend/src\\models\\FixedAsset.js",
+        "Hash":  "1090217C11A166557C23FEEEA16F26B2B1A98606B9F7138D47FAD02E678303CA"
+    },
+    {
+        "Path":  "backend/src\\models\\EmailDelivery.js",
+        "Hash":  "FE88808426490E28055DABCF1EAF1C7A3EB04C768F50F247C97C040F8AB6E6A1"
+    },
+    {
+        "Path":  "backend/src\\models\\CustomerTimelineEvent.js",
+        "Hash":  "9778008594E06EF3E6CFB6CF0C787BB8C3D39A174E1FE05FC80B20413CA835E3"
+    },
+    {
+        "Path":  "backend/src\\models\\CustomerDuplicateCandidate.js",
+        "Hash":  "41065440278140A90098BFAC307692F6761081E616F77A5E538AEF4EEC388849"
+    },
+    {
+        "Path":  "backend/src\\models\\Customer.js",
+        "Hash":  "845E76A26FCF11CA8EA01604E528679BDE9CBF46A184E2382F3DA15CB9114A12"
+    },
+    {
+        "Path":  "backend/src\\models\\CrmTask.js",
+        "Hash":  "CF720B15265B3F2D8296D28AD68F9E21281CD20BDFC0FD4F6B329D2721527B05"
+    },
+    {
+        "Path":  "backend/src\\models\\CostCenter.js",
+        "Hash":  "37FF8864CA25DE783098F052437E6A0125AFC73451198C0B894461C14BC82CD8"
+    },
+    {
+        "Path":  "backend/src\\models\\CommissionRecord.js",
+        "Hash":  "6824AC8B193E91EE346F65E4BFA6DD3398D8AF0496BF7F44120EC316A4A85D37"
+    },
+    {
+        "Path":  "backend/src\\models\\ChartOfAccount.js",
+        "Hash":  "D27EC3C362950EFBC6FB545F08FC4066479505AED2377D03162EF296F5FF84CF"
+    },
+    {
+        "Path":  "backend/src\\models\\BusinessIncome.js",
+        "Hash":  "E7D77684079A0F190E5742494729C90070C86A4DAA236F3EEC3253674449EC9E"
+    },
+    {
+        "Path":  "backend/src\\models\\BusinessExpense.js",
+        "Hash":  "F4AE2FDA5AE9AF8348931E4AAF9D306D17238EC1C98F9CA21B8EFB772AFF2470"
+    },
+    {
+        "Path":  "backend/src\\models\\BookingRequest.js",
+        "Hash":  "AE05D16FACD71EB6CD8A80E9CBCA82CA97637371761B44D0EE17F6DE8162DE06"
+    },
+    {
+        "Path":  "backend/src\\models\\Booking.js",
+        "Hash":  "B00BA7FD3FC206B0FA75B0270D9594AC182215FACCEF6AAA971AF91EF5F9D909"
+    },
+    {
+        "Path":  "backend/src\\models\\BackupOperation.js",
+        "Hash":  "F7AD243B5D9052C8A87F1BA8C411C2435ED1DB4AC6156CAE450880D59DAF7262"
+    },
+    {
+        "Path":  "backend/src\\models\\B2BPartner.js",
+        "Hash":  "57A1AF63FC0BC73117290D68CE6D06EDE7B8AA24BD154AF93AC2516F0489254B"
+    },
+    {
+        "Path":  "backend/src\\models\\AuditLog.js",
+        "Hash":  "A6F0B6B22793A583B5FAAEE70022A2677CCC2FE6BD38C9A1C2B272F04E93A054"
+    },
+    {
+        "Path":  "backend/src\\models\\AgentPayoutRequest.js",
+        "Hash":  "E5E111EA73993A045AE0188E6259EE554A2DC83DE56ACB3B9C898D66FAE762F3"
+    },
+    {
+        "Path":  "backend/src\\models\\Agent.js",
+        "Hash":  "A567F93AE5B49398EF468E3736BCBBAAB6C83B198164CA305B83998818A33106"
+    },
+    {
+        "Path":  "backend/src\\models\\AccountingPosting.js",
+        "Hash":  "0D131B95F98AA7AE2DC4F2C46596B9BAD4AEC720A357FB0868C2B37FB2964456"
+    },
+    {
+        "Path":  "backend/src\\models\\AccountingPeriod.js",
+        "Hash":  "88D60C028C7D70264407E4B2A593459FB75B74E7C8D15539BFE11746D95C461F"
+    },
+    {
+        "Path":  "backend/src\\models\\AccountingMapping.js",
+        "Hash":  "524AD79C3AEFF47D44665C01C7E2AAECF97946D65AB22EBCFC3AFA9298F2C99E"
+    },
+    {
+        "Path":  "backend/src\\services\\productionReadiness\\index.js",
+        "Hash":  "E3F2E2A25C921C9F1F22A41AA134ECB0ABDF22230A1F7E8A5537D7EAECB4D5B3"
+    },
+    {
+        "Path":  "backend/src\\services\\payments\\pesapal\\index.js",
+        "Hash":  "1FC5B5BED31DB15E3732627951BA5026FD1E3403ABAE43CF5AD4EA90D7AB4D2E"
+    },
+    {
+        "Path":  "backend/src\\services\\performanceReview\\index.js",
+        "Hash":  "27250CEE8BBA983666191D615CB8B9BA9C0AA7B9A6E747E8CD81E827386B7E89"
+    },
+    {
+        "Path":  "backend/src\\services\\payments\\paypal\\index.js",
+        "Hash":  "8AB126617AAADC995664AA4872A5C4D5911139B1B809FD11F009E073D632FFDE"
+    },
+    {
+        "Path":  "backend/src\\services\\payments\\index.js",
+        "Hash":  "B0A3C4731554A4B11C05EAC8545B7343B9FC264C7BE89FE157F1DDF9181568A0"
+    },
+    {
+        "Path":  "backend/src\\middleware\\validateRequest.js",
+        "Hash":  "18DFF36AF4D0DE1CFB7C82B1119EFB802050C25606B296F7F772F9DFA59B8D7E"
+    },
+    {
+        "Path":  "backend/src\\middleware\\sanitize.js",
+        "Hash":  "64C5735659E96CEFB9E2294A47BAFEBB86B0E18C65F1C79AC5AD38801E929FD6"
+    },
+    {
+        "Path":  "backend/src\\middleware\\requestId.js",
+        "Hash":  "55D15C0D44A35F4D79D8C17489D749A71EB9266E5EEA65A795C9CDC90E2E4245"
+    },
+    {
+        "Path":  "backend/src\\middleware\\rbac.js",
+        "Hash":  "28A39A4AA993584E712AD595EBA7ED73351EC70F3138797B82EA1D0E73CE308A"
+    },
+    {
+        "Path":  "backend/src\\middleware\\rateLimiter.js",
+        "Hash":  "B1A050D6A3096663C8ECC7E91A238BFE8694E372D06331E2E7248A6ACFFBD710"
+    },
+    {
+        "Path":  "backend/src\\middleware\\notFound.js",
+        "Hash":  "3C961B800B757C268FFDCAFB56D21606500CF6718B2BEB0C0288CA84B0032271"
+    },
+    {
+        "Path":  "backend/src\\middleware\\errorHandler.js",
+        "Hash":  "BC836E52A494322AD9628105B85CC923D3CB70E53AB217FAB310473192A40D00"
+    },
+    {
+        "Path":  "backend/src\\middleware\\auth.js",
+        "Hash":  "B6B5CA00F5BE41920FB9FBE801F6EE04DED6733574F44513F0CDD22B91C1DEE1"
+    },
+    {
+        "Path":  "backend/src\\services\\customerAccounting\\index.js",
+        "Hash":  "2B6B8875C5F1A1421C12F40BC8B137850F096E25192B12767092EE139E7128BB"
+    },
+    {
+        "Path":  "backend/src\\services\\payments\\dpo\\index.js",
+        "Hash":  "C0215AECA6C54C7070D367B6787176901C1B143F2E6DB40B432D80870C33A799"
+    },
+    {
+        "Path":  "backend/src\\services\\customers\\index.js",
+        "Hash":  "CB30A8348C75B80124B9DF69ABCD94C11F284BB9B667D0DD2212980584CED43D"
+    },
+    {
+        "Path":  "backend/src\\services\\crmReports\\index.js",
+        "Hash":  "707A24C2EFC1A001F71024AE55D902190D48A9EF8A7589B705C1399A74CA6BEA"
+    },
+    {
+        "Path":  "backend/src\\services\\opsControl\\index.js",
+        "Hash":  "BD4D769475B7B52F6502DC16636C2E23E82B26B522DC4733AB47098759D6933B"
+    },
+    {
+        "Path":  "backend/src\\services\\offers\\index.js",
+        "Hash":  "D69C7EDCBDD965BFC4F2B8A00AA5DBD4A02DEF846A66F7AC3F0F69DA8342138B"
+    },
+    {
+        "Path":  "backend/src\\services\\dataQuality\\index.js",
+        "Hash":  "E0121AFBB2807F0DB31EE728F379DBD6C01E92089C584EDB8B54E7D5B9800CEC"
+    },
+    {
+        "Path":  "backend/.env",
+        "Hash":  "A334FC6B444E7BEE8BC8B1D610D90326E8061EECC4F81195F6E70B2F1D15050F"
+    },
+    {
+        "Path":  "backend/server.js",
+        "Hash":  "D1BF97056D096866DF1309FAAC2EBAE8E98F3438A0ECC2ABC99B8893D9FD6112"
+    },
+    {
+        "Path":  "backend/package.json",
+        "Hash":  "C3B3C869076C904899E0DAE138AFE68F5F67AFD75F3AA82107D8D4369A7A0684"
+    },
+    {
+        "Path":  "frontend/package.json",
+        "Hash":  "F52930876FC2EBDA9271963E3E2B55B1FAB9E527337F378888AD7E7EE7C01C4E"
+    }
+]

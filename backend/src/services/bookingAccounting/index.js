@@ -6,10 +6,19 @@ const ProductCostTemplate = require("../../models/ProductCostTemplate");
 const ProductSnapshot = require("../../models/ProductSnapshot");
 const Refund = require("../../models/Refund");
 const { EXPENSE_CATEGORY } = require("../../accounting/constants");
+const { ACCOUNTING_SCOPE, BUSINESS_UNIT, EXPENSE_PAYMENT_STATUS, FINANCIAL_ENTRY_STATUS, SOURCE_MODULE } = require("../../accounting/constants");
 const AuditLog = require("../../models/AuditLog");
 const logger = require("../../config/logger");
 const toursService = require("../tours");
 const AppError = require("../../utils/AppError");
+const { toDecimal } = require("../../utils/money");
+const { configuredBaseCurrency } = require("../../accounting/currencyPolicy");
+const { BOOKING_DIRECT_COST_CATEGORIES, validateBookingExpenseCategory, resolveBookingExpenseFx, bookingExpenseRequestHash, isCountedBookingExpense } = require("../../accounting/bookingExpensePolicy");
+const {
+  STATUS: REVENUE_BASIS_STATUS,
+  applyRevenueCostCurrencyCheck,
+  resolveVerifiedSupplierRevenueBasis
+} = require("../profitability/revenueBasis");
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_TEMPLATE_LIMIT = 10;
@@ -742,6 +751,7 @@ const resolveBookingCostTemplate = ({ booking = {}, templates = [], asOfDate = n
   const bokunProductId = normalizeToken(booking?.bokunProductId);
   const bokunOptionId = normalizeToken(booking?.bokunOptionId);
   if (!bokunProductId || !bokunOptionId) return null;
+  const pricingCategoryId = normalizeToken(asArray(booking?.priceCategoryParticipants)[0]?.categoryId);
 
   return asArray(templates)
     .filter(
@@ -752,9 +762,11 @@ const resolveBookingCostTemplate = ({ booking = {}, templates = [], asOfDate = n
         isTemplateEffective(template, asOfDate)
     )
     .sort((left, right) => {
+      const leftSpecific = sameToken(left.pricingCategoryId, pricingCategoryId) ? 1 : sameToken(left.pricingCategoryId, "") ? 0 : -1;
+      const rightSpecific = sameToken(right.pricingCategoryId, pricingCategoryId) ? 1 : sameToken(right.pricingCategoryId, "") ? 0 : -1;
       const rightDate = toDate(right.updatedAt || right.validFrom)?.getTime() || 0;
       const leftDate = toDate(left.updatedAt || left.validFrom)?.getTime() || 0;
-      return rightDate - leftDate;
+      return rightSpecific - leftSpecific || rightDate - leftDate;
     })[0] || null;
 };
 
@@ -821,9 +833,22 @@ const summarizeProfitabilityItems = (items = []) => {
       summary.paymentProviderFees += item.paymentProviderFees;
       summary.actualDirectCost += item.actualDirectCost;
       summary.estimatedDirectCost += item.estimatedDirectCost;
+      summary.displayDirectCost += item.displayDirectCost;
       summary.netRevenue += item.netRevenue;
       summary.grossProfit += item.grossProfit;
       summary.dashboardGrossProfit += item.dashboardGrossProfit;
+      summary.revenueBasis += item.revenueBasis ?? 0;
+      summary.actualProfit += item.actualProfit ?? 0;
+      summary.estimatedProfit += item.estimatedProfit ?? 0;
+      const hasEligibleActualProfit = item.actualProfit !== null &&
+        item.actualProfit !== undefined &&
+        item.revenueBasis !== null &&
+        item.revenueBasis !== undefined &&
+        item.revenueEvidenceStatus === REVENUE_BASIS_STATUS.VERIFIED &&
+        !["NEEDS_REVIEW", "NEEDS_REVIEW_FX", "NEEDS_POLICY"].includes(item.profitabilityStatus);
+      summary.actualProfitRevenueBasis += hasEligibleActualProfit ? item.revenueBasis : 0;
+      summary.actualProfitCount += hasEligibleActualProfit ? 1 : 0;
+      summary.estimatedProfitCount += item.estimatedProfit !== null && item.estimatedProfit !== undefined ? 1 : 0;
       return summary;
     },
     {
@@ -833,15 +858,28 @@ const summarizeProfitabilityItems = (items = []) => {
       paymentProviderFees: 0,
       actualDirectCost: 0,
       estimatedDirectCost: 0,
+      displayDirectCost: 0,
       netRevenue: 0,
       grossProfit: 0,
-      dashboardGrossProfit: 0
+      dashboardGrossProfit: 0,
+      revenueBasis: 0,
+      actualProfit: 0,
+      actualProfitRevenueBasis: 0,
+      estimatedProfit: 0,
+      actualProfitCount: 0,
+      estimatedProfitCount: 0
     }
   );
   Object.keys(totals).forEach((key) => {
     totals[key] = roundMoney(totals[key]);
   });
-  totals.profitMargin = totals.netRevenue > 0 ? Number(((totals.grossProfit / totals.netRevenue) * 100).toFixed(2)) : 0;
+  totals.actualProfitMargin = totals.actualProfitCount > 0 && totals.actualProfitRevenueBasis > 0
+    ? Number(((totals.actualProfit / totals.actualProfitRevenueBasis) * 100).toFixed(2))
+    : null;
+  totals.estimatedProfitMargin = totals.estimatedProfitCount > 0 && totals.revenueBasis > 0
+    ? Number(((totals.estimatedProfit / totals.revenueBasis) * 100).toFixed(2))
+    : null;
+  totals.profitMargin = totals.actualProfitMargin ?? totals.estimatedProfitMargin ?? 0;
   totals.dashboardProfitMargin =
     totals.bookedRevenue > 0 ? Number(((totals.dashboardGrossProfit / totals.bookedRevenue) * 100).toFixed(2)) : 0;
   return totals;
@@ -1233,12 +1271,65 @@ const normalizeExpense = (expense = {}) => ({
   baseCurrency: normalizeUpper(expense.baseCurrency || expense.currency || "USD"),
   paymentStatus: expense.paymentStatus || "",
   status: expense.status || "",
+  completionStatus: expense.completionStatus || "NOT_STARTED",
+  bookingId: normalizeToken(expense.bookingId),
   sourceModule: expense.sourceModule || "",
   sourceReference: expense.sourceReference || "",
   expenseDate: toIso(expense.expenseDate || expense.createdAt),
   dueDate: toIso(expense.dueDate),
   updatedAt: toIso(expense.updatedAt)
 });
+
+const buildBookingExpenseValues = ({ input = {}, booking = {}, auth = {}, nowDate = new Date() } = {}) => {
+  const amount = toNumber(input.amount);
+  if (!(amount > 0)) throw new AppError("Booking expense amount must be greater than zero", 422, "BOOKING_EXPENSE_AMOUNT_INVALID");
+  const expenseDate = input.expenseDate ? toDate(input.expenseDate) : nowDate;
+  if (!expenseDate) throw new AppError("Booking expense date is invalid", 422, "BOOKING_EXPENSE_DATE_INVALID");
+  const currency = normalizeCurrency(input.currency || booking.currency || booking.pricingSnapshot?.currency || "USD");
+  const fx = resolveBookingExpenseFx({ ...input, currency }, expenseDate);
+  const bookingReference = normalizeToken(booking.bookingReference || input.bookingReference);
+  const bookingId = normalizeToken(booking._id || input.bookingId);
+  const category = normalizeUpper(input.category);
+  validateBookingExpenseCategory(category);
+  const expenseReference = normalizeToken(input.expenseReference || `BEXP-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`);
+  const idempotencyKey = normalizeToken(input.idempotencyKey);
+  if (!idempotencyKey) throw new AppError("A stable idempotency key is required for a booking expense.", 422, "BOOKING_EXPENSE_IDEMPOTENCY_REQUIRED");
+  return {
+    expenseReference,
+    idempotencyKey,
+    accountingScope: ACCOUNTING_SCOPE.BOOKING,
+    businessUnit: normalizeUpper(input.businessUnit || BUSINESS_UNIT.OTHER),
+    category,
+    sourceModule: SOURCE_MODULE.BOOKING_ACCOUNTING,
+    sourceReference: bookingReference,
+    sourceRecordId: bookingId,
+    sourceRecordModel: "Booking",
+    bookingReference,
+    bookingId: bookingId || null,
+    description: normalizeToken(input.description),
+    supplier: {
+      supplierId: normalizeToken(input.supplier?.supplierId),
+      name: normalizeToken(input.supplier?.name),
+      type: normalizeToken(input.supplier?.type),
+      contact: normalizeToken(input.supplier?.contact)
+    },
+    amount,
+    ...fx,
+    baseCurrencyAmount: toDecimal(amount).times(fx.exchangeRate).toDecimalPlaces(2).toNumber(),
+    expenseDate,
+    dueDate: toDate(input.dueDate),
+    paymentStatus: normalizeUpper(input.paymentStatus || EXPENSE_PAYMENT_STATUS.UNPAID),
+    paymentMethod: normalizeToken(input.paymentMethod),
+    paymentReference: normalizeToken(input.paymentReference),
+    createdBy: normalizeToken(auth?.id || input.createdBy),
+    approvedBy: "",
+    approvedAt: null,
+    notes: normalizeToken(input.notes),
+    status: normalizeUpper(input.status || FINANCIAL_ENTRY_STATUS.DRAFT),
+    completionStatus: normalizeUpper(input.completionStatus || "NOT_STARTED"),
+    metadata: input.metadata || {}
+  };
+};
 
 const bookingLinkedExpenseQuery = (query = {}) => ({
   ...query,
@@ -1623,6 +1714,8 @@ const createBookingAccountingService = ({
     ]);
     return {
       items: rows.map(normalizeExpense),
+      directCostCategories: BOOKING_DIRECT_COST_CATEGORIES,
+      baseCurrency: configuredBaseCurrency(),
       total,
       page,
       limit,
@@ -1630,25 +1723,189 @@ const createBookingAccountingService = ({
     };
   };
 
-  const loadSnapshot = async (filters = {}) => {
+  const recordBookingExpenseAudit = async ({ action, expense, before = null, after = null, auth = {}, requestId = "", reason = "", metadata = {} }) => {
+    if (!AuditLogModel?.create || !expense) return null;
+    return AuditLogModel.create({
+      actorId: auth?.id || null,
+      actorRole: auth?.role || "system",
+      action,
+      entityType: "BusinessExpense",
+      entityId: getId(expense) || normalizeToken(expense.expenseReference),
+      reference: expense.expenseReference || expense.bookingReference || "",
+      reason,
+      requestId,
+      correlationId: requestId,
+      before,
+      after,
+      metadata
+    });
+  };
+
+  const findBookingForExpense = async ({ bookingReference = "", bookingId = "" } = {}) => {
+    const safeBookingId = normalizeToken(bookingId);
+    const safeBookingReference = normalizeToken(bookingReference);
+    const booking = safeBookingId
+      ? await findByIdRow(BookingModel, safeBookingId)
+      : await findOneRow(BookingModel, { bookingReference: safeBookingReference });
+    if (!booking) throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
+    return booking;
+  };
+
+  const createBookingExpense = async ({ payload = {}, auth = {}, requestId = "" } = {}) => {
+    if (!payload.expenseDate || !toDate(payload.expenseDate)) throw new AppError("A valid expense date is required.", 422, "BOOKING_EXPENSE_DATE_INVALID");
+    const booking = await findBookingForExpense({ bookingReference: payload.bookingReference, bookingId: payload.bookingId });
+    const values = buildBookingExpenseValues({ input: payload, booking, auth });
+    if (!values.description) throw new AppError("Booking expense description is required", 422, "BOOKING_EXPENSE_DESCRIPTION_REQUIRED");
+    values.bookingExpenseRequestHash = bookingExpenseRequestHash(values, payload.expenseReference);
+    const replay = (existing) => {
+      if (existing.accountingScope !== ACCOUNTING_SCOPE.BOOKING || existing.bookingExpenseRequestHash !== values.bookingExpenseRequestHash) {
+        throw new AppError("This idempotency key is already used for a different expense request.", 409, "BOOKING_EXPENSE_IDEMPOTENCY_CONFLICT");
+      }
+      return { action: "unchanged", expense: normalizeExpense(existing) };
+    };
+    const existing = await findOneRow(BusinessExpenseModel, { idempotencyKey: values.idempotencyKey });
+    if (existing) return replay(existing);
+    let created;
+    try {
+      created = await createRow(BusinessExpenseModel, values);
+    } catch (error) {
+      if (error?.code !== 11000) throw error;
+      const winner = await findOneRow(BusinessExpenseModel, { idempotencyKey: values.idempotencyKey });
+      if (winner) return replay(winner);
+      throw new AppError("This expense reference already exists.", 409, "BOOKING_EXPENSE_DUPLICATE_REFERENCE");
+    }
+    const normalized = normalizeExpense(created);
+    await recordBookingExpenseAudit({
+      action: "booking_expense_created",
+      expense: created,
+      auth,
+      requestId,
+      reason: "Booking expense created",
+      after: normalized
+    });
+    return { action: "created", expense: normalized };
+  };
+
+  const updateBookingExpense = async ({ expenseId, payload = {}, auth = {}, requestId = "" } = {}) => {
+    const existing = await findByIdRow(BusinessExpenseModel, expenseId);
+    if (!existing || existing.accountingScope !== ACCOUNTING_SCOPE.BOOKING) {
+      throw new AppError("Booking expense not found", 404, "BOOKING_EXPENSE_NOT_FOUND");
+    }
+    if ((payload.idempotencyKey !== undefined && normalizeToken(payload.idempotencyKey) !== existing.idempotencyKey) ||
+        (payload.expenseReference !== undefined && normalizeToken(payload.expenseReference) !== existing.expenseReference)) {
+      throw new AppError("Expense identity cannot be changed by an update.", 409, "BOOKING_EXPENSE_IDENTITY_IMMUTABLE");
+    }
+    const booking = await findBookingForExpense({ bookingReference: existing.bookingReference, bookingId: existing.bookingId });
+    if (payload.currency && normalizeUpper(payload.currency) !== normalizeUpper(existing.currency) && normalizeUpper(payload.currency) !== configuredBaseCurrency()) {
+      resolveBookingExpenseFx(payload, toDate(payload.expenseDate || existing.expenseDate));
+    }
+    const values = buildBookingExpenseValues({ input: { ...existing, ...payload }, booking, auth, nowDate: new Date() });
+    // Creation identity is immutable; the existing audit event identifies the editor.
+    delete values.createdBy;
+    if (!values.description) throw new AppError("Booking expense description is required", 422, "BOOKING_EXPENSE_DESCRIPTION_REQUIRED");
+    const updated = await updateByIdRow(BusinessExpenseModel, expenseId, values);
+    const before = normalizeExpense(existing);
+    const after = normalizeExpense(updated);
+    await recordBookingExpenseAudit({ action: "booking_expense_updated", expense: updated, before, after, auth, requestId, reason: "Booking expense updated" });
+    return { action: "updated", expense: after };
+  };
+
+  const voidBookingExpense = async ({ expenseId, reason = "", auth = {}, requestId = "" } = {}) => {
+    const existing = await findByIdRow(BusinessExpenseModel, expenseId);
+    if (!existing || existing.accountingScope !== ACCOUNTING_SCOPE.BOOKING) {
+      throw new AppError("Booking expense not found", 404, "BOOKING_EXPENSE_NOT_FOUND");
+    }
+    const updated = await updateByIdRow(BusinessExpenseModel, expenseId, {
+      status: FINANCIAL_ENTRY_STATUS.VOID,
+      paymentStatus: EXPENSE_PAYMENT_STATUS.VOID,
+      completionStatus: "NEEDS_REVIEW",
+      notes: [existing.notes, reason].filter(Boolean).join("\n")
+    });
+    await recordBookingExpenseAudit({
+      action: "booking_expense_voided",
+      expense: updated,
+      before: normalizeExpense(existing),
+      after: normalizeExpense(updated),
+      auth,
+      requestId,
+      reason: reason || "Booking expense voided"
+    });
+    return { action: "voided", expense: normalizeExpense(updated) };
+  };
+
+  const updateBookingExpenseCompletion = async ({ expenseId, completionStatus, auth = {}, requestId = "" } = {}) => {
+    const allowedStatuses = ["NOT_STARTED", "IN_PROGRESS", "COMPLETE", "NEEDS_REVIEW"];
+    const nextStatus = normalizeUpper(completionStatus);
+    if (!allowedStatuses.includes(nextStatus)) {
+      throw new AppError("Booking expense completion status is invalid", 422, "BOOKING_EXPENSE_COMPLETION_STATUS_INVALID");
+    }
+    const existing = await findByIdRow(BusinessExpenseModel, expenseId);
+    if (!existing || existing.accountingScope !== ACCOUNTING_SCOPE.BOOKING) {
+      throw new AppError("Booking expense not found", 404, "BOOKING_EXPENSE_NOT_FOUND");
+    }
+    if (existing.status === FINANCIAL_ENTRY_STATUS.VOID) {
+      throw new AppError("Voided booking expenses cannot be completed", 409, "BOOKING_EXPENSE_VOIDED");
+    }
+    const updated = await updateByIdRow(BusinessExpenseModel, expenseId, { completionStatus: nextStatus });
+    await recordBookingExpenseAudit({
+      action: "booking_expense_completion_updated",
+      expense: updated,
+      before: normalizeExpense(existing),
+      after: normalizeExpense(updated),
+      auth,
+      requestId,
+      reason: `Booking expense completion changed to ${nextStatus}`
+    });
+    return { action: "updated", expense: normalizeExpense(updated) };
+  };
+
+  const getBookingExpense = async (expenseId) => {
+    const expense = await findByIdRow(BusinessExpenseModel, expenseId);
+    if (!expense || expense.accountingScope !== ACCOUNTING_SCOPE.BOOKING) {
+      throw new AppError("Booking expense not found", 404, "BOOKING_EXPENSE_NOT_FOUND");
+    }
+    return normalizeExpense(expense);
+  };
+
+  const captureEstimatedCostSnapshot = async ({ booking = {}, asOfDate = null } = {}) => {
+    if (booking.estimatedCostSnapshot) return booking.estimatedCostSnapshot;
+    const resolved = await resolveCostTemplate({
+      booking,
+      asOfDate: toDate(asOfDate || booking.createdAt) || new Date(),
+      pricingCategoryId: asArray(booking.priceCategoryParticipants)[0]?.categoryId || ""
+    });
+    if (!resolved.template || !resolved.calculation) return null;
+    return {
+      templateId: getId(resolved.template),
+      templateVersion: Number(resolved.template.version || 1),
+      calculatedAt: new Date(),
+      currency: resolved.calculation.currency,
+      totalEstimatedCost: resolved.calculation.totalEstimatedCost,
+      breakdown: resolved.calculation.breakdown,
+      context: resolved.calculation.context
+    };
+  };
+
+  const loadSnapshot = async (filters = {}, expenseQuery = {}) => {
     const scanLimit = Math.max(50, Math.min(MAX_LIMIT, Number(filters.limit || 250)));
     const [bookings, invoices, payments, refunds, expenses] = await Promise.all([
       findRows(BookingModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
       findRows(InvoiceModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
       findRows(PaymentModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
       findRows(RefundModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
-      findRows(BusinessExpenseModel, bookingLinkedExpenseQuery({}), { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit })
+      findRows(BusinessExpenseModel, bookingLinkedExpenseQuery(expenseQuery), { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit })
     ]);
     return { bookings, invoices, payments, refunds, expenses, scanLimit };
   };
 
   const getProfitability = async (filters = {}) => {
-    const { bookings, invoices, payments, refunds, expenses, scanLimit } = await loadSnapshot(filters);
+    const { bookings, invoices, payments, refunds, expenses, scanLimit } = await loadSnapshot(filters, { accountingScope: ACCOUNTING_SCOPE.BOOKING });
     const templates = await loadCostTemplates();
     const bookingsByReference = buildMap(bookings, (booking) => booking.bookingReference);
     const invoicesByReference = buildMap(invoices, (invoice) => invoice.bookingReference);
     const paymentsByReference = buildMap(payments, (payment) => payment.bookingReference);
     const expensesByReference = buildMap(expenses, (expense) => expense.bookingReference);
+    const expensesByBookingId = buildMap(expenses, (expense) => expense.bookingId);
     const refundsByPaymentId = buildMap(refunds.filter(isCompletedRefund), (refund) => normalizeToken(refund.paymentId));
 
     const references = Array.from(
@@ -1666,9 +1923,16 @@ const createBookingAccountingService = ({
       const bookingPayments = paymentsByReference.get(bookingReference) || [];
       const paidPayments = bookingPayments.filter(isPaidPayment);
       const linkedRefunds = paidPayments.flatMap((payment) => refundsByPaymentId.get(getId(payment)) || []);
-      const bookingExpenses = expensesByReference.get(bookingReference) || [];
+      const bookingExpenses = Array.from(
+        new Map(
+          [
+            ...(expensesByReference.get(bookingReference) || []),
+            ...(expensesByBookingId.get(getId(booking)) || [])
+          ].map((expense) => [getId(expense) || expense.expenseReference, expense])
+        ).values()
+      );
       const currency = getPrimaryCurrency(invoice, booking, paidPayments[0], bookingExpenses[0]);
-      const bookedRevenue = roundMoney(invoice ? getInvoiceTotal(invoice) : booking?.pricingSnapshot?.finalPayable ?? booking?.amount ?? 0);
+      const reportedBookingRevenue = roundMoney(invoice ? getInvoiceTotal(invoice) : booking?.pricingSnapshot?.finalPayable ?? booking?.amount ?? 0);
       const collectedRevenue = roundMoney(
         invoice ? getInvoicePaid(invoice) : paidPayments.reduce((sum, payment) => sum + getPaymentPaidAmount(payment), 0)
       );
@@ -1680,24 +1944,89 @@ const createBookingAccountingService = ({
         )
       );
       const paymentProviderFees = roundMoney(paidPayments.reduce((sum, payment) => sum + toNumber(payment.providerFeeAmount), 0));
-      const actualDirectCost = roundMoney(
-        bookingExpenses.reduce((sum, expense) => sum + toNumber(expense.baseCurrencyAmount ?? expense.amount), 0)
-      );
-      const financialDate = getFinancialDate({ booking, invoice, payments: bookingPayments, expenses: bookingExpenses });
       const salesChannel = getBookingSalesChannel(booking, invoice, paidPayments[0] || bookingPayments[0]);
-      const estimatedCost = estimateDirectCost({
-        booking: booking || {},
-        templates,
-        bookedRevenue,
-        currency,
-        asOfDate: financialDate || new Date()
+      const revenueBasis = applyRevenueCostCurrencyCheck({
+        revenueBasis: resolveVerifiedSupplierRevenueBasis({
+          booking: { ...booking, salesChannel },
+          fallbackAmount: reportedBookingRevenue,
+          fallbackCurrency: currency
+        }),
+        costCurrency: [...new Set(
+          bookingExpenses
+            .filter((expense) => isCountedBookingExpense(expense))
+            .map((expense) => normalizeUpper(expense.baseCurrency || expense.currency || currency))
+        )].length === 1
+          ? bookingExpenses.find((expense) => isCountedBookingExpense(expense))?.baseCurrency || currency
+          : "MIXED"
       });
+      const profitabilityRevenue = revenueBasis.status === REVENUE_BASIS_STATUS.VERIFIED ? roundMoney(revenueBasis.amount) : null;
+      const bookedRevenue = profitabilityRevenue === null ? reportedBookingRevenue : profitabilityRevenue;
+      const actualDirectCost = roundMoney(
+        bookingExpenses
+          .filter((expense) => isCountedBookingExpense(expense) && toNumber(expense.baseCurrencyAmount ?? expense.amount) >= 0)
+          .reduce((sum, expense) => sum + toNumber(expense.baseCurrencyAmount ?? expense.amount), 0)
+      );
+      const countedBookingExpenses = bookingExpenses.filter((expense) => isCountedBookingExpense(expense));
+      const hasInvalidDirectCost = countedBookingExpenses.some((expense) => toNumber(expense.baseCurrencyAmount ?? expense.amount) < 0);
+      const hasActualDirectCostEvidence = countedBookingExpenses.length > 0 && !hasInvalidDirectCost;
+      const completionStatuses = countedBookingExpenses.map((expense) => normalizeUpper(expense.completionStatus || "NOT_STARTED"));
+      const expenseCompletionStatus = !countedBookingExpenses.length
+        ? "NOT_STARTED"
+        : completionStatuses.includes("NEEDS_REVIEW")
+          ? "NEEDS_REVIEW"
+          : completionStatuses.every((status) => status === "COMPLETE")
+            ? "COMPLETE"
+            : "IN_PROGRESS";
+      const financialDate = getFinancialDate({ booking, invoice, payments: bookingPayments, expenses: bookingExpenses });
+      const estimatedCost = booking?.estimatedCostSnapshot
+        ? {
+            estimatedDirectCost: roundMoney(booking.estimatedCostSnapshot.totalEstimatedCost),
+            costTemplateId: normalizeToken(booking.estimatedCostSnapshot.templateId),
+            costTemplateName: "",
+            costTemplateCurrency: normalizeCurrency(booking.estimatedCostSnapshot.currency || currency),
+            costBreakdown: asArray(booking.estimatedCostSnapshot.breakdown)
+          }
+        : estimateDirectCost({
+            booking: booking || {},
+            templates,
+            bookedRevenue,
+            currency,
+            asOfDate: financialDate || new Date()
+          });
       const estimatedDirectCost = estimatedCost.estimatedDirectCost;
-      const displayDirectCost = actualDirectCost > 0 ? actualDirectCost : estimatedDirectCost;
-      const costStatus = actualDirectCost > 0 ? "actual" : estimatedDirectCost > 0 ? "estimated" : "missing_cost";
+      const displayDirectCost = hasActualDirectCostEvidence ? actualDirectCost : estimatedDirectCost;
+      const costStatus = hasActualDirectCostEvidence ? "actual" : estimatedDirectCost > 0 ? "estimated" : "missing_cost";
       const netRevenue = roundMoney(collectedRevenue - refundedAmount - paymentProviderFees);
-      const grossProfit = roundMoney(netRevenue - actualDirectCost);
-      const profitMargin = netRevenue > 0 ? Number(((grossProfit / netRevenue) * 100).toFixed(2)) : 0;
+      const grossProfit = profitabilityRevenue === null ? null : roundMoney(profitabilityRevenue - actualDirectCost);
+      const profitMargin = profitabilityRevenue !== null && profitabilityRevenue > 0
+        ? Number(((grossProfit / profitabilityRevenue) * 100).toFixed(2))
+        : 0;
+      const estimatedProfit = profitabilityRevenue === null ? null : roundMoney(profitabilityRevenue - estimatedDirectCost);
+      const estimatedProfitMargin = bookedRevenue > 0 ? Number(((estimatedProfit / bookedRevenue) * 100).toFixed(2)) : 0;
+      const actualProfit = profitabilityRevenue !== null && hasActualDirectCostEvidence ? grossProfit : null;
+      const actualProfitMargin = actualProfit !== null && profitabilityRevenue > 0
+        ? Number(((actualProfit / profitabilityRevenue) * 100).toFixed(2))
+        : null;
+      const costVariance = hasActualDirectCostEvidence ? roundMoney(estimatedDirectCost - actualDirectCost) : null;
+      const profitVariance = actualProfit !== null ? roundMoney(actualProfit - estimatedProfit) : null;
+      const requiresPolicyReview = ["CANCELLED", "NO_SHOW"].includes(normalizeUpper(booking?.bookingStatus)) || ["REFUNDED", "PARTIALLY_REFUNDED"].includes(normalizeUpper(booking?.paymentStatus));
+      const profitabilityStatus = requiresPolicyReview
+        ? "NEEDS_POLICY"
+        : hasInvalidDirectCost
+          ? "NEEDS_REVIEW"
+          : revenueBasis.status === REVENUE_BASIS_STATUS.UNKNOWN
+        ? "NEEDS_REVIEW"
+        : revenueBasis.status === REVENUE_BASIS_STATUS.NEEDS_REVIEW_FX
+          ? REVENUE_BASIS_STATUS.NEEDS_REVIEW_FX
+          : countedBookingExpenses.length > 0
+        ? expenseCompletionStatus === "COMPLETE"
+          ? "FINAL"
+          : expenseCompletionStatus === "NEEDS_REVIEW"
+            ? "NEEDS_REVIEW"
+            : "PROVISIONAL"
+        : estimatedDirectCost > 0
+          ? "ESTIMATED_ONLY"
+          : "NEEDS_REVIEW";
       const dashboardGrossProfit = roundMoney(bookedRevenue - actualDirectCost);
       const dashboardProfitMargin = bookedRevenue > 0 ? Number(((dashboardGrossProfit / bookedRevenue) * 100).toFixed(2)) : 0;
       const displayGrossProfit = roundMoney(bookedRevenue - displayDirectCost);
@@ -1715,16 +2044,35 @@ const createBookingAccountingService = ({
         paymentStatus: booking?.paymentStatus || invoice?.paymentStatus || "",
         currency,
         financialDate: toIso(financialDate),
+        customerGrossRevenue: reportedBookingRevenue,
+        customerGrossCurrency: currency,
         bookedRevenue,
+        revenueBasis: profitabilityRevenue,
+        revenueBasisCurrency: revenueBasis.currency,
+        revenueBasisSource: revenueBasis.source,
+        revenueEvidenceStatus: revenueBasis.status,
+        reconciliationStatus: revenueBasis.reconciliationStatus,
+        profitabilityAvailability: revenueBasis.status === REVENUE_BASIS_STATUS.VERIFIED ? "AVAILABLE" : "NEEDS_REVIEW",
         collectedRevenue,
         refundedAmount,
         paymentProviderFees,
         actualDirectCost,
+        actualExpenseCount: countedBookingExpenses.length,
+        expenseCompletionStatus,
         estimatedDirectCost,
         displayDirectCost,
         costStatus,
+        estimatedProfit,
+        estimatedProfitMargin,
+        actualProfit,
+        actualProfitMargin,
+        costVariance,
+        profitVariance,
+        profitabilityStatus,
         costTemplateId: estimatedCost.costTemplateId,
         costTemplateName: estimatedCost.costTemplateName,
+        estimatedCostBreakdown: estimatedCost.costBreakdown || [],
+        estimatedCostSnapshot: Boolean(booking?.estimatedCostSnapshot),
         netRevenue,
         grossProfit,
         profitMargin,
@@ -1850,12 +2198,12 @@ const createBookingAccountingService = ({
     const overdueAmount = roundMoney(overdueInvoices.reduce((sum, invoice) => sum + getInvoiceBalance(invoice), 0));
     const bookingRevenue = profitability.totals.bookedRevenue;
     const collectedRevenue = profitability.totals.collectedRevenue;
-    const directCosts = profitability.totals.actualDirectCost;
+    const directCosts = profitability.totals.displayDirectCost;
     const dashboardGrossProfit = roundMoney(bookingRevenue - directCosts);
     const dashboardProfitMargin = bookingRevenue > 0 ? Number(((dashboardGrossProfit / bookingRevenue) * 100).toFixed(2)) : 0;
     const previousBookingRevenue = previousProfitability.totals.bookedRevenue || 0;
     const previousCollectedRevenue = previousProfitability.totals.collectedRevenue || 0;
-    const previousDirectCosts = previousProfitability.totals.actualDirectCost || 0;
+    const previousDirectCosts = previousProfitability.totals.displayDirectCost || 0;
     const previousGrossProfit = roundMoney(previousBookingRevenue - previousDirectCosts);
     const previousProfitMargin =
       previousBookingRevenue > 0 ? Number(((previousGrossProfit / previousBookingRevenue) * 100).toFixed(2)) : 0;
@@ -1919,7 +2267,7 @@ const createBookingAccountingService = ({
           value: directCosts,
           previousValue: previousDirectCosts,
           tone: "red",
-          detail: "Actual booking-linked expenses",
+          detail: "Actual expenses where recorded; otherwise estimated",
           href: "/admin/booking-accounting/expenses"
         }),
         grossProfit: makeKpi({
@@ -1927,7 +2275,7 @@ const createBookingAccountingService = ({
           value: dashboardGrossProfit,
           previousValue: previousGrossProfit,
           tone: "purple",
-          detail: "Booking revenue minus actual direct costs",
+          detail: "Revenue minus actual or estimated direct costs",
           href: "/admin/booking-accounting/profitability"
         })
       },
@@ -2001,8 +2349,8 @@ const createBookingAccountingService = ({
       definitions: {
         bookingRevenue: "Sum of booked/invoiced revenue in the selected booking accounting scan.",
         collectedRevenue: "Sum of invoice paid amount or successful linked payment amount.",
-        directCosts: "Only actual booking-linked BusinessExpense records.",
-        dashboardGrossProfit: "Booking revenue minus actual direct booking costs.",
+        directCosts: "Actual booking-linked expenses where recorded; otherwise active estimated cost templates.",
+        dashboardGrossProfit: "Booking revenue minus displayed direct costs; estimated until actual expenses are recorded.",
         refundRate: "Confirmed refunded amount divided by collected revenue.",
         collectionRate: "Collected revenue divided by booking revenue."
       },
@@ -2350,7 +2698,10 @@ const createBookingAccountingService = ({
 
   return {
     archiveCostTemplate,
+    captureEstimatedCostSnapshot,
+    createBookingExpense,
     createCostTemplate,
+    getBookingExpense,
     getCostTemplates,
     getCostTemplateById,
     getDashboard,
@@ -2362,6 +2713,9 @@ const createBookingAccountingService = ({
     previewCostTemplate,
     resolveCostTemplate,
     startCostTemplateBokunProductSync,
+    updateBookingExpense,
+    updateBookingExpenseCompletion,
+    voidBookingExpense,
     calculateEstimatedBookingCost
   };
 };

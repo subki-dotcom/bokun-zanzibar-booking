@@ -63,6 +63,7 @@ const PrintableInvoice = ({ invoice }) => {
         <InvoiceMeta label="Booking Reference" value={invoice.bookingReference} />
         <InvoiceMeta label="Issue Date" value={formatDate(invoice.issueDate)} />
         <InvoiceMeta label="Payment Status" value={invoice.paymentStatus} />
+        {invoice.guestPaymentCollector ? <InvoiceMeta label="Payment Collected By" value={invoice.guestPaymentCollector} /> : null}
         <InvoiceMeta label="Booking Status" value={invoice.bookingStatus} />
       </section>
 
@@ -119,7 +120,9 @@ const PrintableInvoice = ({ invoice }) => {
           <p>{invoice.notes || "Thank you for booking with Riser Tours & Safaris."}</p>
           <small>
             {String(invoice.paymentStatus || "").toLowerCase() === "paid"
-              ? "Payment has been confirmed by the payment gateway."
+              ? invoice.guestPaymentCollector
+                ? `Payment was collected by ${invoice.guestPaymentCollector}.`
+                : "Payment has been confirmed."
               : invoice.paymentTerms || "Payment is pending. This invoice is not marked paid until the gateway confirms payment."}
           </small>
           <small>{invoice.cancellationPolicy || ""}</small>
@@ -143,11 +146,11 @@ const PrintableInvoice = ({ invoice }) => {
             <strong>{formatCurrency(invoice.total || 0, currency)}</strong>
           </div>
           <div className="invoice-paid-line">
-            <span>Amount Paid</span>
+            <span>Guest Amount Paid</span>
             <strong>{formatCurrency(invoice.amountPaid || 0, currency)}</strong>
           </div>
           <div className="invoice-balance-line">
-            <span>Balance Due</span>
+            <span>Guest Balance Due</span>
             <strong>{formatCurrency(invoice.balanceDue || 0, currency)}</strong>
           </div>
         </div>

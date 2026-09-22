@@ -329,6 +329,8 @@ test("imports confirmed Bokun booking once and repeated sync is idempotent", asy
   assert.equal(harness.state.bookings[0].transactionCurrency, "USD");
   assert.equal(harness.state.bookings[0].bokunCurrencySource, "BOKUN_ROOT_CURRENCY");
   assert.equal(harness.state.bookings[0].bokunExternalBookingReference, "VTR-1001");
+  assert.equal(harness.state.bookings[0].bokunFinancialEvidence.source, "BOKUN");
+  assert.equal(harness.state.bookings[0].bokunFinancialEvidence.status, "VERIFIED");
   assert.equal(harness.state.bookings[0].rawChannelSource, "Viator");
   assert.equal(harness.state.bookings[0].externalChannelReference, "VIATOR-CHANNEL");
   assert.equal(harness.state.bookings[0].bokunOperationalDates.travelDate.localDate, "2026-09-12");
@@ -336,6 +338,28 @@ test("imports confirmed Bokun booking once and repeated sync is idempotent", asy
   assert.equal(harness.state.syncLogs.length, 2);
   assert.equal(harness.state.audits.filter(row => row.action === "bokun_confirmed_booking_imported").length, 1);
   assert.equal(harness.state.audits.filter(row => row.action === "bokun_payment_status_synchronized").length, 1);
+});
+
+test("round-trip import preserves the existing internal Riser agent relationship", async () => {
+  const harness = createHarness({
+    bookings: [{
+      _id: "booking-agent-owned",
+      bookingReference: "VTR-1001",
+      bokunBookingId: "BOKUN-1001",
+      bokunConfirmationCode: "CONF-1001",
+      agentId: "agent-john",
+      paymentStatus: "paid",
+      sourceChannel: "agent_portal",
+      customer: {},
+      bokunImport: {}
+    }]
+  });
+
+  const result = await harness.service.resyncBooking({ reference: "CONF-1001", source: "manual_resync" });
+
+  assert.ok(["updated", "amended"].includes(result.action));
+  assert.equal(harness.state.bookings.length, 1);
+  assert.equal(harness.state.bookings[0].agentId, "agent-john");
 });
 
 test("manual resync imports customer invoice transaction currency rather than reseller root currency", async () => {

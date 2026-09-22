@@ -1,0 +1,143 @@
+{
+  "readOnly": true,
+  "dryRun": true,
+  "strategy": "CLASSIFY_REVIEW_APPROVE_APPLY_VERIFY",
+  "generatedAt": "2026-09-17T18:38:06.884Z",
+  "scanned": 5,
+  "summary": {
+    "WOULD_CREATE_REVIEW_PLAN": 5
+  },
+  "writes": 0,
+  "rows": [
+    {
+      "bookingReference": "ZNZ-1783068400084-3278",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783068400084-3278",
+      "idempotencyKey": "BOOKING:6a4776f0448436a55c9cac7b:BOOKING_NET_CONTRIBUTION",
+      "approvalRequired": true,
+      "applyMode": "EXPLICIT_POSTING_ENDPOINT",
+      "sourceIds": {
+        "bookingId": "6a4776f0448436a55c9cac7b",
+        "invoiceId": "6a4776f0448436a55c9cac83",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783071019641-1170",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783071019641-1170",
+      "idempotencyKey": "BOOKING:6a47812b59814ab149c55e8e:BOOKING_NET_CONTRIBUTION",
+      "approvalRequired": true,
+      "applyMode": "EXPLICIT_POSTING_ENDPOINT",
+      "sourceIds": {
+        "bookingId": "6a47812b59814ab149c55e8e",
+        "invoiceId": "6a47812b59814ab149c55e97",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783072653718-9199",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783072653718-9199",
+      "idempotencyKey": "BOOKING:6a47878d59814ab149c55f2f:BOOKING_NET_CONTRIBUTION",
+      "approvalRequired": true,
+      "applyMode": "EXPLICIT_POSTING_ENDPOINT",
+      "sourceIds": {
+        "bookingId": "6a47878d59814ab149c55f2f",
+        "invoiceId": "6a47878d59814ab149c55f38",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783075062164-2808",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783075062164-2808",
+      "idempotencyKey": "BOOKING:6a4790f6313e4ee145b8b35c:BOOKING_NET_CONTRIBUTION",
+      "approvalRequired": true,
+      "applyMode": "EXPLICIT_POSTING_ENDPOINT",
+      "sourceIds": {
+        "bookingId": "6a4790f6313e4ee145b8b35c",
+        "invoiceId": "6a4790f6313e4ee145b8b365",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    },
+    {
+      "bookingReference": "ZNZ-1783093363061-7495",
+      "action": "WOULD_CREATE_REVIEW_PLAN",
+      "reason": "MISSING_ACCOUNTING_LINK",
+      "sourceReference": "ZNZ-1783093363061-7495",
+      "idempotencyKey": "BOOKING:6a47d87362ce693f2e8a738e:BOOKING_NET_CONTRIBUTION",
+      "approvalRequired": true,
+      "applyMode": "EXPLICIT_POSTING_ENDPOINT",
+      "sourceIds": {
+        "bookingId": "6a47d87362ce693f2e8a738e",
+        "invoiceId": "6a47d87362ce693f2e8a7397",
+        "paymentIds": [],
+        "refundIds": [],
+        "settlementIds": [],
+        "expenseIds": [],
+        "accountingPostingIds": [],
+        "journalEntryIds": []
+      },
+      "evidence": {
+        "invoice": true,
+        "guestPayment": false,
+        "settlement": false,
+        "expenses": false,
+        "accounting": false
+      }
+    }
+  ]
+}

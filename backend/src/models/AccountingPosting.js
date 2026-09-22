@@ -20,6 +20,9 @@ const accountingComponentsSchema = new mongoose.Schema(
     collectedRevenue: decimalField,
     refundedAmount: decimalField,
     providerFees: decimalField,
+    agentCommission: decimalField,
+    internalAgentCommission: decimalField,
+    otaCommission: decimalField,
     channelCommission: decimalField,
     directBookingCosts: decimalField,
     bookingNetContribution: decimalField,
@@ -83,6 +86,12 @@ const accountingPostingSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(FINANCIAL_ENTRY_STATUS),
       default: FINANCIAL_ENTRY_STATUS.APPROVED,
+      index: true
+    },
+    reviewStatus: {
+      type: String,
+      enum: ["", "NEEDS_REVIEW"],
+      default: "",
       index: true
     },
     components: { type: accountingComponentsSchema, default: () => ({}) },

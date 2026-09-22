@@ -1,0 +1,948 @@
+{
+  "readOnly": true,
+  "generatedAt": "2026-09-15T15:59:51.015Z",
+  "databaseName": "bokun_zanzibar_booking",
+  "productionRecordsChanged": 0,
+  "journalEntriesCreated": 0,
+  "glPostingsCreated": 0,
+  "chartOfAccountsChanged": false,
+  "historicalAccountingBackfill": "NONE",
+  "automaticGlPosting": "DISABLED",
+  "revenuePostingEndpoint": "DISABLED",
+  "bokunRecordsModified": 0,
+  "configuredBaseCurrency": "USD",
+  "architecture": {
+    "defaultMappings": [
+      {
+        "mappingKey": "CASH",
+        "accountCode": "1010",
+        "description": "Default cash account"
+      },
+      {
+        "mappingKey": "BANK",
+        "accountCode": "1020",
+        "description": "Default operating bank account"
+      },
+      {
+        "mappingKey": "PESAPAL_CLEARING",
+        "accountCode": "1030",
+        "provider": "pesapal",
+        "description": "Pesapal provider clearing"
+      },
+      {
+        "mappingKey": "PAYPAL_CLEARING",
+        "accountCode": "1040",
+        "provider": "paypal",
+        "description": "PayPal provider clearing"
+      },
+      {
+        "mappingKey": "DPO_CLEARING",
+        "accountCode": "1050",
+        "provider": "dpo",
+        "description": "DPO provider clearing"
+      },
+      {
+        "mappingKey": "MOBILE_MONEY",
+        "accountCode": "1060",
+        "description": "Mobile money account"
+      },
+      {
+        "mappingKey": "ACCOUNTS_RECEIVABLE",
+        "accountCode": "1100",
+        "description": "Accounts receivable control account"
+      },
+      {
+        "mappingKey": "ACCOUNTS_PAYABLE",
+        "accountCode": "2010",
+        "description": "Accounts payable control account"
+      },
+      {
+        "mappingKey": "REFUND_PAYABLE",
+        "accountCode": "2040",
+        "description": "Refund payable control account"
+      },
+      {
+        "mappingKey": "TAX_PAYABLE",
+        "accountCode": "2100",
+        "description": "Tax payable account"
+      },
+      {
+        "mappingKey": "OWNER_CAPITAL",
+        "accountCode": "3010",
+        "description": "Owner capital"
+      },
+      {
+        "mappingKey": "RETAINED_EARNINGS",
+        "accountCode": "3020",
+        "description": "Retained earnings"
+      },
+      {
+        "mappingKey": "OWNER_DRAWING",
+        "accountCode": "3030",
+        "description": "Owner drawings"
+      },
+      {
+        "mappingKey": "TOUR_REVENUE",
+        "accountCode": "4010",
+        "description": "Tour revenue"
+      },
+      {
+        "mappingKey": "TRANSFER_REVENUE",
+        "accountCode": "4020",
+        "description": "Transfer revenue"
+      },
+      {
+        "mappingKey": "OTHER_SERVICE_REVENUE",
+        "accountCode": "4040",
+        "description": "Other service revenue"
+      },
+      {
+        "mappingKey": "SUPPLIER_DIRECT_COST",
+        "accountCode": "5010",
+        "description": "Supplier direct cost"
+      },
+      {
+        "mappingKey": "TRANSPORT_DIRECT_COST",
+        "accountCode": "5020",
+        "description": "Transport direct cost"
+      },
+      {
+        "mappingKey": "GUIDE_DIRECT_COST",
+        "accountCode": "5030",
+        "description": "Guide direct cost"
+      },
+      {
+        "mappingKey": "BOAT_DIRECT_COST",
+        "accountCode": "5040",
+        "description": "Boat direct cost"
+      },
+      {
+        "mappingKey": "SALARY_EXPENSE",
+        "accountCode": "6010",
+        "description": "Salary expense"
+      },
+      {
+        "mappingKey": "RENT_EXPENSE",
+        "accountCode": "6020",
+        "description": "Rent expense"
+      },
+      {
+        "mappingKey": "MARKETING_EXPENSE",
+        "accountCode": "6030",
+        "description": "Marketing expense"
+      },
+      {
+        "mappingKey": "SOFTWARE_EXPENSE",
+        "accountCode": "6040",
+        "description": "Software expense"
+      },
+      {
+        "mappingKey": "PAYMENT_PROVIDER_FEE",
+        "accountCode": "6060",
+        "description": "Payment provider fee expense"
+      },
+      {
+        "mappingKey": "OTHER_INCOME",
+        "accountCode": "7010",
+        "description": "Other income"
+      },
+      {
+        "mappingKey": "REFUND_ALLOWANCE",
+        "accountCode": "7910",
+        "description": "Refunds and allowances"
+      },
+      {
+        "mappingKey": "ACCUMULATED_DEPRECIATION",
+        "accountCode": "1590",
+        "description": "Accumulated depreciation"
+      },
+      {
+        "mappingKey": "DEPRECIATION_EXPENSE",
+        "accountCode": "6080",
+        "description": "Depreciation and office expense default"
+      }
+    ],
+    "defaultPostingRules": [
+      {
+        "eventType": "CUSTOMER_INVOICE",
+        "sourceModule": "INVOICE",
+        "debitAccountRule": "ACCOUNTS_RECEIVABLE",
+        "creditAccountRule": "TOUR_REVENUE",
+        "descriptionTemplate": "Invoice revenue recognized for {{sourceReference}}"
+      },
+      {
+        "eventType": "CUSTOMER_PAYMENT",
+        "sourceModule": "PAYMENT",
+        "debitAccountRule": "{{provider}}_CLEARING",
+        "creditAccountRule": "ACCOUNTS_RECEIVABLE",
+        "descriptionTemplate": "Customer payment collected for {{sourceReference}}"
+      },
+      {
+        "eventType": "REFUND_APPROVAL",
+        "sourceModule": "REFUND",
+        "debitAccountRule": "REFUND_ALLOWANCE",
+        "creditAccountRule": "REFUND_PAYABLE",
+        "descriptionTemplate": "Refund liability approved for {{sourceReference}}"
+      },
+      {
+        "eventType": "REFUND_COMPLETION",
+        "sourceModule": "REFUND",
+        "debitAccountRule": "REFUND_PAYABLE",
+        "creditAccountRule": "{{provider}}_CLEARING",
+        "descriptionTemplate": "Refund completed for {{sourceReference}}"
+      },
+      {
+        "eventType": "BUSINESS_EXPENSE",
+        "sourceModule": "BUSINESS_ACCOUNTING",
+        "debitAccountRule": "{{expenseCategory}}",
+        "creditAccountRule": "ACCOUNTS_PAYABLE",
+        "descriptionTemplate": "Business expense accrued for {{sourceReference}}"
+      },
+      {
+        "eventType": "BUSINESS_INCOME",
+        "sourceModule": "BUSINESS_ACCOUNTING",
+        "debitAccountRule": "BANK",
+        "creditAccountRule": "OTHER_INCOME",
+        "descriptionTemplate": "Business income recognized for {{sourceReference}}"
+      }
+    ],
+    "actualMappings": 29,
+    "actualPostingRules": 6,
+    "postingKeyFields": [
+      "AccountingPosting.postingKey",
+      "AccountingPosting.idempotencyKey",
+      "JournalEntry.source.postingKey"
+    ],
+    "journalStatuses": [
+      "DRAFT",
+      "SUBMITTED",
+      "PENDING_APPROVAL",
+      "APPROVED",
+      "POSTED",
+      "REVERSED",
+      "VOID"
+    ],
+    "reversalSupported": true,
+    "pAndLSource": "POSTED_GENERAL_LEDGER",
+    "trialBalanceSource": "POSTED_GENERAL_LEDGER"
+  },
+  "accountInventory": [
+    {
+      "code": "1010",
+      "name": "Cash on Hand",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "CASH"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "CASH / BANK"
+      ]
+    },
+    {
+      "code": "1020",
+      "name": "Operating Bank",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "BANK"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "CASH / BANK"
+      ]
+    },
+    {
+      "code": "1030",
+      "name": "Pesapal Clearing",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "PESAPAL_CLEARING"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "PESAPAL CLEARING"
+      ]
+    },
+    {
+      "code": "1040",
+      "name": "PayPal Clearing",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "PAYPAL_CLEARING"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "PAYPAL CLEARING"
+      ]
+    },
+    {
+      "code": "1050",
+      "name": "DPO Clearing",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "DPO_CLEARING"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "DPO CLEARING"
+      ]
+    },
+    {
+      "code": "1060",
+      "name": "Mobile Money",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "MOBILE_MONEY"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "1100",
+      "name": "Accounts Receivable",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "ACCOUNTS_RECEIVABLE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "ACCOUNTS RECEIVABLE"
+      ]
+    },
+    {
+      "code": "1590",
+      "name": "Accumulated Depreciation",
+      "type": "ASSET",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "ACCUMULATED_DEPRECIATION"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "2010",
+      "name": "Accounts Payable",
+      "type": "LIABILITY",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "ACCOUNTS_PAYABLE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "2030",
+      "name": "Customer Deposits",
+      "type": "LIABILITY",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "CUSTOMER DEPOSITS"
+      ]
+    },
+    {
+      "code": "2040",
+      "name": "Refund Payables",
+      "type": "LIABILITY",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "REFUND_PAYABLE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "REFUND / SALES RETURN"
+      ]
+    },
+    {
+      "code": "2100",
+      "name": "Tax Payable",
+      "type": "LIABILITY",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "TAX_PAYABLE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "3010",
+      "name": "Owner Capital",
+      "type": "EQUITY",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "OWNER_CAPITAL"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "3020",
+      "name": "Retained Earnings",
+      "type": "EQUITY",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "RETAINED_EARNINGS"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "3030",
+      "name": "Owner Drawings",
+      "type": "EQUITY",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "OWNER_DRAWING"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "4010",
+      "name": "Tour Revenue",
+      "type": "REVENUE",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "TOUR_REVENUE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "TOUR REVENUE"
+      ]
+    },
+    {
+      "code": "4020",
+      "name": "Transfer Revenue",
+      "type": "REVENUE",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "TRANSFER_REVENUE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "TRANSFER REVENUE"
+      ]
+    },
+    {
+      "code": "4040",
+      "name": "Other Service Revenue",
+      "type": "REVENUE",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "OTHER_SERVICE_REVENUE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "OTHER SERVICE REVENUE"
+      ]
+    },
+    {
+      "code": "4090",
+      "name": "Discounts and Allowances",
+      "type": "REVENUE",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "REFUND / SALES RETURN"
+      ]
+    },
+    {
+      "code": "5010",
+      "name": "Direct Supplier Costs",
+      "type": "COST_OF_SALES",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "SUPPLIER_DIRECT_COST"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "5020",
+      "name": "Direct Transport Costs",
+      "type": "COST_OF_SALES",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "TRANSPORT_DIRECT_COST"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "5030",
+      "name": "Direct Guide Costs",
+      "type": "COST_OF_SALES",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "GUIDE_DIRECT_COST"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "5040",
+      "name": "Direct Boat Costs",
+      "type": "COST_OF_SALES",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "BOAT_DIRECT_COST"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "6010",
+      "name": "Salaries and Wages",
+      "type": "EXPENSE",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "SALARY_EXPENSE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "6020",
+      "name": "Office Rent",
+      "type": "EXPENSE",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "RENT_EXPENSE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "6030",
+      "name": "Marketing and Advertising",
+      "type": "EXPENSE",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "MARKETING_EXPENSE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "6040",
+      "name": "Software Subscriptions",
+      "type": "EXPENSE",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "SOFTWARE_EXPENSE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "6050",
+      "name": "Bank Charges",
+      "type": "EXPENSE",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "CASH / BANK",
+        "PAYMENT PROCESSOR FEES"
+      ]
+    },
+    {
+      "code": "6060",
+      "name": "Payment Provider Fees",
+      "type": "EXPENSE",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "PAYMENT_PROVIDER_FEE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "PAYMENT PROCESSOR FEES"
+      ]
+    },
+    {
+      "code": "6080",
+      "name": "Office Expenses",
+      "type": "EXPENSE",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "DEPRECIATION_EXPENSE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "7010",
+      "name": "Interest Income",
+      "type": "OTHER_INCOME",
+      "normalBalance": "CREDIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "OTHER_INCOME"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": []
+    },
+    {
+      "code": "7910",
+      "name": "Refunds and Allowances",
+      "type": "OTHER_EXPENSE",
+      "normalBalance": "DEBIT",
+      "currency": "MULTI/UNSPECIFIED",
+      "systemMapping": [
+        "REFUND_ALLOWANCE"
+      ],
+      "currentUsage": 0,
+      "active": true,
+      "relevant": [
+        "REFUND / SALES RETURN"
+      ]
+    }
+  ],
+  "missingAccountConcepts": [
+    "PROCESSOR CLEARING",
+    "OTA RECEIVABLE",
+    "GYG RECEIVABLE",
+    "VIATOR RECEIVABLE",
+    "DEFERRED REVENUE",
+    "COMMISSION EXPENSE",
+    "GYG COMMISSION",
+    "VIATOR COMMISSION",
+    "CANCELLATION FEE REVENUE",
+    "FX GAIN",
+    "FX LOSS"
+  ],
+  "sourceTruth": {
+    "bookings": {
+      "count": 128,
+      "currencies": {
+        "USD": 128
+      },
+      "amountFields": [
+        "pricingSnapshot.finalPayable",
+        "amount"
+      ]
+    },
+    "invoices": {
+      "count": 125,
+      "currencies": {
+        "UNKNOWN": 42,
+        "USD": 83
+      },
+      "amountFields": [
+        "totalAmount",
+        "total",
+        "amountPaid",
+        "balanceDue"
+      ]
+    },
+    "payments": {
+      "count": 51,
+      "providers": {
+        "PESAPAL": 46,
+        "PAYPAL": 5
+      },
+      "currencies": {
+        "USD": 51
+      }
+    },
+    "settlements": {
+      "count": 0,
+      "providers": {},
+      "currencies": {}
+    },
+    "refunds": {
+      "count": 0,
+      "providers": {},
+      "currencies": {}
+    },
+    "serviceCompletions": {
+      "count": 0,
+      "statuses": {}
+    },
+    "recognitions": {
+      "count": 0,
+      "statuses": {}
+    }
+  },
+  "policy": {
+    "accountingBasis": {
+      "decision": "ACCRUAL",
+      "confidence": "STRONGLY_SUPPORTED_RECOMMENDATION",
+      "evidence": "ServiceCompletion is separate from payment and settlement; existing GL has receivable, deposit, revenue, clearing, and period concepts.",
+      "approvalRequired": true
+    },
+    "directAdvancePayment": {
+      "decision": "CUSTOMER_DEPOSIT",
+      "confidence": "STRONGLY_SUPPORTED_RECOMMENDATION",
+      "account": "2030 CUSTOMER DEPOSITS",
+      "approvalRequired": true
+    },
+    "directUnpaidCompletedService": {
+      "decision": "ACCOUNTS_RECEIVABLE",
+      "confidence": "VERIFIED_FROM_EXISTING_SYSTEM",
+      "account": "1100"
+    },
+    "otaRevenuePresentation": {
+      "decision": "REQUIRES_ACCOUNTANT_APPROVAL",
+      "confidence": "ACCOUNTANT_APPROVAL_REQUIRED",
+      "reason": "No verified gross/net policy or commission evidence."
+    },
+    "otaReceivable": {
+      "decision": "REQUIRES_APPROVAL",
+      "confidence": "MISSING_INFRASTRUCTURE",
+      "reason": "No dedicated provider OTA receivable mapping exists."
+    },
+    "otaCommission": {
+      "decision": "REQUIRES_APPROVAL",
+      "confidence": "ACCOUNTANT_APPROVAL_REQUIRED",
+      "reason": "No commission expense or contra-revenue policy is configured."
+    },
+    "processorClearing": {
+      "decision": "DEDICATED_BY_PROVIDER",
+      "confidence": "VERIFIED_FROM_EXISTING_SYSTEM",
+      "accounts": {
+        "PESAPAL": "1030",
+        "PAYPAL": "1040",
+        "DPO": "1050"
+      }
+    },
+    "processorFees": {
+      "decision": "EXPENSE",
+      "confidence": "STRONGLY_SUPPORTED_RECOMMENDATION",
+      "account": "6060",
+      "approvalRequired": true
+    },
+    "refundAfterRecognition": {
+      "decision": "REQUIRES_APPROVAL",
+      "confidence": "ACCOUNTANT_APPROVAL_REQUIRED",
+      "reason": "Refund accounts exist, but recognition reversal policy is not configured."
+    },
+    "cancellationNoShowRevenue": {
+      "decision": "REQUIRES_APPROVAL",
+      "confidence": "ACCOUNTANT_APPROVAL_REQUIRED",
+      "reason": "No-show is not completion and cancellation fee policy is absent."
+    },
+    "revenuePostingDate": {
+      "decision": "SERVICE_COMPLETION_DATE",
+      "confidence": "STRONGLY_SUPPORTED_RECOMMENDATION",
+      "approvalRequired": true
+    },
+    "fxPolicy": {
+      "decision": "REQUIRES_APPROVAL",
+      "confidence": "MISSING_INFRASTRUCTURE",
+      "reason": "Currency policy requires FX evidence but no approved Phase 2C source is configured."
+    },
+    "revenueAccountMapping": {
+      "decision": "SERVICE_TYPE_MAPPING",
+      "confidence": "VERIFIED_FROM_EXISTING_SYSTEM",
+      "accounts": {
+        "TOUR": "4010",
+        "TRANSFER": "4020",
+        "OTHER_SERVICE": "4040"
+      },
+      "approvalRequired": true
+    },
+    "periodLockPolicy": {
+      "decision": "SUPPORTED",
+      "confidence": "VERIFIED_FROM_EXISTING_SYSTEM",
+      "statuses": {
+        "OPEN": 2,
+        "SOFT_CLOSED": 0,
+        "CLOSED": 0,
+        "LOCKED": 0
+      }
+    }
+  },
+  "dataAvailability": {
+    "grossBookingAmount": "AVAILABLE",
+    "bookingCurrency": "AVAILABLE",
+    "serviceDate": "AVAILABLE",
+    "completionEvidence": "MISSING",
+    "paymentAmount": "AVAILABLE",
+    "paymentCurrency": "PARTIAL",
+    "otaCommission": "MISSING",
+    "processorFees": "MISSING",
+    "settlementAmount": "MISSING",
+    "refundAmount": "MISSING",
+    "fxRate": "MISSING",
+    "postingDateBasis": "MISSING"
+  },
+  "automation": {
+    "safeNow": [
+      "read-only audit",
+      "completion evidence recording"
+    ],
+    "afterApproval": [
+      "service revenue recognition preview",
+      "direct deposit/AR transitions",
+      "processor clearing settlement"
+    ],
+    "accountantReview": [
+      "OTA gross/net",
+      "OTA receivable",
+      "commission",
+      "refund after recognition",
+      "cancellation/no-show fees",
+      "FX",
+      "posting dates"
+    ]
+  },
+  "blockerMatrix": [
+    {
+      "policy": "accountingBasis",
+      "decision": "ACCRUAL",
+      "confidence": "STRONGLY_SUPPORTED_RECOMMENDATION",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "directAdvancePayment",
+      "decision": "CUSTOMER_DEPOSIT",
+      "confidence": "STRONGLY_SUPPORTED_RECOMMENDATION",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "directUnpaidCompletedService",
+      "decision": "ACCOUNTS_RECEIVABLE",
+      "confidence": "VERIFIED_FROM_EXISTING_SYSTEM",
+      "blocker": ""
+    },
+    {
+      "policy": "otaRevenuePresentation",
+      "decision": "REQUIRES_ACCOUNTANT_APPROVAL",
+      "confidence": "ACCOUNTANT_APPROVAL_REQUIRED",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "otaReceivable",
+      "decision": "REQUIRES_APPROVAL",
+      "confidence": "MISSING_INFRASTRUCTURE",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "otaCommission",
+      "decision": "REQUIRES_APPROVAL",
+      "confidence": "ACCOUNTANT_APPROVAL_REQUIRED",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "processorClearing",
+      "decision": "DEDICATED_BY_PROVIDER",
+      "confidence": "VERIFIED_FROM_EXISTING_SYSTEM",
+      "blocker": ""
+    },
+    {
+      "policy": "processorFees",
+      "decision": "EXPENSE",
+      "confidence": "STRONGLY_SUPPORTED_RECOMMENDATION",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "refundAfterRecognition",
+      "decision": "REQUIRES_APPROVAL",
+      "confidence": "ACCOUNTANT_APPROVAL_REQUIRED",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "cancellationNoShowRevenue",
+      "decision": "REQUIRES_APPROVAL",
+      "confidence": "ACCOUNTANT_APPROVAL_REQUIRED",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "revenuePostingDate",
+      "decision": "SERVICE_COMPLETION_DATE",
+      "confidence": "STRONGLY_SUPPORTED_RECOMMENDATION",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "fxPolicy",
+      "decision": "REQUIRES_APPROVAL",
+      "confidence": "MISSING_INFRASTRUCTURE",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "revenueAccountMapping",
+      "decision": "SERVICE_TYPE_MAPPING",
+      "confidence": "VERIFIED_FROM_EXISTING_SYSTEM",
+      "blocker": "ACCOUNTANT_APPROVAL_REQUIRED"
+    },
+    {
+      "policy": "periodLockPolicy",
+      "decision": "SUPPORTED",
+      "confidence": "VERIFIED_FROM_EXISTING_SYSTEM",
+      "blocker": ""
+    }
+  ],
+  "policyDecisionsRequired": true
+}

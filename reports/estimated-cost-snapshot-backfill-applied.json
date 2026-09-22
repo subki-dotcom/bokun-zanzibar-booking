@@ -1,0 +1,21 @@
+{
+  "readOnly": false,
+  "applied": [
+    {
+      "bookingId": "6aa0f2bfc13148f8b4888d8a",
+      "bookingReference": "VIA-103334641"
+    },
+    {
+      "bookingId": "6aa76b904719cb671f303558",
+      "bookingReference": "1447020877"
+    },
+    {
+      "bookingId": "6aacb3811cb0b2057c9b3da9",
+      "bookingReference": "1448421203"
+    }
+  ],
+  "generatedAt": "2026-09-18T06:03:33.392Z",
+  "databaseName": "bokun_zanzibar_booking",
+  "reviewedRows": 136,
+  "appliedRows": 3
+}

@@ -1,0 +1,47 @@
+{
+  "readOnly": true,
+  "dryRun": true,
+  "applied": false,
+  "approvalRequired": true,
+  "approvalId": null,
+  "sourceReview": "C:\\Users\\toshiba\\Desktop\\bukon system\\reports\\business-accounting-backfill-final-check.json",
+  "processed": 5,
+  "writes": 0,
+  "results": [
+    {
+      "bookingReference": "ZNZ-1783068400084-3278",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783068400084-3278:BOOKING_NET_CONTRIBUTION",
+      "action": "would_create",
+      "dryRun": true,
+      "approvalId": null
+    },
+    {
+      "bookingReference": "ZNZ-1783071019641-1170",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783071019641-1170:BOOKING_NET_CONTRIBUTION",
+      "action": "would_create",
+      "dryRun": true,
+      "approvalId": null
+    },
+    {
+      "bookingReference": "ZNZ-1783072653718-9199",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783072653718-9199:BOOKING_NET_CONTRIBUTION",
+      "action": "would_create",
+      "dryRun": true,
+      "approvalId": null
+    },
+    {
+      "bookingReference": "ZNZ-1783075062164-2808",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783075062164-2808:BOOKING_NET_CONTRIBUTION",
+      "action": "would_create",
+      "dryRun": true,
+      "approvalId": null
+    },
+    {
+      "bookingReference": "ZNZ-1783093363061-7495",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783093363061-7495:BOOKING_NET_CONTRIBUTION",
+      "action": "would_create",
+      "dryRun": true,
+      "approvalId": null
+    }
+  ]
+}

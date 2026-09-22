@@ -166,6 +166,61 @@ test("admin can read business accounting foundation through permission middlewar
   }
 });
 
+test("authoritative business accounting endpoints enforce read permission and forward validated inputs", async () => {
+  const originalFacts = businessAccountingService.getBookingFinancialFacts;
+  const originalSummary = businessAccountingService.getAuthoritativeFinancialSummary;
+  let factsArgs = null;
+  let summaryArgs = null;
+  businessAccountingService.getBookingFinancialFacts = async (reference) => {
+    factsArgs = reference;
+    return { booking: { reference }, readOnly: true };
+  };
+  businessAccountingService.getAuthoritativeFinancialSummary = async (args) => {
+    summaryArgs = args;
+    return { readOnly: true, items: [] };
+  };
+
+  const restoreStaff = withMockUser("staff");
+  const staffServer = await listen();
+  try {
+    const { port } = staffServer.address();
+    const factsResponse = await fetch(`http://127.0.0.1:${port}/api/admin/business-accounting/bookings/BK-RBAC/financial-facts`, {
+      headers: { Authorization: `Bearer ${token()}` }
+    });
+    const summaryResponse = await fetch(`http://127.0.0.1:${port}/api/admin/business-accounting/authoritative-summary`, {
+      headers: { Authorization: `Bearer ${token()}` }
+    });
+    assert.equal(factsResponse.status, 403);
+    assert.equal(summaryResponse.status, 403);
+    assert.equal(factsArgs, null);
+    assert.equal(summaryArgs, null);
+  } finally {
+    restoreStaff();
+    await close(staffServer);
+  }
+
+  const restoreAdmin = withMockUser("admin");
+  const adminServer = await listen();
+  try {
+    const { port } = adminServer.address();
+    const factsResponse = await fetch(`http://127.0.0.1:${port}/api/admin/business-accounting/bookings/BK-RBAC/financial-facts`, {
+      headers: { Authorization: `Bearer ${token()}` }
+    });
+    const summaryResponse = await fetch(`http://127.0.0.1:${port}/api/admin/business-accounting/authoritative-summary?fromDate=2026-08-01&toDate=2026-08-31&limit=25`, {
+      headers: { Authorization: `Bearer ${token()}` }
+    });
+    assert.equal(factsResponse.status, 200);
+    assert.equal(summaryResponse.status, 200);
+    assert.equal(factsArgs, "BK-RBAC");
+    assert.deepEqual(summaryArgs, { fromDate: "2026-08-01", toDate: "2026-08-31", limit: 25 });
+  } finally {
+    restoreAdmin();
+    await close(adminServer);
+    businessAccountingService.getBookingFinancialFacts = originalFacts;
+    businessAccountingService.getAuthoritativeFinancialSummary = originalSummary;
+  }
+});
+
 test("accounts payable dashboard validates filters and requires business accounting read permission", async () => {
   const originalDashboard = businessAccountingService.getAccountsPayableDashboard;
   let capturedArgs = null;

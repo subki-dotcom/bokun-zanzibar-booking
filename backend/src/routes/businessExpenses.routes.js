@@ -7,7 +7,9 @@ const validateRequest = require("../middleware/validateRequest");
 const {
   createBusinessExpenseSchema,
   listBusinessExpenseSchema,
-  updateBusinessExpenseSchema
+  updateBusinessExpenseSchema,
+  supplierPaymentSchema,
+  expenseIdParamsSchema
 } = require("../validators/businessAccounting.validation");
 
 const router = express.Router();
@@ -31,6 +33,34 @@ router.patch(
   authorizePermission(PERMISSIONS.BUSINESS_EXPENSE_WRITE),
   validateRequest(updateBusinessExpenseSchema),
   businessExpensesController.update
+);
+router.get(
+  "/:id/posting-preview",
+  authorizePermission(PERMISSIONS.BUSINESS_EXPENSE_READ),
+  businessExpensesController.previewPosting
+);
+router.post(
+  "/supplier-payments",
+  authorizePermission(PERMISSIONS.RECORD_SUPPLIER_PAYMENT),
+  validateRequest(supplierPaymentSchema),
+  businessExpensesController.createSupplierPayment
+);
+router.post(
+  "/:id/approve",
+  authorizePermission(PERMISSIONS.APPROVE_EXPENSE),
+  validateRequest(expenseIdParamsSchema),
+  businessExpensesController.approve
+);
+router.post(
+  "/:id/post",
+  authorizePermission(PERMISSIONS.POST_EXPENSE),
+  businessExpensesController.post
+);
+router.post(
+  "/:id/reverse",
+  authorizePermission(PERMISSIONS.REVERSE_EXPENSE),
+  validateRequest(expenseIdParamsSchema),
+  businessExpensesController.reverse
 );
 
 module.exports = router;

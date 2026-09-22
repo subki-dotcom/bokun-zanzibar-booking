@@ -1,0 +1,903 @@
+{
+  "readOnly": true,
+  "verifiedAt": "2026-09-17T20:06:47.197Z",
+  "sourceReport": "C:\\Users\\toshiba\\Desktop\\bukon system\\reports\\business-accounting-backfill-applied.json",
+  "checked": 99,
+  "duplicates": 0,
+  "missingPostings": 0,
+  "sourceMismatches": 0,
+  "unlinkedFacts": 0,
+  "checks": [
+    {
+      "bookingReference": "ZNZ-1783068400084-3278",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783068400084-3278:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783071019641-1170",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783071019641-1170:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783072653718-9199",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783072653718-9199:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783075062164-2808",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783075062164-2808:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783093363061-7495",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783093363061-7495:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783093384503-3418",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783093384503-3418:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783093637342-1323",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783093637342-1323:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783094946270-5328",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783094946270-5328:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783096757501-8584",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783096757501-8584:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783097246955-2831",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783097246955-2831:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783098016490-1425",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783098016490-1425:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783098349610-2293",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783098349610-2293:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783100132099-8284",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783100132099-8284:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783103045959-3350",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783103045959-3350:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783286113157-1302",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783286113157-1302:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783324159463-2470",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783324159463-2470:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783458202515-8156",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783458202515-8156:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783491621778-8830",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783491621778-8830:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783491629380-7708",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783491629380-7708:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783495966038-9570",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783495966038-9570:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783499765564-1348",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783499765564-1348:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783499785434-3825",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783499785434-3825:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783702348928-7732",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783702348928-7732:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783702405302-5579",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783702405302-5579:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783703828538-2542",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783703828538-2542:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783927655437-9063",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783927655437-9063:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783944538290-1855",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783944538290-1855:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783950352641-8615",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783950352641-8615:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783950738360-7118",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783950738360-7118:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783954125767-9817",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783954125767-9817:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1783965248638-9910",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1783965248638-9910:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1784214431513-2211",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1784214431513-2211:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1784214567367-7693",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1784214567367-7693:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1784214657183-3277",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1784214657183-3277:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1784218724204-2703",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1784218724204-2703:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1784219065056-4919",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1784219065056-4919:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1784223776928-6722",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1784223776928-6722:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1784224104668-9931",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1784224104668-9931:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1785309942749-8549",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1785309942749-8549:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1785309956347-5736",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1785309956347-5736:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1785566862582-9223",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1785566862582-9223:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1785566977883-2069",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1785566977883-2069:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1785567414326-3370",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1785567414326-3370:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1785594711340-4634",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1785594711340-4634:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1785643320297-2340",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1785643320297-2340:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101658841",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101658841:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100651976",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100651976:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100477559",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100477559:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-99535802",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-99535802:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-102105574",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-102105574:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101660315",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101660315:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101660088",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101660088:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101659298",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101659298:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101658385",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101658385:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101447139",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101447139:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101446226",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101446226:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101446083",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101446083:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101445916",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101445916:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101241760",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101241760:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101239934",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101239934:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101239553",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101239553:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101238920",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101238920:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101238796",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101238796:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101237410",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101237410:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101237313",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101237313:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101125350",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101125350:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101124054",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101124054:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101123754",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101123754:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101123591",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101123591:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101122881",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101122881:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101122398",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101122398:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101122079",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101122079:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-101121845",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-101121845:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100844410",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100844410:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100794393",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100794393:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100794327",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100794327:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100753608",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100753608:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100747421",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100747421:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100746257",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100746257:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100745660",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100745660:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100654370",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100654370:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1786608947411-2003",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1786608947411-2003:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100480611",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100480611:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100478026",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100478026:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-103334641",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-103334641:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-103334155",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-103334155:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-103333934",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-103333934:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-103333571",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-103333571:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-103333440",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-103333440:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-102931808",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-102931808:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-102891929",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-102891929:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-102891364",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-102891364:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-102890573",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-102890573:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-100476169",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-100476169:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "ZNZ-1789376512918-9322",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:ZNZ-1789376512918-9322:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-104116229",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-104116229:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-104115290",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-104115290:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-104114606",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-104114606:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    },
+    {
+      "bookingReference": "VIA-104114494",
+      "idempotencyKey": "BUSINESS_ACCOUNTING:BOOKING_ACCOUNTING:VIA-104114494:BOOKING_NET_CONTRIBUTION",
+      "postingCount": 1,
+      "duplicate": false,
+      "sourceMatches": true,
+      "factsLoaded": true,
+      "accountingLinked": true
+    }
+  ]
+}

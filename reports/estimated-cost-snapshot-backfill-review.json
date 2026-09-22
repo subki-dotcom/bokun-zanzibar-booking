@@ -1,0 +1,3709 @@
+{
+  "readOnly": true,
+  "dryRun": true,
+  "strategy": "REVIEW_APPROVE_APPLY_VERIFY",
+  "generatedAt": "2026-09-18T06:05:55.039Z",
+  "scanned": 136,
+  "summary": {
+    "BLOCKED_TEMPLATE_NOT_EFFECTIVE": 133,
+    "WOULD_CAPTURE": 3
+  },
+  "writes": 0,
+  "rows": [
+    {
+      "bookingId": "6a4776f0448436a55c9cac7b",
+      "bookingReference": "ZNZ-1783068400084-3278",
+      "bokunProductId": "892073",
+      "bokunOptionId": "1721391",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aa2528bc13148f8b48b758e",
+          "status": "active",
+          "validFrom": "2026-09-10T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-10T06:47:39.386Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47812b59814ab149c55e8e",
+      "bookingReference": "ZNZ-1783071019641-1170",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.624Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47878d59814ab149c55f2f",
+      "bookingReference": "ZNZ-1783072653718-9199",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.624Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a4790f6313e4ee145b8b35c",
+      "bookingReference": "ZNZ-1783075062164-2808",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.624Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47d87362ce693f2e8a738e",
+      "bookingReference": "ZNZ-1783093363061-7495",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.624Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47d88862ce693f2e8a73a5",
+      "bookingReference": "ZNZ-1783093384503-3418",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.624Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47d98562ce693f2e8a73c9",
+      "bookingReference": "ZNZ-1783093637342-1323",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.624Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47dea227b90974d0a1c521",
+      "bookingReference": "ZNZ-1783094946270-5328",
+      "bokunProductId": "963546",
+      "bokunOptionId": "1865105",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f9960549e",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.787Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f62",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.584Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47e5b527b90974d0a1c5a9",
+      "bookingReference": "ZNZ-1783096757501-8584",
+      "bokunProductId": "1141765",
+      "bokunOptionId": "2268761",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f9960549f",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.787Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f63",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.586Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47e79e9e70be68b81b8522",
+      "bookingReference": "ZNZ-1783097246955-2831",
+      "bokunProductId": "1141765",
+      "bokunOptionId": "2268761",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f9960549f",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.787Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f63",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.586Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47eaa09e70be68b81b8568",
+      "bookingReference": "ZNZ-1783098016490-1425",
+      "bokunProductId": "1141765",
+      "bokunOptionId": "2268761",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f9960549f",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.787Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f63",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.586Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47ebed66a96d56a07d2774",
+      "bookingReference": "ZNZ-1783098349610-2293",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.624Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47f2e4edf6067efe354556",
+      "bookingReference": "ZNZ-1783100132099-8284",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.624Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47fe45a555d254fc04fcc4",
+      "bookingReference": "ZNZ-1783103045959-3350",
+      "bokunProductId": "1095724",
+      "bokunOptionId": "2176526",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a2",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f66",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.599Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a4ac961c9ff93eaefeae597",
+      "bookingReference": "ZNZ-1783286113157-1302",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.624Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a4b5dff3a452fd3ddb7665e",
+      "bookingReference": "ZNZ-1783324159463-2470",
+      "bokunProductId": "887796",
+      "bokunOptionId": "1714219",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ac",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f70",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.632Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a4d699a00c6c2ca358bd858",
+      "bookingReference": "ZNZ-1783458202515-8156",
+      "bokunProductId": "1016957",
+      "bokunOptionId": "1984188",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f99605540",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c545004",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:18.151Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a4dec2500c6c2ca358bd8ed",
+      "bookingReference": "ZNZ-1783491621778-8830",
+      "bokunProductId": "987696",
+      "bokunOptionId": "1919346",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054fd",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fc1",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.916Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a4dec2d00c6c2ca358bd906",
+      "bookingReference": "ZNZ-1783491629380-7708",
+      "bokunProductId": "987696",
+      "bokunOptionId": "1919346",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054fd",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fc1",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.916Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a4dfd1e00c6c2ca358bd9c7",
+      "bookingReference": "ZNZ-1783495966038-9570",
+      "bokunProductId": "1215538",
+      "bokunOptionId": "2407921",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054f2",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fb6",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.876Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a4e0bf500c6c2ca358bda41",
+      "bookingReference": "ZNZ-1783499765564-1348",
+      "bokunProductId": "1215538",
+      "bokunOptionId": "2407921",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054f2",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fb6",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.876Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a4e0c0900c6c2ca358bda5b",
+      "bookingReference": "ZNZ-1783499785434-3825",
+      "bokunProductId": "1215538",
+      "bokunOptionId": "2407921",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054f2",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fb6",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.876Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a51234c8fe5402dea698bef",
+      "bookingReference": "ZNZ-1783702348928-7732",
+      "bokunProductId": "1198698",
+      "bokunOptionId": "2371753",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a5",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f69",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.610Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a5123858fe5402dea698c06",
+      "bookingReference": "ZNZ-1783702405302-5579",
+      "bokunProductId": "1198698",
+      "bokunOptionId": "2371753",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a5",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f69",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.610Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a5129148fe5402dea698c3f",
+      "bookingReference": "ZNZ-1783703828538-2542",
+      "bokunProductId": "1198698",
+      "bokunOptionId": "2371753",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a5",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f69",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.610Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a5493677550162ca926ee2a",
+      "bookingReference": "ZNZ-1783927655437-9063",
+      "bokunProductId": "1089552",
+      "bokunOptionId": "2162487",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ec",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fb0",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.852Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a54d55a7550162ca926ef38",
+      "bookingReference": "ZNZ-1783944538290-1855",
+      "bokunProductId": "1089552",
+      "bokunOptionId": "2162487",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ec",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fb0",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.852Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a54ec107550162ca926ef78",
+      "bookingReference": "ZNZ-1783950352641-8615",
+      "bokunProductId": "1089552",
+      "bokunOptionId": "2162487",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ec",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fb0",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.852Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a54ed927550162ca926efad",
+      "bookingReference": "ZNZ-1783950738360-7118",
+      "bokunProductId": "887796",
+      "bokunOptionId": "1714219",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ac",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f70",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.632Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a54facd7550162ca926f088",
+      "bookingReference": "ZNZ-1783954125767-9817",
+      "bokunProductId": "1016957",
+      "bokunOptionId": "1984188",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f99605540",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c545004",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:18.151Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a5526407550162ca926f16d",
+      "bookingReference": "ZNZ-1783965248638-9910",
+      "bokunProductId": "1016957",
+      "bokunOptionId": "1984188",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f99605540",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c545004",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:18.151Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a58f39fcc3abe98f08f6a64",
+      "bookingReference": "ZNZ-1784214431513-2211",
+      "bokunProductId": "887796",
+      "bokunOptionId": "1714219",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ac",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f70",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.632Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a58f427cc3abe98f08f6a98",
+      "bookingReference": "ZNZ-1784214567367-7693",
+      "bokunProductId": "887796",
+      "bokunOptionId": "1714219",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ac",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f70",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.632Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a58f481cc3abe98f08f6aae",
+      "bookingReference": "ZNZ-1784214657183-3277",
+      "bokunProductId": "887796",
+      "bokunOptionId": "1714219",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ac",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f70",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.632Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a590464cc3abe98f08f6b39",
+      "bookingReference": "ZNZ-1784218724204-2703",
+      "bokunProductId": "995221",
+      "bokunOptionId": "1935605",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a8ab",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.228Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fc2",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.918Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a5905b9cc3abe98f08f6b78",
+      "bookingReference": "ZNZ-1784219065056-4919",
+      "bokunProductId": "995221",
+      "bokunOptionId": "1935605",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a8ab",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.228Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fc2",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.918Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a591820cc3abe98f08f6c4d",
+      "bookingReference": "ZNZ-1784223776928-6722",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a591968cc3abe98f08f6c92",
+      "bookingReference": "ZNZ-1784224104668-9931",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a69aaf6eea4cf829eed7354",
+      "bookingReference": "ZNZ-1785309942749-8549",
+      "bokunProductId": "956388",
+      "bokunOptionId": "2493894",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86b",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f3d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.451Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a69ab04eea4cf829eed736f",
+      "bookingReference": "ZNZ-1785309956347-5736",
+      "bokunProductId": "956388",
+      "bokunOptionId": "2493894",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86b",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f3d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.451Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a6d968e53ebfa01e983276b",
+      "bookingReference": "ZNZ-1785566862582-9223",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a6d970153ebfa01e983287c",
+      "bookingReference": "ZNZ-1785566977883-2069",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a6d98b653ebfa01e98329b9",
+      "bookingReference": "ZNZ-1785567414326-3370",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a6e035753ebfa01e9832a0a",
+      "bookingReference": "ZNZ-1785594711340-4634",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a6ec138877e62c415d99238",
+      "bookingReference": "ZNZ-1785643320297-2340",
+      "bokunProductId": "956388",
+      "bokunOptionId": "2493894",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86b",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f3d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.451Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fae73fe0090fc0b8a751",
+      "bookingReference": "GYGRFQGYKZ28",
+      "bokunProductId": "890709",
+      "bokunOptionId": "1775515",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a877",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.224Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f7b",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.667Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93faed3fe0090fc0b8a75d",
+      "bookingReference": "GYG32LY979AB",
+      "bokunProductId": "995221",
+      "bokunOptionId": "1935608",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a8ae",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.228Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fc5",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.929Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93faf03fe0090fc0b8a769",
+      "bookingReference": "1441863013",
+      "bokunProductId": "1058284",
+      "bokunOptionId": "2273468",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a7",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6b",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.617Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fd49306f986879cfbdd4",
+      "bookingReference": "VIA-101658841",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fd4c306f986879cfbddd",
+      "bookingReference": "VIA-100651976",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850432",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84a",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1c",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.322Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fd52306f986879cfbde5",
+      "bookingReference": "VIA-100477559",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850441",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a854",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.218Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f26",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.365Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fd5b306f986879cfbdf4",
+      "bookingReference": "VIA-99535802",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850433",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84b",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.328Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fd60306f986879cfbe06",
+      "bookingReference": "1423634423",
+      "bokunProductId": "1016957",
+      "bokunOptionId": "1984188",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f99605540",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c545004",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:18.151Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fdf2306f986879cfbe54",
+      "bookingReference": "1441720001",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233035",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aa772ff4719cb671f3079c3",
+          "status": "active",
+          "validFrom": "2026-09-14T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-14T04:07:27.576Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fdf7306f986879cfbe5e",
+      "bookingReference": "VIA-102105574",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fdfc306f986879cfbe69",
+      "bookingReference": "GYGRFQG684Y9",
+      "bokunProductId": "890709",
+      "bokunOptionId": "1775511",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86e",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f72",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.636Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fdfd306f986879cfbe75",
+      "bookingReference": "GYGVN234W6MQ",
+      "bokunProductId": "890709",
+      "bokunOptionId": "1775511",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86e",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f72",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.636Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fdff306f986879cfbe7e",
+      "bookingReference": "VIA-101660315",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe03306f986879cfbe86",
+      "bookingReference": "VIA-101660088",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850434",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.333Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe05306f986879cfbe8e",
+      "bookingReference": "VIA-101659298",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850449",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a85c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.222Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f2e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.393Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe09306f986879cfbe9e",
+      "bookingReference": "VIA-101658385",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe0b306f986879cfbea9",
+      "bookingReference": "GYGN6BYHH5MN",
+      "bokunProductId": "1075662",
+      "bokunOptionId": "2104902",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f99605494",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.787Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f58",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.552Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe0e306f986879cfbec7",
+      "bookingReference": "1439382645",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233035",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aa772ff4719cb671f3079c3",
+          "status": "active",
+          "validFrom": "2026-09-14T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-14T04:07:27.576Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe10306f986879cfbed3",
+      "bookingReference": "1439277305",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233035",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aa772ff4719cb671f3079c3",
+          "status": "active",
+          "validFrom": "2026-09-14T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-14T04:07:27.576Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe12306f986879cfbedf",
+      "bookingReference": "1439139071",
+      "bokunProductId": "887796",
+      "bokunOptionId": "1861784",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ad",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f71",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.634Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe14306f986879cfbee8",
+      "bookingReference": "VIA-101447139",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850452",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a85f",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.222Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f31",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.402Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe16306f986879cfbef0",
+      "bookingReference": "VIA-101446226",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850442",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a855",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.218Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f27",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.367Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe18306f986879cfbef8",
+      "bookingReference": "VIA-101446083",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850439",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a852",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.218Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f24",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.358Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe1b306f986879cfbeff",
+      "bookingReference": "VIA-101445916",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850442",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a855",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.218Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f27",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.367Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe1e306f986879cfbf09",
+      "bookingReference": "VIA-101241760",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850434",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.333Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe20306f986879cfbf13",
+      "bookingReference": "VIA-101239934",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850439",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a852",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.218Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f24",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.358Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe22306f986879cfbf1b",
+      "bookingReference": "VIA-101239553",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850431",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a849",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1b",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.317Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe24306f986879cfbf23",
+      "bookingReference": "VIA-101238920",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe25306f986879cfbf2c",
+      "bookingReference": "VIA-101238796",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe28306f986879cfbf33",
+      "bookingReference": "VIA-101237410",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850432",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84a",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1c",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.322Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe2b306f986879cfbf3a",
+      "bookingReference": "VIA-101237313",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe2d306f986879cfbf44",
+      "bookingReference": "VIA-101125350",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe30306f986879cfbf4c",
+      "bookingReference": "VIA-101124054",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850432",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84a",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1c",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.322Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe32306f986879cfbf54",
+      "bookingReference": "VIA-101123754",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850432",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84a",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1c",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.322Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe35306f986879cfbf5b",
+      "bookingReference": "VIA-101123591",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1860028",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86a",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f3c",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.448Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe38306f986879cfbf62",
+      "bookingReference": "VIA-101122881",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850432",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84a",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1c",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.322Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe3b306f986879cfbf69",
+      "bookingReference": "VIA-101122398",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe3d306f986879cfbf71",
+      "bookingReference": "VIA-101122079",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850431",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a849",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1b",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.317Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe3f306f986879cfbf7b",
+      "bookingReference": "VIA-101121845",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe42306f986879cfbf8e",
+      "bookingReference": "GYG996XK5ZAM",
+      "bokunProductId": "890709",
+      "bokunOptionId": "1775530",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86f",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f73",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.643Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe45306f986879cfbf99",
+      "bookingReference": "VIA-100844410",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe48306f986879cfbfa1",
+      "bookingReference": "VIA-100794393",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850434",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.333Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe49306f986879cfbfa9",
+      "bookingReference": "VIA-100794327",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850434",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.333Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe4b306f986879cfbfb1",
+      "bookingReference": "VIA-100753608",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850434",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.333Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe50306f986879cfbfb9",
+      "bookingReference": "VIA-100747421",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1860028",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86a",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f3c",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.448Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe53306f986879cfbfc0",
+      "bookingReference": "VIA-100746257",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe56306f986879cfbfc7",
+      "bookingReference": "VIA-100745660",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe57306f986879cfbfcf",
+      "bookingReference": "VIA-100654370",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe59306f986879cfbfda",
+      "bookingReference": "GYGKBF7BBL2K",
+      "bokunProductId": "920484",
+      "bokunOptionId": "1775537",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054f7",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fbb",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.889Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe5e306f986879cfbfee",
+      "bookingReference": "1436245843",
+      "bokunProductId": "1141765",
+      "bokunOptionId": "2268761",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f9960549f",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.787Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f63",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.586Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe61306f986879cfc003",
+      "bookingReference": "ZNZ-1786608947411-2003",
+      "bokunProductId": "956388",
+      "bokunOptionId": "2493894",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86b",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f3d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.451Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe64306f986879cfc00e",
+      "bookingReference": "GYGG45MKB4HG",
+      "bokunProductId": "919083",
+      "bokunOptionId": "2276069",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd106a7a9139e57a2a8de",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.240Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544ff5",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:18.101Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe67306f986879cfc01a",
+      "bookingReference": "VIA-100480611",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe6a306f986879cfc025",
+      "bookingReference": "1435747845",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233035",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aa772ff4719cb671f3079c3",
+          "status": "active",
+          "validFrom": "2026-09-14T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-14T04:07:27.576Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a93fe6c306f986879cfc030",
+      "bookingReference": "VIA-100478026",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850434",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.333Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0897cd0cfd3b4c2147a60",
+      "bookingReference": "GYG83W8N2A2H",
+      "bokunProductId": "890709",
+      "bokunOptionId": "1775515",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a877",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.224Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f7b",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.667Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2bfc13148f8b4888d8a",
+      "bookingReference": "VIA-103334641",
+      "bokunProductId": "1123783",
+      "bokunOptionId": "2232319",
+      "action": "WOULD_CAPTURE",
+      "reason": "MISSING_ESTIMATED_COST_SNAPSHOT",
+      "templateCandidates": [
+        {
+          "templateId": "6a9670a31f4bc2431f3d5c7d",
+          "status": "active",
+          "validFrom": "2026-09-01T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-01T06:28:51.169Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": {
+        "templateId": "6a9670a31f4bc2431f3d5c7d",
+        "templateVersion": 1,
+        "calculatedAt": "2026-09-18T06:05:54.523Z",
+        "currency": "USD",
+        "totalEstimatedCost": 30,
+        "breakdown": [
+          {
+            "lineId": "line-1788244077926",
+            "category": "Guide",
+            "basis": "fixed_per_booking",
+            "amount": 20,
+            "currency": "USD"
+          },
+          {
+            "lineId": "line-1788244108578",
+            "category": "Transport",
+            "basis": "fixed_per_booking",
+            "amount": 10,
+            "currency": "USD"
+          }
+        ],
+        "context": {
+          "adults": 2,
+          "children": 0,
+          "participants": 2,
+          "vehicles": 0,
+          "sellingAmount": 1060
+        }
+      }
+    },
+    {
+      "bookingId": "6aa0f2c0c13148f8b4888d9e",
+      "bookingReference": "VIA-103334155",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850434",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.333Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2c0c13148f8b4888db2",
+      "bookingReference": "VIA-103333934",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850434",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.333Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2c2c13148f8b4888dc6",
+      "bookingReference": "VIA-103333571",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2c3c13148f8b4888df2",
+      "bookingReference": "VIA-103333440",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2c5c13148f8b4888e0a",
+      "bookingReference": "1445126625",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f6d",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.624Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2c5c13148f8b4888e15",
+      "bookingReference": "GYGKBF5YKVV2",
+      "bokunProductId": "920484",
+      "bokunOptionId": "1775539",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054f8",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fbc",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.895Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2c6c13148f8b4888e1e",
+      "bookingReference": "VIA-102931808",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2c6c13148f8b4888e26",
+      "bookingReference": "VIA-102891929",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850434",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.333Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2c7c13148f8b4888e2d",
+      "bookingReference": "VIA-102891364",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850434",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a84c",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.212Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f1e",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.333Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2c7c13148f8b4888e35",
+      "bookingReference": "VIA-102890573",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2c8c13148f8b4888e43",
+      "bookingReference": "GYGKBF53F282",
+      "bokunProductId": "890709",
+      "bokunOptionId": "1775511",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86e",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f72",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.636Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2cac13148f8b4888e58",
+      "bookingReference": "1442659613",
+      "bokunProductId": "887796",
+      "bokunOptionId": "1714219",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ac",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f70",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.632Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f2ccc13148f8b4888e6c",
+      "bookingReference": "GYGKBF59W84Y",
+      "bokunProductId": "968862",
+      "bokunOptionId": "2134386",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f99605487",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.787Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f4b",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.503Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f309c13148f8b48891be",
+      "bookingReference": "VIA-100476169",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850439",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a852",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.218Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f24",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.358Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f30ac13148f8b48891c9",
+      "bookingReference": "GYGLMRVGF6XM",
+      "bokunProductId": "1168763",
+      "bokunOptionId": "2321510",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054f0",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fb4",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.866Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa0f30bc13148f8b48891d5",
+      "bookingReference": "GYG7VKQ757HB",
+      "bokunProductId": "920484",
+      "bokunOptionId": "1911089",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054f9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fbd",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.899Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa122bfc13148f8b48a1991",
+      "bookingReference": "GYGRFQGAG2WQ",
+      "bokunProductId": "1168272",
+      "bokunOptionId": "2320493",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f99605451",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.786Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f15",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.283Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa2fccec13148f8b48b96d6",
+      "bookingReference": "1445969483",
+      "bokunProductId": "1089552",
+      "bokunOptionId": "2162486",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ed",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fb1",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.855Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa2fccfc13148f8b48b96e2",
+      "bookingReference": "1445955279",
+      "bokunProductId": "1016957",
+      "bokunOptionId": "1984188",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f99605540",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c545004",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:18.151Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa2fcd0c13148f8b48b96fa",
+      "bookingReference": "1445915375",
+      "bokunProductId": "963546",
+      "bokunOptionId": "1865104",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f9960549d",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.787Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f61",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.581Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa4e100c13148f8b48bc3bb",
+      "bookingReference": "GYG2Q9ANMLLL",
+      "bokunProductId": "890709",
+      "bokunOptionId": "1775510",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a871",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f75",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.648Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa6258fc13148f8b48cb194",
+      "bookingReference": "GYG2Q9AMY3VQ",
+      "bokunProductId": "920484",
+      "bokunOptionId": "1911089",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054f9",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.789Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fbd",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.899Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa76b904719cb671f303558",
+      "bookingReference": "1447020877",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233035",
+      "action": "WOULD_CAPTURE",
+      "reason": "MISSING_ESTIMATED_COST_SNAPSHOT",
+      "templateCandidates": [
+        {
+          "templateId": "6aa772ff4719cb671f3079c3",
+          "status": "active",
+          "validFrom": "2026-09-14T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-14T04:07:27.576Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": {
+        "templateId": "6aa772ff4719cb671f3079c3",
+        "templateVersion": 1,
+        "calculatedAt": "2026-09-18T06:05:54.879Z",
+        "currency": "USD",
+        "totalEstimatedCost": 60,
+        "breakdown": [
+          {
+            "lineId": "line-1789358794696",
+            "category": "Guide",
+            "basis": "fixed_per_booking",
+            "amount": 10,
+            "currency": "USD"
+          },
+          {
+            "lineId": "line-1789358813559",
+            "category": "Transport",
+            "basis": "fixed_per_booking",
+            "amount": 50,
+            "currency": "USD"
+          }
+        ],
+        "context": {
+          "adults": 2,
+          "children": 0,
+          "participants": 2,
+          "vehicles": 0,
+          "sellingAmount": 183.6
+        }
+      }
+    },
+    {
+      "bookingId": "6aa774014719cb671f308304",
+      "bookingReference": "GYGMX389AARY",
+      "bokunProductId": "890709",
+      "bokunOptionId": "1775529",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a873",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f77",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.652Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa7afc14719cb671f314f64",
+      "bookingReference": "1447193175",
+      "bokunProductId": "873569",
+      "bokunOptionId": "1686175",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a8a6",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.227Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fac",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.842Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aa7b8004719cb671f319a77",
+      "bookingReference": "ZNZ-1789376512918-9322",
+      "bokunProductId": "1089552",
+      "bokunOptionId": "2162487",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054ec",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544fb0",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.852Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aaa1bc86beeaca6d54cd921",
+      "bookingReference": "GYGKBF5B24VG",
+      "bokunProductId": "890709",
+      "bokunOptionId": "1775511",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a86e",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.223Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f72",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.636Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aabf8b5c4b3290f9373492b",
+      "bookingReference": "VIA-104116229",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850441",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a854",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.218Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f26",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.365Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aabf8b7c4b3290f9373493f",
+      "bookingReference": "VIA-104115290",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850429",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a847",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.211Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f19",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.304Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aabf8b8c4b3290f93734953",
+      "bookingReference": "VIA-104114606",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aabf8b9c4b3290f93734966",
+      "bookingReference": "VIA-104114494",
+      "bokunProductId": "956388",
+      "bokunOptionId": "1850426",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a844",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.209Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f16",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.286Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aabf8bac4b3290f93734982",
+      "bookingReference": "GYGWZALRMG68",
+      "bokunProductId": "890709",
+      "bokunOptionId": "2030673",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacd105a7a9139e57a2a896",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T05:49:58.226Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f9a",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.769Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aac4ac3a6ec63a5d2e8aaf9",
+      "bookingReference": "1448345653",
+      "bokunProductId": "1141765",
+      "bokunOptionId": "2274569",
+      "action": "BLOCKED_TEMPLATE_NOT_EFFECTIVE",
+      "reason": "NO_TEMPLATE_EFFECTIVE_AT_BOOKING_DATE",
+      "templateCandidates": [
+        {
+          "templateId": "6aacc2e16168a05f996054a1",
+          "status": "active",
+          "validFrom": "2026-09-18T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:49:37.788Z",
+          "currency": "USD"
+        },
+        {
+          "templateId": "6aac4f88ac31f4769c544f65",
+          "status": "inactive",
+          "validFrom": "2026-09-17T20:37:28.542Z",
+          "validTo": null,
+          "updatedAt": "2026-09-18T04:30:17.596Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": null
+    },
+    {
+      "bookingId": "6aacb3811cb0b2057c9b3da9",
+      "bookingReference": "1448421203",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233035",
+      "action": "WOULD_CAPTURE",
+      "reason": "MISSING_ESTIMATED_COST_SNAPSHOT",
+      "templateCandidates": [
+        {
+          "templateId": "6aa772ff4719cb671f3079c3",
+          "status": "active",
+          "validFrom": "2026-09-14T00:00:00.000Z",
+          "validTo": null,
+          "updatedAt": "2026-09-14T04:07:27.576Z",
+          "currency": "USD"
+        }
+      ],
+      "snapshot": {
+        "templateId": "6aa772ff4719cb671f3079c3",
+        "templateVersion": 1,
+        "calculatedAt": "2026-09-18T06:05:55.039Z",
+        "currency": "USD",
+        "totalEstimatedCost": 60,
+        "breakdown": [
+          {
+            "lineId": "line-1789358794696",
+            "category": "Guide",
+            "basis": "fixed_per_booking",
+            "amount": 10,
+            "currency": "USD"
+          },
+          {
+            "lineId": "line-1789358813559",
+            "category": "Transport",
+            "basis": "fixed_per_booking",
+            "amount": 50,
+            "currency": "USD"
+          }
+        ],
+        "context": {
+          "adults": 2,
+          "children": 1,
+          "participants": 3,
+          "vehicles": 0,
+          "sellingAmount": 183.6
+        }
+      }
+    }
+  ]
+}

@@ -32,6 +32,8 @@ const disasterRecoveryRoutes = require("./disasterRecovery.routes");
 const systemHealthRoutes = require("./systemHealth.routes");
 const performanceReviewRoutes = require("./performanceReview.routes");
 const productionReadinessRoutes = require("./productionReadiness.routes");
+const settlementsRoutes = require("./settlements.routes");
+const serviceCompletionRoutes = require("./serviceCompletion.routes");
 
 const router = express.Router();
 
@@ -66,6 +68,8 @@ router.use("/admin/production-readiness", productionReadinessRoutes);
 router.use("/admin/business-accounting", businessAccountingRoutes);
 router.use("/admin/business-expenses", businessExpensesRoutes);
 router.use("/admin/business-income", businessIncomeRoutes);
+router.use("/admin/settlements", settlementsRoutes);
+router.use("/admin/service-completions", serviceCompletionRoutes);
 router.use("/", bookingRequestsRoutes);
 router.use("/admin", adminBookingRequestsRoutes);
 

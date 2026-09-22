@@ -1211,30 +1211,32 @@ const handleWebhookEvent = async ({ event = {}, headers = {}, requestId = "" } =
   await verifyWebhookSignature({ headers, event, requestId });
 
   const eventType = String(event?.event_type || "").trim().toUpperCase();
+  const providerEventId = String(event?.id || "").trim();
+  if (!providerEventId) {
+    throw new AppError("PayPal webhook is missing its provider event ID", 422, "PAYPAL_WEBHOOK_EVENT_ID_MISSING");
+  }
+  const webhookEvents = require("../../webhookIdempotency");
+  const claim = await webhookEvents.claim({ provider: "paypal", eventId: providerEventId, eventType });
+  if (!claim.acquired) {
+    return { accepted: true, ignored: true, replay: true, eventType, reason: "event_already_claimed" };
+  }
   const orderId = resolveWebhookOrderId(event);
 
-  // Subscribe to CHECKOUT.ORDER.APPROVED in the PayPal dashboard. Capturing
-  // at that point keeps the existing reconciliation and Bokun retry flow intact.
-  if (eventType !== "CHECKOUT.ORDER.APPROVED") {
-    return {
-      accepted: true,
-      ignored: true,
-      eventType,
-      reason: "event_not_handled"
-    };
+  try {
+    // Subscribe to CHECKOUT.ORDER.APPROVED in the PayPal dashboard. Capturing
+    // at that point keeps the existing reconciliation and Bokun retry flow intact.
+    if (eventType !== "CHECKOUT.ORDER.APPROVED") {
+      await webhookEvents.complete({ event: claim.event });
+      return { accepted: true, ignored: true, eventType, reason: "event_not_handled" };
+    }
+    if (!orderId) throw new AppError("PayPal webhook is missing an order ID", 422, "PAYPAL_WEBHOOK_ORDER_ID_MISSING");
+    const result = await handlePaymentSuccess({ orderId, requestId: requestId || `paypal_webhook_${providerEventId}` });
+    await webhookEvents.complete({ event: claim.event });
+    return { accepted: true, eventType, orderId, result };
+  } catch (error) {
+    await webhookEvents.fail({ event: claim.event, error }).catch(() => {});
+    throw error;
   }
-
-  if (!orderId) {
-    throw new AppError("PayPal webhook is missing an order ID", 422, "PAYPAL_WEBHOOK_ORDER_ID_MISSING");
-  }
-
-  const result = await handlePaymentSuccess({ orderId, requestId: requestId || `paypal_webhook_${Date.now()}` });
-  return {
-    accepted: true,
-    eventType,
-    orderId,
-    result
-  };
 };
 
 module.exports = {

@@ -77,8 +77,12 @@ test("missing settlement amount or currency never becomes an invented zero USD r
 test("batch projection groups references using two bounded reads and applies context currency", async () => {
   const Payment = require("../src/models/Payment");
   const PaymentAllocation = require("../src/models/PaymentAllocation");
+  const Settlement = require("../src/models/Settlement");
+  const SettlementAllocation = require("../src/models/SettlementAllocation");
   const originalPaymentFind = Payment.find;
   const originalAllocationFind = PaymentAllocation.find;
+  const originalSettlementFind = Settlement.find;
+  const originalSettlementAllocationFind = SettlementAllocation.find;
   const calls = [];
   const query = (rows) => ({ select: () => ({ lean: async () => rows }) });
   try {
@@ -90,8 +94,16 @@ test("batch projection groups references using two bounded reads and applies con
       calls.push(filter);
       return query([allocation({ bookingReference: "B1" })]);
     };
+    SettlementAllocation.find = (filter) => {
+      calls.push(filter);
+      return query([]);
+    };
+    Settlement.find = (filter) => {
+      calls.push(filter);
+      return query([]);
+    };
     const views = await loadSettlementViews(["B1", "B2", "B1", ""], new Map([["B2", { currency: "TZS" }]]));
-    assert.equal(calls.length, 2);
+    assert.equal(calls.length, 3);
     assert.deepEqual(calls[0].bookingReference.$in, ["B1", "B2"]);
     assert.equal(views.get("B1").receivedAmount, "100");
     assert.equal(views.get("B2").receivedAmount, 0);
@@ -100,5 +112,7 @@ test("batch projection groups references using two bounded reads and applies con
   } finally {
     Payment.find = originalPaymentFind;
     PaymentAllocation.find = originalAllocationFind;
+    Settlement.find = originalSettlementFind;
+    SettlementAllocation.find = originalSettlementAllocationFind;
   }
 });

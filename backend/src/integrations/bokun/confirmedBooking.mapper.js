@@ -453,6 +453,17 @@ const mapBokunBookingForImport = ({ bokunBooking = {}, fallbackSalesChannel = ""
   const productTitle = normalizeToken(activity.title || product.title || product.name || root.productTitle || "Bokun experience");
   const optionTitle = normalizeToken(activity.rateTitle || rate.title || rate.name || activity.optionTitle || "Booked option");
   const bokunOperationalDates = extractBokunOperationalDates(root, activity);
+  const activityStatus = normalizeToken(activity.status || activity.bookingStatus || activity.fulfillmentStatus).toUpperCase();
+  const bokunOperationalEvidence = {
+    source: activityStatus ? "BOKUN_ACTIVITY_BOOKING" : "",
+    sourceField: activityStatus ? "activityBookings[].status" : "",
+    activityStatus,
+    activityBookingId: normalizeToken(activity.bookingId || activity.id || ""),
+    activityProductId: normalizeToken(activity.activity?.id || activity.product?.id || activity.productId || ""),
+    // Bókun does not provide an arrival timestamp in every ARRIVED response.
+    observedAt: bokunOperationalDates.bokunLastModifiedAt.normalizedAt || null,
+    mappedAt: new Date()
+  };
   const travelDate = bokunOperationalDates.travelDate.localDate || [activity.dateString, activity.date, activity.startDateTime, activity.startDate, root.startDate, root.date]
     .map((candidate) => toDateOnly(candidate))
     .find(Boolean) || "";
@@ -539,6 +550,19 @@ const mapBokunBookingForImport = ({ bokunBooking = {}, fallbackSalesChannel = ""
       bokunCurrencySource: money.currencySource,
       paymentStatus: paymentStatusFromBokun({ amount: money.amount, paidAmount: money.paidAmount }),
       paymentMethod: normalizeToken(root.paidType || root.paymentType || "bokun_channel"),
+      bokunFinancialEvidence: {
+        source: "BOKUN",
+        status: Number.isFinite(money.amount) && money.amount >= 0 && Boolean(money.currency) ? "VERIFIED" : "NEEDS_REVIEW",
+        grossAmount: money.amount,
+        currency: money.currency,
+        reportedPaidAmount: Number.isFinite(money.paidAmount) && money.paidAmount >= 0 ? money.paidAmount : null,
+        paymentStatus: paymentStatusFromBokun({ amount: money.amount, paidAmount: money.paidAmount }),
+        paymentMethod: normalizeToken(root.paidType || root.paymentType || "bokun_channel"),
+        bookingStatus: status.normalizedStatus,
+        cancellationStatus: cancellationDate ? "CANCELLED" : "NOT_CANCELLED",
+        evidenceHash: "",
+        syncedAt: null
+      },
       sourceChannel: lowerSalesChannel(channel.salesChannel),
       salesChannel: channel.salesChannel,
       rawSalesChannel: channel.rawChannel,
@@ -546,6 +570,7 @@ const mapBokunBookingForImport = ({ bokunBooking = {}, fallbackSalesChannel = ""
       bokunExternalBookingReference,
       externalChannelReference,
       bokunOperationalDates,
+      bokunOperationalEvidence,
       cancellationDate,
       rawBokunResponse: raw
     }

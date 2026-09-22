@@ -9,6 +9,9 @@ const Invoice = require("../../models/Invoice");
 const Payment = require("../../models/Payment");
 const Refund = require("../../models/Refund");
 const generalLedgerService = require("../generalLedger");
+const financialReportingService = require("../financialReporting");
+const bookingAccountingService = require("../bookingAccounting");
+const expenseAccountingService = require("../expenseAccounting");
 const {
   ACCOUNTING_SCOPE,
   BUSINESS_UNIT,
@@ -23,6 +26,7 @@ const {
 } = require("../../accounting/constants");
 const AppError = require("../../utils/AppError");
 const { configuredBaseCurrency, resolveFxEvidence } = require("../../accounting/currencyPolicy");
+const { resolveVerifiedSupplierRevenueBasis } = require("../profitability/revenueBasis");
 const {
   Decimal,
   add,
@@ -803,6 +807,7 @@ const buildBookingContributionPosting = ({
   payments = [],
   refunds = [],
   commissions = [],
+  expenses = [],
   nowDate = new Date()
 } = {}) => {
   if (!booking?.bookingReference) {
@@ -810,7 +815,11 @@ const buildBookingContributionPosting = ({
   }
 
   const paidPayments = dedupePaidPayments(payments);
+  const bokunEvidence = booking?.bokunFinancialEvidence?.source === "BOKUN" && booking.bokunFinancialEvidence.status === "VERIFIED"
+    ? booking.bokunFinancialEvidence
+    : null;
   const currency = firstCurrency(
+    bokunEvidence?.currency,
     paidPayments[0] ? paymentCurrency(paidPayments[0]) : "",
     invoice?.accountingCurrency,
     booking.currency,
@@ -818,21 +827,42 @@ const buildBookingContributionPosting = ({
     "USD"
   );
   assertSingleCurrency({ currency, payments: paidPayments, invoice, booking });
+  const revenueBasis = resolveVerifiedSupplierRevenueBasis({
+    booking,
+    evidence: bokunEvidence,
+    fallbackAmount: booking.pricingSnapshot?.finalPayable ?? booking.amount ?? invoice?.total ?? 0,
+    fallbackCurrency: currency
+  });
   const accountingCurrency = requireCurrency(currency);
-  const bookedRevenue = moneyOrZero(booking.pricingSnapshot?.finalPayable ?? booking.amount ?? invoice?.total ?? 0);
+  const bookedRevenue = revenueBasis.status === "VERIFIED" ? moneyOrZero(revenueBasis.amount) : "0";
   const invoicedRevenue = moneyOrZero(invoice?.totalAmount ?? invoice?.total ?? bookedRevenue);
   const collectedRevenue = sumMoney(paidPayments, paymentAccountingAmount);
   const confirmedRefunds = asArray(refunds).filter((refund) => FINAL_REFUND_STATUSES.has(String(refund.status || "").toLowerCase()));
   const refundedAmount = sumMoney(confirmedRefunds, extractRefundAmount);
   const providerFees = sumMoney(paidPayments, paymentProviderFeeAmount);
-  const channelCommission = sumMoney(
+  const agentCommission = sumMoney(
     asArray(commissions).filter((commission) => commission.payoutStatus !== "rejected"),
     (commission) => moneyOrZero(commission.commissionAmount || 0)
   );
-  const directBookingCosts = "0";
+  // Unknown OTA commission is represented as zero for Decimal128 compatibility;
+  // the separate status prevents it from being interpreted as verified evidence.
+  const otaCommission = "0";
+  const otaCommissionApplicable = ["VIATOR", "GETYOURGUIDE", "BOKUN_MARKETPLACE", "TOURHQ", "AIRBNB"]
+    .includes(String(booking.salesChannel || "").toUpperCase());
+  const otaCommissionStatus = otaCommissionApplicable ? "NEEDS_REVIEW" : "NOT_APPLICABLE";
+  const countedBookingExpenses = asArray(expenses).filter(
+    (expense) => COUNTED_FINANCIAL_STATUSES.includes(String(expense.status || "").toUpperCase())
+  );
+  const compatibleBookingExpenses = countedBookingExpenses.filter(
+    (expense) => normalizeCurrency(expense.baseCurrency || expense.currency || accountingCurrency) === accountingCurrency
+  );
+  const directBookingCosts = sumMoney(
+    compatibleBookingExpenses,
+    (expense) => moneyOrZero(expense.baseCurrencyAmount ?? expense.amount ?? 0)
+  );
   const netAfterRefunds = subtract(collectedRevenue, refundedAmount);
   const netAfterProviderFees = subtract(netAfterRefunds, providerFees);
-  const bookingNetContribution = subtract(subtract(netAfterProviderFees, channelCommission), directBookingCosts);
+  const bookingNetContribution = subtract(subtract(netAfterProviderFees, agentCommission), directBookingCosts);
   const amount = bookingNetContribution;
   const exchangeRate = "1";
   const baseCurrencyAmount = multiply(amount, exchangeRate);
@@ -864,13 +894,18 @@ const buildBookingContributionPosting = ({
     exchangeRateDate: bookingDate(booking, invoice, paidPayments, nowDate),
     transactionDate: bookingDate(booking, invoice, paidPayments, nowDate),
     status: FINANCIAL_ENTRY_STATUS.APPROVED,
+    reviewStatus: revenueBasis.status !== "VERIFIED" || otaCommissionApplicable ? "NEEDS_REVIEW" : "",
     components: {
       bookedRevenue,
       invoicedRevenue,
       collectedRevenue,
       refundedAmount,
       providerFees,
-      channelCommission,
+      agentCommission,
+      internalAgentCommission: agentCommission,
+      otaCommission,
+      // Legacy consumers keep their existing field until they migrate.
+      channelCommission: agentCommission,
       directBookingCosts,
       bookingNetContribution,
       otherBusinessIncome: "0",
@@ -882,17 +917,30 @@ const buildBookingContributionPosting = ({
       bookingReference: sourceReference,
       bookingStatus: booking.bookingStatus || "",
       paymentStatus: booking.paymentStatus || "",
+      financialEvidenceSource: bokunEvidence?.source || "LOCAL",
+      financialEvidenceStatus: bokunEvidence?.status || "NEEDS_REVIEW",
+      financialEvidenceHash: bokunEvidence?.evidenceHash || "",
+      revenueBasis: bookedRevenue,
+      revenueBasisCurrency: revenueBasis.currency || currency,
+      revenueBasisSource: revenueBasis.source || "LOCAL_BOOKING_AMOUNT",
+      revenueEvidenceStatus: revenueBasis.status,
+      reconciliationStatus: revenueBasis.reconciliationStatus,
       operationalSource: booking.operationalSource || "",
       salesChannel: booking.salesChannel || "",
       invoiceNumber: invoice?.invoiceNumber || "",
       paymentIds: paidPayments.map((payment) => String(payment._id || "")),
       refundIds: confirmedRefunds.map((refund) => String(refund._id || "")),
       commissionIds: asArray(commissions).map((commission) => String(commission._id || "")),
+      bookingExpenseIds: compatibleBookingExpenses.map((expense) => String(expense._id || expense.expenseReference || "")),
       sourceAccountingScope: ACCOUNTING_SCOPE.BOOKING
     },
     metadata: {
       noDoubleCountingRule: "Business Accounting consumes Booking Accounting contribution through this source-linked posting.",
-      directBookingCostsIncluded: false,
+      directBookingCostsIncluded: compatibleBookingExpenses.length > 0,
+      otaCommissionStatus,
+      contributionRevenueBasisStatus: revenueBasis.status,
+      contributionModel: "CASH_COLLECTION_LESS_REFUNDS_FEES_AGENT_COMMISSION_AND_DIRECT_COSTS",
+      excludedBookingExpenseCount: countedBookingExpenses.length - compatibleBookingExpenses.length,
       generatedAt: nowDate.toISOString()
     }
   };
@@ -1156,8 +1204,12 @@ const createBusinessAccountingService = ({
   PaymentModel = Payment,
   RefundModel = Refund,
   GeneralLedgerService = generalLedgerService,
+  FinancialReportingService: injectedFinancialReportingService,
+  BookingAccountingService = bookingAccountingService,
+  ExpenseAccountingService = expenseAccountingService,
   now = () => new Date()
 } = {}) => {
+  const FinancialReportingService = injectedFinancialReportingService || financialReportingService;
   const recordAudit = async ({ action, posting, auth = {}, requestId = "", reason = "", before = null, after = null, metadata = {} }) => {
     if (!AuditLogModel?.create) return null;
     return AuditLogModel.create({
@@ -1486,6 +1538,9 @@ const createBusinessAccountingService = ({
     const refreshed = posting
       ? await leanMaybe(BusinessExpenseModel.findOne({ expenseReference: values.expenseReference }))
       : created;
+    const automaticPosting = process.env.EXPENSE_AUTOMATIC_POSTING_ENABLED === "true" && process.env.EXPENSE_POSTING_MODE === "AUTOMATIC_NEW_EXPENSE_POSTING" && isCountedStatus(refreshed.status)
+      ? await ExpenseAccountingService.postExpense({ expense: refreshed, auth, requestId, mode: "AUTOMATIC_NEW_EXPENSE_POSTING" })
+      : null;
 
     await recordExpenseAudit({
       action: "business_expense_created",
@@ -1494,13 +1549,14 @@ const createBusinessAccountingService = ({
       requestId,
       reason: "Business expense created",
       after: normalizeBusinessExpenseForApi(refreshed),
-      metadata: { postingCreated: Boolean(posting) }
+      metadata: { postingCreated: Boolean(posting), automaticPosting: automaticPosting?.action || "not_run" }
     });
 
     return {
       action: "created",
       expense: normalizeBusinessExpenseForApi(refreshed),
-      posting: posting ? normalizePostingForApi(posting) : null
+      posting: posting ? normalizePostingForApi(posting) : null,
+      automaticPosting
     };
   };
 
@@ -1549,6 +1605,9 @@ const createBusinessAccountingService = ({
       reason: "Business expense updated"
     });
     const refreshed = await leanMaybe(BusinessExpenseModel.findById(expenseId));
+    const automaticPosting = process.env.EXPENSE_AUTOMATIC_POSTING_ENABLED === "true" && process.env.EXPENSE_POSTING_MODE === "AUTOMATIC_NEW_EXPENSE_POSTING" && isCountedStatus(refreshed.status)
+      ? await ExpenseAccountingService.postExpense({ expense: refreshed, auth, requestId, mode: "AUTOMATIC_NEW_EXPENSE_POSTING" })
+      : null;
 
     await recordExpenseAudit({
       action: "business_expense_updated",
@@ -1558,13 +1617,14 @@ const createBusinessAccountingService = ({
       reason: "Business expense updated",
       before,
       after: normalizeBusinessExpenseForApi(refreshed),
-      metadata: { postingSynchronized: Boolean(posting) }
+      metadata: { postingSynchronized: Boolean(posting), automaticPosting: automaticPosting?.action || "not_run" }
     });
 
     return {
       action: "updated",
       expense: normalizeBusinessExpenseForApi(refreshed),
-      posting: posting ? normalizePostingForApi(posting) : null
+      posting: posting ? normalizePostingForApi(posting) : null,
+      automaticPosting
     };
   };
 
@@ -1579,11 +1639,18 @@ const createBusinessAccountingService = ({
       throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
     }
 
-    const [invoice, payments, refunds, commissions] = await Promise.all([
+    const [invoice, payments, refunds, commissions, expenses] = await Promise.all([
       leanMaybe(InvoiceModel.findOne({ bookingReference: reference })),
       leanMaybe(PaymentModel.find({ bookingReference: reference })),
       leanMaybe(RefundModel.find({ bookingId: booking._id })),
-      leanMaybe(CommissionRecordModel.find({ bookingReference: reference }))
+      leanMaybe(CommissionRecordModel.find({ bookingReference: reference })),
+      leanMaybe(
+        BusinessExpenseModel.find({
+          accountingScope: ACCOUNTING_SCOPE.BOOKING,
+          bookingReference: reference,
+          status: { $in: COUNTED_FINANCIAL_STATUSES }
+        })
+      )
     ]);
 
     return {
@@ -1591,13 +1658,16 @@ const createBusinessAccountingService = ({
       invoice,
       payments: asArray(payments),
       refunds: asArray(refunds),
-      commissions: asArray(commissions)
+      commissions: asArray(commissions),
+      expenses: asArray(expenses)
     };
   };
 
   const postBookingContribution = async ({
     bookingReference,
     dryRun = false,
+    approvalId = "",
+    idempotencyKey = "",
     auth = {},
     requestId = "",
     reason = "Booking Accounting contribution linked into Business Accounting"
@@ -1605,6 +1675,21 @@ const createBusinessAccountingService = ({
     const context = await loadBookingAccountingContext(bookingReference);
     const nowDate = now();
     const payload = buildBookingContributionPosting({ ...context, nowDate });
+    if (!dryRun && !normalizeToken(approvalId)) {
+      throw new AppError(
+        "An explicit human approval ID is required before applying a booking contribution posting.",
+        422,
+        "BUSINESS_ACCOUNTING_APPROVAL_REQUIRED"
+      );
+    }
+    if (!dryRun && normalizeToken(idempotencyKey) !== payload.idempotencyKey) {
+      throw new AppError(
+        "The supplied idempotency key does not match the authoritative booking posting key.",
+        409,
+        "BUSINESS_ACCOUNTING_IDEMPOTENCY_KEY_MISMATCH",
+        { expected: payload.idempotencyKey }
+      );
+    }
     const existing = await leanMaybe(AccountingPostingModel.findOne({ postingKey: payload.postingKey }));
     const changed = existing ? !samePosting(existing, payload) : true;
 
@@ -1620,6 +1705,10 @@ const createBusinessAccountingService = ({
     if (!existing) {
       const created = await AccountingPostingModel.create({
         ...payload,
+        metadata: {
+          ...(payload.metadata || {}),
+          approvalId
+        },
         amount: decimalOrNull(payload.amount),
         exchangeRate: decimalOrNull(payload.exchangeRate),
         baseCurrencyAmount: decimalOrNull(payload.baseCurrencyAmount),
@@ -1662,7 +1751,8 @@ const createBusinessAccountingService = ({
           }, {}),
           metadata: {
             ...(payload.metadata || {}),
-            refreshedAt: nowDate.toISOString()
+            refreshedAt: nowDate.toISOString(),
+            approvalId
           },
           approvedBy: existing.approvedBy || auth?.id || "",
           approvedAt: existing.approvedAt || nowDate
@@ -1703,6 +1793,13 @@ const createBusinessAccountingService = ({
     const previousTrend = buildTrend(previousPostings, period.previous);
     const currencySummary = buildCurrencySummary(postings);
     const currency = currencySummary.primaryCurrency;
+    const authoritativeFinancialFacts = injectedFinancialReportingService && typeof FinancialReportingService?.getAuthoritativeSummary === "function"
+      ? await FinancialReportingService.getAuthoritativeSummary({
+        fromDate: period.fromDate,
+        toDate: period.toDate,
+        limit: 5000
+      })
+      : null;
     const sparklineFor = (key) => trend.map((point) => point[key] || 0);
 
     return {
@@ -1712,12 +1809,14 @@ const createBusinessAccountingService = ({
       sourceLinkStrategy: {
         bookingAccountingFeedsBusinessAccounting: true,
         bookingRevenueIsNotDuplicated: true,
+        authoritativeFinancialFactsAvailable: Boolean(authoritativeFinancialFacts),
         countedStatuses: COUNTED_FINANCIAL_STATUSES
       },
       sourceStrategy: buildSourceStrategy(),
       period,
       currency,
       currencySummary,
+      authoritativeFinancialFacts,
       totals: summary.totals,
       previousTotals: previousSummary.totals,
       kpis: {
@@ -1985,8 +2084,8 @@ const createBusinessAccountingService = ({
       dataQuality,
       capabilities: {
         createBill: true,
-        recordSupplierPayment: false,
-        recordSupplierPaymentReason: "A supplier payment allocation and double-entry posting workflow is not yet available."
+        recordSupplierPayment: true,
+        recordSupplierPaymentReason: "Approved business-accounting bills can be allocated and posted through the supplier payment workflow."
       }
     };
   };
@@ -2061,6 +2160,10 @@ const createBusinessAccountingService = ({
         outstandingAmount: balance.toFixed(),
         reportingCurrency: normalizeCurrency(invoice.accountingCurrency || "USD"),
         displayStatus,
+        accountingStatus: invoice.accountingStatus || "",
+        accountingBlockers: asArray(invoice.accountingBlockers),
+        accountingPostingKey: invoice.accountingPostingKey || "",
+        accountingJournalEntryId: invoice.accountingJournalEntryId ? String(invoice.accountingJournalEntryId) : "",
         overdue,
         counted: !cancelled && displayStatus !== "draft",
         source: invoice.bookingReference ? "Booking Accounting" : "Invoice"
@@ -2228,12 +2331,40 @@ const createBusinessAccountingService = ({
     };
   };
 
+  const getBookingFinancialFacts = async (bookingReference = "") => {
+    const facts = await FinancialReportingService.loadBookingFinancialFacts(bookingReference);
+    if (!facts) {
+      throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
+    }
+    const booking = await leanMaybe(BookingModel.findOne({ bookingReference: normalizeToken(bookingReference) }));
+    const estimatedCost = BookingAccountingService?.resolveCostTemplate
+      ? await BookingAccountingService.resolveCostTemplate({
+          booking,
+          asOfDate: booking?.createdAt || now()
+        })
+      : null;
+    const estimatedDirectCosts = estimatedCost?.calculation?.totalEstimatedCost ?? 0;
+    return {
+      ...facts,
+      expenses: {
+        ...facts.expenses,
+        estimatedDirectCosts,
+        estimatedCostTemplateId: estimatedCost?.template?._id || estimatedCost?.template?.id || ""
+      }
+    };
+  };
+
+  const getAuthoritativeFinancialSummary = async (filters = {}) =>
+    FinancialReportingService.getAuthoritativeSummary(filters);
+
   return {
     createBusinessExpense,
     createBusinessIncome,
     getFoundationSummary,
     getAccountsReceivableDashboard,
     getAccountsPayableDashboard,
+    getBookingFinancialFacts,
+    getAuthoritativeFinancialSummary,
     listBusinessExpenses,
     listBusinessIncome,
     updateBusinessExpense,
@@ -2242,7 +2373,7 @@ const createBusinessAccountingService = ({
   };
 };
 
-const service = createBusinessAccountingService();
+const service = createBusinessAccountingService({ FinancialReportingService: financialReportingService });
 
 module.exports = {
   ...service,

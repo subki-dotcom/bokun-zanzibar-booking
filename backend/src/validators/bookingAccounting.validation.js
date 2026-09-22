@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const { BOOKING_DIRECT_COST_CATEGORIES } = require("../accounting/bookingExpensePolicy");
 
 const optionalToken = z.string().min(1).max(180).optional();
 const optionalDate = z.string().min(1).max(80).optional();
@@ -76,6 +77,12 @@ const costTemplateParamsSchema = z.object({
   query: z.object({}).optional()
 });
 
+const bokunFinancialPreviewParamsSchema = z.object({
+  params: z.object({ bookingId: requiredToken }),
+  body: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
 const costTemplateWriteSchema = z.object({
   params: z
     .object({
@@ -136,8 +143,68 @@ const costTemplatePreviewSchema = z.object({
   })
 });
 
+const bookingExpenseParamsSchema = z.object({
+  params: z.object({ expenseId: requiredToken }),
+  query: z.object({}).optional(),
+  body: z.object({}).optional()
+});
+
+const bookingExpenseWriteSchema = z.object({
+  params: z.object({ expenseId: requiredToken.optional() }).optional(),
+  query: z.object({}).optional(),
+  body: z.object({
+    bookingReference: z.string().max(240).optional(),
+    bookingId: z.string().max(180).optional(),
+    category: z.enum(BOOKING_DIRECT_COST_CATEGORIES),
+    description: z.string().trim().min(1).max(2000),
+    amount: z.coerce.number().finite().positive(),
+    currency: z.string().trim().length(3),
+    baseCurrency: z.string().trim().min(3).max(10).optional(),
+    exchangeRate: z.coerce.number().positive().optional(),
+    exchangeRateDate: optionalDate,
+    exchangeRateSource: z.string().max(180).optional(),
+    expenseDate: z.string().min(1).max(80).refine((value) => !Number.isNaN(Date.parse(value)), "Invalid expense date"),
+    dueDate: optionalDate,
+    paymentStatus: z.string().max(80).optional(),
+    paymentMethod: z.string().max(120).optional(),
+    paymentReference: z.string().max(240).optional(),
+    expenseReference: z.string().max(180).optional(),
+    idempotencyKey: z.string().trim().min(1).max(240),
+    businessUnit: z.string().max(80).optional(),
+    completionStatus: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETE", "NEEDS_REVIEW"]).optional(),
+    status: z.enum(["DRAFT", "SUBMITTED", "APPROVED", "REJECTED", "PAID", "VOID"]).optional(),
+    supplier: z.object({
+      supplierId: z.string().max(180).optional(),
+      name: z.string().max(240).optional(),
+      type: z.string().max(120).optional(),
+      contact: z.string().max(240).optional()
+    }).optional(),
+    notes: z.string().max(4000).optional(),
+    metadata: z.any().optional()
+  })
+});
+
+const bookingExpenseVoidSchema = z.object({
+  params: z.object({ expenseId: requiredToken }),
+  query: z.object({}).optional(),
+  body: z.object({ reason: z.string().max(1000).optional() }).optional()
+});
+
+const bookingExpenseCompletionSchema = z.object({
+  params: z.object({ expenseId: requiredToken }),
+  query: z.object({}).optional(),
+  body: z.object({
+    completionStatus: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETE", "NEEDS_REVIEW"])
+  })
+});
+
 module.exports = {
+  bokunFinancialPreviewParamsSchema,
   archiveCostTemplateSchema,
+  bookingExpenseParamsSchema,
+  bookingExpenseCompletionSchema,
+  bookingExpenseVoidSchema,
+  bookingExpenseWriteSchema,
   bookingAccountingQuerySchema,
   costTemplateParamsSchema,
   costTemplatePreviewSchema,

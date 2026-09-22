@@ -362,7 +362,7 @@ const providerMappingKey = (provider = "") => {
   if (normalized === "PAYPAL") return GL_MAPPING_KEY.PAYPAL_CLEARING;
   if (normalized === "DPO") return GL_MAPPING_KEY.DPO_CLEARING;
   if (normalized === "MOBILE_MONEY") return GL_MAPPING_KEY.MOBILE_MONEY;
-  return GL_MAPPING_KEY.BANK;
+  return null;
 };
 
 const expenseMappingKey = (category = "") => {
@@ -1006,35 +1006,16 @@ const createGeneralLedgerService = ({
     });
   };
 
-  const postCustomerInvoice = async ({ invoice = {}, booking = {}, auth = {}, requestId = "" } = {}) => {
-    const amount = money(invoice.accountingTotal || invoice.total || invoice.amount || 0, { allowNegative: false, field: "invoice.amount" });
-    const currency = requireCurrency(invoice.accountingCurrency || invoice.currency || booking.currency || "USD");
-    return postSourceEvent({
-      event: {
-        sourceModule: SOURCE_MODULE.INVOICE,
-        sourceEntityType: "Invoice",
-        sourceEntityId: normalizeId(invoice._id) || invoice.invoiceNumber,
-        sourceReference: invoice.invoiceNumber || invoice.bookingReference || booking.bookingReference,
-        postingType: GL_POSTING_TYPE.CUSTOMER_INVOICE,
-        postingDate: invoice.issueDate || invoice.createdAt || booking.createdAt,
-        description: `Invoice revenue recognized for ${invoice.invoiceNumber || invoice.bookingReference}`,
-        currency,
-        lines: [
-          { mappingKey: GL_MAPPING_KEY.ACCOUNTS_RECEIVABLE, debit: amount, bookingReference: invoice.bookingReference },
-          { mappingKey: revenueMappingKey(booking), credit: amount, bookingReference: invoice.bookingReference }
-        ],
-        sourceSnapshot: { invoice, booking }
-      },
-      auth,
-      requestId
-    });
+  const postCustomerInvoice = async () => {
+    throw new AppError("Invoice-gross recognition is disabled; use verified service revenue recognition.", 409, "SERVICE_REVENUE_RECOGNITION_REQUIRED");
   };
 
-  const postCustomerPayment = async ({ payment = {}, auth = {}, requestId = "" } = {}) => {
+  const postCustomerPayment = async ({ payment = {}, auth = {}, requestId = "", postingKey = "" } = {}) => {
     const amount = money(payment.accountingAmount || payment.amountPaid || payment.paidAmount || payment.amount || 0, { allowNegative: false, field: "payment.amount" });
     const fee = money(payment.providerFeeAmount || 0, { allowNegative: false, field: "payment.providerFee" });
     const currency = requireCurrency(payment.accountingCurrency || payment.currency || payment.orderCurrency || "USD");
     const clearingKey = providerMappingKey(payment.provider || payment.paymentProvider || payment.providerName);
+    if (!clearingKey) throw new AppError("A provider-specific clearing mapping is required.", 409, "GL_CLEARING_MAPPING_REQUIRED");
     const lines = [
       { mappingKey: clearingKey, debit: amount, bookingReference: payment.bookingReference },
       { mappingKey: GL_MAPPING_KEY.ACCOUNTS_RECEIVABLE, credit: amount, bookingReference: payment.bookingReference }
@@ -1052,6 +1033,7 @@ const createGeneralLedgerService = ({
         sourceEntityId: normalizeId(payment._id) || payment.intentId || payment.orderTrackingId,
         sourceReference: payment.intentId || payment.orderTrackingId || payment.bookingReference,
         postingType: GL_POSTING_TYPE.CUSTOMER_PAYMENT,
+        postingKey,
         postingDate: payment.paidAt || payment.verifiedAt || payment.createdAt,
         description: `Customer payment posted for ${payment.bookingReference || payment.intentId}`,
         currency,
@@ -1071,6 +1053,7 @@ const createGeneralLedgerService = ({
     const clearingCredit = decimalSum([amount, fee]);
     const currency = requireCurrency(settlement.currency || "USD");
     const clearingKey = providerMappingKey(settlement.provider);
+    if (!clearingKey) throw new AppError("A provider-specific clearing mapping is required.", 409, "GL_CLEARING_MAPPING_REQUIRED");
     const lines = [
       { mappingKey: GL_MAPPING_KEY.BANK, debit: amount },
       { mappingKey: clearingKey, credit: clearingCredit }
@@ -1121,6 +1104,8 @@ const createGeneralLedgerService = ({
   const postRefundCompletion = async ({ refund = {}, auth = {}, requestId = "" } = {}) => {
     const amount = money(refund.confirmedRefundedAmount || refund.amountRefunded || refund.amount || 0, { allowNegative: false, field: "refund.confirmedAmount" });
     const currency = requireCurrency(refund.currency || "USD");
+    const clearingKey = providerMappingKey(refund.provider);
+    if (!clearingKey) throw new AppError("A provider-specific clearing mapping is required.", 409, "GL_CLEARING_MAPPING_REQUIRED");
     return postSourceEvent({
       event: {
         sourceModule: SOURCE_MODULE.REFUND,
@@ -1133,7 +1118,7 @@ const createGeneralLedgerService = ({
         currency,
         lines: [
           { mappingKey: GL_MAPPING_KEY.REFUND_PAYABLE, debit: amount, bookingReference: refund.bookingReference },
-          { mappingKey: providerMappingKey(refund.provider), credit: amount, bookingReference: refund.bookingReference }
+          { mappingKey: clearingKey, credit: amount, bookingReference: refund.bookingReference }
         ],
         sourceSnapshot: { refund }
       },
@@ -1145,22 +1130,56 @@ const createGeneralLedgerService = ({
   const postBusinessExpense = async ({ expense = {}, auth = {}, requestId = "" } = {}) => {
     const amount = money(expense.baseCurrencyAmount || expense.amount || 0, { allowNegative: false, field: "expense.amount" });
     const currency = requireCurrency(expense.baseCurrency || expense.currency || "USD");
-    const creditKey = normalizeEnumToken(expense.paymentStatus) === "PAID" ? GL_MAPPING_KEY.BANK : GL_MAPPING_KEY.ACCOUNTS_PAYABLE;
+    const isBookingExpense = normalizeEnumToken(expense.accountingScope) === "BOOKING_ACCOUNTING";
+    const creditKey = GL_MAPPING_KEY.ACCOUNTS_PAYABLE;
+    const debitKey = isBookingExpense ? GL_MAPPING_KEY.SUPPLIER_DIRECT_COST : expenseMappingKey(expense.category);
+    const expenseId = normalizeId(expense._id) || expense.expenseReference;
+    const canonicalPostingKey = `expense-recognition:${expenseId}:v1`;
     return postSourceEvent({
       event: {
-        sourceModule: SOURCE_MODULE.BUSINESS_ACCOUNTING,
+        sourceModule: isBookingExpense ? SOURCE_MODULE.BOOKING_ACCOUNTING : SOURCE_MODULE.BUSINESS_ACCOUNTING,
         sourceEntityType: "BusinessExpense",
-        sourceEntityId: normalizeId(expense._id) || expense.expenseReference,
+        sourceEntityId: expenseId,
         sourceReference: expense.expenseReference || "",
         postingType: GL_POSTING_TYPE.BUSINESS_EXPENSE,
+        postingKey: canonicalPostingKey,
         postingDate: expense.expenseDate || expense.transactionDate || expense.createdAt,
         description: expense.description || `Business expense ${expense.expenseReference || ""}`.trim(),
         currency,
         lines: [
-          { mappingKey: expenseMappingKey(expense.category), debit: amount, supplierId: expense.supplier?.supplierId || "" },
+          { mappingKey: debitKey, debit: amount, supplierId: expense.supplier?.supplierId || "", bookingId: expense.bookingId, bookingReference: expense.bookingReference },
           { mappingKey: creditKey, credit: amount, supplierId: expense.supplier?.supplierId || "" }
         ],
-        sourceSnapshot: { expense }
+        sourceSnapshot: { expense },
+        metadata: { canonicalExpensePosting: true, canonicalPostingKey }
+      },
+      auth,
+      requestId
+    });
+  };
+
+  const postSupplierPayment = async ({ payment = {}, auth = {}, requestId = "" } = {}) => {
+    const amount = money(payment.baseCurrencyAmount || payment.amount || 0, { allowNegative: false, field: "supplierPayment.amount" });
+    const currency = requireCurrency(payment.baseCurrency || payment.currency || "USD");
+    const paymentId = normalizeId(payment._id) || payment.paymentReference;
+    const postingKey = `supplier-payment:${paymentId}:v1`;
+    return postSourceEvent({
+      event: {
+        sourceModule: SOURCE_MODULE.BUSINESS_ACCOUNTING,
+        sourceEntityType: "SupplierPayment",
+        sourceEntityId: paymentId,
+        sourceReference: payment.paymentReference || "",
+        postingType: GL_POSTING_TYPE.BUSINESS_EXPENSE_PAYMENT,
+        postingKey,
+        postingDate: payment.paymentDate || payment.createdAt,
+        description: payment.description || `Supplier payment ${payment.paymentReference || ""}`.trim(),
+        currency,
+        lines: [
+          { mappingKey: GL_MAPPING_KEY.ACCOUNTS_PAYABLE, debit: amount, supplierId: payment.supplierId || "" },
+          { mappingKey: payment.paymentSourceMappingKey || GL_MAPPING_KEY.BANK, credit: amount, supplierId: payment.supplierId || "" }
+        ],
+        sourceSnapshot: { payment },
+        metadata: { canonicalSupplierPayment: true, postingKey }
       },
       auth,
       requestId
@@ -2388,7 +2407,7 @@ const createGeneralLedgerService = ({
     const unpostedInvoices = invoiceRows.filter((row)=>!postedInvoiceReferences.has(normalizeToken(row.invoiceNumber||row.bookingReference))).length;
     const arCurrencies = new Set(invoiceRows.map(row=>normalizeEnumToken(row.accountingCurrency||row.transactionCurrency||row.currency)).filter(Boolean));
     const arSubledger = invoiceRows.reduce((sum,row)=>sum.plus(toDecimal(row.balanceDueAmount??row.balanceDue??0)),new Decimal(0));
-    const expenseRows = asArray(expenses).filter(row=>!["VOID","REJECTED"].includes(normalizeEnumToken(row.status)));
+    const expenseRows = asArray(expenses).filter(row=>row.sourceModule===SOURCE_MODULE.BUSINESS_ACCOUNTING&&!['VOID','REJECTED'].includes(normalizeEnumToken(row.status)));
     const apCurrencies = new Set(expenseRows.map(row=>normalizeEnumToken(row.baseCurrency||row.currency)).filter(Boolean));
     const apEvidenceComplete = expenseRows.every(row=>normalizeEnumToken(row.paymentStatus)!=="PARTIALLY_PAID");
     const apSubledger = expenseRows.reduce((sum,row)=>normalizeEnumToken(row.paymentStatus)==="PAID"?sum:sum.plus(toDecimal(row.baseCurrencyAmount||row.amount||0)),new Decimal(0));
@@ -2533,6 +2552,79 @@ const createGeneralLedgerService = ({
     return { action: "created", asset };
   };
 
+  const createFixedAssetDepreciationJournal = async ({ assetId, postingDate, auth = {}, requestId = "", reason = "" } = {}) => {
+    const asset = await leanMaybe(FixedAssetModel.findById(assetId));
+    if (!asset) throw new AppError("Fixed asset was not found.", 404, "FIXED_ASSET_NOT_FOUND");
+    if (asset.status !== FIXED_ASSET_STATUS.ACTIVE) {
+      throw new AppError("Only active fixed assets can generate depreciation journals.", 409, "FIXED_ASSET_NOT_ACTIVE");
+    }
+    const amount = toDecimal(asset.purchaseCost).minus(toDecimal(asset.salvageValue || 0)).dividedBy(Number(asset.usefulLifeMonths || 1)).toDecimalPlaces(2);
+    if (!amount.greaterThan(0)) throw new AppError("Fixed asset has no depreciable amount.", 422, "FIXED_ASSET_NOT_DEPRECIABLE");
+    const accounts = await leanMaybe(ChartOfAccountModel.find({ _id: { $in: [asset.assetAccount, asset.accumulatedDepreciationAccount, asset.depreciationExpenseAccount] }, active: true }));
+    const byId = new Map(accounts.map((account) => [String(account._id), account]));
+    const expenseAccount = byId.get(String(asset.depreciationExpenseAccount));
+    const accumulatedAccount = byId.get(String(asset.accumulatedDepreciationAccount));
+    if (!expenseAccount || !accumulatedAccount) throw new AppError("Fixed asset depreciation accounts are missing or inactive.", 422, "FIXED_ASSET_ACCOUNTS_INVALID");
+    const period = periodKeyForDate(normalizeDate(postingDate || now(), now()));
+    const sourceEntityId = String(asset._id);
+    return createJournal({
+      input: {
+        entryDate: postingDate || now(),
+        postingDate: postingDate || now(),
+        sourceModule: SOURCE_MODULE.BUSINESS_ACCOUNTING,
+        sourceEntityType: "FixedAssetDepreciation",
+        sourceEntityId,
+        sourceReference: `${asset.assetReference}:${period}`,
+        postingType: GL_POSTING_TYPE.DEPRECIATION,
+        postingKey: `FIXED_ASSET_DEPRECIATION:${asset.assetReference}:${period}`,
+        description: `Depreciation for ${asset.assetReference} - ${period}`,
+        currency: asset.currency,
+        requiresApproval: true,
+        reason: reason || "Fixed asset depreciation journal generated for review",
+        metadata: { assetReference: asset.assetReference, period, basis: "STRAIGHT_LINE_SCHEDULE" },
+        lines: [
+          { accountCode: expenseAccount.code, description: `Depreciation expense - ${asset.assetReference}`, debit: amount.toFixed() },
+          { accountCode: accumulatedAccount.code, description: `Accumulated depreciation - ${asset.assetReference}`, credit: amount.toFixed() }
+        ]
+      },
+      status: JOURNAL_STATUS.DRAFT,
+      auth,
+      requestId
+    });
+  };
+
+  const createFixedAssetAcquisitionJournal = async ({ assetId, fundingAccountCode = "1010", postingDate, auth = {}, requestId = "", reason = "", evidence = {} } = {}) => {
+    const asset = await leanMaybe(FixedAssetModel.findById(assetId));
+    if (!asset) throw new AppError("Fixed asset was not found.", 404, "FIXED_ASSET_NOT_FOUND");
+    const amount = money(asset.purchaseCost, { allowNegative: false, field: "asset.purchaseCost" });
+    const key = `FIXED_ASSET_ACQUISITION:${asset.assetReference}`;
+    return createJournal({
+      input: {
+        entryDate: postingDate || asset.startDate || now(),
+        postingDate: postingDate || asset.startDate || now(),
+        sourceModule: SOURCE_MODULE.BUSINESS_ACCOUNTING,
+        sourceEntityType: "FixedAssetAcquisition",
+        sourceEntityId: String(asset._id),
+        sourceReference: asset.assetReference,
+        postingType: GL_POSTING_TYPE.FIXED_ASSET_ACQUISITION,
+        postingKey: key,
+        description: `Fixed asset acquisition - ${asset.assetReference}`,
+        currency: asset.currency,
+        requiresApproval: true,
+        reason: reason || "Fixed asset acquisition journal generated for review",
+        evidence,
+        metadata: { assetReference: asset.assetReference, acquisitionBasis: "VERIFIED_SOURCE_EVIDENCE_REQUIRED" },
+        lines: [
+          { accountCode: (await leanMaybe(ChartOfAccountModel.findById(asset.assetAccount))).code, description: `Asset cost - ${asset.assetReference}`, debit: toDecimal(amount).toFixed() },
+          { accountCode: fundingAccountCode, description: `Funding for - ${asset.assetReference}`, credit: toDecimal(amount).toFixed() }
+        ]
+      },
+      status: JOURNAL_STATUS.DRAFT,
+      auth,
+      requestId
+    });
+  };
+
   const fixedAssetDepreciationPlan = (asset = {}) => {
     const depreciable = toDecimal(asset.purchaseCost || 0).minus(toDecimal(asset.salvageValue || 0));
     const monthly = depreciable.dividedBy(Number(asset.usefulLifeMonths || 1)).toDecimalPlaces(2);
@@ -2551,7 +2643,7 @@ const createGeneralLedgerService = ({
     const monthly = cost.minus(salvage).dividedBy(Number(asset.usefulLifeMonths || 1)).toDecimalPlaces(2);
     const start = new Date(asset.startDate); const end = asset.disposedAt && new Date(asset.disposedAt) < asOf ? new Date(asset.disposedAt) : asOf;
     const elapsed = end < start ? 0 : Math.max(0, (end.getUTCFullYear()-start.getUTCFullYear())*12+end.getUTCMonth()-start.getUTCMonth());
-    const months = Math.min(Number(asset.usefulLifeMonths || 0), elapsed); const accumulated = Decimal.min(monthly.times(months), cost.minus(salvage));
+    const months = Math.min(Number(asset.usefulLifeMonths || 0), start <= asOf ? elapsed + 1 : 0); const accumulated = Decimal.min(monthly.times(months), cost.minus(salvage));
     return { scheduledAccumulatedDepreciation: accumulated.toFixed(), netBookValue: cost.minus(accumulated).toFixed(), monthlyDepreciation: monthly.toFixed(), elapsedMonths: months, fullyDepreciated: months >= Number(asset.usefulLifeMonths || 0) };
   };
 
@@ -2603,6 +2695,8 @@ const createGeneralLedgerService = ({
     approveJournal,
     closePeriod,
     createFixedAsset,
+    createFixedAssetDepreciationJournal,
+    createFixedAssetAcquisitionJournal,
     createJournal,
     createManualJournal,
     createOrGetPeriod,
@@ -2621,6 +2715,7 @@ const createGeneralLedgerService = ({
     listJournals,
     listPeriods,
     postBusinessExpense,
+    postSupplierPayment,
     postBusinessIncome,
     postCustomerInvoice,
     postCustomerPayment,

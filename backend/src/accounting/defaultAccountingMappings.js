@@ -12,6 +12,7 @@ const DEFAULT_ACCOUNTING_MAPPINGS = Object.freeze([
   { mappingKey: GL_MAPPING_KEY.DPO_CLEARING, accountCode: "1050", provider: "dpo", description: "DPO provider clearing" },
   { mappingKey: GL_MAPPING_KEY.MOBILE_MONEY, accountCode: "1060", description: "Mobile money account" },
   { mappingKey: GL_MAPPING_KEY.ACCOUNTS_RECEIVABLE, accountCode: "1100", description: "Accounts receivable control account" },
+  { mappingKey: GL_MAPPING_KEY.CUSTOMER_DEPOSIT, accountCode: "2030", description: "Customer deposits liability" },
   { mappingKey: GL_MAPPING_KEY.ACCOUNTS_PAYABLE, accountCode: "2010", description: "Accounts payable control account" },
   { mappingKey: GL_MAPPING_KEY.REFUND_PAYABLE, accountCode: "2040", description: "Refund payable control account" },
   { mappingKey: GL_MAPPING_KEY.TAX_PAYABLE, accountCode: "2100", description: "Tax payable account" },

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { BOOKING_DIRECT_COST_CATEGORIES } = require("../accounting/bookingExpensePolicy");
 const {
   ACCOUNTING_SCOPE,
   BUSINESS_UNIT,
@@ -12,9 +13,10 @@ const businessExpenseSchema = new mongoose.Schema(
   {
     expenseReference: { type: String, required: true, unique: true, index: true },
     idempotencyKey: { type: String, required: true, unique: true, index: true },
+    bookingExpenseRequestHash: { type: String, default: "" },
     accountingScope: {
       type: String,
-      enum: [ACCOUNTING_SCOPE.BUSINESS],
+      enum: [ACCOUNTING_SCOPE.BUSINESS, ACCOUNTING_SCOPE.BOOKING],
       default: ACCOUNTING_SCOPE.BUSINESS,
       index: true
     },
@@ -26,7 +28,7 @@ const businessExpenseSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: Object.values(EXPENSE_CATEGORY),
+      enum: [...Object.values(EXPENSE_CATEGORY), ...BOOKING_DIRECT_COST_CATEGORIES],
       required: true,
       index: true
     },
@@ -40,6 +42,18 @@ const businessExpenseSchema = new mongoose.Schema(
     sourceRecordId: { type: String, default: "", index: true },
     sourceRecordModel: { type: String, default: "" },
     accountingPostingId: { type: mongoose.Schema.Types.ObjectId, ref: "AccountingPosting", default: null, index: true },
+    accountingStatus: {
+      type: String,
+      enum: ["NOT_READY", "READY_TO_POST", "POSTING", "POSTED", "POSTING_BLOCKED", "NEEDS_REVIEW", "REVERSED", "FAILED_RETRYABLE"],
+      default: "NOT_READY",
+      index: true
+    },
+    canonicalPostingKey: { type: String, default: "", index: true },
+    journalEntryId: { type: mongoose.Schema.Types.ObjectId, ref: "JournalEntry", default: null, index: true },
+    accountingBlockers: { type: [String], default: [] },
+    accountingLastAttemptAt: { type: Date, default: null },
+    accountingPostedAt: { type: Date, default: null },
+    accountingFailure: { type: String, default: "" },
     bookingReference: { type: String, default: "", index: true },
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
     description: { type: String, required: true },
@@ -66,6 +80,12 @@ const businessExpenseSchema = new mongoose.Schema(
     },
     paymentMethod: { type: String, default: "" },
     paymentReference: { type: String, default: "", index: true },
+    supplierPaymentAllocations: [{
+      paymentId: { type: mongoose.Schema.Types.ObjectId, ref: "SupplierPayment" },
+      amount: { type: mongoose.Schema.Types.Decimal128 },
+      baseCurrencyAmount: { type: mongoose.Schema.Types.Decimal128 },
+      allocatedAt: { type: Date, default: null }
+    }],
     receiptAttachment: {
       name: { type: String, default: "" },
       url: { type: String, default: "" },
@@ -84,6 +104,12 @@ const businessExpenseSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(FINANCIAL_ENTRY_STATUS),
       default: FINANCIAL_ENTRY_STATUS.DRAFT,
+      index: true
+    },
+    completionStatus: {
+      type: String,
+      enum: ["NOT_STARTED", "IN_PROGRESS", "COMPLETE", "NEEDS_REVIEW"],
+      default: "NOT_STARTED",
       index: true
     },
     metadata: mongoose.Schema.Types.Mixed

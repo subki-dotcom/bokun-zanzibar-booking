@@ -1,0 +1,103 @@
+{
+  "readOnly": true,
+  "dryRun": true,
+  "strategy": "REVIEW_APPROVE_APPLY_VERIFY",
+  "generatedAt": "2026-09-18T03:52:26.360Z",
+  "scanned": 10,
+  "summary": {
+    "BLOCKED_MISSING_COST_TEMPLATE": 10
+  },
+  "writes": 0,
+  "rows": [
+    {
+      "bookingId": "6a4776f0448436a55c9cac7b",
+      "bookingReference": "ZNZ-1783068400084-3278",
+      "bokunProductId": "892073",
+      "bokunOptionId": "1721391",
+      "action": "BLOCKED_MISSING_COST_TEMPLATE",
+      "reason": "NO_EFFECTIVE_COST_TEMPLATE",
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47812b59814ab149c55e8e",
+      "bookingReference": "ZNZ-1783071019641-1170",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_MISSING_COST_TEMPLATE",
+      "reason": "NO_EFFECTIVE_COST_TEMPLATE",
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47878d59814ab149c55f2f",
+      "bookingReference": "ZNZ-1783072653718-9199",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_MISSING_COST_TEMPLATE",
+      "reason": "NO_EFFECTIVE_COST_TEMPLATE",
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a4790f6313e4ee145b8b35c",
+      "bookingReference": "ZNZ-1783075062164-2808",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_MISSING_COST_TEMPLATE",
+      "reason": "NO_EFFECTIVE_COST_TEMPLATE",
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47d87362ce693f2e8a738e",
+      "bookingReference": "ZNZ-1783093363061-7495",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_MISSING_COST_TEMPLATE",
+      "reason": "NO_EFFECTIVE_COST_TEMPLATE",
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47d88862ce693f2e8a73a5",
+      "bookingReference": "ZNZ-1783093384503-3418",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_MISSING_COST_TEMPLATE",
+      "reason": "NO_EFFECTIVE_COST_TEMPLATE",
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47d98562ce693f2e8a73c9",
+      "bookingReference": "ZNZ-1783093637342-1323",
+      "bokunProductId": "1124157",
+      "bokunOptionId": "2233036",
+      "action": "BLOCKED_MISSING_COST_TEMPLATE",
+      "reason": "NO_EFFECTIVE_COST_TEMPLATE",
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47dea227b90974d0a1c521",
+      "bookingReference": "ZNZ-1783094946270-5328",
+      "bokunProductId": "963546",
+      "bokunOptionId": "1865105",
+      "action": "BLOCKED_MISSING_COST_TEMPLATE",
+      "reason": "NO_EFFECTIVE_COST_TEMPLATE",
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47e5b527b90974d0a1c5a9",
+      "bookingReference": "ZNZ-1783096757501-8584",
+      "bokunProductId": "1141765",
+      "bokunOptionId": "2268761",
+      "action": "BLOCKED_MISSING_COST_TEMPLATE",
+      "reason": "NO_EFFECTIVE_COST_TEMPLATE",
+      "snapshot": null
+    },
+    {
+      "bookingId": "6a47e79e9e70be68b81b8522",
+      "bookingReference": "ZNZ-1783097246955-2831",
+      "bokunProductId": "1141765",
+      "bokunOptionId": "2268761",
+      "action": "BLOCKED_MISSING_COST_TEMPLATE",
+      "reason": "NO_EFFECTIVE_COST_TEMPLATE",
+      "snapshot": null
+    }
+  ]
+}

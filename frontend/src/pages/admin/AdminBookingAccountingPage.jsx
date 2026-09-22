@@ -1,6 +1,7 @@
 import BookingPaymentOverview from '../../components/invoice/BookingPaymentOverview';
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Card, Col, Row, Table } from "react-bootstrap";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { newBookingExpenseForm, bookingExpensePayload } from "./bookingExpenseForm";
+import { Badge, Button, Card, Col, Form, Modal, Offcanvas, Row, Table } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
 import {
   BsArrowClockwise,
@@ -17,13 +18,20 @@ import {
   BsFunnel,
   BsGraphUpArrow,
   BsInfoCircle,
+  BsEye,
   BsPieChart,
   BsReceipt
 } from "react-icons/bs";
 import {
   fetchBookingAccountingCostTemplates,
   fetchBookingAccountingDashboard,
+  fetchBookingFinancialFacts,
+  fetchAuthoritativeFinancialSummary,
   fetchBookingAccountingExpenses,
+  fetchBookingAccountingExpense,
+  createBookingAccountingExpense,
+  updateBookingAccountingExpenseCompletion,
+  voidBookingAccountingExpense,
   fetchBookingAccountingInvoices,
   fetchBookingAccountingProfitability,
   fetchBookingAccountingReconciliation,
@@ -45,8 +53,15 @@ const safeNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 const money = (value, currency = "USD") => formatCurrency(safeNumber(value), currency || "USD");
+const optionalMoney = (value, currency = "USD") => value === null || value === undefined || value === "" ? "-" : money(value, currency);
 const percent = (value) => `${safeNumber(value).toFixed(2)}%`;
 const label = (value = "") => String(value || "-").replaceAll("_", " ");
+
+const EvidenceBadge = ({ value }) => {
+  const normalized = String(value || "UNKNOWN").toUpperCase();
+  const variant = normalized === "VERIFIED" || normalized === "AVAILABLE" ? "success" : normalized.includes("NEEDS_REVIEW") ? "warning" : "secondary";
+  return <Badge bg={variant}>{label(normalized)}</Badge>;
+};
 
 const formatReference = (value = "") => {
   const text = String(value || "");
@@ -343,7 +358,7 @@ const ProfitabilityBars = ({ rows = [], currency = "USD" }) => {
   );
 };
 
-const RecentFinancials = ({ rows = [], currency = "USD" }) => {
+const RecentFinancials = ({ rows = [], currency = "USD", onTrace }) => {
   if (!rows.length) return <DashboardEmpty message="No booking financials in selected period." />;
   return (
     <>
@@ -365,7 +380,11 @@ const RecentFinancials = ({ rows = [], currency = "USD" }) => {
           <tbody>
             {rows.map((row) => (
               <tr key={row.bookingReference}>
-                <td><strong>{formatReference(row.bookingReference)}</strong></td>
+                <td>
+                  <Button variant="link" size="sm" className="p-0 text-decoration-none" onClick={() => onTrace?.(row.bookingReference)} title="View authoritative financial facts">
+                    <BsEye className="me-1" aria-hidden="true" />{formatReference(row.bookingReference)}
+                  </Button>
+                </td>
                 <td className="booking-accounting-dashboard-truncate"><span>{row.productTitle || "-"}</span><small>{row.optionTitle || ""}</small></td>
                 <td>{row.salesChannelLabel || label(row.salesChannel)}</td>
                 <td className="text-end">{money(row.revenue, row.currency || currency)}</td>
@@ -399,6 +418,7 @@ const RecentFinancials = ({ rows = [], currency = "USD" }) => {
             <footer>
               <span>{row.salesChannelLabel || label(row.salesChannel)}</span>
               <span>{formatShortDate(row.date)}</span>
+              <Button variant="outline-secondary" size="sm" onClick={() => onTrace?.(row.bookingReference)}><BsEye className="me-1" />Trace</Button>
             </footer>
           </article>
         ))}
@@ -407,11 +427,58 @@ const RecentFinancials = ({ rows = [], currency = "USD" }) => {
   );
 };
 
+const FactValue = ({ label: title, value, currency: code }) => (
+  <div className="d-flex justify-content-between gap-3 border-bottom py-2">
+    <span className="text-muted">{title}</span>
+    <strong className="text-end">{value === null || value === undefined ? "Awaiting evidence" : code ? money(value, code) : value}</strong>
+  </div>
+);
+
+const FinancialFactsOffcanvas = ({ facts, loading, error, onHide, onAddExpense }) => {
+  const code = facts?.booking?.currency || "USD";
+  const trace = facts?.trace || {};
+  return (
+    <Offcanvas placement="end" show={Boolean(facts || loading || error)} onHide={onHide}>
+      <Offcanvas.Header closeButton><Offcanvas.Title>Authoritative Financial Facts</Offcanvas.Title></Offcanvas.Header>
+      <Offcanvas.Body>
+        {loading ? <Loader message="Loading booking facts..." /> : error ? <ErrorAlert error={error} /> : facts ? (
+          <>
+            <h5>{facts.booking.reference || "Booking"}</h5>
+            <p className="text-muted">Read-only source trace for {facts.booking.channel || "unknown channel"}.</p>
+            <Badge bg={facts.evidence?.accounting ? "success" : "secondary"} className="mb-3">{facts.evidence?.accounting ? "Accounting linked" : "Accounting link pending"}</Badge>
+            <div className="mb-3">
+              <Button variant="primary" size="sm" onClick={() => onAddExpense?.(facts.booking.reference)}>
+                Add actual expense
+              </Button>
+            </div>
+            <FactValue label="Gross booking revenue" value={facts.revenue?.grossBookingRevenue} currency={code} />
+            <FactValue label="Invoiced revenue" value={facts.revenue?.invoicedRevenue} currency={code} />
+            <FactValue label="Guest payment" value={facts.guestPayment?.amount} currency={code} />
+            <FactValue label="Guest receivable" value={facts.receivable?.amount} currency={code} />
+            <FactValue label="OTA pending payout" value={facts.receivable?.otaPendingPayout} currency={code} />
+            <FactValue label="Settlement received" value={facts.settlement?.amount} currency={facts.settlement?.currency || code} />
+            <FactValue label="Refunds" value={facts.refunds?.amount} currency={code} />
+            <FactValue label="Direct costs (actual)" value={facts.expenses?.directCosts} currency={facts.expenses?.currency || code} />
+            <FactValue label="Estimated direct costs" value={facts.expenses?.estimatedDirectCosts} currency={facts.expenses?.currency || code} />
+            <FactValue label="Gateway fees" value={facts.fees?.paymentGatewayFees} currency={code} />
+            <FactValue label="OTA commission" value={facts.fees?.otaCommissions} currency={code} />
+            <h6 className="mt-4">Source IDs</h6>
+            <dl className="small mb-0">
+              {Object.entries(trace).map(([key, value]) => <div key={key} className="mb-2"><dt>{label(key)}</dt><dd className="text-muted text-break mb-0">{Array.isArray(value) ? value.join(", ") || "None" : value || "None"}</dd></div>)}
+            </dl>
+          </>
+        ) : null}
+      </Offcanvas.Body>
+    </Offcanvas>
+  );
+};
+
 const AttentionPanel = ({ items = [] }) => {
-  if (!items.length) return <DashboardEmpty message="No accounting issues detected." />;
+  const visibleItems = items.filter((item) => Number(item.count || 0) > 0 || item.severity !== "success");
+  if (!visibleItems.length) return <DashboardEmpty message="No accounting issues detected." />;
   return (
     <div className="booking-accounting-dashboard-attention-list">
-      {items.slice(0, 7).map((item) => (
+      {visibleItems.slice(0, 7).map((item) => (
         <Link key={item.id} to={item.href || "#"} className={`is-${item.severity || "neutral"}`}>
           <span>{item.label}<small>{item.description}</small></span>
           <strong>{formatNumber(item.count)}</strong>
@@ -489,8 +556,53 @@ const exportDashboardCsv = (dashboard = {}) => {
   URL.revokeObjectURL(url);
 };
 
+const AuthoritativeSummary = ({ summary, loading }) => {
+  if (loading) return <DashboardSkeleton rows={3} />;
+  if (!summary?.items?.length) return <DashboardEmpty message="No authoritative financial facts found for this period." />;
+  return (
+    <div className="table-responsive">
+      <table className="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Currency</th>
+            <th className="text-end">Bookings</th>
+            <th className="text-end">Gross Revenue</th>
+            <th className="text-end">Collected</th>
+            <th className="text-end">Receivable</th>
+            <th className="text-end">Refunds</th>
+            <th className="text-end">Direct Costs</th>
+            <th className="text-end">Gross Profit</th>
+            <th>Evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {summary.items.map((item) => {
+            const evidencePending = (item.evidence?.unknownOtaPayoutBookings || 0) + (item.evidence?.unknownCommissionBookings || 0);
+            return (
+              <tr key={item.currency}>
+                <td><strong>{item.currency}</strong></td>
+                <td className="text-end">{item.bookings}</td>
+                <td className="text-end">{money(item.grossBookingRevenue, item.currency)}</td>
+                <td className="text-end">{money(item.guestPaymentsCollected, item.currency)}</td>
+                <td className="text-end">{item.otaReceivables === null ? "Awaiting evidence" : money(item.otaReceivables, item.currency)}</td>
+                <td className="text-end">{money(item.refunds, item.currency)}</td>
+                <td className="text-end">{money(item.directCosts, item.currency)}</td>
+                <td className="text-end">{money(item.grossProfit, item.currency)}</td>
+                <td>{evidencePending ? <StatusBadge value={`${evidencePending} pending`} /> : <StatusBadge value="available" />}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <small className="text-muted d-block mt-2">Values are grouped by currency. Net profit remains unavailable until approved operating expenses are allocated.</small>
+    </div>
+  );
+};
+
 const BookingAccountingDashboard = ({
   dashboard,
+  authoritativeSummary,
+  onTrace,
   filters,
   setFilters,
   loading,
@@ -590,6 +702,11 @@ const BookingAccountingDashboard = ({
         </div>
       ) : null}
 
+      <DashboardCard>
+        <DashboardCardHeader title="Authoritative Financial Facts" detail="Read-only facts from bookings, payments, refunds, settlements and posted expenses." />
+        <AuthoritativeSummary summary={authoritativeSummary} loading={loading} />
+      </DashboardCard>
+
       <div className="booking-accounting-dashboard-primary-kpis">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
@@ -632,7 +749,7 @@ const BookingAccountingDashboard = ({
             detail="Actual costs are preferred; estimated costs are labelled when no posted expense exists."
             action={<Link to="/admin/booking-accounting/profitability">View all</Link>}
           />
-          {loading ? <DashboardSkeleton rows={7} className="is-table" /> : <RecentFinancials rows={asArray(dashboard?.recentBookingFinancials)} currency={currency} />}
+          {loading ? <DashboardSkeleton rows={7} className="is-table" /> : <RecentFinancials rows={asArray(dashboard?.recentBookingFinancials)} currency={currency} onTrace={onTrace} />}
         </DashboardCard>
         <DashboardCard>
           <DashboardCardHeader title="Needs Attention" action={<Link to="/admin/booking-accounting/reconciliation">View all</Link>} />
@@ -723,7 +840,7 @@ const RefundsTable = ({ items = [] }) => (
   </AccountingTable>
 );
 
-const ExpensesTable = ({ items = [] }) => (
+const ExpensesTable = ({ items = [], onCompletionChange, onView }) => (
   <AccountingTable>
     <thead>
       <tr>
@@ -732,8 +849,10 @@ const ExpensesTable = ({ items = [] }) => (
         <th>Category</th>
         <th>Supplier</th>
         <th>Status</th>
+        <th>Completion</th>
         <th className="text-end">Amount</th>
         <th>Date</th>
+        <th className="text-end">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -747,26 +866,207 @@ const ExpensesTable = ({ items = [] }) => (
           <td>{label(item.category)}</td>
           <td>{item.supplierName || "-"}</td>
           <td><StatusBadge value={item.status || item.paymentStatus} /></td>
+          <td>
+            <Form.Select
+              size="sm"
+              value={item.completionStatus || "NOT_STARTED"}
+              onChange={(event) => onCompletionChange?.(item, event.target.value)}
+              aria-label={`Completion status for ${item.expenseReference}`}
+            >
+              <option value="NOT_STARTED">Not started</option>
+              <option value="IN_PROGRESS">In progress</option>
+              <option value="COMPLETE">Complete</option>
+              <option value="NEEDS_REVIEW">Needs review</option>
+            </Form.Select>
+          </td>
           <td className="text-end">{money(item.baseCurrencyAmount ?? item.amount, item.baseCurrency || item.currency)}</td>
           <td>{formatDateTime(item.expenseDate)}</td>
+          <td className="text-end">
+            <Button variant="outline-secondary" size="sm" onClick={() => onView?.(item)} aria-label={`View ${item.expenseReference}`}>
+              <BsEye aria-hidden="true" />
+            </Button>
+          </td>
         </tr>
-      )) : <EmptyRow colSpan={7} message="No booking-linked expenses found." />}
+      )) : <EmptyRow colSpan={9} message="No actual booking-linked expenses found. Estimated costs are shown in Profitability." />}
     </tbody>
   </AccountingTable>
 );
+
+const ExpenseFilters = ({ filters, onChange, onReset }) => (
+  <Row className="g-2 mb-3 align-items-end">
+    <Col lg={4} md={6}>
+      <Form.Label>Search expenses</Form.Label>
+      <Form.Control
+        value={filters.search}
+        onChange={(event) => onChange({ search: event.target.value, page: 1 })}
+        placeholder="Booking, reference, supplier or description"
+      />
+    </Col>
+    <Col lg={2} md={6}>
+      <Form.Label>Status</Form.Label>
+      <Form.Select value={filters.status} onChange={(event) => onChange({ status: event.target.value, page: 1 })}>
+        <option value="">All statuses</option>
+        <option value="DRAFT">Draft</option>
+        <option value="APPROVED">Approved</option>
+        <option value="PAID">Paid</option>
+        <option value="VOID">Void</option>
+      </Form.Select>
+    </Col>
+    <Col lg={2} md={6}>
+      <Form.Label>From</Form.Label>
+      <Form.Control type="date" value={filters.fromDate} onChange={(event) => onChange({ fromDate: event.target.value, page: 1 })} />
+    </Col>
+    <Col lg={2} md={6}>
+      <Form.Label>To</Form.Label>
+      <Form.Control type="date" value={filters.toDate} onChange={(event) => onChange({ toDate: event.target.value, page: 1 })} />
+    </Col>
+    <Col lg={1} md={6}>
+      <Form.Label>Rows</Form.Label>
+      <Form.Select value={filters.limit} onChange={(event) => onChange({ limit: Number(event.target.value), page: 1 })}>
+        {[10, 25, 50].map((size) => <option key={size} value={size}>{size}</option>)}
+      </Form.Select>
+    </Col>
+    <Col lg={1} md={6}>
+      <Button variant="outline-secondary" onClick={onReset} className="w-100">Reset</Button>
+    </Col>
+  </Row>
+);
+
+const ExpensePagination = ({ page = 1, limit = 25, total = 0, onPageChange }) => {
+  const pageCount = Math.max(1, Math.ceil(total / limit));
+  if (pageCount <= 1) return null;
+  return (
+    <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+      <small className="text-muted">Page {page} of {pageCount} ({total} expenses)</small>
+      <div className="d-flex gap-2">
+        <Button variant="outline-secondary" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Previous</Button>
+        <Button variant="outline-secondary" size="sm" disabled={page >= pageCount} onClick={() => onPageChange(page + 1)}>Next</Button>
+      </div>
+    </div>
+  );
+};
+
+const BookingExpenseDetailsOffcanvas = ({ expense, loading, error, onHide, onVoid }) => (
+  <Offcanvas placement="end" show={Boolean(expense || loading || error)} onHide={onHide}>
+    <Offcanvas.Header closeButton>
+      <Offcanvas.Title>Booking expense details</Offcanvas.Title>
+    </Offcanvas.Header>
+    <Offcanvas.Body>
+      {loading ? <Loader message="Loading expense details..." /> : null}
+      {error ? <ErrorAlert error={error} /> : null}
+      {expense ? (
+        <div className="d-grid gap-3">
+          <div>
+            <strong className="d-block">{expense.expenseReference || "Expense"}</strong>
+            <small className="text-muted">{expense.description || "No description"}</small>
+          </div>
+          <dl className="row mb-0">
+            <dt className="col-5">Booking</dt><dd className="col-7">{expense.bookingReference || "-"}</dd>
+            <dt className="col-5">Category</dt><dd className="col-7">{label(expense.category)}</dd>
+            <dt className="col-5">Supplier</dt><dd className="col-7">{expense.supplierName || "-"}</dd>
+            <dt className="col-5">Amount</dt><dd className="col-7">{money(expense.amount, expense.currency)}</dd>
+            <dt className="col-5">Base amount</dt><dd className="col-7">{money(expense.baseCurrencyAmount, expense.baseCurrency)}</dd>
+            <dt className="col-5">Financial status</dt><dd className="col-7"><StatusBadge value={expense.status || expense.paymentStatus} /></dd>
+            <dt className="col-5">Completion</dt><dd className="col-7"><StatusBadge value={expense.completionStatus} /></dd>
+            <dt className="col-5">Expense date</dt><dd className="col-7">{formatDateTime(expense.expenseDate)}</dd>
+            <dt className="col-5">Source</dt><dd className="col-7">{expense.sourceModule || "-"}</dd>
+          </dl>
+          {expense.status !== "VOID" ? <Button variant="outline-danger" onClick={() => onVoid?.(expense)}>Void expense</Button> : null}
+        </div>
+      ) : null}
+    </Offcanvas.Body>
+  </Offcanvas>
+);
+
+const BookingExpenseForm = ({ show, onHide, onCreated, initialBookingReference = "" }) => {
+  const [form, setForm] = useState(newBookingExpenseForm);
+  const [expenseConfig, setExpenseConfig] = useState(null);
+  const inFlight = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!show) return;
+    let active = true;
+    fetchBookingAccountingExpenses({ limit: 1 }).then((config) => {
+      if (active) setExpenseConfig(config);
+    }).catch((err) => { if (active) setError(err.message || "Failed to load expense settings"); });
+    return () => { active = false; };
+  }, [show]);
+
+  useEffect(() => {
+    if (show && initialBookingReference) {
+      setForm((current) => ({ ...current, bookingReference: initialBookingReference }));
+    }
+  }, [show, initialBookingReference]);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (inFlight.current || !expenseConfig) return;
+    inFlight.current = true;
+    setSaving(true);
+    setError("");
+    try {
+      await createBookingAccountingExpense(bookingExpensePayload(form, expenseConfig.baseCurrency));
+      setForm(newBookingExpenseForm());
+      onCreated();
+      onHide();
+    } catch (err) {
+      setError(err.message || "Failed to create booking expense");
+    } finally {
+      inFlight.current = false;
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal show={show} onHide={saving ? undefined : onHide} centered>
+      <Form onSubmit={submit}>
+        <Modal.Header closeButton><Modal.Title>Add booking expense</Modal.Title></Modal.Header>
+        <Modal.Body>
+          {error ? <div className="alert alert-danger py-2">{error}</div> : null}
+          <Form.Group className="mb-3"><Form.Label>Booking reference</Form.Label><Form.Control required value={form.bookingReference} onChange={(event) => setForm({ ...form, bookingReference: event.target.value })} /></Form.Group>
+          <Row className="g-2">
+            <Col md={7}><Form.Group className="mb-3"><Form.Label>Description</Form.Label><Form.Control required value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></Form.Group></Col>
+            <Col md={5}><Form.Group className="mb-3"><Form.Label>Category</Form.Label><Form.Select required value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>{(expenseConfig?.directCostCategories || []).map((category) => <option key={category} value={category}>{label(category)}</option>)}</Form.Select></Form.Group></Col>
+            <Col md={7}><Form.Group className="mb-3"><Form.Label>Amount</Form.Label><Form.Control required min="0.01" step="0.01" type="number" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} /></Form.Group></Col>
+            <Col md={5}><Form.Group className="mb-3"><Form.Label>Currency</Form.Label><Form.Control required maxLength={3} value={form.currency} onChange={(event) => setForm({ ...form, currency: event.target.value.toUpperCase(), exchangeRate: "", exchangeRateDate: "", exchangeRateSource: "" })} /></Form.Group></Col>
+          </Row>
+          <Form.Group><Form.Label>Expense date</Form.Label><Form.Control required type="date" value={form.expenseDate} onChange={(event) => setForm({ ...form, expenseDate: event.target.value })} /></Form.Group>
+          {expenseConfig && form.currency !== expenseConfig.baseCurrency ? <div className="mt-3">
+            <Form.Group className="mb-2"><Form.Label>Verified FX rate ({expenseConfig.baseCurrency} per 1 {form.currency})</Form.Label><Form.Control required type="number" min="0.000000000001" step="any" value={form.exchangeRate} onChange={(event) => setForm({ ...form, exchangeRate: event.target.value })} /></Form.Group>
+            <Form.Group className="mb-2"><Form.Label>Rate date</Form.Label><Form.Control required type="date" value={form.exchangeRateDate} onChange={(event) => setForm({ ...form, exchangeRateDate: event.target.value })} /></Form.Group>
+            <Form.Group><Form.Label>Rate source / evidence reference</Form.Label><Form.Control required placeholder="Bank quote or verified rate reference" value={form.exchangeRateSource} onChange={(event) => setForm({ ...form, exchangeRateSource: event.target.value })} /></Form.Group>
+          </div> : null}
+        </Modal.Body>
+        <Modal.Footer><Button variant="outline-secondary" disabled={saving} onClick={onHide}>Cancel</Button><Button type="submit" disabled={saving || !expenseConfig}>{saving ? "Saving..." : "Add expense"}</Button></Modal.Footer>
+      </Form>
+    </Modal>
+  );
+};
 
 const ProfitabilityTable = ({ items = [] }) => (
   <AccountingTable>
     <thead>
       <tr>
-        <th>Booking</th>
-        <th>Channel</th>
-        <th className="text-end">Collected</th>
-        <th className="text-end">Refunded</th>
-        <th className="text-end">Fees</th>
-        <th className="text-end">Direct Cost</th>
-        <th className="text-end">Gross Profit</th>
-        <th className="text-end">Margin</th>
+        <th colSpan={12}>Profitability</th>
+        <th colSpan={2}>Settlement</th>
+      </tr>
+      <tr>
+        <th>Booking Reference</th>
+        <th>Sales Channel</th>
+        <th className="text-end">Revenue Basis / Supplier Revenue</th>
+        <th>Revenue Currency</th>
+        <th>Revenue Basis Source</th>
+        <th>Revenue Evidence</th>
+        <th className="text-end">Gross / Total</th>
+        <th className="text-end">OTA Commission</th>
+        <th className="text-end">Actual Direct Costs</th>
+        <th className="text-end">Estimated Direct Costs</th>
+        <th className="text-end">Actual Profit</th>
+        <th className="text-end">Estimated Profit</th>
+        <th className="text-end">Profit Margin</th>
+        <th>Reconciliation Status</th>
       </tr>
     </thead>
     <tbody>
@@ -777,14 +1077,28 @@ const ProfitabilityTable = ({ items = [] }) => (
             <small className="text-muted">{item.productTitle || "-"}</small>
           </td>
           <td>{label(item.salesChannel)}</td>
-          <td className="text-end">{money(item.collectedRevenue, item.currency)}</td>
-          <td className="text-end">{money(item.refundedAmount, item.currency)}</td>
-          <td className="text-end">{money(item.paymentProviderFees, item.currency)}</td>
+          <td className="text-end"><strong>{optionalMoney(item.revenueBasis, item.revenueBasisCurrency || item.currency)}</strong></td>
+          <td>{item.revenueBasisCurrency || item.currency || "-"}</td>
+          <td><small>{label(item.revenueBasisSource)}</small></td>
+          <td><EvidenceBadge value={item.revenueEvidenceStatus} /></td>
+          <td className="text-end">{optionalMoney(item.customerGrossRevenue, item.customerGrossCurrency || item.currency)}</td>
+          <td className="text-end">
+            {item.otaCommissionStatus === "VERIFIED"
+              ? optionalMoney(item.otaCommissionAmount, item.otaCommissionCurrency || item.currency)
+              : item.salesChannel === "VIATOR" ? <small>DEFERRED / NOT USED IN PROFITABILITY</small> : "-"}
+          </td>
           <td className="text-end">{money(item.actualDirectCost, item.currency)}</td>
-          <td className="text-end">{money(item.grossProfit, item.currency)}</td>
-          <td className="text-end">{percent(item.profitMargin)}</td>
+          <td className="text-end">{money(item.estimatedDirectCost, item.currency)}</td>
+          <td className="text-end">{optionalMoney(item.actualProfit, item.revenueBasisCurrency || item.currency)}</td>
+          <td className="text-end">{optionalMoney(item.estimatedProfit, item.revenueBasisCurrency || item.currency)}{item.actualProfit === null && item.estimatedProfit !== null ? <small className="d-block text-muted">ESTIMATED</small> : null}</td>
+          <td className="text-end">{(() => {
+            const margin = item.actualProfit !== null && item.actualProfit !== undefined ? item.actualProfitMargin : item.estimatedProfitMargin;
+            if (item.revenueEvidenceStatus !== "VERIFIED" || margin === null || margin === undefined) return <EvidenceBadge value={item.revenueEvidenceStatus || "UNKNOWN"} />;
+            return <>{percent(margin)}{item.actualProfit === null || item.actualProfit === undefined ? <small className="d-block text-muted">ESTIMATED</small> : null}</>;
+          })()}</td>
+          <td><EvidenceBadge value={item.reconciliationStatus || "UNKNOWN"} /></td>
         </tr>
-      )) : <EmptyRow colSpan={8} message="No profitability rows found." />}
+      )) : <EmptyRow colSpan={14} message="No profitability rows found." />}
     </tbody>
   </AccountingTable>
 );
@@ -827,6 +1141,7 @@ const AdminBookingAccountingPage = () => {
   });
   const [data, setData] = useState({
     dashboard: null,
+    authoritativeSummary: null,
     invoices: { items: [] },
     refunds: { items: [] },
     expenses: { items: [] },
@@ -837,6 +1152,15 @@ const AdminBookingAccountingPage = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [financialFacts, setFinancialFacts] = useState(null);
+  const [financialFactsLoading, setFinancialFactsLoading] = useState(false);
+  const [financialFactsError, setFinancialFactsError] = useState("");
+  const [expenseBookingReference, setExpenseBookingReference] = useState("");
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [expenseFilters, setExpenseFilters] = useState({ page: 1, limit: 25, search: "", status: "", fromDate: "", toDate: "" });
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [expenseDetailLoading, setExpenseDetailLoading] = useState(false);
+  const [expenseDetailError, setExpenseDetailError] = useState("");
 
   const dashboardQuery = useMemo(() => ({
     limit: 500,
@@ -846,6 +1170,15 @@ const AdminBookingAccountingPage = () => {
     ...(dashboardFilters.channel ? { channel: dashboardFilters.channel } : {})
   }), [dashboardFilters]);
 
+  const expenseQuery = useMemo(() => ({
+    page: expenseFilters.page,
+    limit: expenseFilters.limit,
+    ...(expenseFilters.search ? { search: expenseFilters.search } : {}),
+    ...(expenseFilters.status ? { status: expenseFilters.status } : {}),
+    ...(expenseFilters.fromDate ? { fromDate: expenseFilters.fromDate } : {}),
+    ...(expenseFilters.toDate ? { toDate: expenseFilters.toDate } : {})
+  }), [expenseFilters]);
+
   const load = useCallback(async ({ silent = false } = {}) => {
     if (silent) setRefreshing(true);
     else setLoading(true);
@@ -853,10 +1186,31 @@ const AdminBookingAccountingPage = () => {
 
     try {
       if (mode === "dashboard") {
-        const dashboard = await fetchBookingAccountingDashboard(dashboardQuery);
+        const [dashboard, authoritativeSummary] = await Promise.all([
+          fetchBookingAccountingDashboard(dashboardQuery),
+          fetchAuthoritativeFinancialSummary({
+            fromDate: dashboardQuery.fromDate,
+            toDate: dashboardQuery.toDate,
+            limit: dashboardQuery.limit
+          })
+        ]);
         setData((current) => ({
           ...current,
-          dashboard
+          dashboard,
+          authoritativeSummary
+        }));
+        return;
+      }
+
+      if (mode === "expenses") {
+        const [dashboard, expenses] = await Promise.all([
+          fetchBookingAccountingDashboard({ limit: 25 }),
+          fetchBookingAccountingExpenses(expenseQuery)
+        ]);
+        setData((current) => ({
+          ...current,
+          dashboard,
+          expenses
         }));
         return;
       }
@@ -873,7 +1227,7 @@ const AdminBookingAccountingPage = () => {
         fetchBookingAccountingDashboard({ limit: 25 }),
         fetchBookingAccountingInvoices({ limit: 100 }),
         fetchBookingAccountingRefunds({ limit: 100 }),
-        fetchBookingAccountingExpenses({ limit: 100 }),
+        fetchBookingAccountingExpenses(expenseQuery),
         fetchBookingAccountingCostTemplates(),
         fetchBookingAccountingProfitability({ limit: 100 }),
         fetchBookingAccountingReconciliation({ limit: 100 })
@@ -894,7 +1248,53 @@ const AdminBookingAccountingPage = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [dashboardQuery, mode]);
+  }, [dashboardQuery, expenseQuery, mode]);
+
+  const updateExpenseCompletion = useCallback(async (item, completionStatus) => {
+    try {
+      await updateBookingAccountingExpenseCompletion(item.id, completionStatus);
+      await load({ silent: true });
+    } catch (err) {
+      setError(err.message || "Failed to update expense completion");
+    }
+  }, [load]);
+
+  const viewExpense = useCallback(async (item) => {
+    setExpenseDetailLoading(true);
+    setExpenseDetailError("");
+    setSelectedExpense(item);
+    try {
+      setSelectedExpense(await fetchBookingAccountingExpense(item.id));
+    } catch (err) {
+      setExpenseDetailError(err.message || "Failed to load expense details");
+    } finally {
+      setExpenseDetailLoading(false);
+    }
+  }, []);
+
+  const voidExpense = useCallback(async (item) => {
+    if (!window.confirm(`Void booking expense ${item.expenseReference || ""}?`)) return;
+    try {
+      await voidBookingAccountingExpense(item.id, "Voided from Booking Accounting expenses");
+      setSelectedExpense(null);
+      await load({ silent: true });
+    } catch (err) {
+      setExpenseDetailError(err.message || "Failed to void expense");
+    }
+  }, [load]);
+
+  const loadFinancialFacts = useCallback(async (bookingReference) => {
+    setFinancialFactsLoading(true);
+    setFinancialFactsError("");
+    setFinancialFacts(null);
+    try {
+      setFinancialFacts(await fetchBookingFinancialFacts(bookingReference));
+    } catch (err) {
+      setFinancialFactsError(err.message || "Failed to load authoritative financial facts.");
+    } finally {
+      setFinancialFactsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (mode.startsWith("cost-template")) return;
@@ -923,15 +1323,40 @@ const AdminBookingAccountingPage = () => {
 
   if (mode === "dashboard") {
     return (
-      <><BookingPaymentOverview query={{ period: "CUSTOM", from: dashboardFilters.fromDate, to: dashboardFilters.toDate, ...(dashboardFilters.channel ? { channel: dashboardFilters.channel } : {}) }} refreshKey={refreshing} /><BookingAccountingDashboard
-        dashboard={data.dashboard}
-        filters={dashboardFilters}
-        setFilters={setDashboardFilters}
-        loading={loading}
-        refreshing={refreshing}
-        error={error}
-        onRefresh={() => load({ silent: true })}
-      /></>
+      <>
+        <BookingPaymentOverview query={{ period: "CUSTOM", from: dashboardFilters.fromDate, to: dashboardFilters.toDate, ...(dashboardFilters.channel ? { channel: dashboardFilters.channel } : {}) }} refreshKey={refreshing} />
+        <BookingAccountingDashboard
+          dashboard={data.dashboard}
+          authoritativeSummary={data.authoritativeSummary}
+          filters={dashboardFilters}
+          setFilters={setDashboardFilters}
+          loading={loading}
+          refreshing={refreshing}
+          error={error}
+          onRefresh={() => load({ silent: true })}
+          onTrace={loadFinancialFacts}
+        />
+        <FinancialFactsOffcanvas
+          facts={financialFacts}
+          loading={financialFactsLoading}
+          error={financialFactsError}
+          onHide={() => {
+            setFinancialFacts(null);
+            setFinancialFactsError("");
+          }}
+          onAddExpense={(bookingReference) => {
+            setExpenseBookingReference(bookingReference);
+            setShowExpenseForm(true);
+            setFinancialFacts(null);
+          }}
+        />
+        <BookingExpenseForm
+          show={showExpenseForm}
+          initialBookingReference={expenseBookingReference}
+          onHide={() => setShowExpenseForm(false)}
+          onCreated={() => load({ silent: true })}
+        />
+      </>
     );
   }
 
@@ -1000,9 +1425,48 @@ const AdminBookingAccountingPage = () => {
       ) : null}
 
       {mode === "expenses" ? (
-        <SectionCard title="Booking-Linked Expenses" detail={`${data.expenses?.total || 0} matching records`}>
-          <ExpensesTable items={tableItems.expenses} />
+        <SectionCard title="Booking-Linked Expenses" detail={`${data.expenses?.total || 0} matching records`} action={<Button onClick={() => setShowExpenseForm(true)}>Add expense</Button>}>
+          {!data.expenses?.total ? (
+            <div className="alert alert-info mb-3" role="status">
+              No actual supplier or operating expenses have been recorded yet. Cost templates provide estimates only; add an expense here when you have supporting evidence.
+            </div>
+          ) : null}
+          <ExpenseFilters
+            filters={expenseFilters}
+            onChange={(updates) => setExpenseFilters((current) => ({ ...current, ...updates }))}
+            onReset={() => setExpenseFilters({ page: 1, limit: 25, search: "", status: "", fromDate: "", toDate: "" })}
+          />
+          <ExpensesTable items={tableItems.expenses} onCompletionChange={updateExpenseCompletion} onView={viewExpense} />
+          <ExpensePagination
+            page={data.expenses?.page}
+            limit={data.expenses?.limit || expenseFilters.limit}
+            total={data.expenses?.total}
+            onPageChange={(page) => setExpenseFilters((current) => ({ ...current, page }))}
+          />
         </SectionCard>
+      ) : null}
+
+
+      {mode === "expenses" ? (
+        <BookingExpenseDetailsOffcanvas
+          expense={selectedExpense}
+          loading={expenseDetailLoading}
+          error={expenseDetailError}
+          onHide={() => {
+            setSelectedExpense(null);
+            setExpenseDetailError("");
+          }}
+          onVoid={voidExpense}
+        />
+      ) : null}
+
+      {mode === "expenses" ? (
+        <BookingExpenseForm
+          show={showExpenseForm}
+          initialBookingReference={expenseBookingReference}
+          onHide={() => setShowExpenseForm(false)}
+          onCreated={() => load({ silent: true })}
+        />
       ) : null}
 
       {mode === "profitability" ? (

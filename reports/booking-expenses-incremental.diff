@@ -1,0 +1,305 @@
+﻿diff --git a/reports/booking-expenses-baseline/service.js b/backend/src/services/bookingAccounting/index.js
+index 353439c..9f53bfe 100644
+--- a/reports/booking-expenses-baseline/service.js
++++ b/backend/src/services/bookingAccounting/index.js
+@@ -11,6 +11,9 @@ const AuditLog = require("../../models/AuditLog");
+ const logger = require("../../config/logger");
+ const toursService = require("../tours");
+ const AppError = require("../../utils/AppError");
++const { toDecimal } = require("../../utils/money");
++const { configuredBaseCurrency } = require("../../accounting/currencyPolicy");
++const { BOOKING_DIRECT_COST_CATEGORIES, validateBookingExpenseCategory, resolveBookingExpenseFx, bookingExpenseRequestHash, isCountedBookingExpense } = require("../../accounting/bookingExpensePolicy");
+ const {
+   STATUS: REVENUE_BASIS_STATUS,
+   applyRevenueCostCurrencyCheck,
+@@ -34,7 +37,6 @@ const COST_BASIS_TYPES = Object.freeze([
+ ]);
+ 
+ const TEMPLATE_STATUSES = Object.freeze(["draft", "active", "inactive", "archived"]);
+-const COUNTED_EXPENSE_STATUSES = Object.freeze(["APPROVED", "PAID"]);
+ const OPEN_ENDED_DATE = new Date("9999-12-31T23:59:59.999Z");
+ const DAY_MS = 24 * 60 * 60 * 1000;
+ 
+@@ -1281,16 +1283,17 @@ const normalizeExpense = (expense = {}) => ({
+ const buildBookingExpenseValues = ({ input = {}, booking = {}, auth = {}, nowDate = new Date() } = {}) => {
+   const amount = toNumber(input.amount);
+   if (!(amount > 0)) throw new AppError("Booking expense amount must be greater than zero", 422, "BOOKING_EXPENSE_AMOUNT_INVALID");
+-  const expenseDate = toDate(input.expenseDate) || nowDate;
++  const expenseDate = input.expenseDate ? toDate(input.expenseDate) : nowDate;
+   if (!expenseDate) throw new AppError("Booking expense date is invalid", 422, "BOOKING_EXPENSE_DATE_INVALID");
+   const currency = normalizeCurrency(input.currency || booking.currency || booking.pricingSnapshot?.currency || "USD");
+-  const baseCurrency = normalizeCurrency(input.baseCurrency || currency);
+-  const exchangeRate = toNumber(input.exchangeRate, 1);
++  const fx = resolveBookingExpenseFx({ ...input, currency }, expenseDate);
+   const bookingReference = normalizeToken(booking.bookingReference || input.bookingReference);
+   const bookingId = normalizeToken(booking._id || input.bookingId);
+-  const category = normalizeUpper(input.category || "OTHER_OPERATING_EXPENSE");
++  const category = normalizeUpper(input.category);
++  validateBookingExpenseCategory(category);
+   const expenseReference = normalizeToken(input.expenseReference || `BEXP-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`);
+-  const idempotencyKey = normalizeToken(input.idempotencyKey || `booking-expense:${bookingReference || bookingId}:${expenseReference}`);
++  const idempotencyKey = normalizeToken(input.idempotencyKey);
++  if (!idempotencyKey) throw new AppError("A stable idempotency key is required for a booking expense.", 422, "BOOKING_EXPENSE_IDEMPOTENCY_REQUIRED");
+   return {
+     expenseReference,
+     idempotencyKey,
+@@ -1311,12 +1314,8 @@ const buildBookingExpenseValues = ({ input = {}, booking = {}, auth = {}, nowDat
+       contact: normalizeToken(input.supplier?.contact)
+     },
+     amount,
+-    currency,
+-    exchangeRate,
+-    baseCurrency,
+-    baseCurrencyAmount: roundMoney(amount * exchangeRate),
+-    exchangeRateDate: toDate(input.exchangeRateDate) || expenseDate,
+-    exchangeRateSource: normalizeToken(input.exchangeRateSource || "manual"),
++    ...fx,
++    baseCurrencyAmount: toDecimal(amount).times(fx.exchangeRate).toDecimalPlaces(2).toNumber(),
+     expenseDate,
+     dueDate: toDate(input.dueDate),
+     paymentStatus: normalizeUpper(input.paymentStatus || EXPENSE_PAYMENT_STATUS.UNPAID),
+@@ -1715,6 +1714,8 @@ const createBookingAccountingService = ({
+     ]);
+     return {
+       items: rows.map(normalizeExpense),
++      directCostCategories: BOOKING_DIRECT_COST_CATEGORIES,
++      baseCurrency: configuredBaseCurrency(),
+       total,
+       page,
+       limit,
+@@ -1751,12 +1752,28 @@ const createBookingAccountingService = ({
+   };
+ 
+   const createBookingExpense = async ({ payload = {}, auth = {}, requestId = "" } = {}) => {
++    if (!payload.expenseDate || !toDate(payload.expenseDate)) throw new AppError("A valid expense date is required.", 422, "BOOKING_EXPENSE_DATE_INVALID");
+     const booking = await findBookingForExpense({ bookingReference: payload.bookingReference, bookingId: payload.bookingId });
+     const values = buildBookingExpenseValues({ input: payload, booking, auth });
+     if (!values.description) throw new AppError("Booking expense description is required", 422, "BOOKING_EXPENSE_DESCRIPTION_REQUIRED");
++    values.bookingExpenseRequestHash = bookingExpenseRequestHash(values, payload.expenseReference);
++    const replay = (existing) => {
++      if (existing.accountingScope !== ACCOUNTING_SCOPE.BOOKING || existing.bookingExpenseRequestHash !== values.bookingExpenseRequestHash) {
++        throw new AppError("This idempotency key is already used for a different expense request.", 409, "BOOKING_EXPENSE_IDEMPOTENCY_CONFLICT");
++      }
++      return { action: "unchanged", expense: normalizeExpense(existing) };
++    };
+     const existing = await findOneRow(BusinessExpenseModel, { idempotencyKey: values.idempotencyKey });
+-    if (existing) return { action: "unchanged", expense: normalizeExpense(existing) };
+-    const created = await createRow(BusinessExpenseModel, values);
++    if (existing) return replay(existing);
++    let created;
++    try {
++      created = await createRow(BusinessExpenseModel, values);
++    } catch (error) {
++      if (error?.code !== 11000) throw error;
++      const winner = await findOneRow(BusinessExpenseModel, { idempotencyKey: values.idempotencyKey });
++      if (winner) return replay(winner);
++      throw new AppError("This expense reference already exists.", 409, "BOOKING_EXPENSE_DUPLICATE_REFERENCE");
++    }
+     const normalized = normalizeExpense(created);
+     await recordBookingExpenseAudit({
+       action: "booking_expense_created",
+@@ -1774,7 +1791,14 @@ const createBookingAccountingService = ({
+     if (!existing || existing.accountingScope !== ACCOUNTING_SCOPE.BOOKING) {
+       throw new AppError("Booking expense not found", 404, "BOOKING_EXPENSE_NOT_FOUND");
+     }
++    if ((payload.idempotencyKey !== undefined && normalizeToken(payload.idempotencyKey) !== existing.idempotencyKey) ||
++        (payload.expenseReference !== undefined && normalizeToken(payload.expenseReference) !== existing.expenseReference)) {
++      throw new AppError("Expense identity cannot be changed by an update.", 409, "BOOKING_EXPENSE_IDENTITY_IMMUTABLE");
++    }
+     const booking = await findBookingForExpense({ bookingReference: existing.bookingReference, bookingId: existing.bookingId });
++    if (payload.currency && normalizeUpper(payload.currency) !== normalizeUpper(existing.currency) && normalizeUpper(payload.currency) !== configuredBaseCurrency()) {
++      resolveBookingExpenseFx(payload, toDate(payload.expenseDate || existing.expenseDate));
++    }
+     const values = buildBookingExpenseValues({ input: { ...existing, ...payload }, booking, auth, nowDate: new Date() });
+     if (!values.description) throw new AppError("Booking expense description is required", 422, "BOOKING_EXPENSE_DESCRIPTION_REQUIRED");
+     const updated = await updateByIdRow(BusinessExpenseModel, expenseId, values);
+@@ -1927,20 +1951,20 @@ const createBookingAccountingService = ({
+         }),
+         costCurrency: [...new Set(
+           bookingExpenses
+-            .filter((expense) => COUNTED_EXPENSE_STATUSES.includes(normalizeUpper(expense.status)))
++            .filter((expense) => isCountedBookingExpense(expense))
+             .map((expense) => normalizeUpper(expense.baseCurrency || expense.currency || currency))
+         )].length === 1
+-          ? bookingExpenses.find((expense) => COUNTED_EXPENSE_STATUSES.includes(normalizeUpper(expense.status)))?.baseCurrency || currency
++          ? bookingExpenses.find((expense) => isCountedBookingExpense(expense))?.baseCurrency || currency
+           : "MIXED"
+       });
+       const profitabilityRevenue = revenueBasis.status === REVENUE_BASIS_STATUS.VERIFIED ? roundMoney(revenueBasis.amount) : null;
+       const bookedRevenue = profitabilityRevenue === null ? reportedBookingRevenue : profitabilityRevenue;
+       const actualDirectCost = roundMoney(
+         bookingExpenses
+-          .filter((expense) => COUNTED_EXPENSE_STATUSES.includes(normalizeUpper(expense.status)) && toNumber(expense.baseCurrencyAmount ?? expense.amount) >= 0)
++          .filter((expense) => isCountedBookingExpense(expense) && toNumber(expense.baseCurrencyAmount ?? expense.amount) >= 0)
+           .reduce((sum, expense) => sum + toNumber(expense.baseCurrencyAmount ?? expense.amount), 0)
+       );
+-      const countedBookingExpenses = bookingExpenses.filter((expense) => COUNTED_EXPENSE_STATUSES.includes(normalizeUpper(expense.status)));
++      const countedBookingExpenses = bookingExpenses.filter((expense) => isCountedBookingExpense(expense));
+       const hasInvalidDirectCost = countedBookingExpenses.some((expense) => toNumber(expense.baseCurrencyAmount ?? expense.amount) < 0);
+       const hasActualDirectCostEvidence = countedBookingExpenses.length > 0 && !hasInvalidDirectCost;
+       const completionStatuses = countedBookingExpenses.map((expense) => normalizeUpper(expense.completionStatus || "NOT_STARTED"));
+diff --git a/reports/booking-expenses-baseline/validation.js b/backend/src/validators/bookingAccounting.validation.js
+index b265df8..6d1df9c 100644
+--- a/reports/booking-expenses-baseline/validation.js
++++ b/backend/src/validators/bookingAccounting.validation.js
+@@ -1,4 +1,5 @@
+ const { z } = require("zod");
++const { BOOKING_DIRECT_COST_CATEGORIES } = require("../accounting/bookingExpensePolicy");
+ 
+ const optionalToken = z.string().min(1).max(180).optional();
+ const optionalDate = z.string().min(1).max(80).optional();
+@@ -154,21 +155,21 @@ const bookingExpenseWriteSchema = z.object({
+   body: z.object({
+     bookingReference: z.string().max(240).optional(),
+     bookingId: z.string().max(180).optional(),
+-    category: z.string().min(1).max(120),
+-    description: z.string().min(1).max(2000),
+-    amount: z.coerce.number().positive(),
+-    currency: z.string().trim().min(3).max(10),
++    category: z.enum(BOOKING_DIRECT_COST_CATEGORIES),
++    description: z.string().trim().min(1).max(2000),
++    amount: z.coerce.number().finite().positive(),
++    currency: z.string().trim().length(3),
+     baseCurrency: z.string().trim().min(3).max(10).optional(),
+     exchangeRate: z.coerce.number().positive().optional(),
+     exchangeRateDate: optionalDate,
+     exchangeRateSource: z.string().max(180).optional(),
+-    expenseDate: optionalDate,
++    expenseDate: z.string().min(1).max(80).refine((value) => !Number.isNaN(Date.parse(value)), "Invalid expense date"),
+     dueDate: optionalDate,
+     paymentStatus: z.string().max(80).optional(),
+     paymentMethod: z.string().max(120).optional(),
+     paymentReference: z.string().max(240).optional(),
+     expenseReference: z.string().max(180).optional(),
+-    idempotencyKey: z.string().max(240).optional(),
++    idempotencyKey: z.string().trim().min(1).max(240),
+     businessUnit: z.string().max(80).optional(),
+     completionStatus: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETE", "NEEDS_REVIEW"]).optional(),
+     status: z.enum(["DRAFT", "SUBMITTED", "APPROVED", "REJECTED", "PAID", "VOID"]).optional(),
+diff --git a/reports/booking-expenses-baseline/model.js b/backend/src/models/BusinessExpense.js
+index c4a1e0b..baf1d29 100644
+--- a/reports/booking-expenses-baseline/model.js
++++ b/backend/src/models/BusinessExpense.js
+@@ -1,4 +1,5 @@
+ const mongoose = require("mongoose");
++const { BOOKING_DIRECT_COST_CATEGORIES } = require("../accounting/bookingExpensePolicy");
+ const {
+   ACCOUNTING_SCOPE,
+   BUSINESS_UNIT,
+@@ -12,6 +13,7 @@ const businessExpenseSchema = new mongoose.Schema(
+   {
+     expenseReference: { type: String, required: true, unique: true, index: true },
+     idempotencyKey: { type: String, required: true, unique: true, index: true },
++    bookingExpenseRequestHash: { type: String, default: "" },
+     accountingScope: {
+       type: String,
+       enum: [ACCOUNTING_SCOPE.BUSINESS, ACCOUNTING_SCOPE.BOOKING],
+@@ -26,7 +28,7 @@ const businessExpenseSchema = new mongoose.Schema(
+     },
+     category: {
+       type: String,
+-      enum: Object.values(EXPENSE_CATEGORY),
++      enum: [...Object.values(EXPENSE_CATEGORY), ...BOOKING_DIRECT_COST_CATEGORIES],
+       required: true,
+       index: true
+     },
+diff --git a/reports/booking-expenses-baseline/page.jsx b/frontend/src/pages/admin/AdminBookingAccountingPage.jsx
+index 34b9802..c3133e6 100644
+--- a/reports/booking-expenses-baseline/page.jsx
++++ b/frontend/src/pages/admin/AdminBookingAccountingPage.jsx
+@@ -1,5 +1,6 @@
+ import BookingPaymentOverview from '../../components/invoice/BookingPaymentOverview';
+-import { useCallback, useEffect, useMemo, useState } from "react";
++import { useCallback, useEffect, useMemo, useRef, useState } from "react";
++import { newBookingExpenseForm, bookingExpensePayload } from "./bookingExpenseForm";
+ import { Badge, Button, Card, Col, Form, Modal, Offcanvas, Row, Table } from "react-bootstrap";
+ import { Link, useLocation } from "react-router-dom";
+ import {
+@@ -978,10 +979,21 @@ const BookingExpenseDetailsOffcanvas = ({ expense, loading, error, onHide, onVoi
+ );
+ 
+ const BookingExpenseForm = ({ show, onHide, onCreated, initialBookingReference = "" }) => {
+-  const [form, setForm] = useState({ bookingReference: "", category: "OTHER_OPERATING_EXPENSE", description: "", amount: "", currency: "USD", expenseDate: "" });
++  const [form, setForm] = useState(newBookingExpenseForm);
++  const [expenseConfig, setExpenseConfig] = useState(null);
++  const inFlight = useRef(false);
+   const [saving, setSaving] = useState(false);
+   const [error, setError] = useState("");
+ 
++  useEffect(() => {
++    if (!show) return;
++    let active = true;
++    fetchBookingAccountingExpenses({ limit: 1 }).then((config) => {
++      if (active) setExpenseConfig(config);
++    }).catch((err) => { if (active) setError(err.message || "Failed to load expense settings"); });
++    return () => { active = false; };
++  }, [show]);
++
+   useEffect(() => {
+     if (show && initialBookingReference) {
+       setForm((current) => ({ ...current, bookingReference: initialBookingReference }));
+@@ -990,22 +1002,25 @@ const BookingExpenseForm = ({ show, onHide, onCreated, initialBookingReference =
+ 
+   const submit = async (event) => {
+     event.preventDefault();
++    if (inFlight.current || !expenseConfig) return;
++    inFlight.current = true;
+     setSaving(true);
+     setError("");
+     try {
+-      await createBookingAccountingExpense({ ...form, amount: Number(form.amount) });
+-      setForm({ bookingReference: "", category: "OTHER_OPERATING_EXPENSE", description: "", amount: "", currency: "USD", expenseDate: "" });
++      await createBookingAccountingExpense(bookingExpensePayload(form, expenseConfig.baseCurrency));
++      setForm(newBookingExpenseForm());
+       onCreated();
+       onHide();
+     } catch (err) {
+       setError(err.message || "Failed to create booking expense");
+     } finally {
++      inFlight.current = false;
+       setSaving(false);
+     }
+   };
+ 
+   return (
+-    <Modal show={show} onHide={onHide} centered>
++    <Modal show={show} onHide={saving ? undefined : onHide} centered>
+       <Form onSubmit={submit}>
+         <Modal.Header closeButton><Modal.Title>Add booking expense</Modal.Title></Modal.Header>
+         <Modal.Body>
+@@ -1013,13 +1028,18 @@ const BookingExpenseForm = ({ show, onHide, onCreated, initialBookingReference =
+           <Form.Group className="mb-3"><Form.Label>Booking reference</Form.Label><Form.Control required value={form.bookingReference} onChange={(event) => setForm({ ...form, bookingReference: event.target.value })} /></Form.Group>
+           <Row className="g-2">
+             <Col md={7}><Form.Group className="mb-3"><Form.Label>Description</Form.Label><Form.Control required value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></Form.Group></Col>
+-            <Col md={5}><Form.Group className="mb-3"><Form.Label>Category</Form.Label><Form.Control required value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value.toUpperCase() })} /></Form.Group></Col>
++            <Col md={5}><Form.Group className="mb-3"><Form.Label>Category</Form.Label><Form.Select required value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>{(expenseConfig?.directCostCategories || []).map((category) => <option key={category} value={category}>{label(category)}</option>)}</Form.Select></Form.Group></Col>
+             <Col md={7}><Form.Group className="mb-3"><Form.Label>Amount</Form.Label><Form.Control required min="0.01" step="0.01" type="number" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} /></Form.Group></Col>
+-            <Col md={5}><Form.Group className="mb-3"><Form.Label>Currency</Form.Label><Form.Control required maxLength={10} value={form.currency} onChange={(event) => setForm({ ...form, currency: event.target.value.toUpperCase() })} /></Form.Group></Col>
++            <Col md={5}><Form.Group className="mb-3"><Form.Label>Currency</Form.Label><Form.Control required maxLength={3} value={form.currency} onChange={(event) => setForm({ ...form, currency: event.target.value.toUpperCase(), exchangeRate: "", exchangeRateDate: "", exchangeRateSource: "" })} /></Form.Group></Col>
+           </Row>
+-          <Form.Group><Form.Label>Expense date</Form.Label><Form.Control type="date" value={form.expenseDate} onChange={(event) => setForm({ ...form, expenseDate: event.target.value })} /></Form.Group>
++          <Form.Group><Form.Label>Expense date</Form.Label><Form.Control required type="date" value={form.expenseDate} onChange={(event) => setForm({ ...form, expenseDate: event.target.value })} /></Form.Group>
++          {expenseConfig && form.currency !== expenseConfig.baseCurrency ? <div className="mt-3">
++            <Form.Group className="mb-2"><Form.Label>Verified FX rate ({expenseConfig.baseCurrency} per 1 {form.currency})</Form.Label><Form.Control required type="number" min="0.000000000001" step="any" value={form.exchangeRate} onChange={(event) => setForm({ ...form, exchangeRate: event.target.value })} /></Form.Group>
++            <Form.Group className="mb-2"><Form.Label>Rate date</Form.Label><Form.Control required type="date" value={form.exchangeRateDate} onChange={(event) => setForm({ ...form, exchangeRateDate: event.target.value })} /></Form.Group>
++            <Form.Group><Form.Label>Rate source / evidence reference</Form.Label><Form.Control required placeholder="Bank quote or verified rate reference" value={form.exchangeRateSource} onChange={(event) => setForm({ ...form, exchangeRateSource: event.target.value })} /></Form.Group>
++          </div> : null}
+         </Modal.Body>
+-        <Modal.Footer><Button variant="outline-secondary" onClick={onHide}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? "Saving..." : "Add expense"}</Button></Modal.Footer>
++        <Modal.Footer><Button variant="outline-secondary" disabled={saving} onClick={onHide}>Cancel</Button><Button type="submit" disabled={saving || !expenseConfig}>{saving ? "Saving..." : "Add expense"}</Button></Modal.Footer>
+       </Form>
+     </Modal>
+   );
+diff --git a/reports/booking-expenses-baseline/controller.js b/backend/src/controllers/bookingAccounting.controller.js
+index 9383924..97d71ea 100644
+--- a/reports/booking-expenses-baseline/controller.js
++++ b/backend/src/controllers/bookingAccounting.controller.js
+@@ -52,7 +52,7 @@ const bookingExpense = asyncHandler(async (req, res) => {
+ 
+ const createBookingExpense = asyncHandler(async (req, res) => {
+   const data = await bookingAccountingService.createBookingExpense({ payload: req.validated.body, auth: req.auth, requestId: req.requestId });
+-  return successResponse(res, { message: "Booking expense created", data, statusCode: 201 });
++  return successResponse(res, { message: data.action === "unchanged" ? "Booking expense already recorded" : "Booking expense created", data, statusCode: data.action === "unchanged" ? 200 : 201 });
+ });
+ 
+ const updateBookingExpense = asyncHandler(async (req, res) => {

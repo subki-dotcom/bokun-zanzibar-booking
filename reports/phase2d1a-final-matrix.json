@@ -1,0 +1,132 @@
+{
+  "readOnly": true,
+  "generatedAt": "2026-09-19T07:37:19.651Z",
+  "database": "bokun_zanzibar_booking",
+  "categoryMatrix": [
+    {
+      "category": "INSURANCE",
+      "mappingKey": null,
+      "eligibleForAutomaticPosting": false,
+      "blocker": "MAPPING_MISSING_OR_INACTIVE"
+    },
+    {
+      "category": "OTHER_OPERATING_EXPENSE",
+      "mappingKey": "SUPPLIER_DIRECT_COST",
+      "accountCode": "5010",
+      "accountName": "Direct Supplier Costs",
+      "mappingActive": true,
+      "active": true,
+      "verified": true,
+      "eligibleForAutomaticPosting": true,
+      "blocker": ""
+    }
+  ],
+  "ap": {
+    "accountExists": true,
+    "accountActive": true,
+    "mappingActive": true,
+    "correctLiabilityAccount": true,
+    "AP_MAPPING_VERIFIED": true
+  },
+  "targetRows": [
+    {
+      "expenseId": "6aad7d0f5003fe3d75582328",
+      "businessExpenseCount": 1,
+      "status": "APPROVED",
+      "accountingStatus": "POSTED",
+      "canonicalPostingKey": "expense-recognition:6aad7d0f5003fe3d75582328:v1",
+      "canonicalJournalCount": 1,
+      "journals": [
+        {
+          "id": "6aae35b85583318f86cd3043",
+          "status": "POSTED",
+          "lineCount": 2,
+          "storedLines": 2,
+          "debit": 60,
+          "credit": 60,
+          "lines": [
+            {
+              "accountCode": "5010",
+              "accountName": "Direct Supplier Costs",
+              "debit": "60",
+              "credit": "0"
+            },
+            {
+              "accountCode": "2010",
+              "accountName": "Accounts Payable",
+              "debit": "0",
+              "credit": "60"
+            }
+          ]
+        }
+      ],
+      "accountingPostingCount": 0
+    }
+  ],
+  "profitability": {
+    "bookingReference": "1448421203",
+    "productTitle": "Full-Day Zanzibar Dolphins, Turtle Salaam Cave & Jozani Forest",
+    "optionTitle": "Pickup From Any Hotels",
+    "bokunProductId": "1124157",
+    "bokunOptionId": "2233035",
+    "salesChannel": "VIATOR",
+    "salesChannelLabel": "Viator",
+    "bookingStatus": "confirmed",
+    "paymentStatus": "paid",
+    "currency": "USD",
+    "financialDate": "2026-09-18T03:45:25.169Z",
+    "bookedRevenue": 183.6,
+    "collectedRevenue": 183.6,
+    "refundedAmount": 0,
+    "paymentProviderFees": 0,
+    "actualDirectCost": 60,
+    "actualExpenseCount": 1,
+    "expenseCompletionStatus": "COMPLETE",
+    "estimatedDirectCost": 60,
+    "displayDirectCost": 60,
+    "costStatus": "actual",
+    "estimatedProfit": 123.6,
+    "estimatedProfitMargin": 67.32,
+    "actualProfit": 123.6,
+    "actualProfitMargin": 67.32,
+    "costVariance": 0,
+    "profitVariance": 0,
+    "profitabilityStatus": "FINAL",
+    "costTemplateId": "6aa772ff4719cb671f3079c3",
+    "costTemplateName": "",
+    "estimatedCostBreakdown": [
+      {
+        "lineId": "line-1789358794696",
+        "category": "Guide",
+        "basis": "fixed_per_booking",
+        "amount": 10,
+        "currency": "USD"
+      },
+      {
+        "lineId": "line-1789358813559",
+        "category": "Transport",
+        "basis": "fixed_per_booking",
+        "amount": 50,
+        "currency": "USD"
+      }
+    ],
+    "estimatedCostSnapshot": true,
+    "netRevenue": 183.6,
+    "grossProfit": 123.6,
+    "profitMargin": 67.32,
+    "dashboardGrossProfit": 123.6,
+    "dashboardProfitMargin": 67.32,
+    "displayGrossProfit": 123.6,
+    "displayProfitMargin": 67.32,
+    "evidence": {
+      "invoice": true,
+      "successfulPaymentCount": 0,
+      "completedRefundCount": 0,
+      "bookingLinkedExpenseCount": 1,
+      "costTemplate": true
+    },
+    "financialStatus": "paid"
+  },
+  "duplicateExpenseRecognitionJournals": 0,
+  "unbalancedCompletedJournals": 0
+}

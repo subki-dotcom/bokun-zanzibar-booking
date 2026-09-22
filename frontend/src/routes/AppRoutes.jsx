@@ -51,6 +51,11 @@ import AdminProfitLossPage from "../pages/admin/AdminProfitLossPage";
 import AdminCashFlowPage from "../pages/admin/AdminCashFlowPage";
 import AdminFixedAssetsPage from "../pages/admin/AdminFixedAssetsPage";
 import AdminAccountingReconciliationPage from "../pages/admin/AdminAccountingReconciliationPage";
+import AdminSettlementsPage from "../pages/admin/AdminSettlementsPage";
+import AdminSettlementDetailPage from "../pages/admin/AdminSettlementDetailPage";
+import AdminSettlementImportPage from "../pages/admin/AdminSettlementImportPage";
+import AdminServiceCompletionPage from "../pages/admin/AdminServiceCompletionPage";
+import AdminGlPostingPreviewPage from "../pages/admin/AdminGlPostingPreviewPage";
 import AdminBookingReconciliationPage from "../pages/admin/AdminBookingReconciliationPage";
 import AdminReportCenterPage from "../pages/admin/AdminReportCenterPage";
 import AdminAuditControlPage from "../pages/admin/AdminAuditControlPage";
@@ -229,6 +234,11 @@ const AppRoutes = () => {
         <Route path="/admin/business-accounting/cash-flow" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW_CASH_FLOW]}><AdminCashFlowPage /></ProtectedRoute>} />
         <Route path="/admin/business-accounting/fixed-assets" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW]}><AdminFixedAssetsPage /></ProtectedRoute>} />
         <Route path="/admin/business-accounting/accounting-reconciliation" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_VIEW]}><AdminAccountingReconciliationPage /></ProtectedRoute>} />
+        <Route path="/admin/business-accounting/settlements" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.SETTLEMENT_VIEW]}><AdminSettlementsPage /></ProtectedRoute>} />
+        <Route path="/admin/business-accounting/settlements/:settlementId" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.SETTLEMENT_VIEW]}><AdminSettlementDetailPage /></ProtectedRoute>} />
+        <Route path="/admin/business-accounting/settlements/import" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.SETTLEMENT_VIEW]}><AdminSettlementImportPage /></ProtectedRoute>} />
+        <Route path="/admin/business-accounting/service-completion" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.SERVICE_COMPLETION_VIEW]}><AdminServiceCompletionPage /></ProtectedRoute>} />
+        <Route path="/admin/business-accounting/gl-posting-preview" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.GL_PREVIEW_POSTING]}><AdminGlPostingPreviewPage /></ProtectedRoute>} />
         <Route
           path="/admin/business-intelligence"
           element={

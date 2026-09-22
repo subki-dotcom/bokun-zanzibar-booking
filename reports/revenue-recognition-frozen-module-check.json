@@ -1,0 +1,50 @@
+[
+    {
+        "file":  "backend/src\\services\\bookingAccounting\\index.js",
+        "unchanged":  true
+    },
+    {
+        "file":  "frontend/src\\pages\\admin\\bookingExpenseForm.js",
+        "unchanged":  true
+    },
+    {
+        "file":  "backend/src\\models\\BusinessExpense.js",
+        "unchanged":  true
+    },
+    {
+        "file":  "backend/src\\routes\\businessExpenses.routes.js",
+        "unchanged":  true
+    },
+    {
+        "file":  "frontend/src\\pages\\admin\\AdminBookingAccountingPage.jsx",
+        "unchanged":  true
+    },
+    {
+        "file":  "backend/test\\bookingExpenseSafety.test.js",
+        "unchanged":  true
+    },
+    {
+        "file":  "backend/src\\services\\profitability\\revenueBasis.js",
+        "unchanged":  true
+    },
+    {
+        "file":  "backend/src\\services\\businessAccounting\\index.js",
+        "unchanged":  true
+    },
+    {
+        "file":  "backend/src\\controllers\\businessExpenses.controller.js",
+        "unchanged":  true
+    },
+    {
+        "file":  "backend/src\\services\\expenseAccounting\\index.js",
+        "unchanged":  true
+    },
+    {
+        "file":  "frontend/test\\bookingExpenseSafety.test.js",
+        "unchanged":  true
+    },
+    {
+        "file":  "backend/src\\accounting\\bookingExpensePolicy.js",
+        "unchanged":  true
+    }
+]

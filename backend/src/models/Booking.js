@@ -36,6 +36,44 @@ const bookingSchema = new mongoose.Schema(
     bookingPaymentStatusSyncedAt: { type: Date, default: null },
     bookingPaymentEvidenceHash: { type: String, default: "" },
     bokunPaymentSnapshot: { type: mongoose.Schema.Types.Mixed, default: null },
+    bokunFinancialEvidence: {
+      source: { type: String, enum: ["", "BOKUN"], default: "" },
+      status: { type: String, enum: ["", "VERIFIED", "NEEDS_REVIEW"], default: "" },
+      bookingId: { type: String, default: "" },
+      confirmationCode: { type: String, default: "" },
+      experienceId: { type: String, default: "" },
+      grossAmount: { type: mongoose.Schema.Types.Decimal128, default: null },
+      currency: { type: String, default: "", uppercase: true },
+      reportedPaidAmount: { type: mongoose.Schema.Types.Decimal128, default: null },
+      paymentStatus: { type: String, default: "" },
+      paymentMethod: { type: String, default: "" },
+      bookingStatus: { type: String, default: "" },
+      cancellationStatus: { type: String, default: "" },
+      invoiceEvidence: { type: mongoose.Schema.Types.Mixed, default: [] },
+      sellerInvoiceEvidence: { type: mongoose.Schema.Types.Mixed, default: null },
+      paymentEvidence: { type: mongoose.Schema.Types.Mixed, default: [] },
+      auditEvidence: { type: mongoose.Schema.Types.Mixed, default: [] },
+      marketplaceContractId: { type: String, default: "" },
+      marketplaceResellerId: { type: String, default: "" },
+      marketplaceRelationship: { type: String, default: "" },
+      otaCommissionAmount: { type: mongoose.Schema.Types.Decimal128, default: null },
+      otaCommissionCurrency: { type: String, default: "", uppercase: true },
+      otaCommissionSource: { type: String, default: "" },
+      otaCommissionStatus: { type: String, default: "" },
+      expectedSellerInvoiceAmount: { type: mongoose.Schema.Types.Decimal128, default: null },
+      expectedSellerInvoiceCurrency: { type: String, default: "", uppercase: true },
+      expectedSellerInvoiceSource: { type: String, default: "" },
+      expectedNetReceivable: { type: mongoose.Schema.Types.Decimal128, default: null },
+      settlementAmount: { type: mongoose.Schema.Types.Decimal128, default: null },
+      settlementCurrency: { type: String, default: "", uppercase: true },
+      settlementEvidence: { type: mongoose.Schema.Types.Mixed, default: null },
+      raw: { type: mongoose.Schema.Types.Mixed, default: null },
+      evidenceHash: { type: String, default: "" },
+      syncedAt: { type: Date, default: null },
+      evidenceFetchedAt: { type: Date, default: null },
+      retrievedAt: { type: Date, default: null },
+      evidenceConflicts: [{ type: String }]
+    },
     bookingPaymentConflict: { type: mongoose.Schema.Types.Mixed, default: null },
     bookingPaymentPendingAudit: { type: mongoose.Schema.Types.Mixed, default: null },
     bookingPaymentOverride: {
@@ -86,6 +124,11 @@ const bookingSchema = new mongoose.Schema(
       subsidyAmount: Number,
       finalPayable: Number,
       lineItems: [{ label: String, amount: Number }]
+    },
+    estimatedCostSnapshot: {
+      type: mongoose.Schema.Types.Mixed,
+      immutable: true,
+      default: null
     },
     bookingQuestionsSnapshot: [bookingQuestionAnswerSchema],
     customer: {
@@ -151,6 +194,15 @@ const bookingSchema = new mongoose.Schema(
       amendmentDate: { type: bokunOperationalDateSchema, default: () => ({}) },
       rescheduleDate: { type: bokunOperationalDateSchema, default: () => ({}) },
       bokunLastModifiedAt: { type: bokunOperationalDateSchema, default: () => ({}) },
+      mappedAt: { type: Date, default: null }
+    },
+    bokunOperationalEvidence: {
+      source: { type: String, default: "" },
+      sourceField: { type: String, default: "" },
+      activityStatus: { type: String, default: "" },
+      activityBookingId: { type: String, default: "" },
+      activityProductId: { type: String, default: "" },
+      observedAt: { type: Date, default: null },
       mappedAt: { type: Date, default: null }
     },
     bokunImport: {

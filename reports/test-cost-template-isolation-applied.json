@@ -1,0 +1,1223 @@
+{
+  "readOnly": false,
+  "dryRun": false,
+  "applied": true,
+  "databaseName": "bokun_zanzibar_booking",
+  "approvalId": "user-request-2026-09-18",
+  "sourceReview": "C:\\Users\\toshiba\\Desktop\\bukon system\\reports\\test-cost-template-isolation-dry-run.json",
+  "processed": 242,
+  "deactivated": 242,
+  "skipped": 0,
+  "results": [
+    {
+      "templateId": "6aac4f88ac31f4769c544f14",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f15",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f16",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f17",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f18",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f19",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f1a",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f1b",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f1c",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f1d",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f1e",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f1f",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f20",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f21",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f22",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f23",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f24",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f25",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f26",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f27",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f28",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f29",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f2a",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f2b",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f2c",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f2d",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f2e",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f2f",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f30",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f31",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f32",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f33",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f34",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f35",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f36",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f37",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f38",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f39",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f3a",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f3b",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f3c",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f3d",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f3e",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f3f",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f40",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f41",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f42",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f43",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f44",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f45",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f46",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f47",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f48",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f49",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f4a",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f4b",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f4c",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f4d",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f4e",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f4f",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f50",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f51",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f52",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f53",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f54",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f55",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f56",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f57",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f58",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f59",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f5a",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f5b",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f5c",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f5d",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f5e",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f5f",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f60",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f61",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f62",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f63",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f64",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f65",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f66",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f67",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f68",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f69",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f6a",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f6b",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f6c",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f6d",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f6e",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f6f",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f70",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f71",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f72",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f73",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f74",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f75",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f76",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f77",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f78",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f79",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f7a",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f7b",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f7c",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f7d",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f7e",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f7f",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f80",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f81",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f82",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f83",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f84",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f85",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f86",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f87",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f88",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f89",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f8a",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f8b",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f8c",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f8d",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f8e",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f8f",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f90",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f91",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f92",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f93",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f94",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f95",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f96",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f97",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f98",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f99",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f9a",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f9b",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f9c",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f9d",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f9e",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544f9f",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fa0",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fa1",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fa2",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fa3",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fa4",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fa5",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fa6",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fa7",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fa8",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fa9",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544faa",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fab",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fac",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fad",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fae",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544faf",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fb0",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fb1",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fb2",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fb3",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fb4",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fb5",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fb6",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fb7",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fb8",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fb9",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fba",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fbb",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fbc",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fbd",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fbe",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fbf",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fc0",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fc1",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fc2",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fc3",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fc4",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fc5",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fc6",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fc7",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fc8",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fc9",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fca",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fcb",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fcc",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fcd",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fce",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fcf",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fd0",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fd1",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fd2",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fd3",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fd4",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fd5",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fd6",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fd7",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fd8",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fd9",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fda",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fdb",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fdc",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fdd",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fde",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fdf",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fe0",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fe1",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fe2",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fe3",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fe4",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fe5",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fe6",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fe7",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fe8",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fe9",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fea",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544feb",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fec",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fed",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fee",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fef",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ff0",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ff1",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ff2",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ff3",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ff4",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ff5",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ff6",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ff7",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ff8",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ff9",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ffa",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ffb",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ffc",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ffd",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544ffe",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c544fff",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c545000",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c545001",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c545002",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c545003",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c545004",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    },
+    {
+      "templateId": "6aac4f88ac31f4769c545005",
+      "action": "DEACTIVATED",
+      "status": "inactive"
+    }
+  ]
+}

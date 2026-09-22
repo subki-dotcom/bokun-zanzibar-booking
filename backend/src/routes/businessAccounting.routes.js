@@ -7,6 +7,8 @@ const validateRequest = require("../middleware/validateRequest");
 const {
   accountsReceivableQuerySchema,
   accountsPayableQuerySchema,
+  bookingFinancialFactsSchema,
+  authoritativeFinancialSummarySchema,
   foundationQuerySchema,
   postBookingContributionSchema
 } = require("../validators/businessAccounting.validation");
@@ -34,6 +36,20 @@ router.get(
   authorizePermission(PERMISSIONS.BUSINESS_ACCOUNTING_READ),
   validateRequest(foundationQuerySchema),
   businessAccountingController.foundation
+);
+
+router.get(
+  "/bookings/:bookingReference/financial-facts",
+  authorizePermission(PERMISSIONS.BUSINESS_ACCOUNTING_READ),
+  validateRequest(bookingFinancialFactsSchema),
+  businessAccountingController.bookingFinancialFacts
+);
+
+router.get(
+  "/authoritative-summary",
+  authorizePermission(PERMISSIONS.BUSINESS_ACCOUNTING_READ),
+  validateRequest(authoritativeFinancialSummarySchema),
+  businessAccountingController.authoritativeFinancialSummary
 );
 
 router.post(

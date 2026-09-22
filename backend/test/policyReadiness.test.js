@@ -1,0 +1,4 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { buildPolicyReadiness, REQUIRED_POLICY_QUESTIONS } = require("../src/services/revenueRecognition/policyReadiness");
+test("accounting policy readiness blocks automatic GL posting when policy is incomplete", () => { const result = buildPolicyReadiness({ mappings: [{ mappingKey: "TOUR_REVENUE" }] }); assert.equal(result.automaticGlPostingEnabled, false); assert.equal(result.status, "GL_AUTOMATION_BLOCKED_BY_ACCOUNTING_POLICY"); assert.ok(result.missing.includes("grossNetPolicy")); assert.equal(result.answers.revenueAccount.supported, true); assert.equal(REQUIRED_POLICY_QUESTIONS.length, 12); });

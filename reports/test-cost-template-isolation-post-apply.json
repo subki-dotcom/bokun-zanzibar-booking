@@ -1,0 +1,10 @@
+{
+  "readOnly": true,
+  "dryRun": true,
+  "databaseName": "bokun_zanzibar_booking",
+  "generatedAt": "2026-09-18T04:33:35.888Z",
+  "scannedActiveTemplates": 3,
+  "candidateCount": 0,
+  "writes": 0,
+  "rows": []
+}

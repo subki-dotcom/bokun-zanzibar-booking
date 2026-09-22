@@ -1,0 +1,15 @@
+backend/src\models\ServiceCompletion.js
+backend/src\models\RevenueRecognition.js
+backend/test\serviceCompletionCore.test.js
+backend/src\controllers\accounting.controller.js
+backend/src\routes\serviceCompletion.routes.js
+backend/test\generalLedgerCore.test.js
+backend/test\glPostingPreview.test.js
+backend/src\config\env.js
+backend/src\services\customerAccounting\index.js
+backend/src\services\serviceCompletion\index.js
+backend/src\controllers\serviceCompletion.controller.js
+backend/src\services\glPosting\preview.js
+backend/src\services\generalLedger\ledger.js
+backend/src\validators\serviceCompletion.validation.js
+backend/src\accounting\constants.js

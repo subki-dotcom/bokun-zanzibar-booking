@@ -26,11 +26,29 @@ const accountsReceivable = asyncHandler(async (req, res) => {
   });
 });
 
+const bookingFinancialFacts = asyncHandler(async (req, res) => {
+  const data = await businessAccountingService.getBookingFinancialFacts(req.validated.params.bookingReference);
+  return successResponse(res, {
+    message: "Booking financial facts fetched",
+    data
+  });
+});
+
+const authoritativeFinancialSummary = asyncHandler(async (req, res) => {
+  const data = await businessAccountingService.getAuthoritativeFinancialSummary(req.validated?.query || req.query || {});
+  return successResponse(res, {
+    message: "Authoritative financial summary fetched",
+    data
+  });
+});
+
 const postBookingContribution = asyncHandler(async (req, res) => {
   const data = await businessAccountingService.postBookingContribution({
     bookingReference: req.validated.params.bookingReference,
     dryRun: Boolean(req.validated.body?.dryRun),
     reason: req.validated.body?.reason,
+    approvalId: req.validated.body?.approvalId,
+    idempotencyKey: req.validated.body?.idempotencyKey,
     auth: req.auth,
     requestId: req.requestId
   });
@@ -44,6 +62,8 @@ const postBookingContribution = asyncHandler(async (req, res) => {
 
 module.exports = {
   accountsReceivable,
+  bookingFinancialFacts,
+  authoritativeFinancialSummary,
   accountsPayable,
   foundation,
   postBookingContribution

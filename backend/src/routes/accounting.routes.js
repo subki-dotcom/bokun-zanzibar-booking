@@ -7,6 +7,8 @@ const { PERMISSIONS } = require("../security/permissions");
 const {
   cashBankQuerySchema,
   createChartAccountSchema,
+  createFixedAssetAcquisitionJournalSchema,
+  createFixedAssetDepreciationJournalSchema,
   createFixedAssetSchema,
   createJournalSchema,
   createPeriodSchema,
@@ -22,11 +24,35 @@ const {
   seedChartOfAccountsSchema,
   seedMappingsSchema,
   updateChartAccountSchema
+  ,previewPostingSchema,
+  customerInvoicePreviewSchema,
+  customerPaymentPreviewSchema
 } = require("../validators/accounting.validation");
 
 const router = express.Router();
 
 router.use(authenticate);
+
+router.post(
+  "/postings/preview",
+  authorizePermission(PERMISSIONS.GL_PREVIEW_POSTING),
+  validateRequest(previewPostingSchema),
+  accountingController.previewPosting
+);
+
+router.post(
+  "/postings/customer-invoice-preview",
+  authorizePermission(PERMISSIONS.GL_PREVIEW_POSTING),
+  validateRequest(customerInvoicePreviewSchema),
+  accountingController.previewCustomerInvoicePosting
+);
+
+router.post(
+  "/postings/customer-payment-preview",
+  authorizePermission(PERMISSIONS.GL_PREVIEW_POSTING),
+  validateRequest(customerPaymentPreviewSchema),
+  accountingController.previewCustomerPaymentPosting
+);
 
 router.get(
   "/chart-of-accounts",
@@ -185,6 +211,20 @@ router.post(
   authorizePermission(PERMISSIONS.GL_JOURNAL_CREATE),
   validateRequest(createFixedAssetSchema),
   accountingController.createFixedAsset
+);
+
+router.post(
+  "/fixed-assets/:id/depreciation-journals",
+  authorizePermission(PERMISSIONS.GL_JOURNAL_CREATE),
+  validateRequest(createFixedAssetDepreciationJournalSchema),
+  accountingController.createFixedAssetDepreciationJournal
+);
+
+router.post(
+  "/fixed-assets/:id/acquisition-journals",
+  authorizePermission(PERMISSIONS.GL_JOURNAL_CREATE),
+  validateRequest(createFixedAssetAcquisitionJournalSchema),
+  accountingController.createFixedAssetAcquisitionJournal
 );
 
 router.get(

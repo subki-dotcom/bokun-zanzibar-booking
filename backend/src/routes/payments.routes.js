@@ -27,6 +27,13 @@ router.get(
   paymentsController.listReconciliation
 );
 router.post(
+  "/reconciliation/:bookingReference/recheck",
+  authenticate,
+  authorize("super_admin", "admin", "staff"),
+  validateRequest(bookingReferenceActionSchema),
+  paymentsController.recheckPayment
+);
+router.post(
   "/reconciliation/:bookingReference/recheck-pesapal",
   authenticate,
   authorize("super_admin", "admin", "staff"),

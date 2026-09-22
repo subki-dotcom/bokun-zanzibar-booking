@@ -76,9 +76,29 @@ const postBookingContributionSchema = z.object({
   body: z
     .object({
       dryRun: z.boolean().optional(),
-      reason: z.string().max(1000).optional()
+      reason: z.string().max(1000).optional(),
+      approvalId: z.string().min(1).max(240).optional(),
+      idempotencyKey: z.string().min(1).max(240).optional()
     })
     .default({})
+});
+
+const bookingFinancialFactsSchema = z.object({
+  params: z.object({
+    bookingReference: z.string().min(1).max(180)
+  }),
+  query: z.object({}).optional(),
+  body: z.object({}).optional()
+});
+
+const authoritativeFinancialSummarySchema = z.object({
+  params: z.object({}).optional(),
+  body: z.object({}).optional(),
+  query: z.object({
+    fromDate: z.string().min(1).optional(),
+    toDate: z.string().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(5000).optional()
+  }).optional()
 });
 
 const counterpartySchema = z
@@ -270,15 +290,50 @@ const updateBusinessExpenseSchema = z.object({
   })
 });
 
+const supplierPaymentSchema = z.object({
+  params: z.object({}).optional(),
+  query: z.object({}).optional(),
+  body: z.object({
+    paymentReference: z.string().min(1).max(180),
+    idempotencyKey: z.string().min(1).max(240).optional(),
+    supplierId: z.string().max(180).optional(),
+    supplierName: z.string().max(180).optional(),
+    amount: moneyInput,
+    currency: z.string().length(3),
+    baseCurrency: z.string().length(3).optional(),
+    exchangeRate: optionalMoneyInput,
+    exchangeRateDate: z.string().min(1).optional(),
+    exchangeRateSource: z.string().max(120).optional(),
+    baseCurrencyAmount: optionalMoneyInput,
+    paymentDate: z.string().min(1).optional(),
+    paymentMethod: z.enum(["BANK", "CASH", "MOBILE_MONEY"]),
+    allocations: z.array(z.object({
+      expenseId: mongoObjectId,
+      amount: moneyInput,
+      baseCurrencyAmount: moneyInput
+    })).min(1)
+  })
+});
+
+const expenseIdParamsSchema = z.object({
+  params: z.object({ id: mongoObjectId }),
+  query: z.object({}).optional(),
+  body: z.object({}).optional()
+});
+
 module.exports = {
   accountsReceivableQuerySchema,
+  bookingFinancialFactsSchema,
+  authoritativeFinancialSummarySchema,
   accountsPayableQuerySchema,
   createBusinessExpenseSchema,
   createBusinessIncomeSchema,
+  expenseIdParamsSchema,
   foundationQuerySchema,
   listBusinessExpenseSchema,
   listBusinessIncomeSchema,
   postBookingContributionSchema,
+  supplierPaymentSchema,
   updateBusinessExpenseSchema,
   updateBusinessIncomeSchema
 };

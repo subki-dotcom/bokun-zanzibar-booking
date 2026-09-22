@@ -13,6 +13,26 @@ const SALES_CHANNEL = {
   OTHER: "OTHER"
 };
 
+const SALES_CHANNEL_ALIASES = {
+  GETYOURGUIDE: SALES_CHANNEL.GETYOURGUIDE,
+  GET_YOUR_GUIDE: SALES_CHANNEL.GETYOURGUIDE,
+  GYG: SALES_CHANNEL.GETYOURGUIDE,
+  VIATOR: SALES_CHANNEL.VIATOR,
+  BOKUN_MARKETPLACE: SALES_CHANNEL.BOKUN_MARKETPLACE,
+  MARKETPLACE: SALES_CHANNEL.BOKUN_MARKETPLACE,
+  BOKUN_DIRECT: SALES_CHANNEL.DIRECT_WEBSITE,
+  BOKUN: SALES_CHANNEL.DIRECT_WEBSITE,
+  DIRECT_WEBSITE: SALES_CHANNEL.DIRECT_WEBSITE,
+  WEBSITE: SALES_CHANNEL.DIRECT_WEBSITE,
+  INTERNAL: SALES_CHANNEL.DIRECT_WEBSITE,
+  SYSTEM: SALES_CHANNEL.DIRECT_WEBSITE
+};
+
+const normalizeSalesChannel = (value = "") => {
+  const token = String(value || "OTHER").trim().toUpperCase().replace(/[\s/-]+/g, "_");
+  return SALES_CHANNEL_ALIASES[token] || SALES_CHANNEL[token] || SALES_CHANNEL.OTHER;
+};
+
 const normalizeText = (value = "") =>
   String(value || "")
     .trim()
@@ -163,6 +183,7 @@ const mapBokunSalesChannel = (raw = {}, fallback = "") => {
 
 module.exports = {
   SALES_CHANNEL,
+  normalizeSalesChannel,
   extractBokunChannelCandidates,
   mapBokunSalesChannel
 };

@@ -18,10 +18,19 @@ test('register renders usable mobile cards, actual currency and existing booking
   assert.match(html, /iv-mobile-card/);
   assert.match(html, /Partially paid/);
   assert.match(html, /Settlement pending/);
-  assert.match(html, /Accounting balance/);
+  assert.match(html, /Guest balance due/);
   assert.match(html, /USD.*35\.00/);
   assert.match(html, /\/admin\/operations\/bookings\?search=BK%2F123/);
   assert.match(html, /Actions for INV-1/);
+});
+test('public invoice identifies an OTA collector without describing it as a gateway payment', async () => {
+  const { default: PrintableInvoice } = await server.ssrLoadModule('/src/components/invoice/PrintableInvoice.jsx');
+  const html = renderToStaticMarkup(React.createElement(PrintableInvoice, { invoice: { invoiceNumber: 'INV-OTA-1', bookingReference: 'GYG-1', issueDate: '2026-09-17', paymentStatus: 'paid', bookingStatus: 'confirmed', guestPaymentCollector: 'GetYourGuide', currency: 'USD', total: 22, amountPaid: 22, balanceDue: 0 } }));
+  assert.match(html, /Payment Collected By/);
+  assert.match(html, /GetYourGuide/);
+  assert.match(html, /Payment was collected by GetYourGuide/);
+  assert.match(html, /Guest Balance Due/);
+  assert.doesNotMatch(html, /payment gateway/);
 });
 test('KPI scope and unavailable totals are explicit', () => {
   assert.match(render('InvoiceSummaryCards', { items: [row] }), /1 invoices on this page/);

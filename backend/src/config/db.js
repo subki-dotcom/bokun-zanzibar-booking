@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const { env } = require("./env");
 const logger = require("./logger");
 const Booking = require("../models/Booking");
+const RevenueRecognition = require("../models/RevenueRecognition");
+const JournalEntry = require("../models/JournalEntry");
 
 const connectDB = async () => {
   mongoose.set("strictQuery", true);
@@ -9,6 +11,8 @@ const connectDB = async () => {
   try {
     await mongoose.connect(env.MONGO_URI);
     await Booking.createIndexes();
+    await RevenueRecognition.createIndexes();
+    await JournalEntry.createIndexes();
     logger.info("MongoDB connected");
   } catch (error) {
     logger.error("MongoDB connection failed", { error: error.message });

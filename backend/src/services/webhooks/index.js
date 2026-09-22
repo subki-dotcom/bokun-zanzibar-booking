@@ -283,6 +283,10 @@ const applyBokunSnapshotToBooking = async ({
     }
   }
 
+  if (mappedBooking?.snapshot?.bokunOperationalEvidence) {
+    bookingDoc.bokunOperationalEvidence = mappedBooking.snapshot.bokunOperationalEvidence;
+  }
+
   if (bokunBooking || resolvedStatus) {
     bookingDoc.operationalSource = "BOKUN";
     bookingDoc.salesChannel = bookingDoc.salesChannel || mappedChannel.salesChannel;
@@ -464,6 +468,7 @@ const reconcileExistingBokunBooking = async ({
     throw new AppError("Booking is required for Bokun reconciliation", 400, "BOOKING_REQUIRED");
   }
 
+
   const lookupKeys = resolveLookupKeys({ booking: bookingDoc });
   if (!lookupKeys.length) {
     return { found: false, booking: bookingDoc, skipped: "supplier_identifier_missing" };
@@ -491,6 +496,46 @@ const reconcileExistingBokunBooking = async ({
     booking: await Booking.findById(bookingDoc._id),
     bokunBooking
   };
+};
+
+const syncBokunOperationalEvidence = async ({
+  bookingDoc,
+  requestId = "",
+  source = "owner_controlled_operational_evidence"
+} = {}) => {
+  if (!bookingDoc) {
+    throw new AppError("Booking is required for Bókun operational evidence sync", 400, "BOOKING_REQUIRED");
+  }
+
+  const lookupKeys = resolveLookupKeys({ booking: bookingDoc });
+  const bokunBooking = await lookupBokunBookingWithFallback({ lookupKeys, requestId });
+  if (!bokunBooking) return { found: false, updated: false, booking: bookingDoc };
+
+  const mapped = require("../../integrations/bokun/confirmedBooking.mapper").mapBokunBookingForImport({ bokunBooking });
+  const evidence = mapped.snapshot.bokunOperationalEvidence || {};
+  if (!evidence.activityStatus) return { found: true, updated: false, booking: bookingDoc, evidence: null };
+
+  const before = bookingDoc.bokunOperationalEvidence || {};
+  const changed = JSON.stringify(before) !== JSON.stringify(evidence);
+  if (changed) {
+    bookingDoc.bokunOperationalEvidence = evidence;
+    await bookingDoc.save();
+    await AuditLog.create({
+      actorId: null,
+      actorRole: "system",
+      action: "bokun_operational_evidence_synced",
+      entityType: "Booking",
+      entityId: bookingDoc._id.toString(),
+      reference: bookingDoc.bookingReference,
+      requestId,
+      reason: "Bókun activity operational evidence synchronized without completion or payment changes",
+      before: { bokunOperationalEvidence: before },
+      after: { bokunOperationalEvidence: evidence },
+      metadata: { source }
+    });
+  }
+
+  return { found: true, updated: changed, booking: bookingDoc, evidence };
 };
 
 const createSyncLogStarted = async ({ operation, details = {} }) =>
@@ -814,5 +859,6 @@ module.exports = {
   handleBokunWebhook,
   pollBookingUpdates,
   reconcileExistingBokunBooking,
+  syncBokunOperationalEvidence,
   __testables: { applyMappedTransactionCurrency }
 };

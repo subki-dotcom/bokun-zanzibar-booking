@@ -9,7 +9,19 @@ const listReconciliationSchema = z.object({
   body: z.object({}).optional(),
   query: z
     .object({
-      limit: z.coerce.number().int().min(1).max(200).optional()
+      page: z.coerce.number().int().min(1).optional(),
+      limit: z.coerce.number().int().min(1).max(100).optional(),
+      search: z.string().max(120).optional(),
+      fromDate: z.string().date().optional(),
+      toDate: z.string().date().optional(),
+      channel: z.string().max(80).optional(),
+      paymentStatus: z.string().max(40).optional(),
+      settlementStatus: z.string().max(40).optional(),
+      reconciliationStatus: z.string().max(40).optional(),
+      currency: z.string().length(3).optional(),
+      status: z.string().max(40).optional(),
+      sort: z.string().max(40).optional(),
+      order: z.enum(["asc", "desc"]).optional()
     })
     .optional()
 });

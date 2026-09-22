@@ -1,0 +1,43 @@
+{
+  "readOnly": true,
+  "dryRun": true,
+  "mode": "PREVIEW_ONLY",
+  "generatedAt": "2026-09-19T07:14:16.153Z",
+  "totals": {
+    "historicalExpensesDiscovered": 2,
+    "SAFE_TO_POST": 0,
+    "ALREADY_POSTED": 1,
+    "DRAFT_DO_NOT_POST": 1,
+    "POSTED_BY_BACKFILL": 0,
+    "BLOCKED": 1,
+    "NEEDS_MANUAL_REVIEW": 1,
+    "postingFailures": 0,
+    "duplicateExpensePostings": 0,
+    "unbalancedJournals": 0
+  },
+  "rows": [
+    {
+      "expenseId": "6aa96b88a245e043ec108965",
+      "expenseReference": "BE-20260915-8F6C0B88",
+      "accountingScope": "BUSINESS_ACCOUNTING",
+      "status": "DRAFT",
+      "amount": "100",
+      "classification": "DRAFT_DO_NOT_POST",
+      "blockers": [
+        "DRAFT_DO_NOT_POST",
+        "MISSING_MAPPING"
+      ],
+      "postingKey": "expense-recognition:6aa96b88a245e043ec108965:v1"
+    },
+    {
+      "expenseId": "6aad7d0f5003fe3d75582328",
+      "expenseReference": "BEXP-1789754639025-IEZKWS",
+      "accountingScope": "BOOKING_ACCOUNTING",
+      "status": "APPROVED",
+      "amount": "60",
+      "classification": "ALREADY_POSTED",
+      "blockers": [],
+      "postingKey": "expense-recognition:6aad7d0f5003fe3d75582328:v1"
+    }
+  ]
+}

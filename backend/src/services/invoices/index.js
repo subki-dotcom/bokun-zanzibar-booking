@@ -3,7 +3,9 @@ const Invoice = require("../../models/Invoice");
 const Refund = require("../../models/Refund");
 const { env } = require("../../config/env");
 const paymentsService = require("../payments");
+const logger = require("../../config/logger");
 const { Decimal, decimalString, normalizeCurrency, toDecimal } = require("../../utils/money");
+const { resolveGuestPaymentPolicy } = require("../bookingPayment/policy");
 
 const roundMoney = (value = 0) => Number(toDecimal(value).toDecimalPlaces(2).toFixed(2));
 
@@ -93,6 +95,11 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
     throw error;
   }
   const verifiedPaidAmount = paidSummary.amount;
+  const guestPayment = resolveGuestPaymentPolicy({
+    booking,
+    total,
+    verifiedPaidAmount
+  });
   const refundRows = await Refund.aggregate([
     {
       $match: {
@@ -113,7 +120,7 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
     bookingStatus: booking.bookingStatus,
     bookingPaymentStatus: booking.paymentStatus,
     total,
-    verifiedPaidAmount,
+    verifiedPaidAmount: guestPayment.amountPaid,
     confirmedRefundedAmount: Number(refundRows[0]?.amount || 0)
   });
 
@@ -157,6 +164,8 @@ const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
     amountRefunded,
     netAmountPaid,
     balanceDue,
+    guestPaymentCollector: guestPayment.collector,
+    guestPaymentSource: guestPayment.source,
     transactionCurrency: invoiceCurrency,
     accountingCurrency: invoiceCurrency,
     totalAmount: canonical.totalAmount,
@@ -182,55 +191,29 @@ const persistInvoiceFromSnapshot = async (invoiceSnapshot) => {
 };
 
 const upsertInvoiceFromSnapshot = async (invoiceSnapshot) => {
-  const existing = await Invoice.findOne({ bookingReference: invoiceSnapshot.bookingReference });
-
-  if (!existing) {
-    return persistInvoiceFromSnapshot(invoiceSnapshot);
+  const bookingReference = String(invoiceSnapshot.bookingReference || "").trim();
+  if (!bookingReference) throw new Error("Invoice bookingReference is required");
+  const mutableSnapshot = { ...invoiceSnapshot };
+  const invoiceNumber = mutableSnapshot.invoiceNumber;
+  delete mutableSnapshot.invoiceNumber;
+  delete mutableSnapshot.bookingReference;
+  try {
+    const invoice = await Invoice.findOneAndUpdate(
+      { bookingReference },
+      { $set: mutableSnapshot, $setOnInsert: { bookingReference, invoiceNumber } },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+    return typeof invoice?.toObject === "function" ? invoice.toObject() : invoice;
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+    const canonical = await Invoice.findOne({ bookingReference });
+    if (!canonical) throw error;
+    logger.warn("INVOICE_DUPLICATE_PREVENTED", { bookingReference, canonicalRecordId: String(canonical._id) });
+    const recovered = await Invoice.findOneAndUpdate(
+      { _id: canonical._id }, { $set: mutableSnapshot }, { new: true, runValidators: true }
+    );
+    return typeof recovered?.toObject === "function" ? recovered.toObject() : recovered;
   }
-
-  existing.paymentStatus = invoiceSnapshot.paymentStatus;
-  existing.bookingStatus = invoiceSnapshot.bookingStatus;
-  existing.clientName = invoiceSnapshot.clientName;
-  existing.clientPhone = invoiceSnapshot.clientPhone;
-  existing.clientEmail = invoiceSnapshot.clientEmail;
-  existing.clientCountry = invoiceSnapshot.clientCountry;
-  existing.hotelName = invoiceSnapshot.hotelName;
-  existing.tourName = invoiceSnapshot.tourName;
-  existing.bookedOption = invoiceSnapshot.bookedOption;
-  existing.tourDate = invoiceSnapshot.tourDate;
-  existing.pickupTime = invoiceSnapshot.pickupTime;
-  existing.pickupLocation = invoiceSnapshot.pickupLocation;
-  existing.dropoffLocation = invoiceSnapshot.dropoffLocation;
-  existing.duration = invoiceSnapshot.duration;
-  existing.adults = invoiceSnapshot.adults;
-  existing.children = invoiceSnapshot.children;
-  existing.totalPax = invoiceSnapshot.totalPax;
-  existing.guideLanguage = invoiceSnapshot.guideLanguage;
-  existing.included = invoiceSnapshot.included;
-  existing.excluded = invoiceSnapshot.excluded;
-  existing.items = invoiceSnapshot.items;
-  existing.subtotal = invoiceSnapshot.subtotal;
-  existing.discount = invoiceSnapshot.discount;
-  existing.tax = invoiceSnapshot.tax;
-  existing.total = invoiceSnapshot.total;
-  existing.amountPaid = invoiceSnapshot.amountPaid;
-  existing.amountRefunded = invoiceSnapshot.amountRefunded;
-  existing.netAmountPaid = invoiceSnapshot.netAmountPaid;
-  existing.balanceDue = invoiceSnapshot.balanceDue;
-  existing.transactionCurrency = invoiceSnapshot.transactionCurrency;
-  existing.accountingCurrency = invoiceSnapshot.accountingCurrency;
-  existing.totalAmount = invoiceSnapshot.totalAmount;
-  existing.paidAccountingAmount = invoiceSnapshot.paidAccountingAmount;
-  existing.refundedAccountingAmount = invoiceSnapshot.refundedAccountingAmount;
-  existing.netAccountingAmount = invoiceSnapshot.netAccountingAmount;
-  existing.balanceDueAmount = invoiceSnapshot.balanceDueAmount;
-  existing.paymentMethod = invoiceSnapshot.paymentMethod;
-  existing.notes = invoiceSnapshot.notes;
-  existing.cancellationPolicy = invoiceSnapshot.cancellationPolicy;
-  existing.paymentTerms = invoiceSnapshot.paymentTerms;
-  await existing.save();
-
-  return existing.toObject();
 };
 
 const getInvoiceByBookingReference = async (bookingReference) => {
@@ -248,6 +231,7 @@ module.exports = {
   getInvoiceByBookingReference,
   getInvoiceByNumber,
   __testables: {
-    resolveInvoiceAccounting
+    resolveInvoiceAccounting,
+    resolveGuestPaymentPolicy
   }
 };

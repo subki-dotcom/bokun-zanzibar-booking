@@ -41,7 +41,11 @@ export const ADMIN_ROLES = {
 export const ADMIN_PERMISSIONS = {
   BOOKING_ACCOUNTING_READ: "booking_accounting.read",
   BUSINESS_ACCOUNTING_READ: "business_accounting.read",
+  SETTLEMENT_VIEW: "settlement.view",
+  SERVICE_COMPLETION_VIEW: "service_completion.view",
+  GL_PREVIEW_POSTING: "gl.preview_posting",
   BUSINESS_EXPENSE_WRITE: "business_expense.write",
+  RECORD_SUPPLIER_PAYMENT: "supplier_payment.record",
   BUSINESS_INTELLIGENCE_READ: "business_intelligence.read",
   REPORT_CENTER_READ: "report_center.read",
   AUDIT_CONTROL_READ: "audit_control.read",
@@ -374,6 +378,42 @@ export const adminNavigation = [
         icon: BsBuilding,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.BUSINESS_ACCOUNTING_READ],
+        status: "active"
+      },
+      {
+        id: "settlements",
+        label: "Settlements",
+        path: "/admin/business-accounting/settlements",
+        icon: BsCashCoin,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.SETTLEMENT_VIEW],
+        status: "active"
+      },
+      {
+        id: "settlement-import",
+        label: "Import Settlements",
+        path: "/admin/business-accounting/settlements/import",
+        icon: BsCloudArrowUp,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.SETTLEMENT_VIEW],
+        status: "active"
+      },
+      {
+        id: "service-completion",
+        label: "Service Completion",
+        path: "/admin/business-accounting/service-completion",
+        icon: BsCalendar2Check,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.SERVICE_COMPLETION_VIEW],
+        status: "active"
+      },
+      {
+        id: "gl-posting-preview",
+        label: "GL Posting Preview",
+        path: "/admin/business-accounting/gl-posting-preview",
+        icon: BsJournalCheck,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_PREVIEW_POSTING],
         status: "active"
       },
       {

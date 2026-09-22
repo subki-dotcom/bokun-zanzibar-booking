@@ -63,6 +63,17 @@ const paymentSchema = new mongoose.Schema(
       default: "",
       index: true
     },
+    accountingTreatment: {
+      type: String,
+      enum: ["", "AR_SETTLEMENT", "ADVANCE_PAYMENT", "CUSTOMER_DEPOSIT"],
+      default: "",
+      index: true
+    },
+    accountingStatus: { type: String, enum: ["", "READY_TO_POST", "POSTING", "POSTED", "POSTING_BLOCKED", "NEEDS_REVIEW", "FAILED_RETRYABLE", "REVERSED"], default: "", index: true },
+    accountingPostingKey: { type: String, default: "", index: true },
+    accountingJournalEntryId: { type: mongoose.Schema.Types.ObjectId, ref: "JournalEntry", default: null, index: true },
+    accountingBlockers: [{ type: String }],
+    accountingPostedAt: { type: Date, default: null },
     accountingAllocatedAt: { type: Date, default: null },
     invoiceStatus: { type: String, default: "" },
     refundStatus: { type: String, default: "not_required" },

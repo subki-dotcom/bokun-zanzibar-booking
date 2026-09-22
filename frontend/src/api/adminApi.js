@@ -1,4 +1,5 @@
 import axiosClient from "./axiosClient";
+import { buildPaymentReconciliationQuery } from "./paymentReconciliationQuery";
 
 const buildQueryString = (params = {}) => {
   const query = new URLSearchParams();
@@ -83,8 +84,93 @@ export const reconcileBookingFinalizations = async ({ limit = 20, force = false 
   return response.data.data;
 };
 
-export const fetchPaymentReconciliation = async ({ limit = 100 } = {}) => {
-  const response = await axiosClient.get(`/payments/reconciliation?limit=${encodeURIComponent(limit)}`);
+export const fetchPaymentReconciliation = async (params = {}) => {
+  const response = await axiosClient.get(`/payments/reconciliation${buildPaymentReconciliationQuery(params)}`);
+  return response.data.data;
+};
+
+export const recheckPayment = async (bookingReference) => {
+  const response = await axiosClient.post(`/payments/reconciliation/${bookingReference}/recheck`, {});
+  return response.data.data;
+};
+
+export const fetchSettlements = async ({ page = 1, limit = 100, provider = "", status = "", currency = "", search = "" } = {}) => {
+  const params = new URLSearchParams({ page, limit });
+  if (provider) params.set("provider", provider);
+  if (status) params.set("status", status);
+  if (currency) params.set("currency", currency);
+  if (search) params.set("search", search);
+  const response = await axiosClient.get(`/admin/settlements?${params.toString()}`);
+  return response.data.data;
+};
+
+export const createSettlement = async (input) => {
+  const response = await axiosClient.post("/admin/settlements", input);
+  return response.data.data;
+};
+
+export const previewSettlementImport = async (csv) => {
+  const response = await axiosClient.post("/admin/settlements/import/preview", { csv });
+  return response.data.data;
+};
+
+export const commitSettlementImport = async (token) => {
+  const response = await axiosClient.post("/admin/settlements/import/commit", { token });
+  return response.data.data;
+};
+
+export const fetchServiceCompletions = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/service-completions?${new URLSearchParams(params).toString()}`);
+  return response.data.data;
+};
+
+export const createServiceCompletion = async (input) => {
+  const response = await axiosClient.post("/admin/service-completions", input);
+  return response.data.data;
+};
+
+export const fetchServiceCompletionDetail = async (completionId) => {
+  const response = await axiosClient.get(`/admin/service-completions/${encodeURIComponent(completionId)}`);
+  return response.data.data;
+};
+
+export const fetchServiceCompletionReview = async (bookingReference) => {
+  const response = await axiosClient.get(`/admin/service-completions/booking/${encodeURIComponent(bookingReference)}/review`);
+  return response.data.data;
+};
+
+export const verifyServiceCompletion = async (completionId, input) => {
+  const response = await axiosClient.post(`/admin/service-completions/${encodeURIComponent(completionId)}/verify`, input);
+  return response.data.data;
+};
+
+export const previewServiceCompletionRevenue = async (completionId) => {
+  const response = await axiosClient.post(`/admin/service-completions/${encodeURIComponent(completionId)}/revenue-preview`, {});
+  return response.data.data;
+};
+
+export const previewAccountingPosting = async (input) => {
+  const response = await axiosClient.post("/admin/accounting/postings/preview", input);
+  return response.data.data;
+};
+
+export const fetchSettlementDetail = async (settlementId) => {
+  const response = await axiosClient.get(`/admin/settlements/${encodeURIComponent(settlementId)}`);
+  return response.data.data;
+};
+
+export const allocateSettlement = async (settlementId, input) => {
+  const response = await axiosClient.post(`/admin/settlements/${encodeURIComponent(settlementId)}/allocate`, input);
+  return response.data.data;
+};
+
+export const reconcileSettlement = async (settlementId) => {
+  const response = await axiosClient.post(`/admin/settlements/${encodeURIComponent(settlementId)}/reconcile`, {});
+  return response.data.data;
+};
+
+export const reverseSettlementAllocation = async (allocationId, reason) => {
+  const response = await axiosClient.post(`/admin/settlements/allocations/${encodeURIComponent(allocationId)}/reverse`, { reason });
   return response.data.data;
 };
 
@@ -443,6 +529,16 @@ export const fetchBookingAccountingDashboard = async (params = {}) => {
   return response.data.data;
 };
 
+export const fetchAuthoritativeFinancialSummary = async (params = {}) => {
+  const response = await axiosClient.get(`/admin/business-accounting/authoritative-summary${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchBookingFinancialFacts = async (bookingReference) => {
+  const response = await axiosClient.get(`/admin/business-accounting/bookings/${encodeURIComponent(bookingReference)}/financial-facts`);
+  return response.data.data;
+};
+
 export const fetchBookingAccountingInvoices = async (params = {}) => {
   const response = await axiosClient.get(`/admin/booking-accounting/invoices${buildQueryString(params)}`);
   return response.data.data;
@@ -455,6 +551,31 @@ export const fetchBookingAccountingRefunds = async (params = {}) => {
 
 export const fetchBookingAccountingExpenses = async (params = {}) => {
   const response = await axiosClient.get(`/admin/booking-accounting/expenses${buildQueryString(params)}`);
+  return response.data.data;
+};
+
+export const fetchBookingAccountingExpense = async (expenseId) => {
+  const response = await axiosClient.get(`/admin/booking-accounting/expenses/${encodeURIComponent(expenseId)}`);
+  return response.data.data;
+};
+
+export const createBookingAccountingExpense = async (payload = {}) => {
+  const response = await axiosClient.post("/admin/booking-accounting/expenses", payload);
+  return response.data.data;
+};
+
+export const updateBookingAccountingExpense = async (expenseId, payload = {}) => {
+  const response = await axiosClient.put(`/admin/booking-accounting/expenses/${encodeURIComponent(expenseId)}`, payload);
+  return response.data.data;
+};
+
+export const voidBookingAccountingExpense = async (expenseId, reason = "") => {
+  const response = await axiosClient.post(`/admin/booking-accounting/expenses/${encodeURIComponent(expenseId)}/void`, { reason });
+  return response.data.data;
+};
+
+export const updateBookingAccountingExpenseCompletion = async (expenseId, completionStatus) => {
+  const response = await axiosClient.post(`/admin/booking-accounting/expenses/${encodeURIComponent(expenseId)}/completion`, { completionStatus });
   return response.data.data;
 };
 
@@ -537,6 +658,8 @@ export const fetchReportExportHistory = async (params = {}, signal) => {
   return response.data.data;
 };
 export const fetchBookingReconciliationDetail = async (bookingId) => { const response = await axiosClient.get(`/admin/booking-accounting/reconciliation/${encodeURIComponent(bookingId)}`); return response.data.data; };
+export const fetchBokunFinancialPreview = async (bookingId) => { const response = await axiosClient.get(`/admin/booking-accounting/reconciliation/${encodeURIComponent(bookingId)}/bokun-financial-preview`); return response.data.data; };
+export const refreshBokunFinancialPreview = async (bookingId) => { const response = await axiosClient.get(`/admin/booking-accounting/reconciliation/${encodeURIComponent(bookingId)}/bokun-financial-preview/refresh`); return response.data.data; };
 export const runBookingReconciliation = async (bookingId) => { const response = await axiosClient.post(`/admin/booking-accounting/reconciliation/${encodeURIComponent(bookingId)}/run`, {}); return response.data.data; };
 export const exportBookingReconciliation = async (params = {}) => { const response = await axiosClient.get(`/admin/booking-accounting/reconciliation-export${buildQueryString(params)}`, { responseType: "blob" }); return response.data; };
 
@@ -622,6 +745,16 @@ export const fetchAccountsReceivableDashboard = async (params = {}) => {
   return response.data.data;
 };
 
+export const previewCustomerInvoicePosting = async (payload = {}) => {
+  const response = await axiosClient.post("/admin/accounting/postings/customer-invoice-preview", payload);
+  return response.data.data;
+};
+
+export const previewCustomerPaymentPosting = async (payload = {}) => {
+  const response = await axiosClient.post("/admin/accounting/postings/customer-payment-preview", payload);
+  return response.data.data;
+};
+
 export const fetchCashBankDashboard = async (params = {}) => {
   const response = await axiosClient.get(`/admin/accounting/cash-bank${buildQueryString(params)}`);
   return response.data.data;
@@ -629,6 +762,11 @@ export const fetchCashBankDashboard = async (params = {}) => {
 
 export const createBusinessExpense = async (payload = {}) => {
   const response = await axiosClient.post("/admin/business-expenses", payload);
+  return response.data.data;
+};
+
+export const createSupplierPayment = async (payload = {}) => {
+  const response = await axiosClient.post("/admin/business-expenses/supplier-payments", payload);
   return response.data.data;
 };
 
@@ -763,4 +901,6 @@ export const fetchFixedAssets = async () => {
 };
 export const exportAccountingReconciliation = async (params = {}) => { const response = await axiosClient.get(`/admin/accounting/exports/reconciliation${buildQueryString(params)}`, { responseType: "blob" }); return response.data; };
 export const createFixedAsset = async (payload = {}) => { const response = await axiosClient.post("/admin/accounting/fixed-assets", payload); return response.data.data; };
+export const createFixedAssetDepreciationJournal = async (assetId, payload = {}) => { const response = await axiosClient.post(`/admin/accounting/fixed-assets/${encodeURIComponent(assetId)}/depreciation-journals`, payload); return response.data.data; };
+export const createFixedAssetAcquisitionJournal = async (assetId, payload = {}) => { const response = await axiosClient.post(`/admin/accounting/fixed-assets/${encodeURIComponent(assetId)}/acquisition-journals`, payload); return response.data.data; };
 export const exportFixedAssets = async (params = {}) => { const response = await axiosClient.get(`/admin/accounting/exports/fixed-assets${buildQueryString(params)}`, { responseType: "blob" }); return response.data; };

@@ -4,6 +4,7 @@ const Booking = require("../../models/Booking");
 const BookingRequest = require("../../models/BookingRequest");
 const AuditLog = require("../../models/AuditLog");
 const AppError = require("../../utils/AppError");
+const logger = require("../../config/logger");
 const bookingsService = require("../bookings");
 const paymentsService = require("../payments");
 const paypalService = require("../payments/paypal");
@@ -1209,10 +1210,12 @@ const processRefund = async ({ refundId, auth, traceId = "", notes = "" } = {}) 
   const refund = await Refund.findById(refundId);
   if (!refund) throw new AppError("Refund not found", 404, "REFUND_NOT_FOUND");
   if (FINAL_REFUND_STATUSES.includes(refund.status)) {
-    throw new AppError("This refund has already been completed.", 409, "REFUND_ALREADY_COMPLETED");
+    logger.info("REFUND_REPLAY", { provider: refund.provider, refundReference: refund.refundReference, canonicalRecordId: String(refund._id), status: refund.status });
+    return refund;
   }
   if (["processing", "awaiting_merchant_approval"].includes(refund.status)) {
-    throw new AppError("This refund is already processing.", 409, "REFUND_ALREADY_PROCESSING");
+    logger.info("REFUND_REPLAY", { provider: refund.provider, refundReference: refund.refundReference, canonicalRecordId: String(refund._id), status: refund.status });
+    return refund;
   }
   if (refund.status !== "approved") {
     throw new AppError("Refund must be approved before processing.", 409, "REFUND_NOT_APPROVED");

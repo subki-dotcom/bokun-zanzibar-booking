@@ -1,0 +1,12 @@
+{
+  "readOnly": true,
+  "dryRun": true,
+  "strategy": "CLASSIFY_REVIEW_APPROVE_APPLY_VERIFY",
+  "generatedAt": "2026-09-18T04:20:40.688Z",
+  "scanned": 10,
+  "summary": {
+    "UNCHANGED": 10
+  },
+  "writes": 0,
+  "rows": []
+}
