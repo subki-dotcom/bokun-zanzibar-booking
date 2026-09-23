@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "test": "node --test ./test/*.test.js",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender-public-pages.mjs",
+    "verify:seo": "node scripts/verify-public-seo.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

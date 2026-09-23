@@ -39,6 +39,7 @@ const TourDetailsPage = () => {
   if (error) {
     return (
       <Container className="py-4">
+        <SeoHead title="Tour Not Found | Riser Tours & Safaris" description="This tour is unavailable." noIndex />
         <ErrorAlert error={error} />
       </Container>
     );

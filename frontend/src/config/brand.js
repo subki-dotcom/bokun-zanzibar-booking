@@ -7,6 +7,7 @@ const whatsappNumber = normalizePhone(envValue("VITE_WHATSAPP_NUMBER", phone));
 
 export const BRAND = {
   name: "Riser Tours & Safaris",
+  website: envValue("VITE_SITE_URL", "https://zanzibartoursandsafaris.co.tz").replace(/\/$/, ""),
   location: "Zanzibar, Tanzania",
   phone,
   phoneHref: `tel:${phone.replace(/\s/g, "")}`,

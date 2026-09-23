@@ -6,12 +6,14 @@ import FloatingWhatsAppButton from "../components/common/footer/FloatingWhatsApp
 import { BRAND } from "../config/brand";
 import { persistMarketingAttribution } from "../utils/marketingAttribution";
 import AnalyticsTracker from "../components/common/AnalyticsTracker";
+import SeoHead from "../components/common/SeoHead";
 
 const PublicLayout = () => {
   const location = useLocation();
   const isCheckoutRoute = /^(\/booking\/|\/payment\/checkout\/|\/payment-(success|failure|processing)(?:\/|$)|\/payment-status\/)/.test(
     location.pathname
   );
+  const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
 
   useEffect(() => {
     persistMarketingAttribution(location.search);
@@ -20,6 +22,7 @@ const PublicLayout = () => {
   return (
     <div className={`app-shell ${isCheckoutRoute ? "is-checkout-route" : ""}`.trim()}>
       <AnalyticsTracker />
+      {noIndexRoute ? <SeoHead noIndex title="Riser Tours & Safaris" description="Secure booking account and payment page." /> : null}
       <Navbar expand="lg" className="public-nav py-3">
         <Container>
           <Navbar.Brand as={Link} to="/" className="brand-mark fs-4">

@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /agent/
 
-Sitemap: https://risertoursandsafaris.co.tz/sitemap.xml
+Sitemap: https://zanzibartoursandsafaris.co.tz/sitemap.xml
