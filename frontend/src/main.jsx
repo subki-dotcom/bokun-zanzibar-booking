@@ -6,6 +6,10 @@ import "./app/styles.css";
 import App from "./app/App";
 import { AuthProvider } from "./context/AuthContext";
 import { PaymentProvidersProvider } from "./context/PaymentProvidersContext";
+import { initializeConsent } from "./utils/consent";
+
+// Synchronous restoration before React effects can emit optional analytics.
+initializeConsent();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

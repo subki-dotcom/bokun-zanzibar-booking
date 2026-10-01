@@ -1,3 +1,4 @@
+import useBookingAnalytics from "../../hooks/useBookingAnalytics";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -312,6 +313,7 @@ const MyBookingPage = () => {
 
   const [reference, setReference] = useState(referenceParam || "");
   const [booking, setBooking] = useState(null);
+  useBookingAnalytics(booking);
   const [loading, setLoading] = useState(Boolean(referenceParam));
   const [error, setError] = useState("");
 

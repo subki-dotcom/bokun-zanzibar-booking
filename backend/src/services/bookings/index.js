@@ -3036,7 +3036,10 @@ const getBookingByReference = async (reference) => {
       .sort({ createdAt: -1 })
       .lean()
   ]);
-  return toPublicBookingDetails({ booking, productSnapshot, cancellationRequest });
+  return {
+    ...toPublicBookingDetails({ booking, productSnapshot, cancellationRequest }),
+    analyticsPurchase: require('./analytics').buildPurchaseAnalytics(booking, env)
+  };
 };
 
 const BOOKING_LIST_SORTS = {

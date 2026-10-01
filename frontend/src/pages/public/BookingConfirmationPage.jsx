@@ -1,3 +1,4 @@
+import useBookingAnalytics from "../../hooks/useBookingAnalytics";
 import { useEffect, useState } from "react";
 import { Container, Card, Badge } from "react-bootstrap";
 import { useParams, Link } from "react-router-dom";
@@ -10,6 +11,7 @@ import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
 const BookingConfirmationPage = () => {
   const { reference } = useParams();
   const [booking, setBooking] = useState(null);
+  useBookingAnalytics(booking);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 

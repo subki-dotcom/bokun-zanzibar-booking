@@ -1,3 +1,4 @@
+import useBookingAnalytics from "../../hooks/useBookingAnalytics";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Container } from "react-bootstrap";
 import { BsCheckCircle, BsClockHistory, BsCreditCard, BsExclamationTriangle, BsFileEarmarkText, BsShieldCheck } from "react-icons/bs";
@@ -28,6 +29,7 @@ const PaymentStatusPage = () => {
   const { reference } = useParams();
   const [searchParams] = useSearchParams();
   const [booking, setBooking] = useState(null);
+  useBookingAnalytics(booking);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);

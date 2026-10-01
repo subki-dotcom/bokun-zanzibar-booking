@@ -6,6 +6,7 @@ import FloatingWhatsAppButton from "../components/common/footer/FloatingWhatsApp
 import { BRAND } from "../config/brand";
 import { persistMarketingAttribution } from "../utils/marketingAttribution";
 import AnalyticsTracker from "../components/common/AnalyticsTracker";
+import CookieConsent from "../components/common/CookieConsent";
 import SeoHead from "../components/common/SeoHead";
 
 const PublicLayout = () => {
@@ -49,6 +50,7 @@ const PublicLayout = () => {
         <Outlet />
       </main>
       <Footer />
+      <CookieConsent />
       {BRAND.whatsappHref ? <FloatingWhatsAppButton href={BRAND.whatsappHref} /> : null}
     </div>
   );

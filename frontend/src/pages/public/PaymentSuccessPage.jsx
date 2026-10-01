@@ -1,3 +1,4 @@
+import useBookingAnalytics from "../../hooks/useBookingAnalytics";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Container } from "react-bootstrap";
 import { Link, useSearchParams } from "react-router-dom";
@@ -38,6 +39,7 @@ const PaymentSuccessPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  useBookingAnalytics(result?.booking, result?.bookingReference);
   const [refreshKey, setRefreshKey] = useState(0);
   const [pollingTimedOut, setPollingTimedOut] = useState(false);
 
