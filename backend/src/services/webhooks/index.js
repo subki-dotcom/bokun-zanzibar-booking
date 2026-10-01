@@ -167,17 +167,33 @@ const lookupBokunBookingWithFallback = async ({ lookupKeys = [], requestId = "" 
 };
 
 const updateInvoiceSnapshot = async (bookingDoc) => {
-  const productSnapshot = await ProductSnapshot.findOne({
-    bokunProductId: bookingDoc.bokunProductId
-  }).lean();
-
-  const invoiceSnapshot = await invoicesService.buildInvoiceSnapshot({
-    booking: bookingDoc.toObject(),
-    productSnapshot
-  });
-  bookingDoc.invoiceSnapshot = invoiceSnapshot;
-  await bookingDoc.save();
-  await invoicesService.upsertInvoiceFromSnapshot(invoiceSnapshot);
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const latestBooking = await Booking.findById(bookingDoc._id);
+    if (!latestBooking) return;
+    const productSnapshot = await ProductSnapshot.findOne({
+      bokunProductId: latestBooking.bokunProductId
+    }).lean();
+    const invoiceSnapshot = await invoicesService.buildInvoiceSnapshot({
+      booking: latestBooking.toObject(),
+      productSnapshot
+    });
+    const version = Number(latestBooking.__v || 0);
+    const update = await Booking.updateOne(
+      { _id: latestBooking._id, __v: version },
+      { $set: { invoiceSnapshot }, $inc: { __v: 1 } },
+      { runValidators: true }
+    );
+    if ((update.matchedCount ?? update.n ?? 0) === 1) {
+      bookingDoc.invoiceSnapshot = invoiceSnapshot;
+      bookingDoc.__v = version + 1;
+      bookingDoc.unmarkModified?.("invoiceSnapshot");
+      await invoicesService.upsertInvoiceFromSnapshot(invoiceSnapshot);
+      return;
+    }
+  }
+  const error = new Error("Booking changed repeatedly while updating its invoice snapshot");
+  error.code = "BOKUN_SYNC_CONCURRENT_UPDATE";
+  throw error;
 };
 
 const setSyncState = (bookingDoc, { source, status, error = "" }) => {
@@ -205,6 +221,53 @@ const applyMappedTransactionCurrency = ({ bookingDoc, mappedBooking }) => {
   return true;
 };
 
+const BOKUN_SYNC_FIELDS = [
+  "bookingReference", "bokunBookingId", "bokunConfirmationCode", "travelDate", "startTime",
+  "amount", "currency", "transactionCurrency", "bokunCurrencySource", "pricingSnapshot",
+  "bookingStatus", "cancellation", "supplierStatus", "supplierStatusUpdatedAt", "supplierFailureReason",
+  "operationalSource", "salesChannel", "rawBokunResponse", "bokunOperationalEvidence", "bokunStatus",
+  "bokunImport", "syncState"
+];
+
+const plainBooking = (bookingDoc) =>
+  typeof bookingDoc.toObject === "function" ? bookingDoc.toObject() : bookingDoc;
+
+const snapshotBokunSyncFields = (bookingDoc) => {
+  const plain = plainBooking(bookingDoc);
+  return Object.fromEntries(BOKUN_SYNC_FIELDS
+    .filter((field) => Object.prototype.hasOwnProperty.call(plain, field))
+    .map((field) => [field, plain[field]]));
+};
+
+const updateBokunFieldsWithRetry = async ({ bookingId, mutate, BookingModel = Booking, maxAttempts = 3 }) => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const bookingDoc = await BookingModel.findById(bookingId);
+    if (!bookingDoc) throw new AppError("Booking not found during Bókun sync", 404, "BOOKING_NOT_FOUND");
+
+    const before = snapshotBokunSyncFields(bookingDoc);
+    const result = mutate(bookingDoc);
+    const after = snapshotBokunSyncFields(bookingDoc);
+    const patch = Object.fromEntries(Object.entries(after).filter(([field, value]) =>
+      JSON.stringify(value) !== JSON.stringify(before[field])));
+    const version = Number(bookingDoc.__v || 0);
+    const update = await BookingModel.updateOne(
+      { _id: bookingDoc._id, __v: version },
+      { $set: patch, $inc: { __v: 1 } },
+      { runValidators: true }
+    );
+
+    if ((update.matchedCount ?? update.n ?? 0) === 1) {
+      bookingDoc.__v = version + 1;
+      for (const field of Object.keys(patch)) bookingDoc.unmarkModified?.(field);
+      return { bookingDoc, before, ...result };
+    }
+  }
+
+  const error = new Error("Booking changed repeatedly during Bókun sync");
+  error.code = "BOKUN_SYNC_CONCURRENT_UPDATE";
+  throw error;
+};
+
 const applyBokunSnapshotToBooking = async ({
   bookingDoc,
   bokunBooking = null,
@@ -213,132 +276,121 @@ const applyBokunSnapshotToBooking = async ({
   requestId = "",
   reason = ""
 }) => {
-  const before = {
-    bookingStatus: bookingDoc.bookingStatus,
-    travelDate: bookingDoc.travelDate,
-    startTime: bookingDoc.startTime,
-    bokunBookingId: bookingDoc.bokunBookingId,
-    bokunConfirmationCode: bookingDoc.bokunConfirmationCode
-  };
-
+  const bookingId = bookingDoc._id;
   const resolvedStatus = bokunBooking?.status || statusHint || "";
   const strictStatus = normalizeBokunBookingStatus(bokunBooking?.raw || bokunBooking || { status: resolvedStatus });
   const mappedStatus = strictStatus.known ? strictStatus.localBookingStatus : mapBokunStatusToLocal(resolvedStatus);
-  const mappedChannel = mapBokunSalesChannel(bokunBooking?.raw || bokunBooking || {}, bookingDoc.sourceChannel || "");
   const mappedBooking = bokunBooking
     ? require("../../integrations/bokun/confirmedBooking.mapper").mapBokunBookingForImport({ bokunBooking })
     : null;
-  let businessChanged = false;
+  const { bookingDoc: syncedBookingDoc, before: beforeState, businessChanged } = await updateBokunFieldsWithRetry({
+    bookingId,
+    mutate: (currentBooking) => {
+      let changed = false;
+      const mappedChannel = mapBokunSalesChannel(bokunBooking?.raw || bokunBooking || {}, currentBooking.sourceChannel || "");
+      const assignIfChanged = (key, value) => {
+        const nextValue = toNonEmptyString(value);
+        if (!nextValue || currentBooking[key] === nextValue) return;
+        currentBooking[key] = nextValue;
+        changed = true;
+      };
 
-  const assignIfChanged = (key, value) => {
-    const nextValue = toNonEmptyString(value);
-    if (!nextValue || bookingDoc[key] === nextValue) {
-      return;
+      assignIfChanged("bokunBookingId", bokunBooking?.bokunBookingId || "");
+      if (!toNonEmptyString(currentBooking.bookingReference)) {
+        assignIfChanged("bookingReference", bokunBooking?.bookingReference || "");
+      }
+      assignIfChanged("bokunConfirmationCode", bokunBooking?.confirmationCode || "");
+      assignIfChanged("travelDate", bokunBooking?.travelDate || "");
+      assignIfChanged("startTime", bokunBooking?.startTime || "");
+
+      // Poll responses may be stale; financial currency snapshots have their own evidence pipeline.
+      if (source !== "polling" && applyMappedTransactionCurrency({ bookingDoc: currentBooking, mappedBooking })) changed = true;
+
+      if (mappedStatus && currentBooking.bookingStatus !== mappedStatus) {
+        currentBooking.bookingStatus = mappedStatus;
+        if (mappedStatus === BOOKING_STATUS.CANCELLED && !currentBooking.cancellation?.cancelledAt) {
+          currentBooking.cancellation = {
+            reason: reason || "Updated from Bokun status sync",
+            cancelledAt: new Date(),
+            cancelledBy: "bokun_sync"
+          };
+        }
+        changed = true;
+      }
+
+      if (currentBooking.bokunBookingId) {
+        const supplierStatus = currentBooking.bookingStatus === BOOKING_STATUS.CONFIRMED ? "confirmed" : "supplier_pending";
+        if (currentBooking.supplierStatus !== supplierStatus) {
+          currentBooking.supplierStatus = supplierStatus;
+          currentBooking.supplierStatusUpdatedAt = new Date();
+          currentBooking.supplierFailureReason = "";
+          changed = true;
+        }
+      }
+
+      if (bokunBooking?.raw && JSON.stringify(currentBooking.rawBokunResponse || null) !== JSON.stringify(bokunBooking.raw)) {
+        currentBooking.rawBokunResponse = bokunBooking.raw;
+      }
+      if (mappedBooking?.snapshot?.bokunOperationalEvidence) {
+        currentBooking.bokunOperationalEvidence = mappedBooking.snapshot.bokunOperationalEvidence;
+      }
+
+      if (bokunBooking || resolvedStatus) {
+        currentBooking.operationalSource = "BOKUN";
+        currentBooking.salesChannel = currentBooking.salesChannel || mappedChannel.salesChannel;
+        currentBooking.bokunStatus = {
+          raw: strictStatus.rawStatus,
+          normalized: strictStatus.normalizedStatus,
+          sourceField: strictStatus.sourceField,
+          mappedAt: new Date()
+        };
+        currentBooking.bokunImport = {
+          ...(currentBooking.bokunImport || {}),
+          firstImportedAt: currentBooking.bokunImport?.firstImportedAt || null,
+          lastImportedAt: currentBooking.bokunImport?.lastImportedAt || null,
+          lastSyncedAt: new Date(),
+          lastSyncSource: source,
+          lastSyncRequestId: requestId,
+          lastChangeType: changed ? "updated" : "unchanged",
+          lastError: "",
+          rawSalesChannel: mappedChannel.rawChannel || currentBooking.bokunImport?.rawSalesChannel || "",
+          salesChannelSourceField: mappedChannel.sourceField || currentBooking.bokunImport?.salesChannelSourceField || ""
+        };
+      }
+
+      setSyncState(currentBooking, { source, status: resolvedStatus, error: "" });
+      return { businessChanged: changed };
     }
-    bookingDoc[key] = nextValue;
-    businessChanged = true;
+  });
+  const before = {
+    bookingStatus: beforeState.bookingStatus,
+    travelDate: beforeState.travelDate,
+    startTime: beforeState.startTime,
+    bokunBookingId: beforeState.bokunBookingId,
+    bokunConfirmationCode: beforeState.bokunConfirmationCode
   };
 
-  assignIfChanged("bokunBookingId", bokunBooking?.bokunBookingId || "");
-  if (!toNonEmptyString(bookingDoc.bookingReference)) {
-    assignIfChanged("bookingReference", bokunBooking?.bookingReference || "");
-  }
-  assignIfChanged("bokunConfirmationCode", bokunBooking?.confirmationCode || "");
-  assignIfChanged("travelDate", bokunBooking?.travelDate || "");
-  assignIfChanged("startTime", bokunBooking?.startTime || "");
-
-  // Only rows whose Bókun currency lineage has already been established may
-  // be updated by routine webhook/polling. Historical rows require reviewed
-  // backfill so accounting documents are never silently rewritten.
-  if (applyMappedTransactionCurrency({ bookingDoc, mappedBooking })) businessChanged = true;
-
-  if (mappedStatus && bookingDoc.bookingStatus !== mappedStatus) {
-    bookingDoc.bookingStatus = mappedStatus;
-    if (mappedStatus === BOOKING_STATUS.CANCELLED && !bookingDoc.cancellation?.cancelledAt) {
-      bookingDoc.cancellation = {
-        reason: reason || "Updated from Bokun status sync",
-        cancelledAt: new Date(),
-        cancelledBy: "bokun_sync"
-      };
-    }
-    businessChanged = true;
-  }
-
-  if (bookingDoc.bokunBookingId) {
-    const supplierStatus = bookingDoc.bookingStatus === BOOKING_STATUS.CONFIRMED ? "confirmed" : "supplier_pending";
-    if (bookingDoc.supplierStatus !== supplierStatus) {
-      bookingDoc.supplierStatus = supplierStatus;
-      bookingDoc.supplierStatusUpdatedAt = new Date();
-      bookingDoc.supplierFailureReason = "";
-      businessChanged = true;
-    }
-  }
-
-  if (bokunBooking?.raw) {
-    const previousRaw = JSON.stringify(bookingDoc.rawBokunResponse || null);
-    const nextRaw = JSON.stringify(bokunBooking.raw);
-    if (previousRaw !== nextRaw) {
-      bookingDoc.rawBokunResponse = bokunBooking.raw;
-      // Raw payment evidence alone must not rebuild accounting invoices.
-    }
-  }
-
-  if (mappedBooking?.snapshot?.bokunOperationalEvidence) {
-    bookingDoc.bokunOperationalEvidence = mappedBooking.snapshot.bokunOperationalEvidence;
-  }
-
-  if (bokunBooking || resolvedStatus) {
-    bookingDoc.operationalSource = "BOKUN";
-    bookingDoc.salesChannel = bookingDoc.salesChannel || mappedChannel.salesChannel;
-    bookingDoc.bokunStatus = {
-      raw: strictStatus.rawStatus,
-      normalized: strictStatus.normalizedStatus,
-      sourceField: strictStatus.sourceField,
-      mappedAt: new Date()
-    };
-    bookingDoc.bokunImport = {
-      ...(bookingDoc.bokunImport || {}),
-      firstImportedAt: bookingDoc.bokunImport?.firstImportedAt || null,
-      lastImportedAt: bookingDoc.bokunImport?.lastImportedAt || null,
-      lastSyncedAt: new Date(),
-      lastSyncSource: source,
-      lastSyncRequestId: requestId,
-      lastChangeType: businessChanged ? "updated" : "unchanged",
-      lastError: "",
-      rawSalesChannel: mappedChannel.rawChannel || bookingDoc.bokunImport?.rawSalesChannel || "",
-      salesChannelSourceField: mappedChannel.sourceField || bookingDoc.bokunImport?.salesChannelSourceField || ""
-    };
-  }
-
-  setSyncState(bookingDoc, {
-    source,
-    status: resolvedStatus,
-    error: ""
-  });
-
-  await bookingDoc.save();
-
   const paymentSync = bokunBooking ? await require('../bookingPayment/sync').syncBokunPayment({
-    booking: bookingDoc, payload: bokunBooking.raw || bokunBooking, source, requestId
+    booking: syncedBookingDoc, payload: bokunBooking.raw || bokunBooking, source, requestId
   }) : null;
 
   if (businessChanged) {
-    await updateInvoiceSnapshot(bookingDoc);
+    await updateInvoiceSnapshot(syncedBookingDoc);
     await AuditLog.create({
       actorId: null,
       actorRole: source === "webhook" ? "bokun_webhook" : "bokun_poller",
       action: source === "webhook" ? "booking_synced_from_bokun_webhook" : "booking_synced_from_bokun_polling",
       entityType: "Booking",
-      entityId: bookingDoc._id.toString(),
+      entityId: syncedBookingDoc._id.toString(),
       reason: reason || "Booking updated from Bokun source of truth",
       requestId,
       before,
       after: {
-        bookingStatus: bookingDoc.bookingStatus,
-        travelDate: bookingDoc.travelDate,
-        startTime: bookingDoc.startTime,
-        bokunBookingId: bookingDoc.bokunBookingId,
-        bokunConfirmationCode: bookingDoc.bokunConfirmationCode
+        bookingStatus: syncedBookingDoc.bookingStatus,
+        travelDate: syncedBookingDoc.travelDate,
+        startTime: syncedBookingDoc.startTime,
+        bokunBookingId: syncedBookingDoc.bokunBookingId,
+        bokunConfirmationCode: syncedBookingDoc.bokunConfirmationCode
       },
       metadata: {
         syncSource: source,
@@ -349,19 +401,21 @@ const applyBokunSnapshotToBooking = async ({
 
   return {
     updated: businessChanged || Boolean(paymentSync?.changed),
-    bookingId: bookingDoc._id.toString(),
-    bookingReference: bookingDoc.bookingReference,
-    bookingStatus: bookingDoc.bookingStatus
+    bookingId: syncedBookingDoc._id.toString(),
+    bookingReference: syncedBookingDoc.bookingReference,
+    bookingStatus: syncedBookingDoc.bookingStatus
   };
 };
 
 const markBookingSyncError = async ({ bookingDoc, source, errorMessage = "" }) => {
-  setSyncState(bookingDoc, {
-    source,
-    status: bookingDoc.syncState?.lastBokunStatus || "",
-    error: errorMessage
+  await Booking.updateOne({ _id: bookingDoc._id }, {
+    $set: {
+      "syncState.lastBokunSyncAt": new Date(),
+      "syncState.lastBokunSyncSource": source,
+      "syncState.lastBokunSyncError": toNonEmptyString(errorMessage)
+    },
+    $inc: { __v: 1 }
   });
-  await bookingDoc.save();
 };
 
 const resolveLocalBooking = async ({
@@ -428,12 +482,14 @@ const processSyncForBooking = async ({
       });
     }
 
-    setSyncState(bookingDoc, {
-      source,
-      status: bookingDoc.syncState?.lastBokunStatus || "",
-      error: ""
+    await Booking.updateOne({ _id: bookingDoc._id }, {
+      $set: {
+        "syncState.lastBokunSyncAt": new Date(),
+        "syncState.lastBokunSyncSource": source,
+        "syncState.lastBokunSyncError": ""
+      },
+      $inc: { __v: 1 }
     });
-    await bookingDoc.save();
 
     return {
       updated: false,
@@ -615,6 +671,24 @@ const buildSummaryCounts = (results = []) =>
     { processed: results.length, updated: 0, unchanged: 0, skipped: 0, failed: 0 }
   );
 
+const processCandidatesIndependently = async ({ candidates = [], processCandidate, onFailure = () => {} }) => {
+  const results = [];
+  for (const bookingDoc of candidates) {
+    try {
+      results.push(await processCandidate(bookingDoc));
+    } catch (error) {
+      onFailure(bookingDoc, error);
+      results.push({
+        failed: true,
+        bookingId: bookingDoc._id?.toString(),
+        bookingReference: bookingDoc.bookingReference,
+        error: error.message
+      });
+    }
+  }
+  return results;
+};
+
 const handleBokunWebhook = async ({ payload, headers = {}, requestId = "" }) => {
   if (!verifyWebhookSecret(headers)) {
     throw new AppError("Invalid webhook secret", 401, "WEBHOOK_SECRET_INVALID");
@@ -651,7 +725,7 @@ const handleBokunWebhook = async ({ payload, headers = {}, requestId = "" }) => 
 
       if (!bookingDoc) {
         // If enabled, attempt a safe confirmed-booking import for missing bookings.
-        if (Boolean(env.BOKUN_WEBHOOK_IMPORT_MISSING)) {
+        if (env.BOKUN_WEBHOOK_IMPORT_MISSING) {
           const lookupReference = context.bookingReference || context.bokunBookingId || context.bokunConfirmationCode;
           if (!lookupReference) {
             results.push({
@@ -792,16 +866,23 @@ const pollBookingUpdates = async ({
       .sort({ "syncState.lastBokunSyncAt": 1, updatedAt: 1 })
       .limit(batchSize);
 
-    const results = [];
-    for (const bookingDoc of candidates) {
-      const result = await processSyncForBooking({
-        bookingDoc,
-        source,
-        requestId: internalRequestId,
-        reason: "Polling fallback sync"
-      });
-      results.push(result);
-    }
+    const results = await processCandidatesIndependently({
+      candidates,
+      processCandidate: (bookingDoc) => processSyncForBooking({
+          bookingDoc,
+          source,
+          requestId: internalRequestId,
+          reason: "Polling fallback sync"
+      }),
+      onFailure: (bookingDoc, error) => {
+        logger.error("Bokun polling sync failed for booking", {
+          requestId: internalRequestId,
+          bookingId: bookingDoc._id?.toString(),
+          bookingReference: bookingDoc.bookingReference,
+          error: error.message
+        });
+      }
+    });
 
     const summary = buildSummaryCounts(results);
     await finalizeSyncLog({
@@ -860,5 +941,5 @@ module.exports = {
   pollBookingUpdates,
   reconcileExistingBokunBooking,
   syncBokunOperationalEvidence,
-  __testables: { applyMappedTransactionCurrency }
+  __testables: { applyMappedTransactionCurrency, updateBokunFieldsWithRetry, processCandidatesIndependently }
 };
