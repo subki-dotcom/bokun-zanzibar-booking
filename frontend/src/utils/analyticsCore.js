@@ -24,7 +24,7 @@ export const cleanEcommerce = (input = {}) => {
   return output;
 };
 export const createAnalytics = (config = {}, browser = () => typeof window === 'undefined' ? null : window) => {
-  const state = { initialized: false, consent: { ...DENIED }, page: '', seen: new Set(), purchases: new Set() };
+  const state = { configured: false, consent: { ...DENIED }, page: '', seen: new Set(), purchases: new Set() };
   const guard = (fn) => (...args) => { try { return fn(...args); } catch { return false; } };
   const prepareConsent = () => {
     const w = browser();
@@ -64,29 +64,27 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
   const initialize = guard(() => {
     const w = browser();
     prepareConsent();
-    if (!eligible() || state.consent.analytics_storage !== 'granted') {
-      if (w) w[`ga-disable-${config.measurementId}`] = true;
-      return false;
-    }
-    w[`ga-disable-${config.measurementId}`] = false;
+    if (!eligible()) return false;
     const route = `${w.history?.state?.key}:${w.location.pathname}`;
     if (state.route !== route) { state.route = route; state.seen.clear(); }
-    if (state.initialized || w.__riserAnalyticsInitialized) { state.initialized = true; return true; }
-    w.gtag('consent', 'update', { ...state.consent });
-    w.gtag('set', 'ads_data_redaction', true);
-    w.gtag('js', new Date());
-    w.gtag('config', config.measurementId, { send_page_view: false, ...locationData(), allow_google_signals: false });
-    if (config.directAds && /^AW-\d+$/.test(config.adsId || '') && /^[A-Za-z0-9_-]+$/.test(config.adsLabel || '')) {
-      w.gtag('config', config.adsId, { send_page_view: false, ...locationData() });
+    if (!state.configured && !w.__riserAnalyticsInitialized) {
+      w.gtag('set', 'ads_data_redaction', true);
+      w.gtag('js', new Date());
+      w.gtag('config', config.measurementId, { send_page_view: false, ...locationData(), allow_google_signals: false });
+      if (config.directAds && /^AW-\d+$/.test(config.adsId || '') && /^[A-Za-z0-9_-]+$/.test(config.adsLabel || '')) {
+        w.gtag('config', config.adsId, { send_page_view: false, ...locationData() });
+      }
+      if (!w.document.querySelector('script[data-riser-google-tag]')) {
+        const script = w.document.createElement('script');
+        script.async = true; script.dataset.riserGoogleTag = 'true';
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(config.measurementId)}`;
+        w.document.head.appendChild(script);
+      }
+      state.configured = w.__riserAnalyticsInitialized = true;
+    } else if (w.__riserAnalyticsInitialized) {
+      state.configured = true;
     }
-    if (!w.document.querySelector('script[data-riser-google-tag]')) {
-      const script = w.document.createElement('script');
-      script.async = true; script.dataset.riserGoogleTag = 'true';
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(config.measurementId)}`;
-      w.document.head.appendChild(script);
-    }
-    state.initialized = w.__riserAnalyticsInitialized = true;
-    return true;
+    return state.consent.analytics_storage === 'granted';
   });
   const consent = guard((choices = {}) => {
     prepareConsent();

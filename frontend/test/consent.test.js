@@ -39,14 +39,20 @@ test('choice survives reload, saves no private data, notifies changes and tolera
   assert.equal(s.store.get().analytics,false);
   assert.equal(s.calls.at(-1).analytics_storage,'denied');
 });
-test('consent precedes config and tag load; regrant does not initialize twice or repeat a page', () => {
+test('default denied consent precedes tag config/load and analytics events wait for grant', () => {
   const commands=[],scripts=[],data=new Map();
   const w={location:{hostname:'zanzibartoursandsafaris.co.tz',origin:'https://zanzibartoursandsafaris.co.tz',pathname:'/',search:'?gclid=real-click'},
     localStorage:{getItem:k=>data.get(k)},document:{referrer:'',title:'Tours',querySelector:()=>scripts[0],createElement:()=>({dataset:{}}),head:{appendChild:s=>scripts.push(s)}},
     gtag:(...args)=>commands.push(args),dispatchEvent:()=>{}};
   const analytics=createAnalytics({production:true,measurementId:'G-G4HFYGCFLH'},()=>w);
   analytics.consent(consentSignals(null)); assert.equal(commands[0][0],'consent'); assert.equal(commands[0][1],'default');
-  assert.equal(scripts.length,0); assert.equal(analytics.page('initial'),false);
+  assert.equal(scripts.length,1);
+  assert.match(scripts[0].src,/googletagmanager\.com\/gtag\/js\?id=G-G4HFYGCFLH/);
+  assert.ok(commands.findIndex(c=>c[0]==='consent'&&c[1]==='default') < commands.findIndex(c=>c[0]==='config'));
+  assert.equal(commands.filter(c=>c[0]==='config').length,1);
+  assert.equal(commands.find(c=>c[0]==='config')[2].send_page_view,false);
+  assert.equal(analytics.page('initial'),false);
+  assert.equal(commands.filter(c=>c[0]==='event').length,0);
   analytics.consent(consentSignals({analytics:true})); analytics.page('initial'); analytics.page('initial');
   analytics.page('tour'); analytics.page('initial'); analytics.page('tour'); // back, forward
   analytics.consent(consentSignals(null)); assert.equal(analytics.page('denied'),false);

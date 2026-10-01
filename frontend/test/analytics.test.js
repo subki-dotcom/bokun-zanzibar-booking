@@ -16,13 +16,19 @@ function setup(extra = {}) {
   return { api, w, scripts, events, store, config };
 }
 const sent = (events, name) => events.filter(e => e[0] === 'event' && e[1] === name);
-test('consent defaults block scripts; grant initializes once and SPA views deduplicate', () => {
+test('denied consent loads the detectable Google tag but blocks events until grant', async () => {
   const { api, scripts, events } = setup();
-  assert.equal(api.page('a'), false); assert.equal(scripts.length, 0);
+  assert.equal(api.page('a'), false);
+  assert.equal(scripts.length, 1);
+  assert.match(scripts[0].src, /gtag\/js\?id=G-G4HFYGCFLH/);
+  assert.equal(events.filter(e => e[0] === 'config').length, 1);
+  assert.equal(events.find(e => e[0] === 'config')[2].send_page_view, false);
+  assert.equal(sent(events, 'page_view').length, 0);
+  assert.equal(await api.purchase(receipt), false);
+  assert.equal(sent(events, 'purchase').length, 0);
   api.consent(granted); api.initialize(); api.initialize();
   assert.equal(scripts.length, 1);
   assert.equal(events.filter(e => e[0] === 'config').length, 1);
-  assert.equal(events.find(e => e[0] === 'config')[2].send_page_view, false);
   api.page('a'); api.page('a'); api.page('b'); api.page('a');
   assert.equal(sent(events, 'page_view').length, 3);
   api.consent({}); api.page('c'); assert.equal(sent(events, 'page_view').length, 3);
