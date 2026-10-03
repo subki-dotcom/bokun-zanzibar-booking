@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { applyChangedFields } = require("../../utils/applyChangedFields");
 const Booking = require("../../models/Booking");
 const Customer = require("../../models/Customer");
 const SyncLog = require("../../models/SyncLog");
@@ -451,7 +452,7 @@ const createBokunConfirmedBookingImportService = ({
 
     let booking;
     if (existing) {
-      Object.assign(existing, patch);
+      applyChangedFields(existing, patch);
       booking = typeof existing.save === "function" ? await existing.save() : existing;
     } else {
       try {
@@ -465,7 +466,7 @@ const createBokunConfirmedBookingImportService = ({
           bokunBookingId: snapshot.bokunBookingId,
           canonicalRecordId: String(canonical._id)
         });
-        Object.assign(canonical, patch);
+        applyChangedFields(canonical, patch);
         booking = typeof canonical.save === "function" ? await canonical.save() : canonical;
       }
     }
@@ -546,7 +547,7 @@ const createBokunConfirmedBookingImportService = ({
       requestId,
       nowDate: now()
     });
-    Object.assign(existing, patch);
+    applyChangedFields(existing, patch);
     const booking = typeof existing.save === "function" ? await existing.save() : existing;
 
     await require('../bookingPayment/sync').syncBokunPayment({ booking, payload: mapped.snapshot.rawBokunResponse, source, requestId, now: now(), AuditLogModel });
