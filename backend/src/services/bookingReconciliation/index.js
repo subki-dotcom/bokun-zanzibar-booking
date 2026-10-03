@@ -18,6 +18,7 @@ const OTA = new Set(["VIATOR", "GETYOURGUIDE", "BOKUN_MARKETPLACE", "TOURHQ", "A
 const COMPLETED_REFUNDS = new Set(["refunded", "partially_refunded"]);
 const PAID_PAYMENTS = new Set(["paid", "completed", "success", "verified"]);
 const DIRECT = new Set(["DIRECT_WEBSITE"]);
+const RECONCILIATION_BATCH_SIZE = 250;
 const PROVIDER_LABELS = { GETYOURGUIDE: "GetYourGuide", VIATOR: "Viator", BOKUN_MARKETPLACE: "Bokun Marketplace", PESAPAL: "Pesapal", DPO: "DPO", PAYPAL: "PayPal", CASH_ON_ARRIVAL: "Cash", MANUAL_BANK: "Bank Transfer" };
 const CHANNEL_LABELS = {
   DIRECT_WEBSITE: "Riser Direct", GETYOURGUIDE: "GetYourGuide", VIATOR: "Viator",
@@ -129,10 +130,9 @@ const baseQuery = (f={}) => { const q={}; if(f.fromDate||f.toDate)q.createdAt={.
 const journalRowsForReferences = (journalRows, references) => {
   const refs = (references || []).map((reference) => String(reference || "")).filter(Boolean);
   return (journalRows || []).filter((journal) =>
-    refs.some((reference) =>
-      journal.source?.sourceReference === reference ||
-      JSON.stringify(journal.sourceSnapshot || {}).includes(reference)
-    )
+    refs.includes(journal.source?.sourceReference) ||
+    refs.includes(journal.sourceSnapshot?.booking?.bookingReference) ||
+    refs.includes(journal.sourceSnapshot?.invoice?.bookingReference)
   );
 };
 
@@ -200,7 +200,7 @@ const getReconciliation = async (f = {}) => {
   const requestedPage = Math.max(1, Number(f.page || 1)); const limit = Math.min(100, Math.max(1, Number(f.limit || 10))); const direction = f.order === "asc" ? 1 : -1;
   const sort = f.sort === "bookingReference" ? { bookingReference: direction, _id: direction } : { createdAt: direction, _id: direction };
   const journalRows = await JournalEntry.find({}).select("_id source.sourceReference sourceSnapshot.booking.bookingReference sourceSnapshot.invoice.bookingReference status entryNumber").lean();
-  const cursor = Booking.find(baseQuery(f)).sort(sort).lean().cursor({ batchSize: 100 });
+  const cursor = Booking.find(baseQuery(f)).sort(sort).lean().cursor({ batchSize: RECONCILIATION_BATCH_SIZE });
   const summary = createSummaryAccumulator(); const counts = { all: 0, payments: 0, settlements: 0, refunds: 0, reconciled: 0, needsReview: 0 }; const items = [];
   let matched = 0; let batch = [];
   const process = async () => {
@@ -213,7 +213,7 @@ const getReconciliation = async (f = {}) => {
       if (matched > (requestedPage - 1) * limit && items.length < limit) items.push(row);
     });
   };
-  for await (const booking of cursor) { batch.push(booking); if (batch.length === 100) await process(); }
+  for await (const booking of cursor) { batch.push(booking); if (batch.length === RECONCILIATION_BATCH_SIZE) await process(); }
   if (batch.length) await process();
   const totalPages = Math.max(1, Math.ceil(matched / limit)); const page = Math.min(requestedPage, totalPages);
   return { generatedAt: new Date().toISOString(), items: page === requestedPage ? items : [], summary: finalizeSummary(summary), counts, page, pageSize: limit, total: matched, totalPages, pagination: { page, limit, totalRecords: matched, totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 } };
