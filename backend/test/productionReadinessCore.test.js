@@ -100,6 +100,26 @@ test("production readiness passes only when existing control services are green"
   assert.ok(summary.invariants.some((item) => item.includes("Refund provider-confirmation rules")));
 });
 
+test("production readiness shares one data-quality scan with operations control", async () => {
+  const dependencies = healthyDependencies();
+  const issues = [{ severity: "CRITICAL", code: "DUPLICATE_SUSPICION", entityType: "Booking" }];
+  let scanCount = 0;
+  let opsOptions;
+  dependencies.dataQuality.getSummaryAndIssues = async () => {
+    scanCount += 1;
+    return { summary: await dependencies.dataQuality.getSummary(), issues };
+  };
+  dependencies.opsControl.getSummary = async (options) => {
+    opsOptions = options;
+    return { openCriticalAlerts: 0, failedJobs: { total: 0 }, alerts: { total: 0 } };
+  };
+
+  await createProductionReadinessService(dependencies).getSummary();
+
+  assert.equal(scanCount, 1);
+  assert.deepEqual(opsOptions.dataQualityIssues, issues);
+});
+
 test("production readiness blocks duplicate financial truth and critical data-quality issues", async () => {
   const dependencies = healthyDependencies();
   dependencies.dataQuality.getSummary = async () => ({

@@ -826,6 +826,22 @@ const createDataQualityService = ({ models = defaultModels, now = () => new Date
     });
   };
 
+  const getSummaryAndIssues = async (filters = {}) => {
+    const result = await runScan(filters);
+    return {
+      summary: buildSummary({
+        recordsByType: result.recordsByType,
+        issues: result.allIssues,
+        generatedAt: result.generatedAt,
+        scanLimit: result.scanLimit,
+        filters
+      }),
+      issues: result.allIssues.filter((issue) =>
+        [DATA_QUALITY_SEVERITY.ERROR, DATA_QUALITY_SEVERITY.CRITICAL].includes(issue.severity)
+      )
+    };
+  };
+
   const listIssues = async (filters = {}) => {
     const result = await runScan(filters);
     const limit = Math.min(Math.max(Number(filters.issueLimit || filters.limit || 100), 1), 500);
@@ -849,6 +865,7 @@ const createDataQualityService = ({ models = defaultModels, now = () => new Date
 
   return {
     getSummary,
+    getSummaryAndIssues,
     listIssues
   };
 };

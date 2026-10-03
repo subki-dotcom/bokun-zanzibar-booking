@@ -245,6 +245,34 @@ test("persisted alert state overrides derived data-quality alerts", async () => 
   assert.equal(item.persisted, true);
 });
 
+test("operations control uses supplied data-quality issues without rescanning", async () => {
+  const issue = {
+    code: "MISSING_BOKUN_DATE",
+    severity: ALERT_SEVERITY.ERROR,
+    entityType: "Booking",
+    entityId: "booking-shared-scan",
+    reference: "ZNZ-SHARED-SCAN",
+    message: "Bokun date missing.",
+    evidence: {},
+    recommendedAction: "Resync from Bokun."
+  };
+  let scanCount = 0;
+  const service = createOpsControlService({
+    models: modelsFor(),
+    dataQuality: {
+      listIssues: async () => {
+        scanCount += 1;
+        throw new Error("Unexpected second data-quality scan");
+      }
+    }
+  });
+
+  const alerts = await service.listSystemAlerts({ dataQualityIssues: [issue] });
+
+  assert.equal(scanCount, 0);
+  assert.ok(alerts.items.some((alert) => alert.reference === issue.reference));
+});
+
 test("unsupported failed jobs return an explicit safe-retry error", async () => {
   const exportRows = [
     {

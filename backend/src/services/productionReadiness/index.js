@@ -381,6 +381,10 @@ const createProductionReadinessService = ({
   clock = nowIso
 } = {}) => {
   const getSummary = async () => {
+    const dataQualityEvidencePromise = typeof dataQuality.getSummaryAndIssues === "function"
+      ? dataQuality.getSummaryAndIssues({ limit: 1000 })
+      : Promise.resolve().then(() => dataQuality.getSummary({ limit: 1000 }))
+        .then((summary) => ({ summary, issues: null }));
     const evidence = await Promise.all([
       collectEvidence({
         id: "system_health",
@@ -399,7 +403,7 @@ const createProductionReadinessService = ({
       }),
       collectEvidence({
         id: "data_quality",
-        task: () => dataQuality.getSummary({ limit: 1000 }),
+        task: async () => (await dataQualityEvidencePromise).summary,
         fallback: {
           scan: { boundedScan: false, scanLimit: 0 },
           summary: {
@@ -412,7 +416,13 @@ const createProductionReadinessService = ({
       }),
       collectEvidence({
         id: "ops_control",
-        task: () => opsControl.getSummary({ limit: 200 }),
+        task: async () => {
+          const dataQualityResult = await dataQualityEvidencePromise.catch(() => ({ issues: [] }));
+          return opsControl.getSummary({
+            limit: 200,
+            ...(Array.isArray(dataQualityResult.issues) ? { dataQualityIssues: dataQualityResult.issues } : {})
+          });
+        },
         fallback: { openCriticalAlerts: 1, failedJobs: { total: 1 }, alerts: { total: 1 } }
       }),
       collectEvidence({
