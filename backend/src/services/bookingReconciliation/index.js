@@ -126,11 +126,22 @@ const buildRow = ({ booking, invoice, payments = [], refunds = [], postings = []
 
 const baseQuery = (f={}) => { const q={}; if(f.fromDate||f.toDate)q.createdAt={...(f.fromDate?{$gte:new Date(f.fromDate)}:{}),...(f.toDate?{$lte:new Date(`${f.toDate}T23:59:59.999Z`)}:{})}; if(f.channel)q.salesChannel=upper(f.channel); if(f.bookingStatus)q.bookingStatus=lower(f.bookingStatus); if(f.currency)q.$or=[{transactionCurrency:upper(f.currency)},{currency:upper(f.currency)},{bookingPaymentCurrency:upper(f.currency)}]; if(f.search){const x=new RegExp(token(f.search).replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i");q.$and=[{$or:[{bookingReference:x},{bokunExternalBookingReference:x},{bokunConfirmationCode:x},{productTitle:x},{"customer.firstName":x},{"customer.lastName":x},{"customer.email":x}]}]}; return q; };
 
-const loadRows = async (bookings) => {
+const journalRowsForReferences = (journalRows, references) => {
+  const refs = (references || []).map((reference) => String(reference || "")).filter(Boolean);
+  return (journalRows || []).filter((journal) =>
+    refs.some((reference) =>
+      journal.source?.sourceReference === reference ||
+      JSON.stringify(journal.sourceSnapshot || {}).includes(reference)
+    )
+  );
+};
+
+const loadRows = async (bookings, { journalRows = null } = {}) => {
   const refs=bookings.map(b=>b.bookingReference); const ids=bookings.map(b=>b._id);
   const [invoices,payments,refunds,postings,journals,settlements]=await Promise.all([
     Invoice.find({bookingReference:{$in:refs}}).lean(), Payment.find({bookingReference:{$in:refs}}).lean(), Refund.find({bookingId:{$in:ids}}).lean(),
-    AccountingPosting.find({bookingReference:{$in:refs}}).lean(), JournalEntry.find({$or:[{"source.sourceReference":{$in:refs}},{"sourceSnapshot.booking.bookingReference":{$in:refs}},{"sourceSnapshot.invoice.bookingReference":{$in:refs}}]}).lean(),
+    AccountingPosting.find({bookingReference:{$in:refs}}).lean(),
+    journalRows ? Promise.resolve(journalRowsForReferences(journalRows, refs)) : JournalEntry.find({$or:[{"source.sourceReference":{$in:refs}},{"sourceSnapshot.booking.bookingReference":{$in:refs}},{"sourceSnapshot.invoice.bookingReference":{$in:refs}}]}).lean(),
     loadSettlementViews(refs,new Map(bookings.map(b=>[b.bookingReference,{expectedAmount:null,currency:bookingCurrency(b)}])))
   ]);
   const group=(rows,key)=>rows.reduce((m,r)=>{const k=token(key(r));if(k){if(!m.has(k))m.set(k,[]);m.get(k).push(r)}return m},new Map());
@@ -188,11 +199,12 @@ const finalizeSummary = summary => {
 const getReconciliation = async (f = {}) => {
   const requestedPage = Math.max(1, Number(f.page || 1)); const limit = Math.min(100, Math.max(1, Number(f.limit || 10))); const direction = f.order === "asc" ? 1 : -1;
   const sort = f.sort === "bookingReference" ? { bookingReference: direction, _id: direction } : { createdAt: direction, _id: direction };
+  const journalRows = await JournalEntry.find({}).select("_id source.sourceReference sourceSnapshot.booking.bookingReference sourceSnapshot.invoice.bookingReference status entryNumber").lean();
   const cursor = Booking.find(baseQuery(f)).sort(sort).lean().cursor({ batchSize: 100 });
   const summary = createSummaryAccumulator(); const counts = { all: 0, payments: 0, settlements: 0, refunds: 0, reconciled: 0, needsReview: 0 }; const items = [];
   let matched = 0; let batch = [];
   const process = async () => {
-    const rows = await loadRows(batch); batch = [];
+    const rows = await loadRows(batch, { journalRows }); batch = [];
     rows.forEach(row => {
       if (!matches(row, { ...f, status: "" })) return;
       counts.all += 1; if (row.customerPayment.status !== "UNPAID") counts.payments += 1; if (row.settlement.status !== "NOT_APPLICABLE") counts.settlements += 1; if (row.refund.count) counts.refunds += 1; if (row.reconciliation.status === "MATCHED") counts.reconciled += 1; else counts.needsReview += 1;
@@ -208,4 +220,4 @@ const getReconciliation = async (f = {}) => {
 };
 const getDetail=async id=>{const booking=await Booking.findById(id).lean();if(!booking)throw new AppError("Booking not found",404,"BOOKING_NOT_FOUND");const [row,audit]=await Promise.all([loadRows([booking]).then(x=>x[0]),AuditLog.find({entityType:"Booking",entityId:String(id)}).sort({createdAt:-1}).limit(20).lean()]);return{...row,auditTrail:audit};};
 const run=async({id,auth={},requestId=""})=>{const before=await getDetail(id);await AuditLog.create({actorId:auth.id||null,actorRole:auth.role||"system",action:"booking_accounting_reconciliation_run",entityType:"Booking",entityId:id,reference:before.bookingReference,requestId,reason:"Read-only reconciliation run",after:{status:before.reconciliation.status,reasons:before.reconciliation.reasons}});return getDetail(id);};
-module.exports={getReconciliation,getDetail,run,__testables:{buildRow,summarize,customerPayment}};
+module.exports={getReconciliation,getDetail,run,__testables:{buildRow,summarize,customerPayment,journalRowsForReferences}};
