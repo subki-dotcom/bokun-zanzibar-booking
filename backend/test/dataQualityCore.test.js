@@ -198,6 +198,40 @@ test("data quality issue list filters by severity, code and reference", async ()
   assert.equal(missingBokunDate.items[0].evidence.travelDate, "");
 });
 
+test("data quality scan projects only check fields and excludes raw provider payloads", async () => {
+  const projections = [];
+  const model = {
+    find: () => ({
+      sort() { return this; },
+      select(projection) {
+        projections.push(projection);
+        return this;
+      },
+      limit() { return this; },
+      lean: () => []
+    })
+  };
+  const service = createDataQualityService({
+    models: {
+      BookingModel: model,
+      InvoiceModel: model,
+      PaymentModel: model,
+      RefundModel: model,
+      BusinessExpenseModel: model,
+      BusinessIncomeModel: model,
+      AccountingPostingModel: model
+    }
+  });
+
+  await service.getSummaryAndIssues({ limit: 1000 });
+
+  assert.equal(projections.length, 7);
+  assert.ok(projections[0].includes("bokunOperationalDates.travelDate.normalizedAt"));
+  assert.ok(!projections[0].includes("rawBokunResponse"));
+  assert.ok(!projections[2].includes("rawResponse"));
+  assert.ok(!projections[3].includes("rawProviderResponse"));
+});
+
 test("data quality helper detects invoice balance and cross-currency FX gaps", () => {
   assert.equal(
     __testables.hasInvoiceBalanceMismatch({

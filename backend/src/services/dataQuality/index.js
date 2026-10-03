@@ -103,6 +103,16 @@ const defaultModels = {
   RefundModel: Refund
 };
 
+const DATA_QUALITY_PROJECTIONS = Object.freeze({
+  Booking: "_id bookingReference bokunBookingId bokunStatus.normalized bookingStatus paymentStatus operationalSource salesChannel rawChannelSource bokunImport.rawSalesChannel bokunOperationalDates.bookingCreatedAtBokun.normalizedAt bokunOperationalDates.travelDate.normalizedAt bokunOperationalDates.travelDate.localDate bokunOperationalDates.activityDate.normalizedAt bokunOperationalDates.activityDate.localDate pricingSnapshot.finalPayable amount createdAt updatedAt",
+  Invoice: "_id invoiceNumber bookingReference paymentStatus totalAmount total amountPaid amountRefunded paidAccountingAmount refundedAccountingAmount paidAccountingAmount balanceDue balanceDueAmount issueDate createdAt updatedAt",
+  Payment: "_id bookingReference merchantReference intentId provider status paymentStatus verificationStatus amountPaid paidAmount providerTransactionId orderTrackingId chargedCurrency orderCurrency currency accountingCurrency settlementCurrency fxRate historicalFxRate anomaly.flagged accountingAllocationStatus paidAt createdAt updatedAt",
+  Refund: "_id refundReference bookingId bookingReference provider status confirmedRefundedAmount providerRefundReference providerRefundRequestReference originalTransactionReference originalProviderTransactionId historicalFxRate requestedAt completedAt createdAt updatedAt",
+  BusinessExpense: "_id expenseReference sourceReference category supplier.name supplier.supplierId businessUnit currency baseCurrency exchangeRate expenseDate createdAt updatedAt",
+  BusinessIncome: "_id incomeReference reference sourceReference businessUnit currency baseCurrency exchangeRate transactionDate createdAt updatedAt",
+  AccountingPosting: "_id postingKey bookingReference sourceReference postingType businessUnit components.directBookingCosts currency baseCurrency exchangeRate transactionDate createdAt updatedAt"
+});
+
 const normalizeToken = (value = "") => String(value || "").trim();
 const normalizeUpper = (value = "") => normalizeToken(value).toUpperCase();
 const isBlank = (value) => normalizeToken(value) === "";
@@ -153,7 +163,7 @@ const dateMatches = (record = {}, { fromDate = "", toDate: endDate = "" } = {}) 
   return candidates.some((date) => (!from || date >= from) && (!to || date <= to));
 };
 
-const loadCollection = async (Model, { limit = 1000, filters = {}, sort = { createdAt: -1 } } = {}) => {
+const loadCollection = async (Model, { limit = 1000, filters = {}, sort = { createdAt: -1 }, projection = "" } = {}) => {
   if (!Model?.find) return [];
   const found = Model.find({});
   if (Array.isArray(found)) {
@@ -166,6 +176,7 @@ const loadCollection = async (Model, { limit = 1000, filters = {}, sort = { crea
 
   let query = found;
   if (query.sort) query = query.sort(sort);
+  if (projection && query.select) query = query.select(projection);
   if (query.limit) query = query.limit(limit);
   if (query.lean) query = query.lean();
   const records = await query;
@@ -766,13 +777,13 @@ const createDataQualityService = ({ models = defaultModels, now = () => new Date
       incomes,
       postings
     ] = await Promise.all([
-      loadCollection(models.BookingModel, { limit: scanLimit, filters }),
-      loadCollection(models.InvoiceModel, { limit: scanLimit, filters }),
-      loadCollection(models.PaymentModel, { limit: scanLimit, filters }),
-      loadCollection(models.RefundModel, { limit: scanLimit, filters }),
-      loadCollection(models.BusinessExpenseModel, { limit: scanLimit, filters }),
-      loadCollection(models.BusinessIncomeModel, { limit: scanLimit, filters }),
-      loadCollection(models.AccountingPostingModel, { limit: scanLimit, filters })
+      loadCollection(models.BookingModel, { limit: scanLimit, filters, projection: DATA_QUALITY_PROJECTIONS.Booking }),
+      loadCollection(models.InvoiceModel, { limit: scanLimit, filters, projection: DATA_QUALITY_PROJECTIONS.Invoice }),
+      loadCollection(models.PaymentModel, { limit: scanLimit, filters, projection: DATA_QUALITY_PROJECTIONS.Payment }),
+      loadCollection(models.RefundModel, { limit: scanLimit, filters, projection: DATA_QUALITY_PROJECTIONS.Refund }),
+      loadCollection(models.BusinessExpenseModel, { limit: scanLimit, filters, projection: DATA_QUALITY_PROJECTIONS.BusinessExpense }),
+      loadCollection(models.BusinessIncomeModel, { limit: scanLimit, filters, projection: DATA_QUALITY_PROJECTIONS.BusinessIncome }),
+      loadCollection(models.AccountingPostingModel, { limit: scanLimit, filters, projection: DATA_QUALITY_PROJECTIONS.AccountingPosting })
     ]);
 
     const issues = [];
@@ -880,6 +891,7 @@ module.exports = {
   __testables: {
     buildSummary,
     dateMatches,
+    DATA_QUALITY_PROJECTIONS,
     filterIssues,
     hasCrossCurrencyMissingFx,
     hasInvoiceBalanceMismatch
