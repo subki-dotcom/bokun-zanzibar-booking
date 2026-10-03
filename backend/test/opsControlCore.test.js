@@ -273,6 +273,29 @@ test("operations control uses supplied data-quality issues without rescanning", 
   assert.ok(alerts.items.some((alert) => alert.reference === issue.reference));
 });
 
+test("operations control summary reuses one failed-job scan for jobs and alerts", async () => {
+  const models = modelsFor();
+  const findCalls = {};
+  for (const [name, model] of Object.entries(models)) {
+    const originalFind = model.find;
+    model.find = (...args) => {
+      findCalls[name] = (findCalls[name] || 0) + 1;
+      return originalFind(...args);
+    };
+  }
+  const service = createOpsControlService({
+    models,
+    dataQuality: { listIssues: async () => ({ items: [] }) }
+  });
+
+  await service.getSummary();
+
+  for (const name of ["SyncLogModel", "BookingModel", "BookingRequestModel", "EmailDeliveryModel", "RefundModel", "PaymentModel", "ReportExportModel"]) {
+    assert.equal(findCalls[name], 1, `${name} should be queried once`);
+  }
+  assert.equal(findCalls.AlertModel, 1);
+});
+
 test("unsupported failed jobs return an explicit safe-retry error", async () => {
   const exportRows = [
     {

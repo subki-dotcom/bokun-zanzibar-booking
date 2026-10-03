@@ -725,7 +725,12 @@ const createOpsControlService = ({
 
   const buildDerivedAlerts = async (filters = {}) => {
     const [jobs, dataQualityIssues] = await Promise.all([
-      listFailedJobs({ ...filters, limit: Math.min(Number(filters.limit || 50), 100) }),
+      filters.failedJobs
+        ? Promise.resolve(filters.failedJobs).then((result) => ({
+          ...result,
+          items: (result?.items || []).slice(0, Math.min(Number(filters.limit || 50), 100))
+        }))
+        : listFailedJobs({ ...filters, limit: Math.min(Number(filters.limit || 50), 100) }),
       Array.isArray(filters.dataQualityIssues)
         ? Promise.resolve({ items: filters.dataQualityIssues })
         : dataQuality.listIssues({
@@ -953,9 +958,10 @@ const createOpsControlService = ({
   };
 
   const getSummary = async (filters = {}) => {
+    const jobsPromise = listFailedJobs({ ...filters, limit: 200 });
     const [alerts, jobs] = await Promise.all([
-      listSystemAlerts({ ...filters, limit: 200 }),
-      listFailedJobs({ ...filters, limit: 200 })
+      listSystemAlerts({ ...filters, limit: 200, failedJobs: jobsPromise }),
+      jobsPromise
     ]);
     return {
       generatedAt: now().toISOString(),
