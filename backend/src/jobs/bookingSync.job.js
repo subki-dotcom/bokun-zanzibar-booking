@@ -1,6 +1,7 @@
 const { env } = require("../config/env");
 const logger = require("../config/logger");
 const webhooksService = require("../services/webhooks");
+const { startJobMemoryDiagnostics } = require("../utils/jobMemoryDiagnostics");
 
 let pollTimer = null;
 const state = {
@@ -23,6 +24,7 @@ const nowIso = () => new Date().toISOString();
 const runPollingCycle = async (trigger = "interval") => {
   state.running = true;
   state.lastRunAt = nowIso();
+  const finishMemoryDiagnostics = startJobMemoryDiagnostics("booking_sync");
   try {
     const result = await webhooksService.pollBookingUpdates({
       source: "polling"
@@ -68,6 +70,8 @@ const runPollingCycle = async (trigger = "interval") => {
     state.lastError = error.message;
     state.consecutiveFailures += 1;
     return null;
+  } finally {
+    finishMemoryDiagnostics();
   }
 };
 

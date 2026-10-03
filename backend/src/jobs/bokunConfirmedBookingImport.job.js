@@ -1,6 +1,7 @@
 const { env, isBokunConfigured } = require("../config/env");
 const logger = require("../config/logger");
 const bokunConfirmedBookingsService = require("../services/bokunConfirmedBookings");
+const { startJobMemoryDiagnostics } = require("../utils/jobMemoryDiagnostics");
 
 let importTimer = null;
 let consecutiveFailures = 0;
@@ -62,6 +63,7 @@ const runConfirmedBookingImportCycle = async (trigger = "interval") => {
   state.running = true;
   state.lastRunAt = nowIso();
   const range = buildLookbackRange();
+  const finishMemoryDiagnostics = startJobMemoryDiagnostics("confirmed_booking_import");
   try {
     // Newly created bookings can be absent from Bokun's last-modified index.
     // Run both searches through the same idempotent importer, sequentially.
@@ -117,6 +119,8 @@ const runConfirmedBookingImportCycle = async (trigger = "interval") => {
       retryAt: new Date(nextAllowedRunAt).toISOString()
     });
     return null;
+  } finally {
+    finishMemoryDiagnostics();
   }
 };
 
