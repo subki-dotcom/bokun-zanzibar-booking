@@ -709,7 +709,6 @@ export const BookingAccountingDashboard = ({
         {summaryError ? <DashboardError message={summaryError} onRetry={onRefresh} /> : <AuthoritativeSummary summary={authoritativeSummary} loading={summaryLoading} />}
       </DashboardCard>
 
-      {(!error || loading) && <>
       <div className="booking-accounting-dashboard-primary-kpis">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
@@ -765,7 +764,6 @@ export const BookingAccountingDashboard = ({
       </div>
 
       {loading ? <DashboardSkeleton rows={2} /> : <FooterKpis values={dashboard?.footerKpis || {}} currency={currency} />}
-      </>}
     </div>
   );
 };

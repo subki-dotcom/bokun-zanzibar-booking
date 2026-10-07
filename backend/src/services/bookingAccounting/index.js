@@ -1886,20 +1886,23 @@ const createBookingAccountingService = ({
     };
   };
 
-  const loadSnapshot = async (filters = {}, expenseQuery = {}) => {
+  const loadSnapshot = async (filters = {}, expenseQuery = {}, sharedRecords = null) => {
     const scanLimit = Math.max(50, Math.min(MAX_LIMIT, Number(filters.limit || 250)));
-    const [bookings, invoices, payments, refunds, expenses] = await Promise.all([
+    const records = sharedRecords || Promise.all([
       findRows(BookingModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
       findRows(InvoiceModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
       findRows(PaymentModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
-      findRows(RefundModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit }),
+      findRows(RefundModel, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit })
+    ]);
+    const [[bookings, invoices, payments, refunds], expenses] = await Promise.all([
+      records,
       findRows(BusinessExpenseModel, bookingLinkedExpenseQuery(expenseQuery), { sort: { updatedAt: -1, createdAt: -1 }, limit: scanLimit })
     ]);
     return { bookings, invoices, payments, refunds, expenses, scanLimit };
   };
 
-  const getProfitability = async (filters = {}) => {
-    const { bookings, invoices, payments, refunds, expenses, scanLimit } = await loadSnapshot(filters, { accountingScope: ACCOUNTING_SCOPE.BOOKING });
+  const getProfitability = async (filters = {}, snapshot = null) => {
+    const { bookings, invoices, payments, refunds, expenses, scanLimit } = await (snapshot || loadSnapshot(filters, { accountingScope: ACCOUNTING_SCOPE.BOOKING }));
     const templates = await loadCostTemplates();
     const bookingsByReference = buildMap(bookings, (booking) => booking.bookingReference);
     const invoicesByReference = buildMap(invoices, (invoice) => invoice.bookingReference);
@@ -2127,8 +2130,8 @@ const createBookingAccountingService = ({
     };
   };
 
-  const getReconciliation = async (filters = {}) => {
-    const { bookings, invoices, payments, refunds, expenses, scanLimit } = await loadSnapshot(filters);
+  const getReconciliation = async (filters = {}, snapshot = null) => {
+    const { bookings, invoices, payments, refunds, expenses, scanLimit } = await (snapshot || loadSnapshot(filters));
     const issues = buildReconciliationIssues({ bookings, invoices, payments, refunds, expenses });
     const search = normalizeLower(filters.search);
     const severity = normalizeUpper(filters.severity);
@@ -2152,6 +2155,13 @@ const createBookingAccountingService = ({
   };
 
   const getDashboard = async (filters = {}) => {
+    // All dashboard panels scan the same bounded records. Share these reads
+    // within this request, while retaining each report's expense scope.
+    const sharedRecords = Promise.all([BookingModel, InvoiceModel, PaymentModel, RefundModel].map((Model) =>
+      findRows(Model, {}, { sort: { updatedAt: -1, createdAt: -1 }, limit: MAX_LIMIT })
+    ));
+    const profitabilitySnapshot = loadSnapshot({ limit: MAX_LIMIT }, { accountingScope: ACCOUNTING_SCOPE.BOOKING }, sharedRecords);
+    const reconciliationSnapshot = loadSnapshot({ limit: MAX_LIMIT }, {}, sharedRecords);
     const range = resolveDashboardRange(filters);
     const previousFilters = range.previous
       ? {
@@ -2166,9 +2176,9 @@ const createBookingAccountingService = ({
       listInvoices({ ...filters, limit: MAX_LIMIT }),
       listRefunds({ ...filters, limit: MAX_LIMIT }),
       listExpenses({ ...filters, limit: MAX_LIMIT }),
-      getProfitability({ ...filters, limit: MAX_LIMIT }),
-      previousFilters ? getProfitability(previousFilters) : Promise.resolve({ totals: summarizeProfitabilityItems([]) }),
-      getReconciliation({ ...filters, limit: MAX_LIMIT }),
+      getProfitability({ ...filters, limit: MAX_LIMIT }, profitabilitySnapshot),
+      previousFilters ? getProfitability(previousFilters, profitabilitySnapshot) : Promise.resolve({ totals: summarizeProfitabilityItems([]) }),
+      getReconciliation({ ...filters, limit: MAX_LIMIT }, reconciliationSnapshot),
       getCostTemplates({ limit: DEFAULT_TEMPLATE_LIMIT })
     ]);
 
