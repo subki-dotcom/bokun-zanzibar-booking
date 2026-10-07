@@ -8,7 +8,6 @@ import {
   hasKnownRefundAmount,
   resolveCancellationActionLabel,
   resolveCancellationCopy,
-  resolveCancellationHeadline,
   splitCancellationTimeRemaining
 } from "../../utils/cancellationPolicy";
 
@@ -81,16 +80,14 @@ const CancellationPolicyPanel = ({
     ? splitCancellationTimeRemaining(resolvedPolicy.deadline, referenceTime)
     : null;
   const stateClass = policyStateClass(resolvedPolicy);
-  const description = resolvedPolicy.refundable === false
-    ? [resolveCancellationCopy(resolvedPolicy), policySummary].filter(Boolean).join(" ")
-    : policySummary || resolveCancellationCopy(resolvedPolicy);
+  const description = policySummary || resolveCancellationCopy(resolvedPolicy);
 
   return (
     <section className={`cancellation-policy-panel ${stateClass} ${compact ? "is-compact" : ""} ${className}`.trim()}>
       <div className="cancellation-policy-main">
         <span className="cancellation-policy-icon">{iconForPolicy(resolvedPolicy)}</span>
         <div>
-          <h3>{resolveCancellationHeadline(resolvedPolicy)}</h3>
+          <h3>Cancellation policy</h3>
         </div>
       </div>
 
