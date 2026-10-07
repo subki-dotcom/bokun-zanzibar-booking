@@ -19,6 +19,12 @@ const COMPLETED_REFUNDS = new Set(["refunded", "partially_refunded"]);
 const PAID_PAYMENTS = new Set(["paid", "completed", "success", "verified"]);
 const DIRECT = new Set(["DIRECT_WEBSITE"]);
 const RECONCILIATION_BATCH_SIZE = 250;
+// Reconciliation needs financial fields, not the large supplier payloads,
+// questionnaires, logs and snapshots stored alongside each booking/payment.
+const BOOKING_FIELDS = "_id bookingReference bokunExternalBookingReference bokunConfirmationCode bokunBookingId customer.firstName customer.lastName customer.email productTitle optionTitle createdAt travelDate bookingStatus amount transactionCurrency bookingPaymentCurrency currency pricingSnapshot.finalPayable pricingSnapshot.grossAmount pricingSnapshot.currency salesChannel sourceChannel bookingPaymentStatus bookingPaymentStatusSource bookingPaymentStatusSyncedAt operationalSource bokunStatus.normalized";
+const INVOICE_FIELDS = "_id bookingReference invoiceNumber paymentStatus totalAmount total amountPaid paidAmount amountRefunded balanceDueAmount balanceDue transactionCurrency accountingCurrency";
+const PAYMENT_FIELDS = "_id bookingReference status verificationStatus accountingAmount chargedAmount amountPaid paidAmount amount accountingCurrency chargedCurrency orderCurrency currency intentId providerTransactionId orderTrackingId provider lastVerifiedAt paidAt updatedAt";
+const REFUND_FIELDS = "bookingId status confirmedAccountingRefundedAmount confirmedRefundedAmount amount";
 const PROVIDER_LABELS = { GETYOURGUIDE: "GetYourGuide", VIATOR: "Viator", BOKUN_MARKETPLACE: "Bokun Marketplace", PESAPAL: "Pesapal", DPO: "DPO", PAYPAL: "PayPal", CASH_ON_ARRIVAL: "Cash", MANUAL_BANK: "Bank Transfer" };
 const CHANNEL_LABELS = {
   DIRECT_WEBSITE: "Riser Direct", GETYOURGUIDE: "GetYourGuide", VIATOR: "Viator",
@@ -139,8 +145,8 @@ const journalRowsForReferences = (journalRows, references) => {
 const loadRows = async (bookings, { journalRows = null } = {}) => {
   const refs=bookings.map(b=>b.bookingReference); const ids=bookings.map(b=>b._id);
   const [invoices,payments,refunds,postings,journals,settlements]=await Promise.all([
-    Invoice.find({bookingReference:{$in:refs}}).lean(), Payment.find({bookingReference:{$in:refs}}).lean(), Refund.find({bookingId:{$in:ids}}).lean(),
-    AccountingPosting.find({bookingReference:{$in:refs}}).lean(),
+    Invoice.find({bookingReference:{$in:refs}}).select(INVOICE_FIELDS).lean(), Payment.find({bookingReference:{$in:refs}}).select(PAYMENT_FIELDS).lean(), Refund.find({bookingId:{$in:ids}}).select(REFUND_FIELDS).lean(),
+    AccountingPosting.find({bookingReference:{$in:refs}}).select("bookingReference postingType").lean(),
     journalRows ? Promise.resolve(journalRowsForReferences(journalRows, refs)) : JournalEntry.find({$or:[{"source.sourceReference":{$in:refs}},{"sourceSnapshot.booking.bookingReference":{$in:refs}},{"sourceSnapshot.invoice.bookingReference":{$in:refs}}]}).lean(),
     loadSettlementViews(refs,new Map(bookings.map(b=>[b.bookingReference,{expectedAmount:null,currency:bookingCurrency(b)}])))
   ]);
@@ -200,7 +206,7 @@ const getReconciliation = async (f = {}) => {
   const requestedPage = Math.max(1, Number(f.page || 1)); const limit = Math.min(100, Math.max(1, Number(f.limit || 10))); const direction = f.order === "asc" ? 1 : -1;
   const sort = f.sort === "bookingReference" ? { bookingReference: direction, _id: direction } : { createdAt: direction, _id: direction };
   const journalRows = await JournalEntry.find({}).select("_id source.sourceReference sourceSnapshot.booking.bookingReference sourceSnapshot.invoice.bookingReference status entryNumber").lean();
-  const cursor = Booking.find(baseQuery(f)).sort(sort).lean().cursor({ batchSize: RECONCILIATION_BATCH_SIZE });
+  const cursor = Booking.find(baseQuery(f)).select(BOOKING_FIELDS).sort(sort).lean().cursor({ batchSize: RECONCILIATION_BATCH_SIZE });
   const summary = createSummaryAccumulator(); const counts = { all: 0, payments: 0, settlements: 0, refunds: 0, reconciled: 0, needsReview: 0 }; const items = [];
   let matched = 0; let batch = [];
   const process = async () => {
