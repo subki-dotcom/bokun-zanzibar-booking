@@ -15,7 +15,9 @@ export const cancellationDisplayText = (value, depth = 0) => {
   if (value === null || value === undefined || depth > 4) return "";
   if (typeof value === "string" || typeof value === "number") {
     const text = String(value).trim();
-    return /^\[object(?:\s+\w+)?\]$/i.test(text) ? "" : text;
+    return /^\[object(?:\s+\w+)?\]$/i.test(text) ? "" : text
+      .replace(/\bviator['’]s\b/gi, "the booking provider's")
+      .replace(/\bviator\b/gi, "the booking provider");
   }
   if (Array.isArray(value)) {
     return value.map((item) => cancellationDisplayText(item, depth + 1)).filter(Boolean).join(" ");
@@ -92,7 +94,7 @@ export const splitCancellationTimeRemaining = (deadline, referenceTime = Date.no
 
 export const resolveCancellationHeadline = (policy = {}) => {
   if (!policy?.policyAvailable) return "Cancellation review required";
-  if (policy.refundable === false) return "Non-refundable booking";
+  if (policy.refundable === false) return "Your booking details";
   if (policy.isFreeCancellationAvailable) return "Free cancellation";
   if (policy.freeCancellationExpired) return "Free cancellation period ended";
   if (policy.requiresManualReview) return "Cancellation review required";
@@ -105,7 +107,7 @@ export const resolveCancellationCopy = (policy = {}) => {
     return "Cancellation terms could not be confirmed automatically. Please contact our support team before cancelling.";
   }
   if (policy.refundable === false) {
-    return "This booking is non-refundable according to the applicable cancellation policy.";
+    return "Please note: payments cannot be refunded if you cancel this booking.";
   }
   if (policy.isFreeCancellationAvailable && deadline) {
     return `Cancel before ${deadline} to receive a full refund.`;

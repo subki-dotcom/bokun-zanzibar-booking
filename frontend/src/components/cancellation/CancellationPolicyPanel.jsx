@@ -81,7 +81,9 @@ const CancellationPolicyPanel = ({
     ? splitCancellationTimeRemaining(resolvedPolicy.deadline, referenceTime)
     : null;
   const stateClass = policyStateClass(resolvedPolicy);
-  const description = policySummary || resolveCancellationCopy(resolvedPolicy);
+  const description = resolvedPolicy.refundable === false
+    ? [resolveCancellationCopy(resolvedPolicy), policySummary].filter(Boolean).join(" ")
+    : policySummary || resolveCancellationCopy(resolvedPolicy);
 
   return (
     <section className={`cancellation-policy-panel ${stateClass} ${compact ? "is-compact" : ""} ${className}`.trim()}>
