@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import Loader from "../components/common/Loader";
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import PublicLayout from "../layouts/PublicLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
@@ -92,7 +94,7 @@ const LegacyBookingRequestRedirect = () => {
 
 const AppRoutes = () => {
   return (
-    <Routes>
+    <Suspense fallback={<Loader message="Loading page..." />}><Routes>
       <Route element={<PublicLayout />}>
         <Route index element={<HomePage />} />
         <Route path="/tours" element={<ToursPage />} />
@@ -472,7 +474,7 @@ const AppRoutes = () => {
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </Routes></Suspense>
   );
 };
 

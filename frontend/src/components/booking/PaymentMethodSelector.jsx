@@ -1,3 +1,4 @@
+import Loader from "../common/Loader";
 import { BsLock } from "react-icons/bs";
 import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 
@@ -22,7 +23,7 @@ const PaymentMethodSelector = ({
       </h4>
     </div>
 
-    {loading ? <p className="payment-method-status" role="status">Checking secure payment methods...</p> : null}
+    {loading ? <Loader message="Loading payment methods..." variant="inline" /> : null}
     {error ? <p className="payment-method-status is-error" role="alert">{error}</p> : null}
     {!loading && !availableProviders.length ? <p className="payment-method-status is-error" role="alert">No secure payment method is currently available. Please contact support.</p> : null}
     {availableProviders.length ? <div className="payment-method-grid" role="radiogroup" aria-label="Payment method">

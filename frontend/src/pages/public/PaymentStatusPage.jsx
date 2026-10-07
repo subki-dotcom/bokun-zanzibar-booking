@@ -117,7 +117,7 @@ const PaymentStatusPage = () => {
   if (loading) {
     return (
       <Container className="py-4">
-        <Loader message="Loading payment status..." />
+        <Loader showMessage variant="inline" message="Loading payment status..." />
       </Container>
     );
   }

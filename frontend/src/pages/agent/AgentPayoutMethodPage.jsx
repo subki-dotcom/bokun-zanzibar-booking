@@ -42,7 +42,7 @@ const AgentPayoutMethodPage = () => {
     }
   };
 
-  if (loading) return <Loader message="Loading payout method..." />;
+  if (loading) return <Loader variant="form" message="Loading payout method..." />;
 
   return (
     <>

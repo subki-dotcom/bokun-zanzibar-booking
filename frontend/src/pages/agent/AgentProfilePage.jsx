@@ -41,7 +41,7 @@ const AgentProfilePage = () => {
     }
   };
 
-  if (loading) return <Loader message="Loading profile..." />;
+  if (loading) return <Loader variant="form" message="Loading profile..." />;
 
   return (
     <>

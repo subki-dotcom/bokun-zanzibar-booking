@@ -1,5 +1,6 @@
+import Loader from "../../components/common/Loader";
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Form, Offcanvas, Spinner } from 'react-bootstrap';
+import { Button, Form, Offcanvas } from 'react-bootstrap';
 import {
   BsArrowClockwise,
   BsCalendar3,
@@ -213,9 +214,7 @@ export default function AdminBookingReconciliationPage() {
           <Button onClick={load}>Retry</Button>
         </div>
       ) : state.loading && !d.items ? (
-        <div className="br-loader">
-          <Spinner /> Loading reconciliation evidence…
-        </div>
+        <Loader message="Loading reconciliation evidence..." />
       ) : (
         <>
           <section className="br-kpis">
@@ -420,7 +419,7 @@ export default function AdminBookingReconciliationPage() {
         </Offcanvas.Header>
         <Offcanvas.Body>
           {detailLoading ? (
-            <Spinner />
+            <Loader message="Loading booking evidence..." variant="form" />
           ) : detail?.bookingReference ? (
             <>
               <h2>{detail.bookingReference}</h2>

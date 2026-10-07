@@ -140,7 +140,7 @@ const PaymentSuccessPage = () => {
   if (loading) {
     return (
       <Container className="py-4">
-        <Loader message="Confirming your payment..." />
+        <Loader showMessage variant="inline" message="Confirming your payment..." />
       </Container>
     );
   }

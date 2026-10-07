@@ -218,7 +218,7 @@ const ToursListingPage = () => {
         />
 
         <ErrorAlert error={error} className="mb-3" />
-        {loading ? <Loader message="Loading Zanzibar experiences..." /> : availabilityLoading ? <Loader message="Checking live availability..." /> : <TourGrid tours={availabilityFilteredTours} />}
+        {loading ? <Loader message="Loading Zanzibar experiences..." variant="cards" /> : availabilityLoading ? <Loader message="Checking live availability..." variant="cards" /> : <TourGrid tours={availabilityFilteredTours} />}
 
         {!loading ? (
           <ListingPagination pagination={pagination} onPageChange={handlePageChange} />

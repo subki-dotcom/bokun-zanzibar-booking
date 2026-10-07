@@ -88,7 +88,7 @@ const PaymentFailurePage = () => {
   if (loading) {
     return (
       <Container className="py-4">
-        <Loader message="Updating payment status..." />
+        <Loader showMessage variant="inline" message="Updating payment status..." />
       </Container>
     );
   }

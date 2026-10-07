@@ -105,7 +105,7 @@ const PaymentCheckoutPage = () => {
   if (loading) {
     return (
       <Container className="py-4">
-        <Loader message="Preparing secure checkout..." />
+        <Loader showMessage variant="inline" message="Preparing secure checkout..." />
       </Container>
     );
   }

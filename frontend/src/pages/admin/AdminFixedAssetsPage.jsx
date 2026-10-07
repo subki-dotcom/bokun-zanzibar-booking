@@ -1,5 +1,6 @@
+import Loader from "../../components/common/Loader";
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Form, Modal, Spinner } from 'react-bootstrap';
+import { Button, Form, Modal } from 'react-bootstrap';
 import {
   BsArrowClockwise,
   BsDownload,
@@ -252,10 +253,7 @@ export default function AdminFixedAssetsPage() {
           </Button>
         </div>
       ) : state.loading ? (
-        <div className="fa-loading">
-          <Spinner />
-          <span>Loading asset register…</span>
-        </div>
+        <Loader message="Loading asset register..." variant="table" />
       ) : (
         <>
           {journalMessage && <div className="fa-warning" role="status">{journalMessage}</div>}

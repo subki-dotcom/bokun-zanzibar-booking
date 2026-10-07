@@ -3118,7 +3118,7 @@ const AdminCrmPage = () => {
                     )) : (
                       <tr>
                         <td colSpan={4} className="text-center text-muted py-4">
-                          {timelineLoading ? "Loading customer timeline." : "No customer timeline events found."}
+                          {timelineLoading ? <Loader variant="table" message="Loading customer timeline..." /> : "No customer timeline events found."}
                         </td>
                       </tr>
                     )}

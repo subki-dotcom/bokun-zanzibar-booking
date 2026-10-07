@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Form, Modal, Spinner, Table } from 'react-bootstrap';
 import {
@@ -655,7 +656,7 @@ const AdminAccountsReceivablePage = () => {
         </Modal.Header>
         <Modal.Body>
           {previewLoading ? (
-            <Spinner />
+            <Loader message="Loading invoice preview..." variant="form" />
           ) : preview ? (
             <>
               <p>

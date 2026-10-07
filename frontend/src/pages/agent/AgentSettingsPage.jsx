@@ -50,7 +50,7 @@ const AgentSettingsPage = () => {
     }
   };
 
-  if (loading) return <Loader message="Loading settings..." />;
+  if (loading) return <Loader variant="form" message="Loading settings..." />;
 
   return (
     <>

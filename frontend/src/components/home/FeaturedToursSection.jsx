@@ -2,6 +2,7 @@ import { Button, Col, Container, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { BsClock, BsGeoAlt, BsStarFill } from "react-icons/bs";
 import { formatHomePrice } from "./home.helpers";
+import Loader from "../common/Loader";
 
 const FeaturedToursSection = ({ tours = [], loading = false }) => (
   <section className="z-home-section">
@@ -11,7 +12,7 @@ const FeaturedToursSection = ({ tours = [], loading = false }) => (
         <p>Handpicked tours and excursions with live pricing and availability from Bokun.</p>
       </div>
 
-      <Row className="g-3 g-lg-4">
+      {loading ? <Loader message="Loading featured tours..." variant="cards" /> : <Row className="g-3 g-lg-4">
         {(tours || []).map((tour) => {
           const detailPath = tour.slug ? `/tours/${tour.slug}` : "/tours";
           const hasRating = Number(tour.rating || 0) > 0;
@@ -59,7 +60,7 @@ const FeaturedToursSection = ({ tours = [], loading = false }) => (
             </Col>
           );
         })}
-      </Row>
+      </Row>}
 
       {!loading && tours.length === 0 ? (
         <div className="z-home-empty-note">Featured tours are updating. Please check again shortly.</div>

@@ -11,6 +11,7 @@ import {
 } from "react-icons/bs";
 import { formatCurrency } from "../../../utils/formatters";
 import { pricePresentation } from "./pricePresentation";
+import Loader from "../../common/Loader";
 
 const extractPriceFromSummary = (value = "") => {
   const normalized = String(value || "").replace(/,/g, "");
@@ -160,8 +161,8 @@ const StickyBookingCard = ({
         <h4 className="single-booking-title">Check availability</h4>
         <div className="single-booking-starting">
           <div className="single-booking-starting-label">Starting price</div>
-          <div className="single-booking-starting-value">{priceLabel}</div>
-          <div className="single-booking-starting-meta">{pricingMetaLabel}</div>
+          <div className="single-booking-starting-value">{loadingStartingPrice && liveFromAmount <= 0 ? <Loader variant="inline" message="Loading price..." /> : priceLabel}</div>
+          {!loadingStartingPrice && <div className="single-booking-starting-meta">{pricingMetaLabel}</div>}
         </div>
 
         <div className="single-booking-form mt-3">
