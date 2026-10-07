@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Container } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 import { fetchTourBySlug } from "../../api/toursApi";
-import Loader from "../../components/common/Loader";
+import TourLoadingSkeleton from "../../components/tours/single/TourLoadingSkeleton";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import SingleTourPage from "../../components/tours/single/SingleTourPage";
 import SeoHead from "../../components/common/SeoHead";
@@ -29,11 +29,7 @@ const TourDetailsPage = () => {
   }, [slug]);
 
   if (loading) {
-    return (
-      <Container className="py-4">
-        <Loader message="Loading tour details..." />
-      </Container>
-    );
+    return <TourLoadingSkeleton />;
   }
 
   if (error) {

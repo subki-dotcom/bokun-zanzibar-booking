@@ -1,0 +1,33 @@
+.tour-skeleton-page { padding-top: 24px; padding-bottom: 40px; min-height: 760px; }
+.tour-skeleton-block { position: relative; overflow: hidden; height: 14px; margin-bottom: 14px; border-radius: 8px; background: #e8ecee; }
+.tour-skeleton-block::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent); animation: tour-skeleton-shimmer 1.8s ease-in-out infinite; }
+.tour-skeleton-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 28px; }
+.tour-skeleton-breadcrumb { width: 28%; height: 12px; margin-bottom: 24px; }
+.tour-skeleton-gallery { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 26px; }
+.tour-skeleton-photo { height: 330px; margin: 0; border-radius: 18px; }
+.tour-skeleton-thumbnails { display: grid; grid-template-rows: 1fr 1fr; gap: 12px; }
+.tour-skeleton-thumbnails .tour-skeleton-block { height: 100%; margin: 0; border-radius: 14px; }
+.tour-skeleton-title { width: 82%; height: 32px; }
+.tour-skeleton-heading { width: 65%; height: 24px; margin-bottom: 22px; }
+.tour-skeleton-short { width: 48%; }
+.tour-skeleton-card { padding: 24px; margin-bottom: 20px; border: 1px solid #edf0f1; border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgba(24,50,60,.045); }
+.tour-skeleton-fields, .tour-skeleton-facts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 24px; }
+.tour-skeleton-fields .tour-skeleton-block { height: 46px; }
+.tour-skeleton-facts { grid-template-columns: repeat(3, minmax(0,1fr)); margin-bottom: 20px; }
+.tour-skeleton-facts .tour-skeleton-block { height: 72px; }
+.tour-skeleton-button { height: 46px; margin-bottom: 0; border-radius: 24px; }
+@keyframes tour-skeleton-shimmer { to { transform: translateX(100%); } }
+@media (max-width: 1023px) {
+  .tour-skeleton-layout { grid-template-columns: 1fr; }
+  .tour-skeleton-sidebar { display: none; }
+  .tour-skeleton-photo { height: 280px; }
+}
+@media (max-width: 575px) {
+  .tour-skeleton-gallery { grid-template-columns: 1fr; }
+  .tour-skeleton-thumbnails { display: none; }
+  .tour-skeleton-photo { height: 240px; }
+  .tour-skeleton-title { height: 28px; width: 95%; }
+  .tour-skeleton-breadcrumb { width: 48%; }
+  .tour-skeleton-card { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .tour-skeleton-block::after { animation: none; } }

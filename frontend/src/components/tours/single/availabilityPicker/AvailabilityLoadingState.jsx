@@ -1,24 +1,11 @@
-import Placeholder from "react-bootstrap/Placeholder";
+import { OptionLoadingSkeleton } from "../TourLoadingSkeleton";
 
 const AvailabilityLoadingState = () => (
-  <div className="availability-state-wrap" aria-live="polite">
-    <div className="availability-state-title">Checking live availability...</div>
-    <div className="availability-state-subtitle">
-      We are fetching real-time options and pricing from Bokun.
-    </div>
+  <div className="availability-state-wrap" role="status" aria-busy="true" aria-label="Loading available options">
+    <span className="visually-hidden">Loading available options...</span>
     <div className="availability-loading-grid">
       {[1, 2, 3].map((row) => (
-        <div key={row} className="availability-loading-card">
-          <Placeholder as="div" animation="glow">
-            <Placeholder xs={7} />
-          </Placeholder>
-          <Placeholder as="div" animation="glow">
-            <Placeholder xs={10} />
-          </Placeholder>
-          <Placeholder as="div" animation="glow">
-            <Placeholder xs={6} />
-          </Placeholder>
-        </div>
+        <OptionLoadingSkeleton key={row} />
       ))}
     </div>
   </div>
