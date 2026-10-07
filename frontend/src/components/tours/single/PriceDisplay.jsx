@@ -1,4 +1,5 @@
 import { formatCurrency } from "../../../utils/formatters";
+import { pricePresentation } from "./pricePresentation";
 
 const resolveModeLabel = ({ mode = "", summary = "" }) => {
   const token = `${mode} ${summary}`.toLowerCase();
@@ -23,14 +24,16 @@ const resolveModeLabel = ({ mode = "", summary = "" }) => {
   return "Live rates";
 };
 
-const PriceDisplay = ({ amount = 0, currency = "USD", summary = "", mode = "", compact = false }) => {
+const PriceDisplay = ({ amount = 0, currency = "USD", summary = "", mode = "", compact = false, pricingType = "", maxPerBooking = null }) => {
   const hasNumericPrice = Number(amount) > 0;
-  const modeLabel = resolveModeLabel({ mode, summary });
+  const modeLabel = mode === "live_total" && pricingType !== "per_group"
+    ? "Total for selected passengers"
+    : pricePresentation({ pricingType, maxPerBooking }).label || resolveModeLabel({ mode, summary });
   const summaryText = String(summary || "").trim();
 
   return (
     <div className={`single-tour-price ${compact ? "is-compact" : ""}`.trim()}>
-      <div className="single-tour-price-label">{hasNumericPrice ? "Starting from" : "Price summary"}</div>
+      <div className="single-tour-price-label">{hasNumericPrice ? mode === "live_total" ? "Total" : "From" : "Price summary"}</div>
       <div className="single-tour-price-value">
         {hasNumericPrice ? formatCurrency(amount, currency) : summaryText || "Live pricing and availability"}
       </div>

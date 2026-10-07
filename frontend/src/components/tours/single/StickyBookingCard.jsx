@@ -10,6 +10,7 @@ import {
   BsTag
 } from "react-icons/bs";
 import { formatCurrency } from "../../../utils/formatters";
+import { pricePresentation } from "./pricePresentation";
 
 const extractPriceFromSummary = (value = "") => {
   const normalized = String(value || "").replace(/,/g, "");
@@ -95,6 +96,8 @@ const StickyBookingCard = ({
 
     return {
       amount: Number(candidates[0].lowestPriceForTwo),
+      pricingType: candidates[0].pricingType || "",
+      maxPerBooking: candidates[0].maxPerBooking,
       currency: candidates[0].currency || tour.currency || "USD",
       comparedAdults: Number(availabilityResult?.comparedAdults || 2),
       optionId: String(candidates[0].optionId || "")
@@ -128,14 +131,13 @@ const StickyBookingCard = ({
 
     return fallbackPrice || 0;
   }, [liveFromAmount, tour.fromPrice, tour.options, selectedOption?.pricingSummary]);
-  const perPersonAmount = liveFromAmount > 0 ? liveFromAmount / 2 : startingAmount;
-  const priceLabel = perPersonAmount > 0 ? formatCurrency(perPersonAmount, liveFromCurrency) : "Live pricing";
-  const pricingMode =
-    liveFromAmount > 0
-      ? "per person (2 adults price / 2)"
-      : String(selectedOption?.pricingSummary || "").toLowerCase().includes("group")
-        ? "per group"
-        : "per person";
+  const displayPrice = pricePresentation({
+    ...(liveFromAmount > 0 ? effectiveLowest : {}),
+    amount: startingAmount,
+    isTotal: liveFromAmount > 0
+  });
+  const priceLabel = displayPrice.amount > 0 ? formatCurrency(displayPrice.amount, liveFromCurrency) : "Live pricing";
+  const pricingMode = displayPrice.label;
   const pricingMetaLabel = loadingStartingPrice && liveFromAmount <= 0 ? "loading live price..." : pricingMode;
 
   const openDatePicker = () => {
@@ -238,7 +240,7 @@ const StickyBookingCard = ({
               ) : null}
               {availableCount > 0 && liveFromAmount > 0 ? (
                 <div className="mt-1">
-                  Per person {formatCurrency(liveFromAmount / 2, liveFromCurrency)}
+                  {formatCurrency(displayPrice.amount, liveFromCurrency)} {displayPrice.label}
                   {" "}
                   ({formatCurrency(liveFromAmount, liveFromCurrency)} for {liveComparedAdults} adults)
                 </div>

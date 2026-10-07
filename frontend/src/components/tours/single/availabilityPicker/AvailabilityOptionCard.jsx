@@ -1,6 +1,7 @@
 import { Button } from "react-bootstrap";
 import { BsArrowRight, BsCheckCircleFill, BsGeoAlt, BsTranslate, BsTruck, BsCashCoin } from "react-icons/bs";
 import { formatCurrency, toPlainText, truncateText } from "../../../../utils/formatters";
+import { pricePresentation } from "../pricePresentation";
 
 const normalizeTimeToken = (value = "") => {
   const token = String(value || "").trim();
@@ -51,6 +52,10 @@ const AvailabilityOptionCard = ({
     130
   );
   const priceAmount = resolveLiveAmount(option);
+  const displayPrice = pricePresentation({
+    ...option, ...option.liveAvailability, amount: priceAmount,
+    isTotal: Number(option.liveAvailability?.lowestPriceForTwo) > 0
+  });
   const currency = option?.liveAvailability?.currency || option?.currency || "USD";
   const slots = (option?.liveAvailability?.slots || [])
     .filter((slot) => slot?.status === "available" || slot?.status === "limited")
@@ -128,7 +133,7 @@ const AvailabilityOptionCard = ({
         </div>
         <div>
           <BsCashCoin />
-          <span>{priceAmount > 0 ? `From ${formatCurrency(priceAmount, currency)}` : "Live price on request"}</span>
+          <span>{priceAmount > 0 ? `From ${formatCurrency(displayPrice.amount, currency)} ${displayPrice.label}` : "Live price on request"}</span>
         </div>
       </div>
 

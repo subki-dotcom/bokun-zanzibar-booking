@@ -7,6 +7,7 @@ import { saveBookingSession } from "../../../../utils/bookingSession";
 import PassengerCategorySelector from "./PassengerCategorySelector";
 import DateAvailabilityPicker from "./DateAvailabilityPicker";
 import StartingPriceBox from "./StartingPriceBox";
+import { pricePresentation } from "../pricePresentation";
 import {
   buildDefaultPassengerState,
   formatPriceLabel,
@@ -87,6 +88,7 @@ const BookingAvailabilityCard = ({
   const [passengers, setPassengers] = useState([]);
   const [travelDate, setTravelDate] = useState("");
   const [startingFromPrice, setStartingFromPrice] = useState(0);
+  const [startingPrice, setStartingPrice] = useState(null);
   const [bookingCurrency, setBookingCurrency] = useState(tour.currency || "USD");
   const [quote, setQuote] = useState(null);
   const [quoteStatus, setQuoteStatus] = useState("idle");
@@ -138,6 +140,7 @@ const BookingAvailabilityCard = ({
         setPassengers(nextPassengers);
         setBookingCurrency(config.currency || tour.currency || "USD");
         setStartingFromPrice(Number(config.startingFromPrice || 0));
+        setStartingPrice(config.startingPrice || null);
         setQuote((prev) =>
           resetQuoteOnSelectionChange({
             ...prev
@@ -319,16 +322,18 @@ const BookingAvailabilityCard = ({
       });
     }
 
-    return formatPriceLabel(startingFromPrice, bookingCurrency, {
-      fallback: "Check live pricing",
-      divideBy: 2
+    const display = pricePresentation({ ...startingPrice, amount: startingFromPrice, isTotal: true });
+    return formatPriceLabel(display.amount, startingPrice?.currency || bookingCurrency, {
+      fallback: "Check live pricing"
     });
-  }, [quoteStatus, quote, startingFromPrice, bookingCurrency]);
+  }, [quoteStatus, quote, startingFromPrice, startingPrice, bookingCurrency]);
 
   const priceMetaLabel =
     quoteStatus === "success" && Number(quote?.totalPrice || 0) > 0
-      ? "Live total for selected passengers"
-      : "per person";
+      ? quote?.pricingType === "per_group"
+        ? pricePresentation(quote).label
+        : "Live total for selected passengers"
+      : pricePresentation({ ...startingPrice, isTotal: true }).label;
 
   const canContinue = Boolean(
     productId &&
@@ -403,7 +408,7 @@ const BookingAvailabilityCard = ({
     <Card className="single-booking-card booking-sticky">
       <Card.Body>
         <StartingPriceBox
-          label="Starting price"
+          label={quoteStatus === "success" && Number(quote?.totalPrice || 0) > 0 ? "Total" : "From"}
           priceLabel={primaryPriceLabel}
           meta={priceMetaLabel}
           loading={configLoading}

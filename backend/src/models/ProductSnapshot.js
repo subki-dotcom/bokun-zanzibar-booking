@@ -7,6 +7,8 @@ const optionSnapshotSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     language: { type: String, default: "" },
     pricingSummary: { type: String, default: "" },
+    pricingType: { type: String, default: "" },
+    maxPerBooking: { type: Number, default: null },
     pickupSupported: { type: Boolean, default: false },
     meetingPointSupported: { type: Boolean, default: true },
     active: { type: Boolean, default: true },

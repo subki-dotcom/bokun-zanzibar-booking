@@ -1,4 +1,5 @@
 const slugify = require("slugify");
+const { ratePricingMetadata } = require("./pricingType");
 const { requestedParticipantCount, exceedsRateLimits } = require("./bookingLimits");
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
@@ -825,6 +826,7 @@ const mapProductItinerary = (root = {}, mappedOptions = [], mappedItineraryItems
 };
 
 const mapOption = (rawOption = {}) => ({
+  ...ratePricingMetadata(rawOption),
   bokunOptionId: String(rawOption.id || rawOption.optionId || ""),
   name: rawOption.name || rawOption.title || rawOption.rateName || "Untitled Option",
   description: stripHtml(rawOption.description || rawOption.rateDescription || ""),

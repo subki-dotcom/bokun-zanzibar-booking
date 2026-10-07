@@ -1,5 +1,6 @@
 const bokunClient = require("../../integrations/bokun/bokun.client");
 const mapper = require("../../integrations/bokun/bokun.mapper");
+const { ratePricingMetadata } = require("../../integrations/bokun/pricingType");
 const { requestedParticipantCount, exceedsRateLimits } = require("../../integrations/bokun/bookingLimits");
 const ProductSnapshot = require("../../models/ProductSnapshot");
 const { env } = require("../../config/env");
@@ -697,16 +698,20 @@ const deriveTwoAdultStartingPrice = (mappedProduct = {}, selectedRateOption = nu
   });
 
   const derivedFromRates = rateCandidates
-    .map((rate = {}) =>
-      normalizeRatePrice(
+    .map((rate = {}) => ({
+      ...ratePricingMetadata(rate),
+      optionId: String(rate.id || ""),
+      comparedAdults: 2,
+      amount: normalizeRatePrice(
         rate?.nextDefaultPriceMoney ?? rate?.nextDefaultPrice ?? rate?.defaultPrice,
         rate?.pricedPerPerson !== false
       )
-    )
-    .filter((value) => Number.isFinite(value) && value > 0);
+    }))
+    .filter((value) => Number.isFinite(value.amount) && value.amount > 0)
+    .sort((a, b) => a.amount - b.amount);
 
   if (derivedFromRates.length > 0) {
-    return Math.min(...derivedFromRates);
+    return derivedFromRates[0];
   }
 
   const topLevelRate = normalizeRatePrice(
@@ -714,15 +719,15 @@ const deriveTwoAdultStartingPrice = (mappedProduct = {}, selectedRateOption = nu
     defaultPricedPerPerson && !isPerGroup
   );
   if (Number.isFinite(topLevelRate) && topLevelRate > 0) {
-    return topLevelRate;
+    return { amount: topLevelRate, comparedAdults: 2 };
   }
 
   const mappedFallback = toPriceNumber(mappedProduct?.fromPrice);
   if (Number.isFinite(mappedFallback) && mappedFallback > 0) {
-    return !defaultPricedPerPerson || isPerGroup ? mappedFallback : mappedFallback * 2;
+    return { amount: !defaultPricedPerPerson || isPerGroup ? mappedFallback : mappedFallback * 2, comparedAdults: 2 };
   }
 
-  return 0;
+  return { amount: 0 };
 };
 
 const fetchProductBookingConfig = async (productId, options = {}, requestId) => {
@@ -797,7 +802,7 @@ const fetchProductBookingConfig = async (productId, options = {}, requestId) => 
   const fallbackStartingPrice = deriveTwoAdultStartingPrice(mappedProduct, selectedRateOption);
   const startingFromPrice = Number(
     startingPreview?.lowestPriceForTwo?.amount ||
-      fallbackStartingPrice ||
+      fallbackStartingPrice.amount ||
       0
   );
 
@@ -807,6 +812,7 @@ const fetchProductBookingConfig = async (productId, options = {}, requestId) => 
     currency: mappedProduct.currency || env.DEFAULT_CURRENCY,
     defaultRateId: selectedRateId,
     startingFromPrice,
+    startingPrice: startingPreview?.lowestPriceForTwo || fallbackStartingPrice,
     rateOptions,
     defaultPricingCategories: pricingCategories,
     pricingCategories,
@@ -908,6 +914,8 @@ const fetchProductLiveQuote = async (productId, payload = {}, requestId) => {
       env.DEFAULT_CURRENCY,
     startingPrice: Number(matrix?.lowestPriceForTwo?.amount || bookingConfig.startingFromPrice || 0),
     totalPrice: Number(quoteAvailability?.pricing?.grossAmount || 0),
+    pricingType: selectedOption?.pricingType || "",
+    maxPerBooking: selectedOption?.maxPerBooking || null,
     availabilityStatus: normalizeAvailabilityStatus(selectedOption?.status),
     remainingCapacity: Number(selectedOption?.capacityLeft || 0),
     pricingBreakdown: ensureArray(quoteAvailability?.pricing?.lineItems).map((item) => ({
@@ -1371,6 +1379,8 @@ const estimateTwoAdultPriceForOption = ({
   }
 
   const rateId = String(ratePriceEntry?.activityRateId || optionId || "");
+  const rate = ensureArray(slot.rates).find((entry) => String(entry.id) === rateId);
+  const multiplier = rate?.pricedPerPerson === false ? 1 : safeAdults;
   const passengerDefinitions = ratePassengersByRateId.get(rateId) || [];
 
   let selectedCategoryId = passengerDefinitions
@@ -1389,7 +1399,7 @@ const estimateTwoAdultPriceForOption = ({
   const selectedTierAmount = selectTierAmount(tiersByCategory.get(selectedCategoryId), safeAdults);
   if (Number.isFinite(selectedTierAmount) && selectedTierAmount >= 0) {
     return {
-      amount: selectedTierAmount * safeAdults,
+      amount: selectedTierAmount * multiplier,
       currency
     };
   }
@@ -1401,7 +1411,7 @@ const estimateTwoAdultPriceForOption = ({
   if (fallbackCandidates.length) {
     const fallbackPerAdult = Math.min(...fallbackCandidates);
     return {
-      amount: fallbackPerAdult * safeAdults,
+      amount: fallbackPerAdult * multiplier,
       currency
     };
   }
@@ -1581,6 +1591,10 @@ const fetchOptionAvailabilityMatrix = async (payload, requestId) => {
             Number(estimatedPrice.amount) < Number(optionAvailability.lowestPriceForTwo)
           ) {
             optionAvailability.lowestPriceForTwo = Number(estimatedPrice.amount);
+            Object.assign(optionAvailability, ratePricingMetadata(
+              ensureArray(slot.rates).find((rate) => String(rate.id) === optionId),
+              resolveRatePriceEntry(slot, optionId)
+            ), { comparedAdults });
           }
         }
       } else if (!optionAvailability.available && slotState.status === "insufficient_capacity") {
@@ -1616,6 +1630,8 @@ const fetchOptionAvailabilityMatrix = async (payload, requestId) => {
     ? {
         optionId: pricedCandidates[0].optionId,
         amount: Number(pricedCandidates[0].lowestPriceForTwo),
+        pricingType: pricedCandidates[0].pricingType || "",
+        maxPerBooking: pricedCandidates[0].maxPerBooking || null,
         currency: pricedCandidates[0].currency || env.DEFAULT_CURRENCY,
         comparedAdults
       }
@@ -1816,6 +1832,10 @@ const fetchStartingPricePreview = async (payload, requestId) => {
 
           if (isBetterAmount || isSameAmountEarlierDate || !row.cheapestTravelDate) {
             row.lowestPriceForTwo = nextAmount;
+            Object.assign(row, ratePricingMetadata(
+              ensureArray(slot.rates).find((rate) => String(rate.id) === optionId),
+              resolveRatePriceEntry(slot, optionId)
+            ), { comparedAdults });
             row.cheapestTravelDate = slotDate;
             row.cheapestStartTime = slotTime;
           }
@@ -1848,6 +1868,8 @@ const fetchStartingPricePreview = async (payload, requestId) => {
         currency: pricedCandidates[0].currency || env.DEFAULT_CURRENCY,
         comparedAdults,
         travelDate: pricedCandidates[0].cheapestTravelDate || pricedCandidates[0].firstAvailableTravelDate || "",
+        pricingType: pricedCandidates[0].pricingType || "",
+        maxPerBooking: pricedCandidates[0].maxPerBooking || null,
         startTime: pricedCandidates[0].cheapestStartTime || pricedCandidates[0].firstAvailableStartTime || ""
       }
     : null;

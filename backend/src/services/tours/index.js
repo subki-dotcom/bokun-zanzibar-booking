@@ -806,6 +806,9 @@ const checkOptionsAvailability = async (slug, payload = {}, requestId) => {
       cheapestTravelDate: availability.cheapestTravelDate || "",
       capacityLeft: Number(availability.capacityLeft || 0),
       lowestPriceForTwo: Number(availability.lowestPriceForTwo || 0) || null,
+      pricingType: availability.pricingType || option.pricingType || "",
+      maxPerBooking: availability.maxPerBooking || option.maxPerBooking || null,
+      comparedAdults: Number(matrix.comparedAdults || 2),
       currency: availability.currency || hydratedTour.currency || "USD",
       slots: availability.slots || []
     };

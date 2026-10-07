@@ -168,6 +168,8 @@ const OptionCard = ({
           amount={displayAmount}
           currency={liveCurrency}
           summary={displaySummary}
+          pricingType={liveAvailability?.pricingType || option.pricingType || ""}
+          maxPerBooking={liveAvailability?.maxPerBooking || option.maxPerBooking}
           mode={hasDateFilter && isLiveAvailable && liveTotalPrice > 0 ? "live_total" : ""}
           compact
         />
