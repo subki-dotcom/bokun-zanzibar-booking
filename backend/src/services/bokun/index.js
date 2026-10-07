@@ -1,5 +1,6 @@
 const bokunClient = require("../../integrations/bokun/bokun.client");
 const mapper = require("../../integrations/bokun/bokun.mapper");
+const { requestedParticipantCount, exceedsRateLimits } = require("../../integrations/bokun/bookingLimits");
 const ProductSnapshot = require("../../models/ProductSnapshot");
 const { env } = require("../../config/env");
 const logger = require("../../config/logger");
@@ -1029,15 +1030,6 @@ const fetchAvailability = async (payload, requestId) => {
   });
 };
 
-const resolveRequestedPaxTotal = (pax = {}) => {
-  const adults = Math.max(0, Number(pax?.adults || 0));
-  const children = Math.max(0, Number(pax?.children || 0));
-  const infants = Math.max(0, Number(pax?.infants || 0));
-  const total = adults + children + infants;
-
-  return total > 0 ? total : 1;
-};
-
 const formatIsoDate = (value) => {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -1061,12 +1053,21 @@ const addDaysIso = (isoDate, days = 0) => {
   return formatIsoDate(base);
 };
 
-const getSlotAvailabilityState = (slot = {}, requestedPaxTotal = 1) => {
+const getSlotAvailabilityState = (slot = {}, requestedPaxTotal = 1, optionId = "") => {
   if (slot.soldOut || slot.unavailable) {
     return {
       available: false,
       status: "sold_out",
       capacityLeft: 0
+    };
+  }
+
+  const rate = ensureArray(slot.rates).find((entry) => String(entry.id) === String(optionId));
+  if (exceedsRateLimits(rate, requestedPaxTotal)) {
+    return {
+      available: false,
+      status: "insufficient_capacity",
+      capacityLeft: slot.unlimitedAvailability ? Number.MAX_SAFE_INTEGER : Math.max(0, Number(slot.availabilityCount || 0))
     };
   }
 
@@ -1493,7 +1494,7 @@ const fetchOptionAvailabilityMatrix = async (payload, requestId) => {
   const ratePassengersByRateId = mapRatePassengersByRateId(priceList);
   const priceCategories = extractPriceCategoriesFromPriceList({ priceList, optionIdSet });
 
-  const requestedPaxTotal = resolveRequestedPaxTotal(payload?.pax);
+  const requestedPaxTotal = requestedParticipantCount(payload);
   const availabilityMap = new Map();
   const initializedOptionIds = optionIds.length ? optionIds : [];
 
@@ -1546,6 +1547,7 @@ const fetchOptionAvailabilityMatrix = async (payload, requestId) => {
         });
       }
 
+      const slotState = getSlotAvailabilityState(slot, requestedPaxTotal, optionId);
       const optionAvailability = availabilityMap.get(optionId);
       const hasTime = optionAvailability.slots.some((item) => item.time === slotTime && item.status === slotState.status);
 
@@ -1739,7 +1741,7 @@ const fetchStartingPricePreview = async (payload, requestId) => {
 
   const ratePassengersByRateId = mapRatePassengersByRateId(priceList);
   const priceCategories = extractPriceCategoriesFromPriceList({ priceList, optionIdSet });
-  const requestedPaxTotal = resolveRequestedPaxTotal(payload?.pax || { adults: comparedAdults, children: 0, infants: 0 });
+  const requestedPaxTotal = requestedParticipantCount({ ...payload, pax: payload?.pax || { adults: comparedAdults } });
   const availabilityMap = new Map();
 
   optionIds.forEach((optionId) => {
@@ -1747,7 +1749,6 @@ const fetchStartingPricePreview = async (payload, requestId) => {
   });
 
   ensureArray(rawAvailabilities).forEach((slot) => {
-    const slotState = getSlotAvailabilityState(slot, requestedPaxTotal);
     const slotTime = getSlotTime(slot);
     const slotDate = getSlotDate(slot);
     const rateIds = extractOptionRateIds(slot);
@@ -1765,6 +1766,7 @@ const fetchStartingPricePreview = async (payload, requestId) => {
         availabilityMap.set(optionId, buildMatrixOptionRow(optionId));
       }
 
+      const slotState = getSlotAvailabilityState(slot, requestedPaxTotal, optionId);
       const row = availabilityMap.get(optionId);
       const hasSameSlot = row.slots.some(
         (entry) => entry.time === slotTime && entry.status === slotState.status && entry.date === slotDate

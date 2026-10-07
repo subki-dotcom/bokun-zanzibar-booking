@@ -1,4 +1,5 @@
 const slugify = require("slugify");
+const { requestedParticipantCount, exceedsRateLimits } = require("./bookingLimits");
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -1716,13 +1717,21 @@ const mapActivityAvailability = ({ payload = {}, rawAvailabilities = [], priceLi
   const matchingSlots = slotsSource.filter((slot) => slotSupportsOption(slot, optionRateId));
   const scopedSlots = matchingSlots.length ? matchingSlots : slotsSource;
 
-  const internalSlots = scopedSlots.map((slot) => ({
-    raw: slot,
-    time: getSlotTime(slot),
-    startTimeId: getSlotStartTimeId(slot),
-    capacityLeft: slot.unlimitedAvailability ? 9999 : Number(slot.availabilityCount || 0),
-    status: getSlotStatus(slot)
-  }));
+  const participantCount = requestedParticipantCount(payload);
+  const internalSlots = scopedSlots.map((slot) => {
+    const rate = resolveSelectedRateContext({ slot, optionRateId }).selectedRateDefinition;
+    const capacityLeft = slot.unlimitedAvailability ? 9999 : Number(slot.availabilityCount || 0);
+    const status = getSlotStatus(slot);
+    return {
+      raw: slot,
+      time: getSlotTime(slot),
+      startTimeId: getSlotStartTimeId(slot),
+      capacityLeft,
+      status: status !== "sold_out" &&
+        (exceedsRateLimits(rate, participantCount) || capacityLeft < participantCount)
+        ? "insufficient_capacity" : status
+    };
+  });
 
   const mergedSlots = new Map();
   internalSlots.forEach((slot) => {
@@ -1800,6 +1809,13 @@ const mapActivityAvailability = ({ payload = {}, rawAvailabilities = [], priceLi
       maxQuantity: category.maxQuantity
     });
   });
+
+  const rateMax = Number(selectedRateContext.selectedRateDefinition?.maxPerBooking || 0);
+  if (rateMax > 0) {
+    pricingCategoryMap.forEach((category) => {
+      category.maxQuantity = Math.min(category.maxQuantity, rateMax);
+    });
+  }
 
   const extras = buildOptionalExtras({
     selectedRateDefinition: selectedRateContext.selectedRateDefinition,
