@@ -180,3 +180,35 @@ test("does not classify unknown channels as OTA evidence gaps in the portfolio s
   assert.equal(summary.items[0].otaReceivables, "0");
   assert.equal(summary.items[0].otaCommissions, "0");
 });
+
+test("portfolio loads evidence in batches and keeps each booking's receipts and costs separate", async () => {
+  let reads = 0;
+  const model = (rows) => ({
+    find: async () => { reads += 1; return rows; },
+    findOne: () => { throw new Error("Summary must not issue per-booking queries"); }
+  });
+  const service = createFinancialReportingService({
+    BookingModel: model([
+      booking(),
+      booking({ _id: "booking-2", bookingReference: "BK-200", currency: "EUR", pricingSnapshot: { finalPayable: 200 } })
+    ]),
+    InvoiceModel: model([]),
+    PaymentModel: model([{ _id: "p1", bookingReference: "BK-100", status: "paid", verificationStatus: "verified", amountPaid: 70, currency: "USD" }]),
+    RefundModel: model([{ bookingId: "booking-2", status: "refunded", confirmedRefundedAmount: 10 }]),
+    BusinessExpenseModel: model([{ bookingReference: "BK-200", status: "APPROVED", amount: 30, currency: "EUR" }]),
+    SettlementAllocationModel: model([]),
+    SettlementModel: model([]),
+    AccountingPostingModel: model([]),
+    JournalEntryModel: model([])
+  });
+  const result = await service.getAuthoritativeSummary();
+  const usd = result.items.find((row) => row.currency === "USD");
+  const eur = result.items.find((row) => row.currency === "EUR");
+  assert.equal(reads, 6);
+  assert.equal(usd.guestPaymentsCollected, "70");
+  assert.equal(eur.guestPaymentsCollected, "0");
+  assert.equal(usd.refunds, "0");
+  assert.equal(eur.refunds, "10");
+  assert.equal(usd.directCosts, "0");
+  assert.equal(eur.directCosts, "30");
+});

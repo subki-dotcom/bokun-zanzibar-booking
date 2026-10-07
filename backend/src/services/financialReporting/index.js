@@ -247,7 +247,50 @@ const createFinancialReportingService = ({
       if (parsedToDate) dateQuery.createdAt.$lte = parsedToDate;
     }
     const bookings = await queryRows(BookingModel, dateQuery, { limit: Math.max(1, Math.min(5000, Number(limit || 500))) });
-    const facts = (await Promise.all(bookings.map((booking) => loadBookingFinancialFacts(booking.bookingReference)))).filter(Boolean);
+    // Load related evidence once per bounded batch instead of issuing eight
+    // queries per booking simultaneously and exhausting the connection pool.
+    const facts = [];
+    const groupBy = (rows, key) => {
+      const grouped = new Map();
+      rows.forEach((row) => {
+        const value = token(key(row));
+        if (!grouped.has(value)) grouped.set(value, []);
+        grouped.get(value).push(row);
+      });
+      return grouped;
+    };
+    for (let offset = 0; offset < bookings.length; offset += 250) {
+      const batch = bookings.slice(offset, offset + 250);
+      const references = batch.map((booking) => token(booking.bookingReference));
+      const [invoices, payments, refunds, expenses, allocations] = await Promise.all([
+        findMany(InvoiceModel, { bookingReference: { $in: references } }),
+        findMany(PaymentModel, { bookingReference: { $in: references } }),
+        findMany(RefundModel, { bookingId: { $in: batch.map((booking) => booking._id) } }),
+        findMany(BusinessExpenseModel, { bookingReference: { $in: references } }),
+        findMany(SettlementAllocationModel, { bookingReference: { $in: references }, status: "APPLIED" })
+      ]);
+      const settlementIds = [...new Set(allocations.map((row) => String(row.settlementId)).filter(Boolean))];
+      const settlements = settlementIds.length ? await findMany(SettlementModel, { _id: { $in: settlementIds } }) : [];
+      const settlementById = new Map(settlements.map((row) => [String(row._id), row]));
+      const invoicesByRef = groupBy(invoices, (row) => row.bookingReference);
+      const paymentsByRef = groupBy(payments, (row) => row.bookingReference);
+      const refundsById = groupBy(refunds, (row) => row.bookingId);
+      const expensesByRef = groupBy(expenses, (row) => row.bookingReference);
+      const allocationsByRef = groupBy(allocations, (row) => row.bookingReference);
+      batch.forEach((booking) => {
+        const reference = token(booking.bookingReference);
+        facts.push(buildFinancialFacts({
+          booking,
+          invoice: invoicesByRef.get(reference)?.[0] || null,
+          payments: paymentsByRef.get(reference) || [],
+          refunds: refundsById.get(String(booking._id)) || [],
+          expenses: expensesByRef.get(reference) || [],
+          settlements: (allocationsByRef.get(reference) || []).map((allocation) => ({
+            allocation, settlement: settlementById.get(String(allocation.settlementId))
+          })).filter((row) => row.settlement)
+        }));
+      });
+    }
     const byCurrency = new Map();
     const add = (row, key, value) => {
       if (value === null || value === undefined) return;

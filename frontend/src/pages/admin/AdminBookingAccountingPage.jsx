@@ -599,9 +599,11 @@ const AuthoritativeSummary = ({ summary, loading }) => {
   );
 };
 
-const BookingAccountingDashboard = ({
+export const BookingAccountingDashboard = ({
   dashboard,
   authoritativeSummary,
+  summaryLoading,
+  summaryError,
   onTrace,
   filters,
   setFilters,
@@ -704,9 +706,10 @@ const BookingAccountingDashboard = ({
 
       <DashboardCard>
         <DashboardCardHeader title="Authoritative Financial Facts" detail="Read-only facts from bookings, payments, refunds, settlements and posted expenses." />
-        <AuthoritativeSummary summary={authoritativeSummary} loading={loading} />
+        {summaryError ? <DashboardError message={summaryError} onRetry={onRefresh} /> : <AuthoritativeSummary summary={authoritativeSummary} loading={summaryLoading} />}
       </DashboardCard>
 
+      {(!error || loading) && <>
       <div className="booking-accounting-dashboard-primary-kpis">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
@@ -762,6 +765,7 @@ const BookingAccountingDashboard = ({
       </div>
 
       {loading ? <DashboardSkeleton rows={2} /> : <FooterKpis values={dashboard?.footerKpis || {}} currency={currency} />}
+      </>}
     </div>
   );
 };
@@ -1152,6 +1156,9 @@ const AdminBookingAccountingPage = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [summaryError, setSummaryError] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const dashboardRequest = useRef(0);
   const [financialFacts, setFinancialFacts] = useState(null);
   const [financialFactsLoading, setFinancialFactsLoading] = useState(false);
   const [financialFactsError, setFinancialFactsError] = useState("");
@@ -1180,25 +1187,41 @@ const AdminBookingAccountingPage = () => {
   }), [expenseFilters]);
 
   const load = useCallback(async ({ silent = false } = {}) => {
+    const request = ++dashboardRequest.current;
     if (silent) setRefreshing(true);
     else setLoading(true);
     setError("");
 
     try {
       if (mode === "dashboard") {
-        const [dashboard, authoritativeSummary] = await Promise.all([
-          fetchBookingAccountingDashboard(dashboardQuery),
+        setSummaryLoading(true);
+        setSummaryError("");
+        await Promise.all([
+          fetchBookingAccountingDashboard(dashboardQuery)
+            .then((dashboard) => {
+              if (request === dashboardRequest.current) setData((current) => ({ ...current, dashboard }));
+            })
+            .catch((err) => {
+              if (request === dashboardRequest.current) setError(err.message || "Failed to load dashboard.");
+            })
+            .finally(() => {
+              if (request === dashboardRequest.current) setLoading(false);
+            }),
           fetchAuthoritativeFinancialSummary({
             fromDate: dashboardQuery.fromDate,
             toDate: dashboardQuery.toDate,
             limit: dashboardQuery.limit
           })
+            .then((authoritativeSummary) => {
+              if (request === dashboardRequest.current) setData((current) => ({ ...current, authoritativeSummary }));
+            })
+            .catch((err) => {
+              if (request === dashboardRequest.current) setSummaryError(err.message || "Failed to load financial facts.");
+            })
+            .finally(() => {
+              if (request === dashboardRequest.current) setSummaryLoading(false);
+            })
         ]);
-        setData((current) => ({
-          ...current,
-          dashboard,
-          authoritativeSummary
-        }));
         return;
       }
 
@@ -1245,8 +1268,10 @@ const AdminBookingAccountingPage = () => {
     } catch (err) {
       setError(err.message || "Failed to load booking accounting");
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (request === dashboardRequest.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, [dashboardQuery, expenseQuery, mode]);
 
@@ -1328,6 +1353,8 @@ const AdminBookingAccountingPage = () => {
         <BookingAccountingDashboard
           dashboard={data.dashboard}
           authoritativeSummary={data.authoritativeSummary}
+          summaryLoading={summaryLoading}
+          summaryError={summaryError}
           filters={dashboardFilters}
           setFilters={setDashboardFilters}
           loading={loading}
