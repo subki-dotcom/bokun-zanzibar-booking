@@ -19,7 +19,10 @@ app.set("trust proxy", 1);
 morgan.token("request-id", (req) => req.requestId || "-");
 app.use(requestId);
 app.use(helmet());
-const productionFrontendOrigin = "https://bokun-zanzibar-booking.vercel.app";
+const productionFrontendOrigins = [
+  "https://zanzibartoursandsafaris.co.tz",
+  "https://bokun-zanzibar-booking.vercel.app"
+];
 const normalizeOriginValue = (value = "") => String(value || "").trim().replace(/\/+$/, "");
 const configuredFrontendOrigins = String(env.FRONTEND_URL || "")
   .split(",")
@@ -28,7 +31,7 @@ const configuredFrontendOrigins = String(env.FRONTEND_URL || "")
 const allowedOrigins = Array.from(
   new Set([
     ...configuredFrontendOrigins,
-    normalizeOriginValue(productionFrontendOrigin)
+    ...productionFrontendOrigins.map(normalizeOriginValue)
   ])
 );
 const devOriginPattern = /^https?:\/\/(127\.0\.0\.1|localhost):\d+$/i;
