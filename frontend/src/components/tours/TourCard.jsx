@@ -1,3 +1,4 @@
+import { trackSelectItem } from "../../utils/analytics";
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
 import Badge from "react-bootstrap/Badge";
@@ -32,7 +33,7 @@ const TourCard = ({ tour }) => {
           </span>
         </div>
 
-        <Button as={Link} to={`/tours/${tour.slug}`} className="premium-btn text-white w-100">
+        <Button onClick={() => trackSelectItem(tour)} as={Link} to={`/tours/${tour.slug}`} className="premium-btn text-white w-100">
           View Experience
         </Button>
       </Card.Body>

@@ -1,3 +1,4 @@
+import { trackSelectItem } from "../../../utils/analytics";
 import { useMemo, useState } from "react";
 import { Badge, Button, Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
@@ -95,7 +96,7 @@ const TourCard = ({ tour = {} }) => {
           </div>
         </div>
 
-        <Button as={Link} to={detailPath} className="listing-tour-cta text-white w-100">
+        <Button onClick={() => trackSelectItem(tour)} as={Link} to={detailPath} className="listing-tour-cta text-white w-100">
           View Details
         </Button>
       </Card.Body>

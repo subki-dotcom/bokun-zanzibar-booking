@@ -46,7 +46,7 @@ import {
   saveBookingSession
 } from "../../utils/bookingSession";
 import { buildMarketingContext } from "../../utils/marketingAttribution";
-import { trackAnalyticsEvent } from "../../utils/analytics";
+import { trackAnalyticsEvent, trackBookingFormStarted } from "../../utils/analytics";
 
 const normalizeTicketCategory = (value = "") => {
   const token = String(value || "").toLowerCase();
@@ -297,6 +297,21 @@ const BookingFlowInner = ({ portal = "public" }) => {
   const hasConfirmation = Boolean(state.bookingResult);
   const isReviewStep = currentStepId === STEP_IDS.REVIEW;
   const isCustomerStep = currentStepId === STEP_IDS.CUSTOMER;
+  useEffect(() => {
+    const report = () => {
+      if (isAgentPortal || initLoading || !tour || !state.quote) return;
+      trackAnalyticsEvent('begin_checkout', {
+        currency: state.quote.pricing?.currency,
+        value: state.quote.pricing?.finalPayable,
+        number_of_guests: Object.values(state.pax || {}).reduce((sum, count) => sum + Number(count || 0), 0),
+        items: [{ item_id: tour.bokunProductId, item_name: tour.title, quantity: 1 }]
+      }, 'checkout:' + window.history.state?.key + ':' + slug);
+    };
+    report();
+    window.addEventListener('riser:analytics-consent', report);
+    return () => window.removeEventListener('riser:analytics-consent', report);
+  }, [isAgentPortal, initLoading, tour, state.quote, state.pax, slug]);
+
   const customerReady = isCustomerSummaryValid(state.customer || {});
   const selectedPaymentLabel = getProvider(selectedPaymentMethod)?.title || getPaymentMethodLabel(selectedPaymentMethod);
   const paymentMethodEnabled = isProviderEnabled(selectedPaymentMethod);
@@ -626,11 +641,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
         availabilityChecked: true
       });
 
-      trackAnalyticsEvent("begin_checkout", {
-        currency: quoteResult?.pricing?.currency || "USD",
-        value: Number(quoteResult?.pricing?.finalPayable || 0),
-        items: [{ item_id: checkoutTour.bokunProductId, item_name: checkoutTour.title, quantity: 1 }]
-      });
+
 
       setCompletedStepIds([STEP_IDS.TRIP_DETAILS]);
       setCurrentStepId(firstActionableStep);
@@ -785,9 +796,9 @@ const BookingFlowInner = ({ portal = "public" }) => {
       }
     }).catch(() => null);
 
-    trackAnalyticsEvent("add_shipping_info", {
-      currency: quote?.pricing?.currency || "USD",
-      value: Number(quote?.pricing?.finalPayable || 0),
+    trackAnalyticsEvent("booking_form_submitted", {
+      currency: quote?.pricing?.currency,
+      value: quote?.pricing?.finalPayable,
       items: [{ item_id: tour?.bokunProductId || "", item_name: tour?.title || "", quantity: 1 }]
     });
 
@@ -836,10 +847,10 @@ const BookingFlowInner = ({ portal = "public" }) => {
         currency
       });
 
-      trackAnalyticsEvent("add_payment_info", {
-        currency,
-        value: totalAmount,
-        payment_type: selectedPaymentMethod,
+      trackAnalyticsEvent("booking_processing", {
+        currency: state.quote?.pricing?.currency,
+        value: state.quote?.pricing?.finalPayable,
+        provider: selectedPaymentMethod,
         items: [{ item_id: tour?.bokunProductId || "", item_name: tour?.title || "", quantity: 1 }]
       });
 
@@ -904,6 +915,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
         setSubmitLoading(false);
         return;
       }
+      trackAnalyticsEvent('booking_failed', { failure_stage: 'payment_initiation', provider: selectedPaymentMethod, error_category: 'request_failed' });
       setError(err.message || `${selectedPaymentLabel} payment could not be initialized`);
       const fallback = availableProviders.find((provider) => provider.id !== selectedPaymentMethod)?.id || "";
       setFallbackPaymentMethod(fallback);
@@ -1186,7 +1198,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
       subtitle="Trip details are already selected. Continue without repeating previous steps."
       stepper={<BookingStepper steps={displaySteps} />}
       tour={tour}
-      left={renderMainContent()}
+      left={<div onInputCapture={trackBookingFormStarted}>{renderMainContent()}</div>}
       right={
         <>
           {isReviewStep ? (

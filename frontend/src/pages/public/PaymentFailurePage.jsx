@@ -1,3 +1,4 @@
+import useBookingAnalytics from "../../hooks/useBookingAnalytics";
 import { useEffect, useState } from "react";
 import { Button, Card, Container } from "react-bootstrap";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -13,6 +14,7 @@ const PaymentFailurePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  useBookingAnalytics(result?.booking, result?.bookingReference);
   const navigate = useNavigate();
 
   const orderTrackingId = String(

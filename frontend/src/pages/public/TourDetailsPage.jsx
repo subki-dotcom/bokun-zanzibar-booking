@@ -5,6 +5,7 @@ import { fetchTourBySlug } from "../../api/toursApi";
 import TourLoadingSkeleton from "../../components/tours/single/TourLoadingSkeleton";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import SingleTourPage from "../../components/tours/single/SingleTourPage";
+import { trackViewItem } from "../../utils/analytics";
 import SeoHead from "../../components/common/SeoHead";
 
 const TourDetailsPage = () => {
@@ -27,6 +28,13 @@ const TourDetailsPage = () => {
 
     load();
   }, [slug]);
+
+  useEffect(() => {
+    const report = () => { if (tour && tour.slug === slug) trackViewItem(tour); };
+    report();
+    window.addEventListener('riser:analytics-consent', report);
+    return () => window.removeEventListener('riser:analytics-consent', report);
+  }, [tour, slug]);
 
   if (loading) {
     return <TourLoadingSkeleton />;
