@@ -36,6 +36,20 @@ export const fetchSettings = () => data(client.get("/settings/pricing"));
 export const updateSettings = (body) => data(client.patch("/settings/pricing", body));
 export const previewPrice = (body) => data(client.post("/pricing/preview", body));
 
+// Fleet and dispatch
+export const fetchDrivers = (params) => data(client.get("/drivers", { params }));
+export const createDriver = (body) => data(client.post("/drivers", body));
+export const updateDriver = (id, body) => data(client.patch(`/drivers/${id}`, body));
+export const fetchDriverHistory = (id) => data(client.get(`/drivers/${id}/history`));
+export const fetchVehicles = (params) => data(client.get("/vehicles", { params }));
+export const createVehicle = (body) => data(client.post("/vehicles", body));
+export const updateVehicle = (id, body) => data(client.patch(`/vehicles/${id}`, body));
+export const fetchVehicleHistory = (id) => data(client.get(`/vehicles/${id}/history`));
+export const fetchTrips = (params) => data(client.get("/dispatch/trips", { params }));
+export const assignTrip = (id, body) => data(client.post(`/dispatch/trips/${id}/assign`, body));
+export const unassignTrip = (id, body) => data(client.post(`/dispatch/trips/${id}/unassign`, body));
+export const changeTripStatus = (id, body) => data(client.post(`/dispatch/trips/${id}/status`, body));
+
 // Users and audit
 export const fetchUsers = () => data(client.get("/users"));
 export const createUser = (body) => data(client.post("/users", body));

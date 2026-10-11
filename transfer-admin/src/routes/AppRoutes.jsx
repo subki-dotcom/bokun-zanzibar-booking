@@ -17,6 +17,9 @@ const RatesPage = lazy(() => import("../pages/RatesPage"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const UsersPage = lazy(() => import("../pages/UsersPage"));
 const AuditLogPage = lazy(() => import("../pages/AuditLogPage"));
+const DispatchPage = lazy(() => import("../pages/DispatchPage"));
+const DriversPage = lazy(() => import("../pages/DriversPage"));
+const VehiclesPage = lazy(() => import("../pages/VehiclesPage"));
 
 const RequireAuth = ({ children }) => {
   const { user, loading } = useAuth();
@@ -36,6 +39,7 @@ const guarded = (permission, Page) => (
 const Home = () => {
   const { user } = useAuth();
   if (user.permissions.includes(P.BOOKINGS_VIEW)) return <DashboardPage />;
+  if (user.permissions.includes(P.FLEET_VIEW)) return <Navigate to="/dispatch" replace />;
   if (user.permissions.includes(P.PRICING_VIEW)) return <Navigate to="/pricing/rates" replace />;
   return <RequirePermission permission={P.BOOKINGS_VIEW}><DashboardPage /></RequirePermission>;
 };
@@ -55,6 +59,9 @@ const AppRoutes = () => (
         <Route path="/bookings" element={guarded(P.BOOKINGS_VIEW, BookingsPage)} />
         <Route path="/bookings/new" element={guarded(P.BOOKINGS_MANAGE, NewBookingPage)} />
         <Route path="/bookings/:bookingId" element={guarded(P.BOOKINGS_VIEW, BookingDetailPage)} />
+        <Route path="/dispatch" element={guarded(P.FLEET_VIEW, DispatchPage)} />
+        <Route path="/fleet/drivers" element={guarded(P.FLEET_VIEW, DriversPage)} />
+        <Route path="/fleet/vehicles" element={guarded(P.FLEET_VIEW, VehiclesPage)} />
         <Route path="/pricing/zones" element={guarded(P.PRICING_VIEW, ZonesPage)} />
         <Route path="/pricing/locations" element={guarded(P.PRICING_VIEW, LocationsPage)} />
         <Route path="/pricing/routes" element={guarded(P.PRICING_VIEW, RoutesPage)} />

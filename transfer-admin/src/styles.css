@@ -331,6 +331,25 @@ a {
   word-break: break-word;
 }
 
+.ta-row-muted td {
+  background: #fafbfc;
+  color: var(--ta-muted);
+}
+
+.ta-trip-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--ta-line);
+}
+
+.ta-trip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 9rem;
+}
+
 /* Login */
 .ta-login {
   min-height: 100vh;

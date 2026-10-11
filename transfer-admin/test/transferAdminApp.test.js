@@ -16,9 +16,9 @@ const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entr
 
 // Server permissions per role (mirrors backend/src/transfers/security/permissions.js).
 const ROLE_PERMISSIONS = {
-  transfer_admin: ["transfer.users.manage", "transfer.pricing.view", "transfer.pricing.manage", "transfer.audit.view", "transfer.bookings.view", "transfer.bookings.manage"],
-  transfer_manager: ["transfer.pricing.view", "transfer.bookings.view", "transfer.bookings.manage"],
-  dispatcher: ["transfer.bookings.view"],
+  transfer_admin: ["transfer.users.manage", "transfer.pricing.view", "transfer.pricing.manage", "transfer.audit.view", "transfer.bookings.view", "transfer.bookings.manage", "transfer.dispatch.manage", "transfer.fleet.view", "transfer.fleet.manage"],
+  transfer_manager: ["transfer.pricing.view", "transfer.bookings.view", "transfer.bookings.manage", "transfer.dispatch.manage", "transfer.fleet.view", "transfer.fleet.manage"],
+  dispatcher: ["transfer.bookings.view", "transfer.dispatch.manage", "transfer.fleet.view"],
   transfer_accountant: ["transfer.pricing.view", "transfer.bookings.view"]
 };
 const userWith = (role) => ({ role, permissions: ROLE_PERMISSIONS[role] });
@@ -37,9 +37,9 @@ after(async () => {
 });
 
 test("navigation shows each role only what it may open", () => {
-  assert.deepEqual(labels("transfer_admin"), ["Dashboard", "Bookings", "New booking", "[Pricing]", "Zones", "Locations", "Routes", "Rates & price check", "Booking settings", "[Administration]", "Users & roles", "Audit log"]);
-  assert.deepEqual(labels("transfer_manager"), ["Dashboard", "Bookings", "New booking", "[Pricing]", "Zones", "Locations", "Routes", "Rates & price check", "Booking settings"]);
-  assert.deepEqual(labels("dispatcher"), ["Dashboard", "Bookings"]);
+  assert.deepEqual(labels("transfer_admin"), ["Dashboard", "Bookings", "New booking", "[Operations]", "Dispatch", "Drivers", "Vehicles", "[Pricing]", "Zones", "Locations", "Routes", "Rates & price check", "Booking settings", "[Administration]", "Users & roles", "Audit log"]);
+  assert.deepEqual(labels("transfer_manager"), ["Dashboard", "Bookings", "New booking", "[Operations]", "Dispatch", "Drivers", "Vehicles", "[Pricing]", "Zones", "Locations", "Routes", "Rates & price check", "Booking settings"]);
+  assert.deepEqual(labels("dispatcher"), ["Dashboard", "Bookings", "[Operations]", "Dispatch", "Drivers", "Vehicles"]);
   assert.deepEqual(labels("transfer_accountant"), ["Dashboard", "Bookings", "[Pricing]", "Zones", "Locations", "Routes", "Rates & price check", "Booking settings"]);
   assert.equal(can(userWith("transfer_manager"), P.PRICING_MANAGE), false);
   assert.equal(can(null, P.BOOKINGS_VIEW), false);
@@ -50,7 +50,7 @@ test("every page route is guarded by the permission the server enforces", () => 
   for (const [routePath, permission] of [
     ["/bookings", "BOOKINGS_VIEW"], ["/bookings/new", "BOOKINGS_MANAGE"], ["/bookings/:bookingId", "BOOKINGS_VIEW"], ["/pricing/zones", "PRICING_VIEW"],
     ["/pricing/locations", "PRICING_VIEW"], ["/pricing/routes", "PRICING_VIEW"], ["/pricing/rates", "PRICING_VIEW"], ["/pricing/settings", "PRICING_VIEW"],
-    ["/users", "USERS_MANAGE"], ["/audit", "AUDIT_VIEW"]
+    ["/users", "USERS_MANAGE"], ["/audit", "AUDIT_VIEW"], ["/dispatch", "FLEET_VIEW"], ["/fleet/drivers", "FLEET_VIEW"], ["/fleet/vehicles", "FLEET_VIEW"]
   ]) {
     assert.ok(routes.includes(`path="${routePath}" element={guarded(P.${permission},`), routePath);
   }
@@ -98,6 +98,15 @@ test("the dashboard labels unpaid amounts as not revenue", () => {
   assert.match(dashboard, /not revenue until paid/);
   assert.match(dashboard, /Paid revenue counts only payments verified by the server/);
   assert.match(dashboard, /data\.paidRevenue\.amount/);
+});
+
+test("trip actions send the version the user saw and hide for users without dispatch rights", () => {
+  const trips = read("src/components/trips.jsx");
+  for (const snippet of ["if (!can(user, P.DISPATCH_MANAGE)) return null;", "if (!trip.dispatchable)", "minSeats: trip.seatsNeeded"]) {
+    assert.ok(trips.includes(snippet), snippet);
+  }
+  // Assign, unassign and both status calls all carry the version.
+  assert.equal(trips.split("expectedVersion: trip.version").length - 1, 4);
 });
 
 test("the app is independent: its own port and never imports website, Back Office or agent code", () => {

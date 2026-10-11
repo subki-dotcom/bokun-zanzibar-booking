@@ -61,10 +61,19 @@ const createTransferAdminRouter = ({ getStore, tokenConfig, services }) => {
   // Dashboard and bookings
   const bookingsAdmin = services.adminBookings;
   const params = (req) => req.validated.params;
-  router.get("/dashboard", can(P.BOOKINGS_VIEW), asyncHandler(async (_req, res) => ok(res, await bookingsAdmin.dashboard())));
+  const seesFleet = (req) => req.transferAuth.permissions.includes(P.FLEET_VIEW);
+  router.get("/dashboard", can(P.BOOKINGS_VIEW), asyncHandler(async (req, res) => {
+    const data = await bookingsAdmin.dashboard();
+    // Dispatch figures include driver names, so they are shown to users who may see the fleet.
+    if (seesFleet(req)) data.dispatch = await services.dispatch.dashboardSection();
+    return ok(res, data);
+  }));
   router.get("/bookings", can(P.BOOKINGS_VIEW), validateRequest(v.listSchema), asyncHandler(async (req, res) => ok(res, await bookingsAdmin.list({ query: req.query }))));
   router.get("/bookings/:bookingId", can(P.BOOKINGS_VIEW), validateRequest(v.bookingIdSchema), asyncHandler(async (req, res) =>
-    ok(res, await bookingsAdmin.get({ bookingId: params(req).bookingId, actor: actor(req) }))));
+    ok(res, {
+      ...(await bookingsAdmin.get({ bookingId: params(req).bookingId, actor: actor(req) })),
+      ...(seesFleet(req) ? { trips: await services.dispatch.tripsForBooking({ bookingId: params(req).bookingId }) } : {})
+    })));
   router.post("/bookings", can(P.BOOKINGS_MANAGE), validateRequest(v.manualBookingSchema), asyncHandler(async (req, res) => {
     const result = await bookingsAdmin.createManual({ actor: actor(req), input: body(req), idempotencyKey: req.get("Idempotency-Key"), context: requestContext(req) });
     return ok(res, result, result.replayed ? 200 : 201);
@@ -77,6 +86,27 @@ const createTransferAdminRouter = ({ getStore, tokenConfig, services }) => {
     ok(res, await bookingsAdmin.reject({ actor: actor(req), bookingId: params(req).bookingId, input: body(req), context: requestContext(req) }))));
   router.post("/bookings/:bookingId/customer-link", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingIdSchema), asyncHandler(async (req, res) =>
     ok(res, await bookingsAdmin.customerLink({ actor: actor(req), bookingId: params(req).bookingId, context: requestContext(req) }))));
+
+  // Drivers and vehicles
+  const fleet = services.fleet;
+  router.get("/drivers", can(P.FLEET_VIEW), ...list(fleet.listDrivers));
+  router.post("/drivers", can(P.FLEET_MANAGE), ...write(v.createDriverSchema, fleet.createDriver, 201));
+  router.patch("/drivers/:driverId", can(P.FLEET_MANAGE), ...write(v.updateDriverSchema, fleet.updateDriver));
+  router.get("/drivers/:driverId/history", can(P.FLEET_VIEW), validateRequest(v.driverIdSchema), asyncHandler(async (req, res) => ok(res, await fleet.driverHistory(params(req)))));
+  router.get("/vehicles", can(P.FLEET_VIEW), ...list(fleet.listVehicles));
+  router.post("/vehicles", can(P.FLEET_MANAGE), ...write(v.createVehicleSchema, fleet.createVehicle, 201));
+  router.patch("/vehicles/:vehicleId", can(P.FLEET_MANAGE), ...write(v.updateVehicleSchema, fleet.updateVehicle));
+  router.get("/vehicles/:vehicleId/history", can(P.FLEET_VIEW), validateRequest(v.vehicleIdSchema), asyncHandler(async (req, res) => ok(res, await fleet.vehicleHistory(params(req)))));
+
+  // Dispatch
+  const dispatch = services.dispatch;
+  const tripAction = (schema, fn) => [validateRequest(schema), asyncHandler(async (req, res) =>
+    ok(res, await fn({ actor: actor(req), tripId: params(req).tripId, input: body(req), context: requestContext(req) })))];
+  router.get("/dispatch/trips", can(P.FLEET_VIEW), validateRequest(v.listSchema), asyncHandler(async (req, res) => ok(res, await dispatch.listTrips({ query: req.query }))));
+  router.get("/dispatch/trips/:tripId", can(P.FLEET_VIEW), validateRequest(v.tripIdSchema), asyncHandler(async (req, res) => ok(res, await dispatch.getTrip(params(req)))));
+  router.post("/dispatch/trips/:tripId/assign", can(P.DISPATCH_MANAGE), ...tripAction(v.assignTripSchema, dispatch.assign));
+  router.post("/dispatch/trips/:tripId/unassign", can(P.DISPATCH_MANAGE), ...tripAction(v.unassignTripSchema, dispatch.unassign));
+  router.post("/dispatch/trips/:tripId/status", can(P.DISPATCH_MANAGE), ...tripAction(v.tripStatusSchema, dispatch.changeStatus));
 
   // Users
   router.get("/users", can(P.USERS_MANAGE), asyncHandler(async (_req, res) => ok(res, await services.users.list())));

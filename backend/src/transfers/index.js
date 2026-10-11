@@ -10,6 +10,8 @@ const { createTransferAdminRouter } = require("./routes/admin.routes");
 const { createTransferPublicRouter } = require("./routes/public.routes");
 const { createTransferBookingService } = require("./services/bookings");
 const { createTransferAdminBookingService } = require("./services/adminBookings");
+const { createTransferFleetService } = require("./services/fleet");
+const { createTransferDispatchService } = require("./services/dispatch");
 
 const tokenConfig = () => {
   const config = transferConfig();
@@ -25,6 +27,8 @@ const createTransferServices = ({ getStore = getTransferStore, tokens = tokenCon
     pricing,
     bookings,
     adminBookings: createTransferAdminBookingService({ getStore, bookings }),
+    fleet: createTransferFleetService({ getStore }),
+    dispatch: createTransferDispatchService({ getStore }),
     users: createTransferUserService({ getStore }),
     audit: createTransferAuditQueryService({ getStore })
   };

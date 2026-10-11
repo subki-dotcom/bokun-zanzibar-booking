@@ -14,7 +14,7 @@ const SettingsPage = () => {
   const [saveError, setSaveError] = useState(null);
   const [saved, setSaved] = useState(false);
   useEffect(() => {
-    if (data) setForm({ infantPricing: data.infantPricing, maxAdvanceDays: data.maxAdvanceDays, reason: "" });
+    if (data) setForm({ infantPricing: data.infantPricing, maxAdvanceDays: data.maxAdvanceDays, defaultTripMinutes: data.defaultTripMinutes, assignmentBufferMinutes: data.assignmentBufferMinutes, reason: "" });
   }, [data]);
 
   const submit = async (event) => {
@@ -23,7 +23,7 @@ const SettingsPage = () => {
     setSaveError(null);
     setSaved(false);
     try {
-      await updateSettings({ infantPricing: form.infantPricing, maxAdvanceDays: Number(form.maxAdvanceDays), reason: form.reason || undefined });
+      await updateSettings({ infantPricing: form.infantPricing, maxAdvanceDays: Number(form.maxAdvanceDays), defaultTripMinutes: Number(form.defaultTripMinutes), assignmentBufferMinutes: Number(form.assignmentBufferMinutes), reason: form.reason || undefined });
       setSaved(true);
       await reload();
     } catch (failure) {
@@ -55,6 +55,15 @@ const SettingsPage = () => {
                   <Form.Label>How far ahead customers can book (days)</Form.Label>
                   <Form.Control type="number" min={1} max={3650} value={form.maxAdvanceDays} onChange={(event) => setForm({ ...form, maxAdvanceDays: event.target.value })} required />
                   <Form.Text>Default 730 days (two years).</Form.Text>
+                </Form.Group>
+                <Form.Group className="mb-3" controlId="settings-trip-minutes">
+                  <Form.Label>Trip length when the route has none (minutes)</Form.Label>
+                  <Form.Control type="number" min={10} max={1440} value={form.defaultTripMinutes} onChange={(event) => setForm({ ...form, defaultTripMinutes: event.target.value })} required />
+                  <Form.Text>Used to block a driver and vehicle for the length of a trip. Routes with a duration use their own.</Form.Text>
+                </Form.Group>
+                <Form.Group className="mb-3" controlId="settings-buffer">
+                  <Form.Label>Gap between two trips of one driver or vehicle (minutes)</Form.Label>
+                  <Form.Control type="number" min={0} max={480} value={form.assignmentBufferMinutes} onChange={(event) => setForm({ ...form, assignmentBufferMinutes: event.target.value })} required />
                 </Form.Group>
                 <Form.Group className="mb-3" controlId="settings-reason">
                   <Form.Label>Reason for the change (optional)</Form.Label>

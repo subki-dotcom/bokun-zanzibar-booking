@@ -5,6 +5,7 @@ import { approveCashOnArrival, fetchBooking, issueCustomerLink, quoteBooking, re
 import { useAuth } from "../auth/AuthContext";
 import { ErrorMessage, FormModal, Loading, PageHeader, ReasonModal, StatusBadge, useResource } from "../components/ui";
 import { ARRANGEMENT, PAYMENT, dateTime, passengers, usd, websiteBase } from "../lib/format";
+import { TripActions, TripStatusBadge } from "../components/trips";
 import { P, can } from "../lib/permissions";
 
 const Row2 = ({ label, children }) => (
@@ -134,6 +135,30 @@ const BookingDetailPage = () => {
               </dl>
             </Card.Body>
           </Card>
+          {booking.trips ? (
+            <Card className="ta-card mb-3">
+              <Card.Body>
+                <h2 className="h6">Trips</h2>
+                <p className="small text-muted">Each leg is a separate trip with its own driver, vehicle and status. Trip status does not change payment.</p>
+                {booking.trips.map((trip) => (
+                  <div key={trip.id} className="ta-leg">
+                    <span className="ta-leg-label">{trip.direction === "RETURN" ? "Return" : "Outbound"} · {trip.localDate} {trip.localTime} EAT</span>
+                    <div className="d-flex flex-wrap gap-2 align-items-center">
+                      <TripStatusBadge status={trip.status} />
+                      <span>{trip.driver ? `${trip.driver.fullName} · ${trip.driver.phone}` : "No driver"} · {trip.vehicle ? `${trip.vehicle.registrationNumber} (${trip.vehicle.passengerCapacity} seats)` : "No vehicle"}</span>
+                    </div>
+                    <TripActions trip={trip} onChanged={reload} />
+                    {trip.assignmentHistory.length ? (
+                      <details className="small">
+                        <summary>Assignment history</summary>
+                        {trip.assignmentHistory.map((entry, index) => <div key={index}>{entry.action.toLowerCase()} · {entry.driverName || ""} {entry.registrationNumber || ""} · {dateTime(entry.at)} · {entry.by}{entry.reason ? ` · ${entry.reason}` : ""}</div>)}
+                      </details>
+                    ) : null}
+                  </div>
+                ))}
+              </Card.Body>
+            </Card>
+          ) : null}
           <Card className="ta-card mb-3">
             <Card.Body>
               <h2 className="h6">Customer</h2>

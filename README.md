@@ -279,7 +279,21 @@ Transfer Admin API (`/api/transfer-admin`, Transfer Admin token required except 
 - `GET|POST /bookings` (manual bookings need an `Idempotency-Key`; a likely duplicate needs `allowDuplicate` with a reason), `GET /bookings/:bookingId`
 - `POST /bookings/:bookingId/quote`, `/approve-cash-on-arrival`, `/reject` (each needs a reason and only applies to unpaid bookings in the right status), `/customer-link` (audited)
 
-Transfer Admin app (`transfer-admin/`, port 5175): dashboard, bookings, booking details with quote / cash-on-arrival / reject, manual bookings, zones, locations, routes, rates with a price check, booking settings, users and roles, and the audit log. Its session is kept in `sessionStorage` and is separate from the website, Back Office and agent portal. Set `TRANSFER_ADMIN_URL=http://localhost:5175` in `backend/.env` for local CORS.
+Fleet and dispatch (`fleet.view` to read, `fleet.manage` for drivers and vehicles, `dispatch.manage` for trips):
+
+- `GET|POST /drivers`, `PATCH /drivers/:driverId`, `GET /drivers/:driverId/history`; the same for `/vehicles` (`?minSeats=` filters by seats)
+- `GET /dispatch/trips?from=&to=&status=&unassigned=true` (at most 62 days), `GET /dispatch/trips/:tripId`
+- `POST /dispatch/trips/:tripId/assign` (`driverId`, `vehicleId`, `expectedVersion`, and a `reason` when reassigning), `/unassign` (reason),
+  `/status` (`SCHEDULED → DRIVER_EN_ROUTE → ARRIVED_AT_PICKUP → IN_PROGRESS → COMPLETED`, or `ARRIVED_AT_PICKUP → NO_SHOW` with a note)
+
+Each booking leg is a trip, so a round trip has two. Only confirmed bookings (verified payment or approved cash on arrival) are
+dispatched. A driver must be active, available and licensed on the trip date; a vehicle must be active, in service and have a
+seat for every passenger, infants included. Overlapping trips of one driver or vehicle are refused, using the route duration (or
+the `defaultTripMinutes` setting, 90 by default) plus `assignmentBufferMinutes` (30 by default); the driver and vehicle are locked
+in the transaction so concurrent assignments cannot both succeed. Every action carries the trip version it saw, so repeated or
+stale clicks are refused. Trip status never changes the booking or its payment.
+
+Transfer Admin app (`transfer-admin/`, port 5175): dashboard with operations figures, dispatch board, drivers, vehicles, bookings, booking details with quote / cash-on-arrival / reject, manual bookings, zones, locations, routes, rates with a price check, booking settings, users and roles, and the audit log. Its session is kept in `sessionStorage` and is separate from the website, Back Office and agent portal. Set `TRANSFER_ADMIN_URL=http://localhost:5175` in `backend/.env` for local CORS.
 
 ## GitHub Hardening + Deployment
 

@@ -1,5 +1,5 @@
 const { z } = require("zod");
-const { LOCATION_TYPES, INFANT_PRICING, MAX_ADVANCE_DAYS_LIMIT, MANUAL_CHANNELS } = require("./models");
+const { LOCATION_TYPES, INFANT_PRICING, MAX_ADVANCE_DAYS_LIMIT, MANUAL_CHANNELS, DRIVER_AVAILABILITY, VEHICLE_TYPES, VEHICLE_OWNERSHIP, VEHICLE_STATUS, TRIP_STATUS } = require("./models");
 const { TRANSFER_ROLES } = require("./security/permissions");
 const { TRIP_TYPES, MAX_PASSENGERS } = require("./pricing/engine");
 const { passwordSchema } = require("./security/password");
@@ -104,9 +104,15 @@ const updateRateSchema = z.object({
 
 const updateSettingsSchema = z.object({
   body: z
-    .object({ infantPricing: z.enum(Object.values(INFANT_PRICING)).optional(), maxAdvanceDays: z.number().int().min(1).max(MAX_ADVANCE_DAYS_LIMIT).optional(), reason })
+    .object({
+      infantPricing: z.enum(Object.values(INFANT_PRICING)).optional(),
+      maxAdvanceDays: z.number().int().min(1).max(MAX_ADVANCE_DAYS_LIMIT).optional(),
+      defaultTripMinutes: z.number().int().min(10).max(1440).optional(),
+      assignmentBufferMinutes: z.number().int().min(0).max(480).optional(),
+      reason
+    })
     .strict()
-    .refine((body) => body.infantPricing !== undefined || body.maxAdvanceDays !== undefined, "Nothing to update"),
+    .refine((body) => ["infantPricing", "maxAdvanceDays", "defaultTripMinutes", "assignmentBufferMinutes"].some((field) => body[field] !== undefined), "Nothing to update"),
   query: noQuery,
   params: z.object({}).passthrough()
 });
@@ -240,7 +246,74 @@ const publicBookingLookupSchema = z.object({
   params: z.object({ reference: z.string().trim().toUpperCase().max(20) })
 });
 
+// ---------- Fleet and dispatch ----------
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+const phone = z.string().trim().regex(/^\+?[0-9 ()-]{7,24}$/, "Enter a valid phone number");
+const driverFields = {
+  fullName: text(120).min(2),
+  phone,
+  whatsapp: z.boolean().optional(),
+  licenseNumber: z.string().trim().min(3).max(40),
+  licenseClass: text(40).optional(),
+  licenseExpiresOn: isoDate.or(z.literal("")).optional(),
+  availability: z.enum(DRIVER_AVAILABILITY).optional(),
+  notes: text(500).optional(),
+  active: z.boolean().optional()
+};
+const createDriverSchema = z.object({ body: z.object(driverFields).strict(), query: noQuery, params: z.object({}).passthrough() });
+const updateDriverSchema = z.object({
+  body: z.object({ ...Object.fromEntries(Object.entries(driverFields).map(([key, value]) => [key, value.optional()])), reason }).strict(),
+  query: noQuery,
+  params: idParams("driverId")
+});
+
+const vehicleFields = {
+  registrationNumber: z.string().trim().min(2).max(20).regex(/^[A-Za-z0-9 -]+$/, "Use letters, numbers, spaces or -"),
+  makeModel: text(80).optional(),
+  vehicleType: z.enum(VEHICLE_TYPES),
+  passengerCapacity: z.number().int().min(1).max(99),
+  luggageCapacity: z.number().int().min(0).max(200).nullable().optional(),
+  ownership: z.enum(VEHICLE_OWNERSHIP),
+  partnerName: text(120).optional(),
+  operationalStatus: z.enum(VEHICLE_STATUS).optional(),
+  notes: text(500).optional(),
+  active: z.boolean().optional()
+};
+const createVehicleSchema = z.object({ body: z.object(vehicleFields).strict(), query: noQuery, params: z.object({}).passthrough() });
+const updateVehicleSchema = z.object({
+  body: z.object({ ...Object.fromEntries(Object.entries(vehicleFields).map(([key, value]) => [key, value.optional()])), reason }).strict(),
+  query: noQuery,
+  params: idParams("vehicleId")
+});
+
+const tripParams = idParams("tripId");
+const expectedVersion = z.number().int().min(0);
+const assignTripSchema = z.object({
+  body: z.object({ driverId: objectId, vehicleId: objectId, expectedVersion, reason: text(500).optional() }).strict(),
+  query: noQuery,
+  params: tripParams
+});
+const unassignTripSchema = z.object({ body: z.object({ expectedVersion, reason: z.string().trim().min(3).max(500) }).strict(), query: noQuery, params: tripParams });
+const tripStatusSchema = z.object({
+  body: z.object({ status: z.enum(Object.values(TRIP_STATUS)), expectedVersion, note: text(500).optional() }).strict(),
+  query: noQuery,
+  params: tripParams
+});
+const tripIdSchema = z.object({ body: z.any().optional(), query: noQuery, params: tripParams });
+const driverIdSchema = z.object({ body: z.any().optional(), query: noQuery, params: idParams("driverId") });
+const vehicleIdSchema = z.object({ body: z.any().optional(), query: noQuery, params: idParams("vehicleId") });
+
 module.exports = {
+  createDriverSchema,
+  updateDriverSchema,
+  createVehicleSchema,
+  updateVehicleSchema,
+  assignTripSchema,
+  unassignTripSchema,
+  tripStatusSchema,
+  tripIdSchema,
+  driverIdSchema,
+  vehicleIdSchema,
   FLIGHT_NUMBER_PATTERN,
   publicQuoteSchema,
   publicBookingSchema,

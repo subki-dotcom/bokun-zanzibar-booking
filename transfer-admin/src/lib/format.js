@@ -7,6 +7,28 @@ export const STATUS = Object.freeze({
 });
 export const statusMeta = (status) => STATUS[status] || { label: status || "—", bg: "light", text: "dark" };
 
+export const TRIP_STATUS = Object.freeze({
+  SCHEDULED: { label: "Scheduled", bg: "secondary" },
+  DRIVER_EN_ROUTE: { label: "Driver en route", bg: "primary" },
+  ARRIVED_AT_PICKUP: { label: "At pickup", bg: "info", text: "dark" },
+  IN_PROGRESS: { label: "In progress", bg: "warning", text: "dark" },
+  COMPLETED: { label: "Completed", bg: "success" },
+  NO_SHOW: { label: "No-show", bg: "danger" }
+});
+// The button that moves a trip to each status.
+export const TRIP_ACTION = Object.freeze({
+  DRIVER_EN_ROUTE: "Driver en route",
+  ARRIVED_AT_PICKUP: "Arrived at pickup",
+  IN_PROGRESS: "Start trip",
+  COMPLETED: "Complete",
+  NO_SHOW: "No-show"
+});
+export const tripStatusMeta = (status) => TRIP_STATUS[status] || { label: status || "—", bg: "light", text: "dark" };
+export const VEHICLE_TYPES = Object.freeze([["SEDAN", "Sedan"], ["SUV", "SUV"], ["VAN", "Van"], ["MINIBUS", "Minibus"], ["BUS", "Bus"], ["OTHER", "Other"]]);
+export const VEHICLE_STATUS = Object.freeze([["AVAILABLE", "Available"], ["MAINTENANCE", "Maintenance"], ["OUT_OF_SERVICE", "Out of service"]]);
+export const DRIVER_AVAILABILITY = Object.freeze([["AVAILABLE", "Available"], ["OFF_DUTY", "Off duty"], ["ON_LEAVE", "On leave"]]);
+export const labelOf = (pairs, value) => pairs.find(([key]) => key === value)?.[1] || value;
+
 export const PAYMENT = Object.freeze({ UNPAID: "Unpaid", PAID: "Paid", REFUNDED: "Refunded" });
 export const ARRANGEMENT = Object.freeze({ ONLINE: "Online", CASH_ON_ARRIVAL: "Cash on arrival" });
 export const CHANNELS = Object.freeze([
