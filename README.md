@@ -229,10 +229,10 @@ Behavior:
 - `POST /api/bokun/products/:productId/live-quote`
 - `POST /api/bokun/availability`
 - `POST /api/bokun/booking-questions` (legacy compatibility; returns no Bokun questions)
-- `POST /api/bokun/bookings`
-- `GET /api/bokun/bookings/:reference`
-- `POST /api/bokun/bookings/:bookingId/cancel`
-- `POST /api/bokun/bookings/:bookingId/edit`
+- `POST /api/bokun/bookings` (admin only)
+- `GET /api/bokun/bookings/:reference` (admin only)
+- `POST /api/bokun/bookings/:bookingId/cancel` (admin only)
+- `POST /api/bokun/bookings/:bookingId/edit` (admin only)
 
 ### Booking Engine
 - `POST /api/bookings/quote`
