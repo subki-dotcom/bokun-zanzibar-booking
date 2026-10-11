@@ -71,6 +71,8 @@ backoffice/        Back Office (admin and staff), a separate Vite app (port 5174
     routes/AdminRoutes.jsx      the admin route table, used by both apps
   test/
 
+transfer-admin/    Transfer Admin, a separate Vite app with its own login (port 5175)
+
 shared/            Code used by both apps (API client, auth, common components, utilities, global styles)
   src/
   vite.shared.js   package de-duplication used by both Vite configs
@@ -196,19 +198,23 @@ cd frontend
 npm run dev
 ```
 
-6. Start the Back Office (http://localhost:5174)
+6. Start the Back Office (http://localhost:5174) and, for transfers, the Transfer Admin (http://localhost:5175)
 
 ```bash
 cd backoffice
 npm run dev
+
+cd transfer-admin
+npm run dev
 ```
 
-Run the three in separate terminals. On Windows, from the repository root:
+Run them in separate terminals. On Windows, from the repository root:
 
 ```powershell
 Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd backend; npm run dev'
 Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd frontend; npm run dev'
 Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd backoffice; npm run dev'
+Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd transfer-admin; npm run dev'
 ```
 
 7. Tests and builds
@@ -216,6 +222,7 @@ Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd backoffice; np
 ```bash
 cd frontend && npm test && npx vite build     # website (npm run build also prerenders SEO pages from a public API)
 cd backoffice && npm test && npm run build    # Back Office
+cd transfer-admin && npm test && npm run build    # Transfer Admin
 cd backend && npm test && npm run lint
 ```
 
@@ -268,6 +275,11 @@ Transfer Admin API (`/api/transfer-admin`, Transfer Admin token required except 
 - `POST /pricing/preview` (server-side price for a one-way or round trip)
 - `GET|POST /users`, `PATCH /users/:userId`, `POST /users/:userId/reset-password`
 - `GET /audit-logs`
+- `GET /dashboard`: real counts; revenue counts verified payments only, unpaid amounts are reported separately
+- `GET|POST /bookings` (manual bookings need an `Idempotency-Key`; a likely duplicate needs `allowDuplicate` with a reason), `GET /bookings/:bookingId`
+- `POST /bookings/:bookingId/quote`, `/approve-cash-on-arrival`, `/reject` (each needs a reason and only applies to unpaid bookings in the right status), `/customer-link` (audited)
+
+Transfer Admin app (`transfer-admin/`, port 5175): dashboard, bookings, booking details with quote / cash-on-arrival / reject, manual bookings, zones, locations, routes, rates with a price check, booking settings, users and roles, and the audit log. Its session is kept in `sessionStorage` and is separate from the website, Back Office and agent portal. Set `TRANSFER_ADMIN_URL=http://localhost:5175` in `backend/.env` for local CORS.
 
 ## GitHub Hardening + Deployment
 

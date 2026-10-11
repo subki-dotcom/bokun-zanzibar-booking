@@ -14,6 +14,8 @@ const env = cleanEnv(process.env, {
   TRANSFERS_DB_NAME: str({ default: "riser_transfers" }),
   TRANSFER_JWT_SECRET: str({ default: "" }),
   TRANSFER_JWT_EXPIRES_IN: str({ default: "12h" }),
+  // Transfer Admin app origins allowed by CORS (comma separated). Production accepts only https values.
+  TRANSFER_ADMIN_URL: str({ default: "" }),
   PASSWORD_RESET_SITE_URL: str({ default: "https://zanzibartoursandsafaris.co.tz" }),
   RATE_LIMIT_WINDOW_MS: num({ default: 15 * 60 * 1000 }),
   RATE_LIMIT_MAX: num({ default: 1200 }),

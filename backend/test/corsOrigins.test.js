@@ -33,3 +33,11 @@ test("without BACKOFFICE_URL the allow-list is unchanged", () => {
 test("development still accepts any localhost port, as before", () => {
   assert.ok(isOriginAllowed({ origin: "http://127.0.0.1:5183", allowedOrigins: [], nodeEnv: "development" }));
 });
+
+test("the Transfer Admin origin comes from TRANSFER_ADMIN_URL with the same production rule", () => {
+  const local = buildAllowedOrigins({ transferAdminUrl: "http://localhost:5175", nodeEnv: "development" });
+  assert.ok(local.includes("http://localhost:5175"));
+  const production = buildAllowedOrigins({ transferAdminUrl: "http://localhost:5175,https://transfers-admin.example.test", nodeEnv: "production" });
+  assert.equal(production.includes("http://localhost:5175"), false);
+  assert.ok(production.includes("https://transfers-admin.example.test"));
+});

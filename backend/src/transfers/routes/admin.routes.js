@@ -58,6 +58,26 @@ const createTransferAdminRouter = ({ getStore, tokenConfig, services }) => {
   router.post("/pricing/preview", can(P.PRICING_VIEW), validateRequest(v.quoteSchema), asyncHandler(async (req, res) =>
     ok(res, await services.pricing.quote(body(req)))));
 
+  // Dashboard and bookings
+  const bookingsAdmin = services.adminBookings;
+  const params = (req) => req.validated.params;
+  router.get("/dashboard", can(P.BOOKINGS_VIEW), asyncHandler(async (_req, res) => ok(res, await bookingsAdmin.dashboard())));
+  router.get("/bookings", can(P.BOOKINGS_VIEW), validateRequest(v.listSchema), asyncHandler(async (req, res) => ok(res, await bookingsAdmin.list({ query: req.query }))));
+  router.get("/bookings/:bookingId", can(P.BOOKINGS_VIEW), validateRequest(v.bookingIdSchema), asyncHandler(async (req, res) =>
+    ok(res, await bookingsAdmin.get({ bookingId: params(req).bookingId, actor: actor(req) }))));
+  router.post("/bookings", can(P.BOOKINGS_MANAGE), validateRequest(v.manualBookingSchema), asyncHandler(async (req, res) => {
+    const result = await bookingsAdmin.createManual({ actor: actor(req), input: body(req), idempotencyKey: req.get("Idempotency-Key"), context: requestContext(req) });
+    return ok(res, result, result.replayed ? 200 : 201);
+  }));
+  router.post("/bookings/:bookingId/quote", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingQuoteSchema), asyncHandler(async (req, res) =>
+    ok(res, await bookingsAdmin.setQuote({ actor: actor(req), bookingId: params(req).bookingId, input: body(req), context: requestContext(req) }))));
+  router.post("/bookings/:bookingId/approve-cash-on-arrival", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingReasonSchema), asyncHandler(async (req, res) =>
+    ok(res, await bookingsAdmin.approveCashOnArrival({ actor: actor(req), bookingId: params(req).bookingId, input: body(req), context: requestContext(req) }))));
+  router.post("/bookings/:bookingId/reject", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingReasonSchema), asyncHandler(async (req, res) =>
+    ok(res, await bookingsAdmin.reject({ actor: actor(req), bookingId: params(req).bookingId, input: body(req), context: requestContext(req) }))));
+  router.post("/bookings/:bookingId/customer-link", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingIdSchema), asyncHandler(async (req, res) =>
+    ok(res, await bookingsAdmin.customerLink({ actor: actor(req), bookingId: params(req).bookingId, context: requestContext(req) }))));
+
   // Users
   router.get("/users", can(P.USERS_MANAGE), asyncHandler(async (_req, res) => ok(res, await services.users.list())));
   router.post("/users", can(P.USERS_MANAGE), validateRequest(v.createUserSchema), asyncHandler(async (req, res) =>

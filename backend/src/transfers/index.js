@@ -9,6 +9,7 @@ const { createTransferUserService, createTransferAuditQueryService } = require("
 const { createTransferAdminRouter } = require("./routes/admin.routes");
 const { createTransferPublicRouter } = require("./routes/public.routes");
 const { createTransferBookingService } = require("./services/bookings");
+const { createTransferAdminBookingService } = require("./services/adminBookings");
 
 const tokenConfig = () => {
   const config = transferConfig();
@@ -17,11 +18,13 @@ const tokenConfig = () => {
 
 const createTransferServices = ({ getStore = getTransferStore, tokens = tokenConfig } = {}) => {
   const pricing = createPricingService({ getStore });
+  const bookings = createTransferBookingService({ getStore, pricing, accessSecret: () => tokens().secret });
   return {
     auth: createTransferAuthService({ getStore, tokenConfig: tokens }),
     catalog: createCatalogService({ getStore }),
     pricing,
-    bookings: createTransferBookingService({ getStore, pricing, accessSecret: () => tokens().secret }),
+    bookings,
+    adminBookings: createTransferAdminBookingService({ getStore, bookings }),
     users: createTransferUserService({ getStore }),
     audit: createTransferAuditQueryService({ getStore })
   };

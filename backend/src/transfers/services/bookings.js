@@ -70,6 +70,7 @@ const publicBookingView = (booking) => ({
   reference: booking.reference,
   status: booking.status,
   paymentStatus: booking.paymentStatus,
+  paymentArrangement: booking.paymentArrangement || "ONLINE",
   tripType: booking.tripType,
   legs: booking.legs.map((leg) => ({
     direction: leg.direction,
@@ -125,25 +126,27 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
 
   const quote = async (input) => publicQuoteView(await pricing.quote(input));
 
-  const replay = (existing, fingerprint) => {
+  // Answers a repeated submission with the booking it already created. Staff callers also get the internal id.
+  const replay = (existing, fingerprint, origin = null) => {
     if (existing.requestFingerprint !== fingerprint) {
       throw new AppError("This Idempotency-Key was already used for a different booking.", 409, "TRANSFER_IDEMPOTENCY_KEY_REUSED");
     }
-    return { replayed: true, reference: existing.reference, accessToken: tokenFor(existing), booking: publicBookingView(existing) };
+    return { replayed: true, reference: existing.reference, accessToken: tokenFor(existing), booking: publicBookingView(existing), ...(origin ? { id: String(existing._id) } : {}) };
   };
 
   const findByKey = (models, idempotencyKey) =>
     models.Booking.findOne({ idempotencyKey }).select("+idempotencyKey +requestFingerprint +accessNonce").lean();
 
-  const createBooking = async ({ input, idempotencyKey, context }) => {
+  // origin is set for bookings entered by Transfer Admin staff (WhatsApp, phone, …); website bookings have none.
+  const createBooking = async ({ input, idempotencyKey, context, origin = null }) => {
     if (!IDEMPOTENCY_KEY_PATTERN.test(String(idempotencyKey || ""))) {
       throw new AppError("An Idempotency-Key header (16–128 letters, numbers, - or _) is required.", 400, "TRANSFER_IDEMPOTENCY_KEY_REQUIRED");
     }
     const store = await getStore();
     const { models } = store;
-    const fingerprint = requestFingerprint(input);
+    const fingerprint = requestFingerprint(origin ? { input, manualChannel: origin.manualChannel, by: origin.actor.id } : input);
     const existing = await findByKey(models, idempotencyKey);
-    if (existing) return replay(existing, fingerprint);
+    if (existing) return replay(existing, fingerprint, origin);
 
     const at = now();
     const settings = (await models.Settings.findOne({ key: "pricing" }, { maxAdvanceDays: 1 }).lean()) || {};
@@ -188,9 +191,27 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
         priceReason: leg.reason
       };
     });
+    // Staff entering a booking by hand are warned about an existing booking for the same customer, pickup and time.
+    if (origin && !origin.allowDuplicate) {
+      const duplicate = await models.Booking.findOne({
+        status: { $nin: [BOOKING_STATUS.REJECTED, BOOKING_STATUS.CANCELLED] },
+        "legs.0.pickupAt": schedule.outbound,
+        "legs.0.pickupLocationId": input.pickupLocationId,
+        $or: [{ "customer.email": String(input.customer.email).toLowerCase() }, { "customer.phone": input.customer.phone }]
+      }, { reference: 1 }).lean();
+      // A simultaneous retry of this same submission may have just created the booking: that is a replay, not a duplicate.
+      const sameSubmission = duplicate ? await findByKey(models, idempotencyKey) : null;
+      if (sameSubmission) return replay(sameSubmission, fingerprint, origin);
+      if (duplicate) {
+        throw new AppError(`Booking ${duplicate.reference} already exists for this customer, pickup and time.`, 409, "TRANSFER_POSSIBLE_DUPLICATE", { reference: duplicate.reference, id: String(duplicate._id) });
+      }
+    }
+
     const status = STATUS_FOR_QUOTE[priced.status];
     const document = {
-      source: "WEBSITE",
+      source: origin ? "MANUAL" : "WEBSITE",
+      manualChannel: origin ? origin.manualChannel : "",
+      createdBy: origin ? { id: origin.actor.id, email: origin.actor.email } : { id: "", email: "" },
       status,
       paymentStatus: PAYMENT_STATUS.UNPAID,
       tripType: input.tripType,
@@ -211,7 +232,22 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
         reasons: priced.reasons,
         quotedAt: at
       },
-      statusHistory: [{ status, at, by: "customer", note: "Submitted on the website" }],
+      pricingHistory: [
+        {
+          source: "ENGINE",
+          status: priced.status,
+          total: priced.total === null ? null : toDecimal128(priced.total),
+          legs: priced.legs.map((leg) => ({ direction: leg.direction, price: leg.price === null ? null : toDecimal128(leg.price) })),
+          at,
+          by: origin ? origin.actor.email : "customer",
+          reason: ""
+        }
+      ],
+      statusHistory: [
+        origin
+          ? { status, at, by: origin.actor.email, note: `Entered by staff (${origin.manualChannel})${origin.allowDuplicate ? ` despite a possible duplicate: ${origin.duplicateReason}` : ""}` }
+          : { status, at, by: "customer", note: "Submitted on the website" }
+      ],
       idempotencyKey,
       requestFingerprint: fingerprint,
       accessNonce: generateAccessNonce()
@@ -223,18 +259,18 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
           const [booking] = await models.Booking.create([{ ...document, reference: generateBookingReference() }], session ? { session } : {});
           await recordTransferAudit(
             models,
-            { actor: { role: "customer", email: input.customer.email }, action: "booking.created", entityType: "TransferBooking", entityId: booking._id, after: { ...booking.toObject(), accessNonce: undefined, idempotencyKey: undefined, requestFingerprint: undefined }, context },
+            { actor: origin ? origin.actor : { role: "customer", email: input.customer.email }, action: origin ? "booking.created_manually" : "booking.created", reason: origin?.allowDuplicate ? `possible duplicate accepted: ${origin.duplicateReason}` : "", entityType: "TransferBooking", entityId: booking._id, after: { ...booking.toObject(), accessNonce: undefined, idempotencyKey: undefined, requestFingerprint: undefined }, context },
             session
           );
           return booking.toObject();
         });
-        return { replayed: false, reference: created.reference, accessToken: tokenFor(created), booking: publicBookingView(created) };
+        return { replayed: false, reference: created.reference, accessToken: tokenFor(created), booking: publicBookingView(created), ...(origin ? { id: String(created._id) } : {}) };
       } catch (error) {
         if (error?.code !== 11000) throw error;
         // A concurrent request with the same key won the race: answer with its booking.
         if (error.keyPattern?.idempotencyKey) {
           const winner = await findByKey(models, idempotencyKey);
-          if (winner) return replay(winner, fingerprint);
+          if (winner) return replay(winner, fingerprint, origin);
         }
         // Otherwise the random reference collided; try another one.
       }
@@ -252,7 +288,7 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
     return publicBookingView(booking);
   };
 
-  return { listPublicLocations, quote, createBooking, getBooking };
+  return { listPublicLocations, quote, createBooking, getBooking, tokenFor };
 };
 
 module.exports = { zanzibarInstant, scheduleFor, publicBookingView, createTransferBookingService };

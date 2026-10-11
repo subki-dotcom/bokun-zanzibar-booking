@@ -138,3 +138,13 @@ test("Transfer Admin passwords need 12+ characters with upper case, lower case a
   assert.equal(passwordSchema.safeParse("A".repeat(40) + "a1".repeat(20)).success, false);
   assert.equal(passwordSchema.safeParse("Good-Transfer-Passw0rd").success, true);
 });
+
+test("the Transfer Admin app's permission names match the server's", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "..", "transfer-admin", "src", "lib", "permissions.js"), "utf8");
+  const block = source.slice(source.indexOf("export const P = Object.freeze({"), source.indexOf("});"));
+  const mirrored = [...block.matchAll(/(\w+): "([^"]+)"/g)];
+  assert.ok(mirrored.length >= 6);
+  for (const [, name, value] of mirrored) assert.equal(P[name], value, name);
+});

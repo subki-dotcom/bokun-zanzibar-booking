@@ -129,7 +129,12 @@ const TransferBookingStatusPage = () => {
         ) : (
           <p className="transfer-status-total">Price to be quoted</p>
         )}
-        <p className="mb-0">Payment: <strong>{booking.paymentStatus === "PAID" ? "Paid" : "Not paid yet"}</strong></p>
+        <p className="mb-0">
+          Payment:{" "}
+          <strong>
+            {booking.paymentStatus === "PAID" ? "Paid" : booking.paymentArrangement === "CASH_ON_ARRIVAL" ? "Pay on arrival" : "Not paid yet"}
+          </strong>
+        </p>
       </section>
 
       <section className="transfer-card">

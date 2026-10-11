@@ -113,3 +113,31 @@ jobs:
         env:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://bokun-zanzibar-booking.onrender.com' }}
         run: npm run build
+
+  transfer-admin:
+    name: Transfer Admin tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: transfer-admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: transfer-admin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Transfer Admin tests
+        run: npm test
+
+      - name: Build Transfer Admin
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://bokun-zanzibar-booking.onrender.com' }}
+        run: npm run build

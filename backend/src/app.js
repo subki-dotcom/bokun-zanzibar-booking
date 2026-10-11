@@ -23,6 +23,7 @@ app.use(helmet());
 const allowedOrigins = buildAllowedOrigins({
   frontendUrl: env.FRONTEND_URL,
   backofficeUrl: env.BACKOFFICE_URL,
+  transferAdminUrl: env.TRANSFER_ADMIN_URL,
   nodeEnv: env.NODE_ENV
 });
 const pesapalIpnPath = "/api/payments/pesapal/ipn";

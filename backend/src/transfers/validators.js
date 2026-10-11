@@ -1,5 +1,5 @@
 const { z } = require("zod");
-const { LOCATION_TYPES, INFANT_PRICING, MAX_ADVANCE_DAYS_LIMIT } = require("./models");
+const { LOCATION_TYPES, INFANT_PRICING, MAX_ADVANCE_DAYS_LIMIT, MANUAL_CHANNELS } = require("./models");
 const { TRANSFER_ROLES } = require("./security/permissions");
 const { TRIP_TYPES, MAX_PASSENGERS } = require("./pricing/engine");
 const { passwordSchema } = require("./security/password");
@@ -152,51 +152,87 @@ const localTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:mm");
 const optionalText = (max) => z.string().trim().max(max).optional().default("");
 const publicQuoteSchema = quoteSchema;
 
+// Fields shared by website and staff-entered bookings. Neither carries a price: the server prices every booking.
+const bookingFields = {
+  tripType: z.enum(Object.values(TRIP_TYPES)),
+  pickupLocationId: objectId,
+  dropoffLocationId: objectId,
+  travelDate: localDate,
+  travelTime: localTime,
+  returnDate: localDate.optional(),
+  returnTime: localTime.optional(),
+  passengers: z.object({ adults: count.min(1), children: count.default(0), infants: count.default(0) }).strict(),
+  luggage: z
+    .object({ largeBags: z.coerce.number().int().min(0).max(40).default(0), smallBags: z.coerce.number().int().min(0).max(40).default(0), notes: optionalText(300) })
+    .strict()
+    .default({}),
+  flightNumber: z.string().trim().toUpperCase().regex(FLIGHT_NUMBER_PATTERN, "Enter the flight number as shown on your ticket").or(z.literal("")).optional().default(""),
+  pickupAddress: optionalText(300),
+  dropoffAddress: optionalText(300),
+  customer: z
+    .object({
+      fullName: z.string().trim().min(2).max(120),
+      email: z.string().trim().toLowerCase().email().max(200),
+      phone: z.string().trim().regex(/^\+?[0-9 ()-]{7,24}$/, "Enter a valid phone number").refine((value) => value.replace(/\D/g, "").length >= 7, "Enter a valid phone number"),
+      whatsapp: z.boolean().optional().default(false)
+    })
+    .strict(),
+  specialRequests: optionalText(1000),
+  // The total the customer saw (null when they saw "Request a Quote"); never used as the price.
+  expectedTotal: z.union([z.string().regex(/^\d+(\.\d{1,2})?$/), z.null()])
+};
+
+const returnRule = (body, ctx) => {
+  const hasReturn = body.returnDate !== undefined || body.returnTime !== undefined;
+  if (body.tripType === TRIP_TYPES.ROUND_TRIP && (!body.returnDate || !body.returnTime)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["returnDate"], message: "Return date and time are required for a round trip" });
+  }
+  if (body.tripType === TRIP_TYPES.ONE_WAY && hasReturn) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["returnDate"], message: "A one-way transfer has no return" });
+  }
+};
+
 const publicBookingSchema = z.object({
   body: z
     .object({
-      tripType: z.enum(Object.values(TRIP_TYPES)),
-      pickupLocationId: objectId,
-      dropoffLocationId: objectId,
-      travelDate: localDate,
-      travelTime: localTime,
-      returnDate: localDate.optional(),
-      returnTime: localTime.optional(),
-      passengers: z.object({ adults: count.min(1), children: count.default(0), infants: count.default(0) }).strict(),
-      luggage: z
-        .object({ largeBags: z.coerce.number().int().min(0).max(40).default(0), smallBags: z.coerce.number().int().min(0).max(40).default(0), notes: optionalText(300) })
-        .strict()
-        .default({}),
-      flightNumber: z.string().trim().toUpperCase().regex(FLIGHT_NUMBER_PATTERN, "Enter the flight number as shown on your ticket").or(z.literal("")).optional().default(""),
-      pickupAddress: optionalText(300),
-      dropoffAddress: optionalText(300),
-      customer: z
-        .object({
-          fullName: z.string().trim().min(2).max(120),
-          email: z.string().trim().toLowerCase().email().max(200),
-          phone: z.string().trim().regex(/^\+?[0-9 ()-]{7,24}$/, "Enter a valid phone number").refine((value) => value.replace(/\D/g, "").length >= 7, "Enter a valid phone number"),
-          whatsapp: z.boolean().optional().default(false)
-        })
-        .strict(),
-      specialRequests: optionalText(1000),
-      // The total the customer saw (null when they saw "Request a Quote"); never used as the price.
-      expectedTotal: z.union([z.string().regex(/^\d+(\.\d{1,2})?$/), z.null()]),
+      ...bookingFields,
       // Honeypot: hidden on the form, so people leave it empty.
       website: z.string().max(0, "Rejected").optional()
     })
     .strict()
-    .superRefine((body, ctx) => {
-      const hasReturn = body.returnDate !== undefined || body.returnTime !== undefined;
-      if (body.tripType === TRIP_TYPES.ROUND_TRIP && (!body.returnDate || !body.returnTime)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["returnDate"], message: "Return date and time are required for a round trip" });
-      }
-      if (body.tripType === TRIP_TYPES.ONE_WAY && hasReturn) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["returnDate"], message: "A one-way transfer has no return" });
-      }
-    }),
+    .superRefine(returnRule),
   query: noQuery,
   params: z.object({}).passthrough()
 });
+
+const manualBookingSchema = z.object({
+  body: z
+    .object({
+      ...bookingFields,
+      manualChannel: z.enum(MANUAL_CHANNELS),
+      allowDuplicate: z.boolean().optional().default(false),
+      duplicateReason: z.string().trim().max(500).optional().default("")
+    })
+    .strict()
+    .superRefine(returnRule),
+  query: noQuery,
+  params: z.object({}).passthrough()
+});
+
+const bookingIdParams = z.object({ bookingId: objectId });
+const requiredReason = z.string().trim().min(3, "Give a reason").max(500);
+const bookingReasonSchema = z.object({ body: z.object({ reason: requiredReason }).strict(), query: noQuery, params: bookingIdParams });
+const bookingQuoteSchema = z.object({
+  body: z
+    .object({
+      legs: z.array(z.object({ direction: z.enum(["OUTBOUND", "RETURN"]), price }).strict()).min(1).max(2),
+      reason: requiredReason
+    })
+    .strict(),
+  query: noQuery,
+  params: bookingIdParams
+});
+const bookingIdSchema = z.object({ body: z.any().optional(), query: noQuery, params: bookingIdParams });
 
 const publicBookingLookupSchema = z.object({
   body: z.any().optional(),
@@ -209,6 +245,10 @@ module.exports = {
   publicQuoteSchema,
   publicBookingSchema,
   publicBookingLookupSchema,
+  manualBookingSchema,
+  bookingReasonSchema,
+  bookingQuoteSchema,
+  bookingIdSchema,
   loginSchema,
   changePasswordSchema,
   emptyBodySchema,

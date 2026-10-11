@@ -18,11 +18,13 @@ const splitOrigins = (value = "") =>
 const backOfficeOrigins = ({ backofficeUrl = "", nodeEnv = "development" } = {}) =>
   splitOrigins(backofficeUrl).filter((origin) => nodeEnv !== "production" || /^https:\/\//i.test(origin));
 
-const buildAllowedOrigins = ({ frontendUrl = "", backofficeUrl = "", nodeEnv = "development" } = {}) =>
+// The Transfer Admin app (TRANSFER_ADMIN_URL) follows the same rule as the Back Office.
+const buildAllowedOrigins = ({ frontendUrl = "", backofficeUrl = "", transferAdminUrl = "", nodeEnv = "development" } = {}) =>
   Array.from(
     new Set([
       ...splitOrigins(frontendUrl),
       ...backOfficeOrigins({ backofficeUrl, nodeEnv }),
+      ...backOfficeOrigins({ backofficeUrl: transferAdminUrl, nodeEnv }),
       ...PRODUCTION_FRONTEND_ORIGINS.map(normalizeOriginValue)
     ])
   );

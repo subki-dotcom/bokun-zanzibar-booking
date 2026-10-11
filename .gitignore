@@ -3,10 +3,12 @@ node_modules/
 backend/node_modules/
 frontend/node_modules/
 backoffice/node_modules/
+transfer-admin/node_modules/
 
 # Build outputs
 frontend/dist/
 backoffice/dist/
+transfer-admin/dist/
 backend/dist/
 coverage/
 .tools/

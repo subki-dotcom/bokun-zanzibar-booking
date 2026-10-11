@@ -126,6 +126,7 @@ export const STATUS_LABELS = Object.freeze({
   QUOTE_REQUESTED: { label: "Quote requested", tone: "info", next: "Our team will review your request and send you a price. Nothing is charged until you accept it." },
   AWAITING_PAYMENT: { label: "Awaiting payment", tone: "warning", next: "Your transfer is not confirmed yet. It is confirmed once payment has been received and verified." },
   CONFIRMED: { label: "Confirmed", tone: "success", next: "Your transfer is confirmed." },
+  REJECTED: { label: "Not accepted", tone: "secondary", next: "We are unable to accept this booking. Please contact us if you would like to arrange something else." },
   CANCELLED: { label: "Cancelled", tone: "secondary", next: "This booking has been cancelled." }
 });
 

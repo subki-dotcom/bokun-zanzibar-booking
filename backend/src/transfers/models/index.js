@@ -130,10 +130,15 @@ const BOOKING_STATUS = Object.freeze({
   QUOTE_REQUESTED: "QUOTE_REQUESTED",
   AWAITING_PAYMENT: "AWAITING_PAYMENT",
   CONFIRMED: "CONFIRMED",
+  REJECTED: "REJECTED",
   CANCELLED: "CANCELLED"
 });
 const PAYMENT_STATUS = Object.freeze({ UNPAID: "UNPAID", PAID: "PAID", REFUNDED: "REFUNDED" });
 const BOOKING_SOURCES = Object.freeze(["WEBSITE", "MANUAL"]);
+// How a manual booking reached the team.
+const MANUAL_CHANNELS = Object.freeze(["WHATSAPP", "PHONE", "EMAIL", "WALK_IN", "OTHER"]);
+// ONLINE: pay through the payment gateway (later phase). CASH_ON_ARRIVAL: approved by an admin, collected at pickup.
+const PAYMENT_ARRANGEMENTS = Object.freeze({ ONLINE: "ONLINE", CASH_ON_ARRIVAL: "CASH_ON_ARRIVAL" });
 
 const bookingLegSchema = new Schema(
   {
@@ -162,8 +167,11 @@ const bookingSchema = new Schema(
   {
     reference: { type: String, required: true, unique: true },
     source: { type: String, enum: BOOKING_SOURCES, default: "WEBSITE" },
+    manualChannel: { type: String, enum: [...MANUAL_CHANNELS, ""], default: "" },
+    createdBy: { id: { type: String, default: "" }, email: { type: String, default: "" } },
     status: { type: String, enum: Object.values(BOOKING_STATUS), required: true, index: true },
     paymentStatus: { type: String, enum: Object.values(PAYMENT_STATUS), default: PAYMENT_STATUS.UNPAID },
+    paymentArrangement: { type: String, enum: Object.values(PAYMENT_ARRANGEMENTS), default: PAYMENT_ARRANGEMENTS.ONLINE },
     tripType: { type: String, enum: ["ONE_WAY", "ROUND_TRIP"], required: true },
     legs: { type: [bookingLegSchema], required: true },
     pickupAddress: { type: String, default: "" },
@@ -197,6 +205,19 @@ const bookingSchema = new Schema(
       reasons: { type: [String], default: [] },
       quotedAt: { type: Date, required: true }
     },
+    // Every price this booking has had (engine price at submission, admin quotes); never rewritten.
+    pricingHistory: [
+      {
+        _id: false,
+        source: { type: String, enum: ["ENGINE", "ADMIN_QUOTE"] },
+        status: String,
+        total: { type: Schema.Types.Decimal128, default: null },
+        legs: [{ _id: false, direction: String, price: { type: Schema.Types.Decimal128, default: null } }],
+        at: Date,
+        by: String,
+        reason: String
+      }
+    ],
     statusHistory: [
       {
         _id: false,
@@ -246,5 +267,7 @@ module.exports = {
   BOOKING_STATUS,
   PAYMENT_STATUS,
   BOOKING_SOURCES,
+  MANUAL_CHANNELS,
+  PAYMENT_ARRANGEMENTS,
   defineTransferModels
 };
