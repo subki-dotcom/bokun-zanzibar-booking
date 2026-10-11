@@ -675,6 +675,14 @@ export const adminNavigation = [
     roles: ADMIN_ROLES.MANAGE,
     children: [
       {
+        id: "create-admin",
+        label: "Create Admin",
+        path: "/admin/settings/create-admin",
+        icon: BsGear,
+        roles: ["super_admin"],
+        status: "active"
+      },
+      {
         id: "settings",
         label: "System Settings",
         path: "/admin/settings",

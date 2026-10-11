@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema(
     fullName: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, minlength: 8, select: false },
+    passwordResetHash: { type: String, select: false },
+    passwordResetExpiresAt: { type: Date, select: false },
+    passwordResetRequestedAt: { type: Date, select: false },
+    tokenVersion: { type: Number, default: 0 },
     role: {
       type: String,
       enum: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.STAFF],

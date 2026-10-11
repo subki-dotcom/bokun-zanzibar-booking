@@ -209,4 +209,18 @@ const sendBookingRequestEmailOnce = ({ booking, request, templateKey, requestId 
     requestId
   });
 
-module.exports = { sendBookingEmailOnce, sendBookingRequestEmailOnce };
+const sendPasswordResetEmail = async ({ to, resetUrl }) => {
+  if (!isEmailConfigured) throw new Error("Email delivery is not configured");
+  return sendWithResend({
+    to,
+    subject: "Reset your Riser Tours & Safaris password",
+    html: buildEmailShell({
+      heading: "Reset your password",
+      body: "<p>Use the button below to set a new admin or staff password. This link expires in 30 minutes and can be used only once.</p><p>If you did not request this, ignore this email. Your password has not changed.</p>",
+      ctaLabel: "Set new password",
+      ctaUrl: resetUrl
+    })
+  });
+};
+
+module.exports = { sendBookingEmailOnce, sendBookingRequestEmailOnce, sendPasswordResetEmail };

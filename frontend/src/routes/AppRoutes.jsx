@@ -1,10 +1,10 @@
-import { Suspense } from "react";
-import Loader from "../components/common/Loader";
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import PublicLayout from "../layouts/PublicLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
 import AdminLayout from "../layouts/admin/AdminLayout";
 import ProtectedRoute from "../components/common/ProtectedRoute";
+import Loader from "../components/common/Loader";
 import { ADMIN_PERMISSIONS } from "../config/adminNavigation";
 import HomePage from "../pages/public/HomePage";
 import ToursPage from "../pages/public/ToursPage";
@@ -18,72 +18,76 @@ import PaymentProcessingPage from "../pages/public/PaymentProcessingPage";
 import PaymentCheckoutPage from "../pages/public/PaymentCheckoutPage";
 import MyBookingPage from "../pages/public/MyBookingPage";
 import InvoiceDetailsPage from "../pages/public/InvoiceDetailsPage";
-import AdminInvoicesPage from "../pages/admin/AdminInvoicesPage";
 import LoginPage from "../pages/public/LoginPage";
+import PasswordRecoveryPage from "../pages/public/PasswordRecoveryPage";
 import AgentRegisterPage from "../pages/public/AgentRegisterPage";
-import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
-import AdminBookingsPage from "../pages/admin/AdminBookingsPage";
-import AdminAgentsPage from "../pages/admin/AdminAgentsPage";
-import AdminPaymentsPage from "../pages/admin/AdminPaymentsPage";
-import AdminRecoveryPage from "../pages/admin/AdminRecoveryPage";
-import SyncLogsPage from "../pages/admin/SyncLogsPage";
-import AdminBokunSyncPage from "../pages/admin/AdminBokunSyncPage";
-import AdminBookingRequestsPage from "../pages/admin/AdminBookingRequestsPage";
-import AdminBookingRequestDetailsPage from "../pages/admin/AdminBookingRequestDetailsPage";
-import AdminOperationsPage from "../pages/admin/AdminOperationsPage";
-import AdminBusinessIntelligencePage from "../pages/admin/AdminBusinessIntelligencePage";
-import AdminDisasterRecoveryPage from "../pages/admin/AdminDisasterRecoveryPage";
-import AdminSystemHealthPage from "../pages/admin/AdminSystemHealthPage";
-import AdminPerformanceReviewPage from "../pages/admin/AdminPerformanceReviewPage";
-import AdminProductionReadinessPage from "../pages/admin/AdminProductionReadinessPage";
-import AdminBookingAccountingPage from "../pages/admin/AdminBookingAccountingPage";
-import AdminBusinessAccountingPage from "../pages/admin/AdminBusinessAccountingPage";
-import AdminChartOfAccountsPage from "../pages/admin/AdminChartOfAccountsPage";
-import AdminCrmPage from "../pages/admin/AdminCrmPage";
-import AdminGeneralLedgerPage from "../pages/admin/AdminGeneralLedgerPage";
-import AdminGeneralLedgerRegisterPage from "../pages/admin/AdminGeneralLedgerRegisterPage";
-import AdminJournalEntriesPage from "../pages/admin/AdminJournalEntriesPage";
-import AdminTrialBalancePage from "../pages/admin/AdminTrialBalancePage";
-import AdminAccountsPayablePage from "../pages/admin/AdminAccountsPayablePage";
-import AdminAccountsReceivablePage from "../pages/admin/AdminAccountsReceivablePage";
-import AdminCashBankPage from "../pages/admin/AdminCashBankPage";
-import AdminPeriodClosePage from "../pages/admin/AdminPeriodClosePage";
-import AdminBalanceSheetPage from "../pages/admin/AdminBalanceSheetPage";
-import AdminProfitLossPage from "../pages/admin/AdminProfitLossPage";
-import AdminCashFlowPage from "../pages/admin/AdminCashFlowPage";
-import AdminFixedAssetsPage from "../pages/admin/AdminFixedAssetsPage";
-import AdminAccountingReconciliationPage from "../pages/admin/AdminAccountingReconciliationPage";
-import AdminSettlementsPage from "../pages/admin/AdminSettlementsPage";
-import AdminSettlementDetailPage from "../pages/admin/AdminSettlementDetailPage";
-import AdminSettlementImportPage from "../pages/admin/AdminSettlementImportPage";
-import AdminServiceCompletionPage from "../pages/admin/AdminServiceCompletionPage";
-import AdminGlPostingPreviewPage from "../pages/admin/AdminGlPostingPreviewPage";
-import AdminBookingReconciliationPage from "../pages/admin/AdminBookingReconciliationPage";
-import AdminReportCenterPage from "../pages/admin/AdminReportCenterPage";
-import AdminAuditControlPage from "../pages/admin/AdminAuditControlPage";
-import AdminDataQualityPage from "../pages/admin/AdminDataQualityPage";
-import AdminOpsControlPage from "../pages/admin/AdminOpsControlPage";
 import AdminUnavailablePage from "../components/admin/AdminUnavailablePage";
-import AgentDashboardPage from "../pages/agent/AgentDashboardPage";
-import AgentProductsPage from "../pages/agent/AgentProductsPage";
-import AgentNewBookingPage from "../pages/agent/AgentNewBookingPage";
-import AgentBookingsPage from "../pages/agent/AgentBookingsPage";
-import AgentBookingDetailsPage from "../pages/agent/AgentBookingDetailsPage";
-import AgentVoucherPage from "../pages/agent/AgentVoucherPage";
-import AgentVouchersPage from "../pages/agent/AgentVouchersPage";
-import AgentCommissionPage from "../pages/agent/AgentCommissionPage";
-import AgentProfilePage from "../pages/agent/AgentProfilePage";
-import AgentPayoutMethodPage from "../pages/agent/AgentPayoutMethodPage";
-import AgentSettingsPage from "../pages/agent/AgentSettingsPage";
-import AgentSupportPage from "../pages/agent/AgentSupportPage";
-import AgentTourBookingPage from "../pages/agent/AgentTourBookingPage";
-import AgentPendingApprovalPage from "../pages/agent/AgentPendingApprovalPage";
-import AgentTermsPage from "../pages/agent/AgentTermsPage";
-import AgentNotificationsPage from "../pages/agent/AgentNotificationsPage";
-import AgentActivityPage from "../pages/agent/AgentActivityPage";
-import AgentReportsPage from "../pages/agent/AgentReportsPage";
-import AgentDraftsPage from "../pages/agent/AgentDraftsPage";
 import LegalPage from "../pages/public/LegalPage";
+const AdminCreateUserPage = lazy(() => import("../pages/admin/AdminCreateUserPage"));
+
+// Static import paths let Vite split each admin page into its own chunk; a variable path cannot be resolved
+// at build time and would 404 in production.
+const AdminInvoicesPage = lazy(() => import("../pages/admin/AdminInvoicesPage"));
+const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
+const AdminBookingsPage = lazy(() => import("../pages/admin/AdminBookingsPage"));
+const AdminAgentsPage = lazy(() => import("../pages/admin/AdminAgentsPage"));
+const AdminPaymentsPage = lazy(() => import("../pages/admin/AdminPaymentsPage"));
+const AdminRecoveryPage = lazy(() => import("../pages/admin/AdminRecoveryPage"));
+const SyncLogsPage = lazy(() => import("../pages/admin/SyncLogsPage"));
+const AdminBokunSyncPage = lazy(() => import("../pages/admin/AdminBokunSyncPage"));
+const AdminBookingRequestsPage = lazy(() => import("../pages/admin/AdminBookingRequestsPage"));
+const AdminBookingRequestDetailsPage = lazy(() => import("../pages/admin/AdminBookingRequestDetailsPage"));
+const AdminOperationsPage = lazy(() => import("../pages/admin/AdminOperationsPage"));
+const AdminBusinessIntelligencePage = lazy(() => import("../pages/admin/AdminBusinessIntelligencePage"));
+const AdminDisasterRecoveryPage = lazy(() => import("../pages/admin/AdminDisasterRecoveryPage"));
+const AdminSystemHealthPage = lazy(() => import("../pages/admin/AdminSystemHealthPage"));
+const AdminPerformanceReviewPage = lazy(() => import("../pages/admin/AdminPerformanceReviewPage"));
+const AdminProductionReadinessPage = lazy(() => import("../pages/admin/AdminProductionReadinessPage"));
+const AdminBookingAccountingPage = lazy(() => import("../pages/admin/AdminBookingAccountingPage"));
+const AdminBusinessAccountingPage = lazy(() => import("../pages/admin/AdminBusinessAccountingPage"));
+const AdminChartOfAccountsPage = lazy(() => import("../pages/admin/AdminChartOfAccountsPage"));
+const AdminCrmPage = lazy(() => import("../pages/admin/AdminCrmPage"));
+const AdminGeneralLedgerRegisterPage = lazy(() => import("../pages/admin/AdminGeneralLedgerRegisterPage"));
+const AdminJournalEntriesPage = lazy(() => import("../pages/admin/AdminJournalEntriesPage"));
+const AdminTrialBalancePage = lazy(() => import("../pages/admin/AdminTrialBalancePage"));
+const AdminAccountsPayablePage = lazy(() => import("../pages/admin/AdminAccountsPayablePage"));
+const AdminAccountsReceivablePage = lazy(() => import("../pages/admin/AdminAccountsReceivablePage"));
+const AdminCashBankPage = lazy(() => import("../pages/admin/AdminCashBankPage"));
+const AdminPeriodClosePage = lazy(() => import("../pages/admin/AdminPeriodClosePage"));
+const AdminBalanceSheetPage = lazy(() => import("../pages/admin/AdminBalanceSheetPage"));
+const AdminProfitLossPage = lazy(() => import("../pages/admin/AdminProfitLossPage"));
+const AdminCashFlowPage = lazy(() => import("../pages/admin/AdminCashFlowPage"));
+const AdminFixedAssetsPage = lazy(() => import("../pages/admin/AdminFixedAssetsPage"));
+const AdminAccountingReconciliationPage = lazy(() => import("../pages/admin/AdminAccountingReconciliationPage"));
+const AdminSettlementsPage = lazy(() => import("../pages/admin/AdminSettlementsPage"));
+const AdminSettlementDetailPage = lazy(() => import("../pages/admin/AdminSettlementDetailPage"));
+const AdminSettlementImportPage = lazy(() => import("../pages/admin/AdminSettlementImportPage"));
+const AdminServiceCompletionPage = lazy(() => import("../pages/admin/AdminServiceCompletionPage"));
+const AdminGlPostingPreviewPage = lazy(() => import("../pages/admin/AdminGlPostingPreviewPage"));
+const AdminBookingReconciliationPage = lazy(() => import("../pages/admin/AdminBookingReconciliationPage"));
+const AdminReportCenterPage = lazy(() => import("../pages/admin/AdminReportCenterPage"));
+const AdminAuditControlPage = lazy(() => import("../pages/admin/AdminAuditControlPage"));
+const AdminDataQualityPage = lazy(() => import("../pages/admin/AdminDataQualityPage"));
+const AdminOpsControlPage = lazy(() => import("../pages/admin/AdminOpsControlPage"));
+const AgentDashboardPage = lazy(() => import("../pages/agent/AgentDashboardPage"));
+const AgentProductsPage = lazy(() => import("../pages/agent/AgentProductsPage"));
+const AgentNewBookingPage = lazy(() => import("../pages/agent/AgentNewBookingPage"));
+const AgentBookingsPage = lazy(() => import("../pages/agent/AgentBookingsPage"));
+const AgentBookingDetailsPage = lazy(() => import("../pages/agent/AgentBookingDetailsPage"));
+const AgentVoucherPage = lazy(() => import("../pages/agent/AgentVoucherPage"));
+const AgentVouchersPage = lazy(() => import("../pages/agent/AgentVouchersPage"));
+const AgentCommissionPage = lazy(() => import("../pages/agent/AgentCommissionPage"));
+const AgentProfilePage = lazy(() => import("../pages/agent/AgentProfilePage"));
+const AgentPayoutMethodPage = lazy(() => import("../pages/agent/AgentPayoutMethodPage"));
+const AgentSettingsPage = lazy(() => import("../pages/agent/AgentSettingsPage"));
+const AgentSupportPage = lazy(() => import("../pages/agent/AgentSupportPage"));
+const AgentTourBookingPage = lazy(() => import("../pages/agent/AgentTourBookingPage"));
+const AgentPendingApprovalPage = lazy(() => import("../pages/agent/AgentPendingApprovalPage"));
+const AgentTermsPage = lazy(() => import("../pages/agent/AgentTermsPage"));
+const AgentNotificationsPage = lazy(() => import("../pages/agent/AgentNotificationsPage"));
+const AgentActivityPage = lazy(() => import("../pages/agent/AgentActivityPage"));
+const AgentReportsPage = lazy(() => import("../pages/agent/AgentReportsPage"));
+const AgentDraftsPage = lazy(() => import("../pages/agent/AgentDraftsPage"));
 
 const AgentLayout = () => <DashboardLayout portal="agent" />;
 
@@ -94,7 +98,10 @@ const LegacyBookingRequestRedirect = () => {
 
 const AppRoutes = () => {
   return (
-    <Suspense fallback={<Loader message="Loading page..." />}><Routes>
+    <Suspense fallback={<Loader message="Loading page..." />}>
+    <Routes>
+      <Route path="/forgot-password" element={<PasswordRecoveryPage key="forgot" />} />
+      <Route path="/reset-password" element={<PasswordRecoveryPage key="reset" mode="reset" />} />
       <Route element={<PublicLayout />}>
         <Route index element={<HomePage />} />
         <Route path="/tours" element={<ToursPage />} />
@@ -123,6 +130,7 @@ const AppRoutes = () => {
         }
       >
         <Route path="/admin" element={<AdminDashboardPage />} />
+        <Route path="/admin/settings/create-admin" element={<ProtectedRoute roles={["super_admin"]}><AdminCreateUserPage /></ProtectedRoute>} />
         <Route path="/admin/operations/dashboard" element={<AdminUnavailablePage module="Operations" title="Operations Dashboard" />} />
         <Route path="/admin/operations/bookings" element={<AdminBookingsPage />} />
         <Route path="/admin/operations/booking-requests" element={<AdminBookingRequestsPage />} />
@@ -474,7 +482,8 @@ const AppRoutes = () => {
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes></Suspense>
+    </Routes>
+    </Suspense>
   );
 };
 

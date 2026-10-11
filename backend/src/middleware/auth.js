@@ -29,6 +29,10 @@ const authenticate = async (req, _res, next) => {
       return next(new AppError("Account not found or inactive", 401, "ACCOUNT_INACTIVE"));
     }
 
+    if ((payload.tokenVersion || 0) !== (user.tokenVersion || 0)) {
+      return next(new AppError("Please sign in again", 401, "INVALID_TOKEN"));
+    }
+
     req.auth = {
       id: user._id.toString(),
       role: user.role,

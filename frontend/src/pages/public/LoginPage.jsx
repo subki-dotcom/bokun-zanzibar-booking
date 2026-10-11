@@ -100,6 +100,9 @@ const LoginPage = () => {
                   </Link>
                 </div>
               </Form>
+              {form.portal === "admin" && (
+                <div className="text-center mt-3"><Link to="/forgot-password">Forgot password?</Link></div>
+              )}
             </Card.Body>
           </Card>
         </Col>

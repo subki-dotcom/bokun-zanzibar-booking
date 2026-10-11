@@ -6,6 +6,7 @@ const { authorize } = require("../middleware/rbac");
 const { loginSchema, registerAdminSchema, registerAgentSchema } = require("../validators/auth.validation");
 
 const router = express.Router();
+router.use(require("./passwordRecovery.routes"));
 
 router.post("/login", validateRequest(loginSchema), authController.login);
 router.post("/register-agent", validateRequest(registerAgentSchema), authController.registerAgent);

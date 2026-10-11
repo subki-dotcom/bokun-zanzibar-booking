@@ -5,12 +5,13 @@ const { env } = require("../../config/env");
 const AppError = require("../../utils/AppError");
 const { getPermissionsForRole } = require("../../security/permissions");
 
-const signToken = ({ id, role, userType }) => {
+const signToken = ({ id, role, userType, tokenVersion = 0 }) => {
   return jwt.sign(
     {
       sub: id,
       role,
-      userType
+      userType,
+      tokenVersion
     },
     env.JWT_SECRET,
     { expiresIn: env.JWT_EXPIRES_IN }
@@ -117,7 +118,8 @@ const login = async (payload) => {
   const token = signToken({
     id: account._id.toString(),
     role: account.role,
-    userType: isAgentPortal ? "agent" : "user"
+    userType: isAgentPortal ? "agent" : "user",
+    tokenVersion: account.tokenVersion || 0
   });
 
   return {

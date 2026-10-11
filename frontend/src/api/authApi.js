@@ -7,6 +7,16 @@ export const login = async (payload) => {
   return response.data.data;
 };
 
+export const requestPasswordReset = async (payload) => {
+  const response = await axiosClient.post("/auth/forgot-password", payload, { timeout: AUTH_REQUEST_TIMEOUT_MS });
+  return response.data;
+};
+
+export const resetPassword = async (payload) => {
+  const response = await axiosClient.post("/auth/reset-password", payload, { timeout: AUTH_REQUEST_TIMEOUT_MS });
+  return response.data;
+};
+
 export const registerAdminSeed = async (payload) => {
   const response = await axiosClient.post("/auth/register-admin", payload, { timeout: AUTH_REQUEST_TIMEOUT_MS });
   return response.data.data;

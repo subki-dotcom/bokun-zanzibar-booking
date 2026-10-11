@@ -9,6 +9,8 @@ const trimStrings = (obj) => {
     const value = obj[key];
 
     if (typeof value === "string") {
+      // Passwords are opaque credentials; trimming changes what the user chose.
+      if (key === "password") return;
       obj[key] = value.trim();
       return;
     }
