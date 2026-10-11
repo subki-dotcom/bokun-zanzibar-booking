@@ -219,6 +219,44 @@ cd backoffice && npm test && npm run build    # Back Office
 cd backend && npm test && npm run lint
 ```
 
+## Transfer System
+
+An independent transfer booking and operations system (`backend/src/transfers/`). It does not use Bókun, the
+Agent System or the Business Back Office, and it does not post to the existing accounting.
+
+- Own database `riser_transfers` on the same MongoDB server, reached with its own user that has `readWrite` on that
+  database only. On connect the backend checks the user's privileges and refuses any access beyond `riser_transfers`
+  (in production it also refuses unauthenticated connections or the Business Platform user).
+- Own admin users (`transfer_admin_users`), own token secret (`TRANSFER_JWT_SECRET`), roles `transfer_admin`,
+  `transfer_manager`, `dispatcher`, `transfer_accountant`, account lockout after 5 failed sign-ins, and an immutable
+  audit log (`transfer_audit_logs`).
+- Pricing: zones → locations, zone-to-zone routes (one-way or bidirectional) and passenger tiers priced per vehicle in
+  USD. Prices are always computed on the server. Adults and children count toward the tier; infants always count
+  toward capacity, and whether they count toward the tier is a setting. Routes or passenger counts without a rate
+  become "Request a Quote".
+
+Local setup (uses the local MongoDB; never production):
+
+```bash
+cd backend
+# 1. Database user with readWrite on riser_transfers only (admin connection used for this run only)
+MONGO_ADMIN_URI=mongodb://127.0.0.1:27017/admin TRANSFERS_DB_PASSWORD=<24+ random chars> npm run transfers:create-db-user
+# 2. Set TRANSFERS_MONGO_URI, TRANSFERS_DB_NAME and TRANSFER_JWT_SECRET in backend/.env (see .env.example)
+# 3. First transfer_admin (no default password)
+TRANSFER_ADMIN_NAME="Your Name" TRANSFER_ADMIN_EMAIL=you@example.com TRANSFER_ADMIN_PASSWORD=<12+ chars, Aa1> npm run transfers:create-admin
+# 4. Optional, local only: Zone A → Zone B, 1–5 passengers = USD 45
+npm run transfers:seed-demo
+```
+
+Transfer Admin API (`/api/transfer-admin`, Transfer Admin token required except for login):
+
+- `POST /auth/login`, `GET /auth/me`, `POST /auth/change-password`, `POST /auth/logout-everywhere`
+- `GET|POST /zones`, `PATCH /zones/:zoneId`; same for `/locations`, `/routes`, `/rates`
+- `GET|PATCH /settings/pricing` (infant pricing policy)
+- `POST /pricing/preview` (server-side price for a one-way or round trip)
+- `GET|POST /users`, `PATCH /users/:userId`, `POST /users/:userId/reset-password`
+- `GET /audit-logs`
+
 ## GitHub Hardening + Deployment
 
 ### 1) Branch protection (recommended on `main`)

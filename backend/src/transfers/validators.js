@@ -1,0 +1,160 @@
+const { z } = require("zod");
+const { LOCATION_TYPES, INFANT_PRICING } = require("./models");
+const { TRANSFER_ROLES } = require("./security/permissions");
+const { TRIP_TYPES, MAX_PASSENGERS } = require("./pricing/engine");
+const { passwordSchema } = require("./security/password");
+
+const objectId = z.string().regex(/^[a-f0-9]{24}$/i, "Invalid id");
+const text = (max) => z.string().trim().max(max);
+const reason = text(500).optional();
+const idParams = (name) => z.object({ [name]: objectId });
+const anyQuery = z.object({}).passthrough();
+const noQuery = z.object({}).passthrough();
+
+const count = z.coerce.number().int().min(0).max(MAX_PASSENGERS);
+// Prices are strings so cents are exact; numbers are accepted and converted.
+const price = z.union([z.string().trim().regex(/^\d+(\.\d{1,2})?$/, "Price must be an amount with at most 2 decimals"), z.number().positive()]).transform(String);
+
+const loginSchema = z.object({
+  body: z.object({ email: z.string().trim().email().max(200), password: z.string().min(1).max(200) }).strict(),
+  query: noQuery,
+  params: z.object({}).passthrough()
+});
+
+const changePasswordSchema = z.object({
+  body: z.object({ currentPassword: z.string().min(1).max(200), newPassword: passwordSchema }).strict(),
+  query: noQuery,
+  params: z.object({}).passthrough()
+});
+
+const emptyBodySchema = z.object({ body: z.object({}).strict().optional(), query: noQuery, params: z.object({}).passthrough() });
+
+const listSchema = z.object({ body: z.any().optional(), query: anyQuery, params: z.object({}).passthrough() });
+
+const zoneBody = {
+  code: z.string().trim().min(1).max(20).regex(/^[A-Za-z0-9_-]+$/, "Use letters, numbers, - or _"),
+  name: text(100).min(1),
+  description: text(500).optional(),
+  active: z.boolean().optional()
+};
+const createZoneSchema = z.object({ body: z.object(zoneBody).strict(), query: noQuery, params: z.object({}).passthrough() });
+const updateZoneSchema = z.object({
+  body: z.object({ code: zoneBody.code.optional(), name: zoneBody.name.optional(), description: zoneBody.description, active: zoneBody.active, reason }).strict(),
+  query: noQuery,
+  params: idParams("zoneId")
+});
+
+const locationBody = {
+  name: text(150).min(1),
+  type: z.enum(LOCATION_TYPES),
+  zoneId: objectId,
+  address: text(300).optional(),
+  aliases: z.array(text(100).min(1)).max(20).optional(),
+  sortOrder: z.number().int().min(0).max(100000).optional(),
+  active: z.boolean().optional()
+};
+const createLocationSchema = z.object({ body: z.object(locationBody).strict(), query: noQuery, params: z.object({}).passthrough() });
+const updateLocationSchema = z.object({
+  body: z.object({ ...Object.fromEntries(Object.entries(locationBody).map(([key, value]) => [key, value.optional()])), reason }).strict(),
+  query: noQuery,
+  params: idParams("locationId")
+});
+
+const routeBody = {
+  bidirectional: z.boolean().optional(),
+  durationMinutes: z.number().int().min(0).max(24 * 60).nullable().optional(),
+  distanceKm: z.number().min(0).max(5000).nullable().optional(),
+  notes: text(500).optional(),
+  active: z.boolean().optional()
+};
+const createRouteSchema = z.object({
+  body: z.object({ fromZoneId: objectId, toZoneId: objectId, ...routeBody }).strict(),
+  query: noQuery,
+  params: z.object({}).passthrough()
+});
+// The zones of a route are fixed once created; create a new route for other zones.
+const updateRouteSchema = z.object({ body: z.object({ ...routeBody, reason }).strict(), query: noQuery, params: idParams("routeId") });
+
+const createRateSchema = z.object({
+  body: z
+    .object({
+      routeId: objectId,
+      minPassengers: z.number().int().min(1).max(MAX_PASSENGERS),
+      maxPassengers: z.number().int().min(1).max(MAX_PASSENGERS),
+      price,
+      active: z.boolean().optional()
+    })
+    .strict(),
+  query: noQuery,
+  params: z.object({}).passthrough()
+});
+const updateRateSchema = z.object({
+  body: z
+    .object({
+      minPassengers: z.number().int().min(1).max(MAX_PASSENGERS).optional(),
+      maxPassengers: z.number().int().min(1).max(MAX_PASSENGERS).optional(),
+      price: price.optional(),
+      active: z.boolean().optional(),
+      reason
+    })
+    .strict(),
+  query: noQuery,
+  params: idParams("rateId")
+});
+
+const updateSettingsSchema = z.object({
+  body: z.object({ infantPricing: z.enum(Object.values(INFANT_PRICING)), reason }).strict(),
+  query: noQuery,
+  params: z.object({}).passthrough()
+});
+
+// No price field: the server always prices from the database.
+const quoteSchema = z.object({
+  body: z
+    .object({
+      tripType: z.enum(Object.values(TRIP_TYPES)).default(TRIP_TYPES.ONE_WAY),
+      pickupLocationId: objectId,
+      dropoffLocationId: objectId,
+      passengers: z.object({ adults: count.min(1), children: count.default(0), infants: count.default(0) }).strict()
+    })
+    .strict(),
+  query: noQuery,
+  params: z.object({}).passthrough()
+});
+
+const roleEnum = z.enum(Object.values(TRANSFER_ROLES));
+const createUserSchema = z.object({
+  body: z.object({ name: text(100).min(1), email: z.string().trim().toLowerCase().email().max(200), role: roleEnum, password: passwordSchema }).strict(),
+  query: noQuery,
+  params: z.object({}).passthrough()
+});
+const updateUserSchema = z.object({
+  body: z.object({ name: text(100).min(1).optional(), role: roleEnum.optional(), isActive: z.boolean().optional(), unlock: z.boolean().optional(), reason }).strict(),
+  query: noQuery,
+  params: idParams("userId")
+});
+const resetPasswordSchema = z.object({
+  body: z.object({ password: passwordSchema, reason }).strict(),
+  query: noQuery,
+  params: idParams("userId")
+});
+
+module.exports = {
+  loginSchema,
+  changePasswordSchema,
+  emptyBodySchema,
+  listSchema,
+  createZoneSchema,
+  updateZoneSchema,
+  createLocationSchema,
+  updateLocationSchema,
+  createRouteSchema,
+  updateRouteSchema,
+  createRateSchema,
+  updateRateSchema,
+  updateSettingsSchema,
+  quoteSchema,
+  createUserSchema,
+  updateUserSchema,
+  resetPasswordSchema
+};

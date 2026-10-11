@@ -9,6 +9,11 @@ const env = cleanEnv(process.env, {
   FRONTEND_URL: str({ default: "https://zanzibartoursandsafaris.co.tz" }),
   // Back Office origins allowed by CORS (comma separated). Production accepts only https values.
   BACKOFFICE_URL: str({ default: "" }),
+  // Transfer System: its own database (separate credentials) and its own admin token secret.
+  TRANSFERS_MONGO_URI: str({ default: "" }),
+  TRANSFERS_DB_NAME: str({ default: "riser_transfers" }),
+  TRANSFER_JWT_SECRET: str({ default: "" }),
+  TRANSFER_JWT_EXPIRES_IN: str({ default: "12h" }),
   PASSWORD_RESET_SITE_URL: str({ default: "https://zanzibartoursandsafaris.co.tz" }),
   RATE_LIMIT_WINDOW_MS: num({ default: 15 * 60 * 1000 }),
   RATE_LIMIT_MAX: num({ default: 1200 }),
