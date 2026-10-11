@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
+import { sharedResolve } from "../../shared/vite.shared.js";
 
 test("admin creation form is labeled and navigation is restricted to super admin", async () => {
-  const server = await createServer({ configFile: false, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, watch: null, hmr: false }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
+  const server = await createServer({ configFile: false, resolve: sharedResolve, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, watch: null, hmr: false }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
   try {
     const Page = (await server.ssrLoadModule("/src/pages/admin/AdminCreateUserPage.jsx")).default;
     const html = renderToStaticMarkup(React.createElement(Page));

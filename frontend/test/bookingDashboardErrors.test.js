@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "vite";
+import { sharedResolve } from "../../shared/vite.shared.js";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 
 test("dashboard retains its original graphs and reports request errors separately", async () => {
-  const server = await createServer({ configFile: false, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, hmr: false, watch: null }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
+  const server = await createServer({ configFile: false, resolve: sharedResolve, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, hmr: false, watch: null }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
   try {
     const { BookingAccountingDashboard } = await server.ssrLoadModule("/src/pages/admin/AdminBookingAccountingPage.jsx");
     const render = (props) => renderToStaticMarkup(React.createElement(MemoryRouter, null,

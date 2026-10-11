@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createServer } from 'vite';
+import { sharedResolve } from '../../shared/vite.shared.js';
 
 let server, components;
 before(async () => {
-  server = await createServer({ configFile: false, esbuild: { jsx: 'automatic' }, server: { middlewareMode: true, watch: null }, optimizeDeps: { noDiscovery: true }, appType: 'custom' });
+  server = await createServer({ configFile: false, resolve: sharedResolve, esbuild: { jsx: 'automatic' }, server: { middlewareMode: true, watch: null }, optimizeDeps: { noDiscovery: true }, appType: 'custom' });
   components = await server.ssrLoadModule('/src/components/admin/reportCenter/ReportCenterComponents.jsx');
 });
 after(async () => { await server?.close(); });

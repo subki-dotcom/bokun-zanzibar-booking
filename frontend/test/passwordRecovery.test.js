@@ -4,9 +4,10 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { createServer } from "vite";
+import { sharedResolve } from "../../shared/vite.shared.js";
 let server, Page;
 before(async () => {
-  server = await createServer({ configFile: false, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, watch: null, hmr: false }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
+  server = await createServer({ configFile: false, resolve: sharedResolve, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, watch: null, hmr: false }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
   Page = (await server.ssrLoadModule("/src/pages/public/PasswordRecoveryPage.jsx")).default;
 });
 after(async () => { delete globalThis.window; await server?.close(); });

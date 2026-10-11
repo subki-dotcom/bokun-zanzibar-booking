@@ -3,10 +3,11 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
+import { sharedResolve } from "../../shared/vite.shared.js";
 
 let server, PriceDisplay, AvailabilityOptionCard;
 before(async () => {
-  server = await createServer({ configFile: false, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, watch: null }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
+  server = await createServer({ configFile: false, resolve: sharedResolve, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, watch: null }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
   PriceDisplay = (await server.ssrLoadModule("/src/components/tours/single/PriceDisplay.jsx")).default;
   AvailabilityOptionCard = (await server.ssrLoadModule("/src/components/tours/single/availabilityPicker/AvailabilityOptionCard.jsx")).default;
 });

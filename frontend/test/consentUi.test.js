@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import React, { act } from 'react';
 import { JSDOM } from 'jsdom';
 import { createServer } from 'vite';
+import { sharedResolve } from '../../shared/vite.shared.js';
 import { createConsentStore } from '../src/utils/consentStore.js';
 let dom, server, root, Page, Footer, Router, store, choices;
 const wait = () => new Promise(resolve=>setTimeout(resolve,360));
@@ -11,7 +12,7 @@ before(async()=>{
   for(const name of ['window','document','HTMLElement','Node','Event','CustomEvent','MutationObserver']) globalThis[name]=dom.window[name];
   globalThis.getComputedStyle=dom.window.getComputedStyle.bind(dom.window);
   globalThis.IS_REACT_ACT_ENVIRONMENT=true;
-  server=await createServer({configFile:false,esbuild:{jsx:'automatic'},server:{middlewareMode:true,watch:null,hmr:false},optimizeDeps:{noDiscovery:true},appType:'custom'});
+  server=await createServer({configFile:false,resolve:sharedResolve,esbuild:{jsx:'automatic'},server:{middlewareMode:true,watch:null,hmr:false},optimizeDeps:{noDiscovery:true},appType:'custom'});
   Page=(await server.ssrLoadModule('/src/components/common/CookieConsent.jsx')).default;
   Footer=(await server.ssrLoadModule('/src/components/common/footer/FooterBottom.jsx')).default;
   Router=(await import('react-router-dom')).MemoryRouter;

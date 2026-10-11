@@ -1,13 +1,3 @@
-import Alert from "react-bootstrap/Alert";
-
-const ErrorAlert = ({ error, className = "" }) => {
-  if (!error) return null;
-
-  return (
-    <Alert variant="danger" className={className}>
-      {typeof error === "string" ? error : error.message || "Something went wrong"}
-    </Alert>
-  );
-};
-
-export default ErrorAlert;
+// Moved to shared/src/components/common/ErrorAlert.jsx so the website and the Back Office share one implementation.
+// This path is kept so existing imports keep working.
+export { default } from "../../../../shared/src/components/common/ErrorAlert.jsx";

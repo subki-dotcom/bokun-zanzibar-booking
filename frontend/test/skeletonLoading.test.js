@@ -3,10 +3,11 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
+import { sharedResolve } from "../../shared/vite.shared.js";
 
 let server, Loader, FeaturedTours;
 before(async () => {
-  server = await createServer({ configFile: false, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, watch: null, hmr: false }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
+  server = await createServer({ configFile: false, resolve: sharedResolve, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, watch: null, hmr: false }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
   Loader = (await server.ssrLoadModule("/src/components/common/Loader.jsx")).default;
   FeaturedTours = (await server.ssrLoadModule("/src/components/home/FeaturedToursSection.jsx")).default;
 });

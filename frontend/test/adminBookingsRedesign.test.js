@@ -10,7 +10,7 @@ const read = (relativePath) => readFileSync(resolve(root, relativePath), "utf8")
 
 test("admin bookings page uses the existing route with server-backed pagination and filters", () => {
   const source = read("src/pages/admin/AdminBookingsPage.jsx");
-  const api = read("src/api/bookingsApi.js");
+  const api = read("../shared/src/api/bookingsApi.js");
 
   assert.match(source, /fetchAdminBookings/);
   assert.match(source, /useSearchParams/);

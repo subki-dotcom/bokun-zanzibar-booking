@@ -8,7 +8,7 @@ const source = fs.readFileSync(
   "utf8"
 );
 const adminApiSource = fs.readFileSync(path.join(process.cwd(), "src", "api", "adminApi.js"), "utf8");
-const axiosClientSource = fs.readFileSync(path.join(process.cwd(), "src", "api", "axiosClient.js"), "utf8");
+const axiosClientSource = fs.readFileSync(path.join(process.cwd(), "..", "shared", "src", "api", "axiosClient.js"), "utf8");
 
 test("Booking cost template UI uses the real admin API helpers", () => {
   assert.ok(source.includes("fetchBookingAccountingCostTemplates"));

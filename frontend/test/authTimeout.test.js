@@ -3,7 +3,7 @@ import path from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 
-const authApiSource = fs.readFileSync(path.join(process.cwd(), "src", "api", "authApi.js"), "utf8");
+const authApiSource = fs.readFileSync(path.join(process.cwd(), "..", "shared", "src", "api", "authApi.js"), "utf8");
 const loginPageSource = fs.readFileSync(
   path.join(process.cwd(), "src", "pages", "public", "LoginPage.jsx"),
   "utf8"
