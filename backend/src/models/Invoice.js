@@ -68,7 +68,24 @@ const invoiceSchema = new mongoose.Schema(
     paymentMethod: String,
     notes: String,
     cancellationPolicy: String,
-    paymentTerms: String
+    paymentTerms: String,
+    // BOOKING invoices are rebuilt from their booking; STANDALONE invoices bill non-booking services and own
+    // their lines, delivery evidence and revenue posting.
+    invoiceType: { type: String, enum: ["BOOKING", "STANDALONE"], default: "BOOKING", index: true },
+    serviceDeliveredAt: { type: Date, default: null },
+    deliveryEvidence: {
+      reference: { type: String, default: "" },
+      confirmedBy: { type: String, default: "" },
+      confirmedAt: { type: Date, default: null },
+      note: { type: String, default: "" }
+    },
+    revenuePosting: {
+      status: { type: String, enum: ["", "PREVIEW", "BLOCKED", "POSTED"], default: "" },
+      postingKey: { type: String, default: "" },
+      journalEntryId: { type: mongoose.Schema.Types.ObjectId, ref: "JournalEntry", default: null },
+      blockers: [{ type: String }]
+    },
+    adjustmentTotal: { type: Number, default: 0 }
   },
   { timestamps: true }
 );

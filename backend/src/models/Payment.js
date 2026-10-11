@@ -7,7 +7,7 @@ const paymentSchema = new mongoose.Schema(
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
     provider: {
       type: String,
-      enum: ["stripe", "pesapal", "dpo", "paypal", "manual_bank", "cash_on_arrival", "custom"],
+      enum: ["stripe", "pesapal", "dpo", "paypal", "manual_bank", "cash_on_arrival", "mobile_money", "custom"],
       default: "custom"
     },
     intentId: { type: String, required: true, index: true },

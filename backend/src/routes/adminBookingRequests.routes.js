@@ -15,6 +15,7 @@ router.post("/booking-requests/:id/request-information", validateRequest(schemas
 router.post("/booking-requests/:id/recalculate-price", validateRequest(schemas.adminRequestIdSchema), controller.recalculate);
 router.post("/booking-requests/:id/retry-bokun-sync", validateRequest(schemas.adminRequestIdSchema), controller.retryBokun);
 router.post("/booking-requests/:id/send-email", validateRequest(schemas.adminRequestIdSchema), controller.retryEmail);
+router.post("/booking-requests/:id/confirm-supplier-change", authorize("super_admin", "admin"), validateRequest(require("../validators/customerReceivables.validation").confirmSupplierChangeSchema), controller.confirmSupplierChange);
 router.post("/payment-adjustments/:id/mark-paid", validateRequest(schemas.adjustmentPaidSchema), controller.markAdjustmentPaid);
 router.post("/refunds/:id/status", authorize("super_admin", "admin"), validateRequest(schemas.refundStatusSchema), controller.updateRefund);
 router.post("/refunds/:id/process", authorize("super_admin", "admin"), validateRequest(schemas.refundProcessSchema), controller.processRefund);

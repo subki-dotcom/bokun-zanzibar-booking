@@ -615,6 +615,43 @@ const resolveApprovedRefundContext = async ({ request, booking, approvedAmount }
   });
 };
 
+// Applies an approved change (date, time, travelers, price) to the local booking. The invoice is rebuilt from
+// grossAmount - discountAmount while revenue recognition reads finalPayable, so a price change moves both.
+const applyApprovedChangeToBooking = async ({ request, booking }) => {
+  const set = {};
+  if (request.requestedChanges?.date) set.travelDate = request.requestedChanges.date;
+  if (request.requestedChanges?.startTime) set.startTime = request.requestedChanges.startTime;
+  if (request.requestedChanges?.travelers) {
+    const currentPax = booking.paxSummary?.toObject?.() || booking.paxSummary || {};
+    set.paxSummary = { ...currentPax, ...request.requestedChanges.travelers, total: travelerTotal(request.requestedChanges.travelers) };
+  }
+  // The new total is the original plus the difference actually charged or refunded (which an admin override
+  // may set), so the booking total always matches the money moved.
+  const original = request.priceAdjustment?.originalAmount;
+  const difference = request.priceAdjustment?.difference;
+  const newAmount = original !== null && original !== undefined && difference !== null && difference !== undefined
+    ? number(original) + number(difference)
+    : request.priceAdjustment?.newAmount;
+  if (newAmount !== null && newAmount !== undefined) {
+    const discount = number(booking.pricingSnapshot?.discountAmount || 0);
+    set.amount = number(newAmount);
+    set["pricingSnapshot.finalPayable"] = number(newAmount);
+    set["pricingSnapshot.grossAmount"] = number(newAmount) + discount;
+  }
+  if (!Object.keys(set).length) return;
+  // An atomic update: the invoice sync may have saved this booking since it was loaded, and a stale document
+  // save would fail with a version conflict and leave the paid change unapplied.
+  await Booking.updateOne({ _id: booking._id }, { $set: set });
+  const fresh = await Booking.findById(booking._id);
+  if (fresh) {
+    booking.travelDate = fresh.travelDate;
+    booking.startTime = fresh.startTime;
+    booking.paxSummary = fresh.paxSummary;
+    booking.amount = fresh.amount;
+    booking.pricingSnapshot = fresh.pricingSnapshot;
+  }
+};
+
 const performBokunSync = async ({ request, booking, requestId = "" }) => {
   ensureRequestWorkflowDefaults(request, booking);
   if (request.bokunSync.status === "synced") return { synced: true, request };
@@ -659,17 +696,7 @@ const performBokunSync = async ({ request, booking, requestId = "" }) => {
         pax: request.requestedChanges?.travelers || booking.paxSummary,
         idempotencyKey: request.bokunSync.idempotencyKey
       }, requestId);
-      booking.travelDate = request.requestedChanges?.date || booking.travelDate;
-      booking.startTime = request.requestedChanges?.startTime || booking.startTime;
-      if (request.requestedChanges?.travelers) {
-        const currentPax = booking.paxSummary?.toObject?.() || booking.paxSummary || {};
-        booking.paxSummary = { ...currentPax, ...request.requestedChanges.travelers, total: travelerTotal(request.requestedChanges.travelers) };
-      }
-      if (request.priceAdjustment?.newAmount !== null && request.priceAdjustment?.newAmount !== undefined) {
-        booking.amount = number(request.priceAdjustment.newAmount);
-        booking.pricingSnapshot.finalPayable = number(request.priceAdjustment.newAmount);
-      }
-      await booking.save();
+      await applyApprovedChangeToBooking({ request, booking });
     } else {
       request.bokunSync.status = "manual_action_required";
       request.bokunSync.lastError = "Bokun amendment API payload has not been verified for this account. Complete the approved change in Bokun, then retry sync.";
@@ -1075,6 +1102,45 @@ const retryBokunSync = async ({ requestId, auth, traceId = "" }) =>
     return result;
   }});
 
+// Live Bokun amendments are completed by an operator in Bokun. This records that confirmation with evidence and
+// applies the approved change locally; without it a modified booking could never reach a synced state.
+const confirmSupplierChange = async ({ requestId, auth, supplierReference = "", evidenceNote = "", traceId = "" }) =>
+  withAdminLock({ requestId, auth, action: "confirm_supplier_change", callback: async (request) => {
+    const booking = await Booking.findById(request.booking);
+    ensureRequestWorkflowDefaults(request, booking);
+    if (request.type === "cancel_booking") throw new AppError("Cancellations are confirmed through supplier cancellation sync.", 409, "USE_CANCELLATION_SYNC");
+    if (!["approved", "processing", "failed"].includes(request.status)) throw new AppError("Approve the request before confirming the supplier change.", 409, "REQUEST_NOT_APPROVED");
+    if (request.bokunSync?.status === "synced") return { request, replay: true };
+    if (!String(supplierReference || "").trim() || !String(evidenceNote || "").trim()) {
+      throw new AppError("Supplier reference and evidence note are required.", 422, "SUPPLIER_CHANGE_EVIDENCE_REQUIRED");
+    }
+    if (request.additionalPayment?.required && request.additionalPayment?.status !== "paid") {
+      throw new AppError("The additional payment must be verified before the change is completed.", 409, "ADDITIONAL_PAYMENT_REQUIRED");
+    }
+    await applyApprovedChangeToBooking({ request, booking });
+    request.bokunSync.status = "synced";
+    request.bokunSync.syncedAt = new Date();
+    request.bokunSync.lastError = "";
+    request.bokunSync.responseSnapshot = { source: "MANUAL_SUPPLIER_CONFIRMATION", supplierReference: String(supplierReference).trim(), evidenceNote: String(evidenceNote).trim(), confirmedBy: auth?.id || "" };
+    request.status = "completed";
+    request.activeRequestKey = undefined;
+    request.completedAt = new Date();
+    await request.save();
+    await bookingsService.syncInvoiceForBookingReference({ bookingReference: booking.bookingReference, requestId: traceId, reason: "Supplier change confirmed" });
+    await recordAudit({ action: "booking_request_supplier_change_confirmed", request, booking, auth, requestId: traceId, metadata: { supplierReference: String(supplierReference).trim() } });
+    // A price reduction approved earlier becomes a refund once the change is confirmed.
+    const refundAmount = number(request.refund?.estimatedAmount || 0);
+    if (request.refund?.required && refundAmount > 0 && !request.refund?.refundId) {
+      const refundContext = await resolveApprovedRefundContext({ request, booking, approvedAmount: refundAmount });
+      if (refundContext?.providerKnown && !refundContext?.requiresManualReview) {
+        const refund = await createRefundRecord({ request, booking, amount: refundAmount, reason: "Price reduction after approved booking change", auth, refundContext });
+        return { request, refund };
+      }
+      await recordAudit({ action: "booking_request_refund_manual_review_required", request, booking, auth, requestId: traceId, metadata: { approvedAmount: refundAmount } });
+    }
+    return { request };
+  }});
+
 const markAdjustmentPaid = async ({ adjustmentId, auth, paymentReference = "", traceId = "" }) => {
   const adjustment = await PaymentAdjustment.findById(adjustmentId);
   if (!adjustment) throw new AppError("Payment adjustment not found", 404, "PAYMENT_ADJUSTMENT_NOT_FOUND");
@@ -1249,6 +1315,7 @@ module.exports = {
   requestMoreInformation,
   recalculateRequest,
   retryBokunSync,
+  confirmSupplierChange,
   markAdjustmentPaid,
   updateRefundStatus,
   processRefund,

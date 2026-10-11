@@ -15,4 +15,6 @@ const updateRefund = asyncHandler(async (req, res) => successResponse(res, { mes
 const processRefund = asyncHandler(async (req, res) => successResponse(res, { message: "Refund processing requested", data: await service.processRefund({ refundId: req.validated.params.id, auth: req.auth, notes: req.validated.body.notes, traceId: req.requestId }) }));
 const verifyRefund = asyncHandler(async (req, res) => successResponse(res, { message: "Refund status verified", data: await service.verifyRefundStatus({ refundId: req.validated.params.id, auth: req.auth, traceId: req.requestId }) }));
 
-module.exports = { list, get, approve, reject, requestInformation, recalculate, retryBokun, retryEmail, markAdjustmentPaid, updateRefund, processRefund, verifyRefund };
+const confirmSupplierChange = asyncHandler(async (req, res) => successResponse(res, { message: "Supplier change confirmation processed", data: await service.confirmSupplierChange({ requestId: req.validated.params.id, auth: req.auth, supplierReference: req.validated.body.supplierReference, evidenceNote: req.validated.body.evidenceNote, traceId: req.requestId }) }));
+
+module.exports = { confirmSupplierChange, list, get, approve, reject, requestInformation, recalculate, retryBokun, retryEmail, markAdjustmentPaid, updateRefund, processRefund, verifyRefund };
