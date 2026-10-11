@@ -31,6 +31,8 @@ const createTransferPublicRouter = ({ bookings, limits = DEFAULT_LIMITS }) => {
 
   router.get("/locations", limiter(60 * 1000, limits.locations, "TRANSFER_RATE_LIMITED"), asyncHandler(async (_req, res) => ok(res, await bookings.listPublicLocations())));
 
+  router.get("/options", limiter(60 * 1000, limits.locations, "TRANSFER_RATE_LIMITED"), asyncHandler(async (_req, res) => ok(res, await bookings.publicOptions())));
+
   router.post("/quote", limiter(60 * 1000, limits.quote, "TRANSFER_RATE_LIMITED"), validateRequest(v.publicQuoteSchema), asyncHandler(async (req, res) =>
     ok(res, await bookings.quote(req.validated.body))));
 

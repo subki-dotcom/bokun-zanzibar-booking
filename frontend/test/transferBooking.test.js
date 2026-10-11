@@ -64,16 +64,23 @@ test("transfer pages are lazy routes beside the unchanged tour routes", () => {
   for (const tourRoute of ['path="/tours"', 'path="/tours/:slug"', 'path="/booking/:slug"', 'path="/payment/checkout/:reference"']) assert.ok(routes.includes(tourRoute), tourRoute);
 });
 
-test("the booking form has every requested field", async () => {
+test("step one asks only for the trip, and shows no price before the server quotes one", async () => {
   const html = await render("/src/pages/public/TransfersPage.jsx", "/transfers");
-  for (const label of ["One way", "Round trip", "Pickup location", "Drop-off location", "Travel date", "Pickup time", "Adults", "Children", "Infants", "Large bags", "Small bags", "Other luggage", "Flight number", "Hotel / exact pickup address", "Full name", "Email", "Phone / WhatsApp", "This number is on WhatsApp", "Special requests"]) {
+  for (const label of ["Where are we taking you?", "One-way", "Round trip", "Pickup location", "Drop-off location", "Travel date", "Pickup time (Zanzibar time)", "Adults", "Children", "Infants", "Large bags", "Small bags", "See vehicle options"]) {
     assert.ok(html.includes(label), label);
   }
-  assert.match(html, /<h1>Zanzibar airport &amp; hotel transfers<\/h1>/);
-  assert.match(html, /aria-hidden="true"><label for="transfer-website">/, "honeypot is hidden from people");
-  // No price exists until the server quotes one.
+  assert.match(html, /<h1 id="transfer-step-heading" tabindex="-1">Where are we taking you\?<\/h1>/);
+  assert.match(html, /aria-current="step"/);
+  assert.match(html, /role="combobox"/);
+  // Personal details belong to a later step, and no price exists until the server quotes one.
+  assert.equal(html.includes("Full name"), false);
   assert.equal(/USD \d/.test(html), false);
-  assert.match(html, /Request a Quote|Choose pickup, drop-off and passengers to see the price/);
+});
+
+test("later steps cannot be opened from the address bar before the trip is complete", async () => {
+  const html = await render("/src/pages/public/TransfersPage.jsx", "/transfers?step=pay");
+  assert.ok(html.includes("Where are we taking you?"));
+  assert.equal(html.includes("Review and pay"), false);
 });
 
 test("the status page does not open a booking from the reference alone", async () => {
@@ -102,6 +109,12 @@ test("form validation covers schedule, passengers and contact details", () => {
   assert.ok(validateTransferForm(filled({ tripType: "ROUND_TRIP" }), now).returnDate);
   assert.ok(validateTransferForm(filled({ tripType: "ROUND_TRIP", returnDate: "2099-06-01", returnTime: "09:00" }), now).returnDate);
   assert.deepEqual(validateTransferForm(filled({ tripType: "ROUND_TRIP", returnDate: "2099-06-05", returnTime: "09:00" }), now), {});
+  // The booking horizon set in Transfer Admin, the luggage limits and an international phone number.
+  assert.match(validateTransferForm(filled({ travelDate: "2099-06-01" }), now, { maxAdvanceDays: 10 }).travelDate, /up to 10 days ahead/);
+  assert.equal(validateTransferForm(filled({ travelDate: "2099-05-11" }), now, { maxAdvanceDays: 10 }).travelDate, undefined);
+  assert.ok(validateTransferForm(filled({ largeBags: 41 }), now).largeBags);
+  assert.ok(validateTransferForm(filled({ smallBags: 1.5 }), now).smallBags);
+  assert.match(validateTransferForm(filled({ phone: "0712 345 678" }), now).phone, /country code/);
 });
 
 test("the booking payload never carries a price, only the total the customer saw for the server to check", () => {
@@ -127,7 +140,8 @@ test("the form shows the agreed age bands and that infants need a seat", async (
   const html = await render("/src/pages/public/TransfersPage.jsx", "/transfers");
   assert.ok(html.includes("12+ years"));
   assert.ok(html.includes("4–11 years"));
-  assert.ok(html.includes("0–3 years · need a seat in the vehicle"));
+  assert.ok(html.includes("0–3 years"));
+  assert.ok(html.includes("Infants need their own seat in the vehicle"));
 });
 
 test("flight numbers accept real airline formats and stay optional", async () => {

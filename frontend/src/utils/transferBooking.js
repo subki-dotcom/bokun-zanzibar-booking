@@ -23,8 +23,12 @@ export const emptyTransferForm = () => ({
   flightNumber: "",
   pickupAddress: "",
   dropoffAddress: "",
+  vehicleOption: "",
   fullName: "",
   email: "",
+  // The phone is entered as a country code plus the local number; `phone` is the two joined, as the server stores it.
+  phoneCountry: "",
+  phoneNational: "",
   phone: "",
   whatsapp: true,
   specialRequests: "",
@@ -57,7 +61,20 @@ export const quoteRequestFor = (form) => {
   };
 };
 
-export const validateTransferForm = (form, now = new Date()) => {
+// The last date a customer may book, as YYYY-MM-DD, from the booking horizon set in Transfer Admin.
+export const lastBookableDate = (maxAdvanceDays, now = new Date()) =>
+  maxAdvanceDays ? new Date(new Date(`${zanzibarToday(now)}T12:00:00Z`).getTime() + maxAdvanceDays * 86400000).toISOString().slice(0, 10) : "";
+
+// "+44" and "7700 900123" → "+44 7700 900123". A number typed with its own "+code" is kept as typed.
+export const composePhone = (country, national) => {
+  const number = String(national || "").trim();
+  if (number.startsWith("+")) return number;
+  return [String(country || "").trim(), number].filter(Boolean).join(" ");
+};
+
+export const MAX_BAGS = 40;
+
+export const validateTransferForm = (form, now = new Date(), { maxAdvanceDays } = {}) => {
   const errors = {};
   if (!form.pickupLocationId) errors.pickupLocationId = "Choose a pickup location";
   if (!form.dropoffLocationId) errors.dropoffLocationId = "Choose a drop-off location";
@@ -66,10 +83,14 @@ export const validateTransferForm = (form, now = new Date()) => {
   const outbound = zanzibarInstant(form.travelDate, form.travelTime);
   if (!outbound) errors.travelDate = "Choose the travel date and time";
   else if (outbound <= now) errors.travelDate = "The travel date and time must be in the future";
+  const lastDate = lastBookableDate(maxAdvanceDays, now);
+  const tooFar = `Transfers can be booked up to ${maxAdvanceDays} days ahead`;
+  if (outbound && lastDate && form.travelDate > lastDate) errors.travelDate = tooFar;
   if (form.tripType === TRIP_TYPES.ROUND_TRIP) {
     const back = zanzibarInstant(form.returnDate, form.returnTime);
     if (!back) errors.returnDate = "Choose the return date and time";
     else if (outbound && back <= outbound) errors.returnDate = "The return must be after the outbound transfer";
+    else if (lastDate && form.returnDate > lastDate) errors.returnDate = tooFar;
   }
 
   const adults = Number(form.adults);
@@ -77,12 +98,18 @@ export const validateTransferForm = (form, now = new Date()) => {
   if (!whole(form.children)) errors.children = "Enter a whole number";
   if (!whole(form.infants)) errors.infants = "Enter a whole number";
   if (adults + Number(form.children) + Number(form.infants) > MAX_PASSENGERS) errors.adults = `At most ${MAX_PASSENGERS} passengers`;
+  for (const bags of ["largeBags", "smallBags"]) {
+    const value = Number(form[bags] || 0);
+    if (!whole(value) || value > MAX_BAGS) errors[bags] = `Enter 0 to ${MAX_BAGS} bags`;
+  }
   if (form.flightNumber && !FLIGHT_NUMBER_PATTERN.test(form.flightNumber.trim().toUpperCase())) errors.flightNumber = "Enter the flight number as shown on your ticket";
 
   if (String(form.fullName).trim().length < 2) errors.fullName = "Enter your full name";
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(form.email).trim())) errors.email = "Enter a valid email address";
-  const phoneDigits = String(form.phone).replace(/\D/g, "");
-  if (!/^\+?[0-9 ()-]{7,24}$/.test(String(form.phone).trim()) || phoneDigits.length < 7) errors.phone = "Enter a valid phone number with country code";
+  const phone = String(form.phone || "").trim();
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (!phone.startsWith("+")) errors.phone = "Choose your country code and enter your phone number";
+  else if (!/^\+[0-9 ()-]{7,24}$/.test(phone) || phoneDigits.length < 7 || phoneDigits.length > 15) errors.phone = "Enter a valid phone number";
   return errors;
 };
 
@@ -123,8 +150,12 @@ export const accessTokenFromHash = (hash = "") => {
 export const formatUsd = (amount) => (amount === null || amount === undefined ? "" : `USD ${Number(amount).toFixed(2)}`);
 
 export const STATUS_LABELS = Object.freeze({
-  QUOTE_REQUESTED: { label: "Quote requested", tone: "info", next: "Our team will review your request and send you a price. Nothing is charged until you accept it." },
-  AWAITING_PAYMENT: { label: "Awaiting payment", tone: "warning", next: "Your transfer is not confirmed yet. It is confirmed once payment has been received and verified." },
+  QUOTE_REQUESTED: {
+    label: "Quote requested",
+    tone: "info",
+    next: "Our team will price your trip and send you a secure link to pay online. Your transfer is confirmed only after the online payment has been verified."
+  },
+  AWAITING_PAYMENT: { label: "Awaiting payment", tone: "warning", next: "Your transfer is not confirmed yet. It is confirmed only after your online payment has been received and verified." },
   CONFIRMED: { label: "Confirmed", tone: "success", next: "Your transfer is confirmed." },
   REJECTED: { label: "Not accepted", tone: "secondary", next: "We are unable to accept this booking. Please contact us if you would like to arrange something else." },
   CANCELLED: { label: "Cancelled", tone: "secondary", next: "This booking has been cancelled." }

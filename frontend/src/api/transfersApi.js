@@ -3,6 +3,9 @@ import axiosClient from "./axiosClient";
 // Transfer System public API. Independent of the tour (Bókun) booking endpoints.
 export const fetchTransferLocations = async () => (await axiosClient.get("/transfers/locations")).data.data;
 
+// Booking horizon and the payment methods customers can use.
+export const fetchTransferOptions = async () => (await axiosClient.get("/transfers/options")).data.data;
+
 export const fetchTransferQuote = async (request) => (await axiosClient.post("/transfers/quote", request)).data.data;
 
 export const createTransferBooking = async (payload, idempotencyKey) =>

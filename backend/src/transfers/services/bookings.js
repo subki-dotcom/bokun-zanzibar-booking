@@ -2,7 +2,7 @@ const AppError = require("../../utils/AppError");
 const { toDecimal, toDecimal128, moneyString } = require("../../utils/money");
 const { withTransaction } = require("../db/connection");
 const { recordTransferAudit } = require("./audit");
-const { BOOKING_STATUS, PAYMENT_STATUS, DEFAULT_MAX_ADVANCE_DAYS } = require("../models");
+const { BOOKING_STATUS, PAYMENT_STATUS, DEFAULT_MAX_ADVANCE_DAYS, TRANSFER_CURRENCY } = require("../models");
 const { QUOTE_STATUS } = require("../pricing/engine");
 const {
   REFERENCE_PATTERN,
@@ -125,6 +125,19 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
   };
 
   const quote = async (input) => publicQuoteView(await pricing.quote(input));
+
+  // What the website needs before a quote: the booking horizon and how customers pay. Online payment
+  // (Pesapal) is the only way a customer pays; it stays unavailable until the payment phase is built, so the
+  // website never offers a checkout that does not exist yet.
+  const publicOptions = async () => {
+    const { models } = await getStore();
+    const settings = (await models.Settings.findOne({ key: "pricing" }, { maxAdvanceDays: 1 }).lean()) || {};
+    return {
+      currency: TRANSFER_CURRENCY,
+      maxAdvanceDays: settings.maxAdvanceDays || DEFAULT_MAX_ADVANCE_DAYS,
+      payment: { methods: ["PESAPAL"], onlineAvailable: false }
+    };
+  };
 
   // Answers a repeated submission with the booking it already created. Staff callers also get the internal id.
   const replay = (existing, fingerprint, origin = null) => {
@@ -288,7 +301,7 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
     return publicBookingView(booking);
   };
 
-  return { listPublicLocations, quote, createBooking, getBooking, tokenFor };
+  return { listPublicLocations, publicOptions, quote, createBooking, getBooking, tokenFor };
 };
 
 module.exports = { zanzibarInstant, scheduleFor, publicBookingView, createTransferBookingService };

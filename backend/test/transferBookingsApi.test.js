@@ -108,6 +108,13 @@ test("public transfer booking API against a real database", async (t) => {
       assert.deepEqual(Object.keys(result.data[0]).sort(), ["id", "name", "type"]);
     });
 
+    await t.test("options give the booking horizon and online payment as the only, not yet available, method", async () => {
+      const result = await call("GET", "/options");
+      assert.equal(result.status, 200);
+      assert.equal(result.headers.get("cache-control"), "no-store");
+      assert.deepEqual(result.data, { currency: "USD", maxAdvanceDays: 730, payment: { methods: ["PESAPAL"], onlineAvailable: false } });
+    });
+
     await t.test("quotes are priced by the server and expose no route or rate ids", async () => {
       const quote = await call("POST", "/quote", { body: { tripType: "ROUND_TRIP", pickupLocationId: airport.id, dropoffLocationId: hotel.id, passengers: { adults: 3 } } });
       assert.equal(quote.data.status, "PRICED");
