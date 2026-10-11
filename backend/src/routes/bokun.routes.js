@@ -38,9 +38,12 @@ router.get("/products/:productId/booking-config", bokunController.productBooking
 router.post("/products/:productId/live-quote", bokunController.productLiveQuote);
 router.post("/availability", bokunController.availability);
 router.post("/booking-questions", bokunController.bookingQuestions);
-router.post("/bookings", bokunController.createBooking);
-router.get("/bookings/:reference", bokunController.lookupBooking);
-router.post("/bookings/:bookingId/cancel", bokunController.cancelBooking);
-router.post("/bookings/:bookingId/edit", bokunController.editBooking);
+// Direct supplier writes and booking lookups bypass payment verification and expose customer data, so they are
+// restricted to administrators. Customer checkouts go through the payment flow, never these endpoints.
+const adminOnly = [authenticate, authorize("super_admin", "admin")];
+router.post("/bookings", ...adminOnly, bokunController.createBooking);
+router.get("/bookings/:reference", ...adminOnly, bokunController.lookupBooking);
+router.post("/bookings/:bookingId/cancel", ...adminOnly, bokunController.cancelBooking);
+router.post("/bookings/:bookingId/edit", ...adminOnly, bokunController.editBooking);
 
 module.exports = router;
