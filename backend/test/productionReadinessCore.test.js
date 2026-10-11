@@ -171,3 +171,21 @@ test("production readiness blocks release when an evidence source fails", async 
   assert.ok(summary.checks.some((check) => check.id === "evidence_audit_control" && check.status === CHECK_STATUS.FAIL));
   assert.ok(summary.nextActions.some((item) => item.checkId === "evidence_audit_control"));
 });
+
+test("disaster recovery readiness distinguishes missing, stale and unknown backup evidence", () => {
+  const missing = __testables.buildDisasterRecoveryCheck({ rpoStatus: "NO_COMPLETED_BACKUP" });
+  const stale = __testables.buildDisasterRecoveryCheck({
+    rpoStatus: "RPO_BREACHED",
+    latestCompletedBackup: { operationReference: "BACKUP-x", completedAt: "2026-08-01T00:00:00.000Z" }
+  });
+  const unknown = __testables.buildDisasterRecoveryCheck({ rpoStatus: "UNKNOWN" });
+
+  assert.equal(missing.status, CHECK_STATUS.WARN);
+  assert.match(missing.message, /No completed backup has ever been recorded/);
+  assert.equal(stale.status, CHECK_STATUS.WARN);
+  assert.match(stale.message, /older than the configured RPO/);
+  assert.equal(stale.evidence.latestCompletedBackupAt, "2026-08-01T00:00:00.000Z");
+  assert.equal(unknown.status, CHECK_STATUS.WARN);
+  assert.match(unknown.message, /unverified/);
+  assert.match(missing.nextAction, /backup:apply/);
+});

@@ -254,25 +254,34 @@ const buildOpsCheck = (summary = {}) => {
   });
 };
 
-const buildDisasterRecoveryCheck = (summary = {}) =>
-  makeCheck({
+const disasterRecoveryMessages = {
+  WITHIN_RPO: "A completed backup is within the configured RPO.",
+  RPO_BREACHED: "The latest completed backup is older than the configured RPO.",
+  NO_COMPLETED_BACKUP: "No completed backup has ever been recorded by the disaster recovery control plane."
+};
+
+const buildDisasterRecoveryCheck = (summary = {}) => {
+  const withinRpo = summary.rpoStatus === "WITHIN_RPO";
+  return makeCheck({
     id: "backup_restore",
     category: "disaster_recovery",
     label: "Backup and restore readiness",
-    status: summary.rpoStatus === "WITHIN_RPO" ? CHECK_STATUS.PASS : CHECK_STATUS.WARN,
-    message: summary.rpoStatus === "WITHIN_RPO"
-      ? "A completed backup is within the configured RPO."
-      : "No completed backup within RPO is recorded by the disaster recovery control plane.",
+    status: withinRpo ? CHECK_STATUS.PASS : CHECK_STATUS.WARN,
+    message: disasterRecoveryMessages[summary.rpoStatus] ||
+      "Backup evidence could not be evaluated, so backup recency is unverified.",
     evidence: {
       rpoStatus: summary.rpoStatus || "",
       latestCompletedBackup: summary.latestCompletedBackup?.operationReference || "",
+      latestCompletedBackupAt: summary.latestCompletedBackup?.completedAt || "",
+      latestRestorePlanStatus: summary.latestRestorePlan?.status || "",
       backupPolicy: summary.backupPolicy || {},
       restoreExecutionInApi: summary.safeguards?.restoreExecutionInApi
     },
-    nextAction: summary.rpoStatus === "WITHIN_RPO"
+    nextAction: withinRpo
       ? ""
-      : "Run a backup dry-run/apply and verify restore procedure on staging before release."
+      : "On an authorized host with MongoDB Database Tools, run `npm run backup:apply` in backend/ (it records COMPLETED evidence with a SHA-256 checksum), copy the archive off-host, then rehearse `npm run restore:dry-run` against an isolated staging cluster."
   });
+};
 
 const buildPerformanceCheck = (summary = {}) => {
   const criticalMissing = (summary.criticalMissing || []).length;

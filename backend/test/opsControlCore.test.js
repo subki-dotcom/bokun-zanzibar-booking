@@ -321,3 +321,28 @@ test("unsupported failed jobs return an explicit safe-retry error", async () => 
     (error) => error instanceof AppError && error.code === "FAILED_JOB_RETRY_NOT_SUPPORTED"
   );
 });
+
+test("operations summary counts open critical alerts beyond the first page of alerts", async () => {
+  const alertRows = Array.from({ length: 250 }, (_unused, index) => ({
+    _id: `alert-${index}`,
+    alertKey: `ALERT::OPS::${index}`,
+    category: ALERT_CATEGORY.OPERATIONS,
+    // The two critical alerts are the oldest, so they fall outside the newest-first first page.
+    severity: index < 2 ? ALERT_SEVERITY.CRITICAL : ALERT_SEVERITY.WARNING,
+    state: ALERT_STATE.OPEN,
+    title: "Ops alert",
+    message: "Ops alert",
+    firstSeenAt: date("2026-08-01T00:00:00.000Z"),
+    lastSeenAt: new Date(Date.UTC(2026, 7, 1) + index * 60000)
+  }));
+  const service = createOpsControlService({
+    models: modelsFor({ AlertModel: arrayModel(alertRows) }),
+    dataQuality: { listIssues: async () => ({ items: [] }) },
+    now: () => date("2026-08-20T12:00:00.000Z")
+  });
+
+  const summary = await service.getSummary({ dataQualityIssues: [] });
+
+  assert.equal(summary.alerts.total, 250);
+  assert.equal(summary.openCriticalAlerts, 2);
+});

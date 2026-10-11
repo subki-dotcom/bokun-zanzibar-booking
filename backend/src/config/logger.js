@@ -8,7 +8,8 @@ const maskMongoUri = (value = "") =>
 const redactString = (value = "") =>
   maskMongoUri(String(value || ""))
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [redacted]")
-    .replace(/(access[_-]?token|refresh[_-]?token|id[_-]?token|api[_-]?key|secret|password)=([^&\s]+)/gi, "$1=[redacted]");
+    .replace(/\bBasic\s+[A-Za-z0-9+/]{8,}={0,2}/gi, "Basic [redacted]")
+    .replace(/(access[_-]?token|refresh[_-]?token|id[_-]?token|token|api[_-]?key|secret|password)=([^&\s]+)/gi, "$1=[redacted]");
 
 const sanitizeLogValue = (key = "", value, depth = 0) => {
   if (SENSITIVE_KEY_PATTERN.test(String(key || ""))) return "[redacted]";
@@ -62,6 +63,19 @@ const logger = {
     if (process.env.NODE_ENV !== "production") {
       write("debug", console.debug, message, meta);
     }
+  },
+  // Runs canary secrets through the real log sanitizer so health checks report verified, not assumed, redaction.
+  verifyRedaction() {
+    const canary = "redaction-canary-value";
+    const basicCredential = Buffer.from(`user:${canary}`).toString("base64");
+    const output = JSON.stringify(sanitizeLogMeta({
+      password: canary,
+      headers: { authorization: `Bearer ${canary}` },
+      uri: `mongodb+srv://user:${canary}@cluster.example.net/db`,
+      note: `token=${canary}`,
+      error: `Request failed Authorization: Basic ${basicCredential}`
+    }));
+    return !output.includes(canary) && !output.includes(basicCredential);
   },
   __testables: {
     maskMongoUri,

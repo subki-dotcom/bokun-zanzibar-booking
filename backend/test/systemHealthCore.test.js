@@ -141,3 +141,58 @@ test("worker health flags repeated failures as failed monitoring evidence", () =
   assert.equal(workerCheck.details.consecutiveFailures, 3);
   assert.equal(workerCheck.message.includes("3 consecutive failures"), true);
 });
+
+test("public readiness payload never exposes check details such as database host or name", () => {
+  const service = createSystemHealthService({
+    envConfig: { ...baseEnv, JWT_SECRET: "short" },
+    connection: { readyState: 1, host: "cluster0-shard-00-00.example.mongodb.net", name: "riser_booking" },
+    flags: {
+      isBokunConfigured: true,
+      isPesapalConfigured: true,
+      isDpoConfigured: false,
+      isPaypalConfigured: false,
+      isEmailConfigured: true
+    },
+    workers: () => []
+  });
+
+  const ready = service.getReadinessHealth();
+  const serialized = JSON.stringify(ready);
+
+  assert.equal(ready.ready, false);
+  assert.equal(serialized.includes("mongodb.net"), false);
+  assert.equal(serialized.includes("riser_booking"), false);
+  assert.equal(ready.checks.every((check) => check.details === undefined), true);
+  assert.equal(ready.checks.some((check) => check.id === "jwt_secret" && check.status === CHECK_STATUS.FAIL), true);
+});
+
+test("admin JWT check explains weakness reasons without exposing the secret", () => {
+  assert.deepEqual(__testables.jwtWeaknessReasons("", true), ["missing"]);
+  assert.deepEqual(__testables.jwtWeaknessReasons("short-but-random", true), ["too_short"]);
+  assert.deepEqual(
+    __testables.jwtWeaknessReasons("my-dev-value-that-is-long-enough-for-production-use", true),
+    ["placeholder_pattern"]
+  );
+  assert.deepEqual(__testables.jwtWeaknessReasons("Zq8vN3kLp9WmR2xT7yHb4cJf6gAe1sUo", true), []);
+
+  const [, jwtCheck] = __testables.runtimeChecks({ envConfig: { ...baseEnv, JWT_SECRET: "tiny-jwt" } });
+  assert.equal(jwtCheck.status, CHECK_STATUS.FAIL);
+  assert.deepEqual(jwtCheck.details.weaknessReasons, ["too_short"]);
+  assert.equal(JSON.stringify(jwtCheck).includes("tiny-jwt"), false);
+});
+
+test("observability secret redaction is verified with a canary, not assumed", () => {
+  const leaking = createSystemHealthService({
+    envConfig: baseEnv,
+    connection: { readyState: 1 },
+    workers: () => [],
+    verifyRedaction: () => false
+  });
+  assert.equal(leaking.getAdminSummary().observability.secretsRedacted, false);
+  assert.equal(logger.verifyRedaction(), true);
+  assert.equal(logger.__testables.redactString("token=abc123").includes("abc123"), false);
+  assert.equal(
+    logger.__testables.redactString("Authorization: Basic dXNlcjpwYXNzd29yZA==").includes("dXNlcjpwYXNzd29yZA"),
+    false
+  );
+});

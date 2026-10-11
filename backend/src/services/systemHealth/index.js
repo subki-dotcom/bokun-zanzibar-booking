@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const packageJson = require("../../../package.json");
+const logger = require("../../config/logger");
 const {
   env,
   isBokunConfigured,
@@ -58,6 +59,15 @@ const check = ({
   details
 });
 
+const publicCheck = ({ id, category, label, status, severity, message }) => ({
+  id,
+  category,
+  label,
+  status,
+  severity,
+  message
+});
+
 const overallStatus = (checks = []) => {
   if (checks.some((item) => item.status === CHECK_STATUS.FAIL)) return HEALTH_STATUS.UNHEALTHY;
   if (checks.some((item) => item.status === CHECK_STATUS.WARN)) return HEALTH_STATUS.DEGRADED;
@@ -91,13 +101,22 @@ const databaseCheck = ({ connection = mongoose.connection } = {}) => {
   });
 };
 
+const JWT_MIN_PRODUCTION_LENGTH = 32;
+
+// Reports why a JWT secret is weak without exposing the value or its length.
+const jwtWeaknessReasons = (jwtSecret = "", production = false) => {
+  if (!jwtSecret) return ["missing"];
+  const reasons = [];
+  if (/change|secret|test|dev|local/i.test(jwtSecret)) reasons.push("placeholder_pattern");
+  if (production && jwtSecret.length < JWT_MIN_PRODUCTION_LENGTH) reasons.push("too_short");
+  return reasons;
+};
+
 const runtimeChecks = ({ envConfig = env } = {}) => {
   const production = envConfig.NODE_ENV === "production";
   const jwtSecret = String(envConfig.JWT_SECRET || "");
-  const weakJwt =
-    !jwtSecret ||
-    /change|secret|test|dev|local/i.test(jwtSecret) ||
-    (production && jwtSecret.length < 32);
+  const jwtReasons = jwtWeaknessReasons(jwtSecret, production);
+  const weakJwt = jwtReasons.length > 0;
 
   return [
     check({
@@ -117,7 +136,15 @@ const runtimeChecks = ({ envConfig = env } = {}) => {
       message: weakJwt
         ? "JWT secret should be rotated to a strong production-only value."
         : "JWT secret is configured.",
-      details: { configured: hasValue(jwtSecret), production }
+      details: {
+        configured: hasValue(jwtSecret),
+        production,
+        weaknessReasons: jwtReasons,
+        minimumProductionLength: JWT_MIN_PRODUCTION_LENGTH,
+        remediation: weakJwt
+          ? "Generate a random value of at least 32 characters (for example: openssl rand -base64 48) that contains none of change/secret/test/dev/local, set JWT_SECRET on the backend host and redeploy. Existing sessions will be signed out."
+          : ""
+      }
     }),
     check({
       id: "frontend_origin",
@@ -362,7 +389,8 @@ const createSystemHealthService = ({
   connection = mongoose.connection,
   packageInfo = packageJson,
   flags = {},
-  workers = defaultWorkers
+  workers = defaultWorkers,
+  verifyRedaction = () => logger.verifyRedaction()
 } = {}) => {
   const getLiveHealth = () => {
     const runtime = runtimeSummary({ envConfig, packageInfo });
@@ -397,7 +425,8 @@ const createSystemHealthService = ({
       ...runtime,
       status: failing.length ? HEALTH_STATUS.UNHEALTHY : HEALTH_STATUS.HEALTHY,
       ready: failing.length === 0,
-      checks
+      // This payload is served unauthenticated: never include details such as database hosts.
+      checks: checks.map(publicCheck)
     };
   };
 
@@ -428,7 +457,7 @@ const createSystemHealthService = ({
         structuredLogs: true,
         requestIds: true,
         correlationIds: true,
-        secretsRedacted: true,
+        secretsRedacted: verifyRedaction(),
         publicHealthEndpoint: "/api/health",
         readinessEndpoint: "/api/health/ready"
       }
@@ -452,6 +481,7 @@ module.exports = {
   __testables: {
     databaseCheck,
     integrationChecks,
+    jwtWeaknessReasons,
     normalizeWorkerStatus,
     overallStatus,
     runtimeChecks,

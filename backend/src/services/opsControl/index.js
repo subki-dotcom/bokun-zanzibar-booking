@@ -799,6 +799,7 @@ const createOpsControlService = ({
         byState: countsByState,
         byCategory: countsByCategory,
         bySeverity: countsBySeverity,
+        openCritical: filtered.filter((alert) => alert.state === ALERT_STATE.OPEN && alert.severity === ALERT_SEVERITY.CRITICAL).length,
         requiresExplicitResolution: filtered.filter(systemAlertRequiresExplicitResolution).length
       },
       states: Object.values(ALERT_STATE),
@@ -967,7 +968,8 @@ const createOpsControlService = ({
       generatedAt: now().toISOString(),
       alerts: alerts.counts,
       failedJobs: jobs.counts,
-      openCriticalAlerts: alerts.items.filter((alert) => alert.state === ALERT_STATE.OPEN && alert.severity === ALERT_SEVERITY.CRITICAL).length,
+      // Counted across every matching alert, not just the first page of items.
+      openCriticalAlerts: alerts.counts.openCritical,
       retryableFailedJobs: jobs.counts.retryable,
       categories: Object.values(ALERT_CATEGORY),
       failedJobTypes: Object.values(FAILED_JOB_TYPE),

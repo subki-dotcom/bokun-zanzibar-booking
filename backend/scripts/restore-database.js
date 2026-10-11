@@ -43,6 +43,31 @@ const maskMongoUri = (uri = "") =>
 const redactArgs = (args = []) =>
   args.map((arg) => arg.startsWith("--uri=") ? `--uri=${maskMongoUri(arg.slice("--uri=".length))}` : arg);
 
+// Cluster host list without credentials, database or options. The database path is ignored on purpose:
+// mongorestore --archive restores into the database names stored in the archive, not the URI path.
+const databaseIdentity = (uri = "") => {
+  const match = String(uri || "").trim().match(/^mongodb(?:\+srv)?:\/\/(?:[^@/]*@)?([^/?#]+)/i);
+  if (!match) return "";
+  return match[1].toLowerCase().split(",").map((host) => host.trim()).sort().join(",");
+};
+
+const collectMissingRequirements = (options = {}, env = process.env) => {
+  const missing = [];
+  const productionOverride = env.DR_ALLOW_PRODUCTION_RESTORE === "true" && options.allowProductionRestore;
+  if (!options.archivePath) missing.push("RESTORE_ARCHIVE_REQUIRED");
+  if (!options.targetUri) missing.push("RESTORE_TARGET_URI_REQUIRED");
+  if (options.apply && !options.confirmRestore) missing.push("CONFIRM_RESTORE_REQUIRED");
+  if (options.apply && env.NODE_ENV === "production" && !productionOverride) {
+    missing.push("PRODUCTION_RESTORE_BLOCKED");
+  }
+  // Operators may run this with NODE_ENV=development, so also refuse the configured live database as a target.
+  const sourceIdentity = databaseIdentity(env.MONGO_URI);
+  if (options.targetUri && sourceIdentity && databaseIdentity(options.targetUri) === sourceIdentity && !productionOverride) {
+    missing.push("SOURCE_TARGET_SAME_DATABASE");
+  }
+  return missing;
+};
+
 const fail = (code, message) => {
   console.error(`${code}: ${message}`);
   process.exitCode = 1;
@@ -68,17 +93,7 @@ const main = async () => {
   args.push("--gzip");
   if (options.dropExisting) args.push("--drop");
 
-  const missing = [];
-  if (!options.archivePath) missing.push("RESTORE_ARCHIVE_REQUIRED");
-  if (!options.targetUri) missing.push("RESTORE_TARGET_URI_REQUIRED");
-  if (options.apply && !options.confirmRestore) missing.push("CONFIRM_RESTORE_REQUIRED");
-  if (
-    options.apply &&
-    process.env.NODE_ENV === "production" &&
-    !(process.env.DR_ALLOW_PRODUCTION_RESTORE === "true" && options.allowProductionRestore)
-  ) {
-    missing.push("PRODUCTION_RESTORE_BLOCKED");
-  }
+  const missing = collectMissingRequirements(options);
 
   console.log(JSON.stringify({
     type: "RESTORE",
@@ -104,7 +119,15 @@ const main = async () => {
   await run({ command: "mongorestore", args });
 };
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exitCode = error.exitCode || 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = error.exitCode || 1;
+  });
+}
+
+module.exports = {
+  collectMissingRequirements,
+  databaseIdentity,
+  parseArgs
+};
