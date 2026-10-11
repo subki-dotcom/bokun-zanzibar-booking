@@ -291,6 +291,28 @@ test("detects checkout and Pesapal callback origins from different environments"
   assert.deepEqual(matching.mismatches, []);
 });
 
+test("accepts canonical production checkout and Pesapal callback origins", () => {
+  const result = __testables.findPesapalCallbackOriginMismatch({
+    checkoutOrigin: "https://zanzibartoursandsafaris.co.tz",
+    frontendOrigins: ["https://zanzibartoursandsafaris.co.tz"],
+    successUrl: "https://zanzibartoursandsafaris.co.tz/payment-success",
+    cancelUrl: "https://zanzibartoursandsafaris.co.tz/payment-failure"
+  });
+
+  assert.deepEqual(result.mismatches, []);
+});
+
+test("rejects legacy Vercel callbacks for the canonical production checkout", () => {
+  const result = __testables.findPesapalCallbackOriginMismatch({
+    checkoutOrigin: "https://zanzibartoursandsafaris.co.tz",
+    frontendOrigins: ["https://zanzibartoursandsafaris.co.tz"],
+    successUrl: "https://bokun-zanzibar-booking.vercel.app/payment-success",
+    cancelUrl: "https://bokun-zanzibar-booking.vercel.app/payment-failure"
+  });
+
+  assert.deepEqual(result.mismatches.map(({ key }) => key), ["PESAPAL_SUCCESS_URL", "PESAPAL_CANCEL_URL"]);
+});
+
 test("returns a terminal reconciliation result for a verified callback without a local booking", () => {
   const result = __testables.buildUnmatchedPesapalCallbackResult({
     orderMerchantReference: "ZNZ-ORPHAN-1",
