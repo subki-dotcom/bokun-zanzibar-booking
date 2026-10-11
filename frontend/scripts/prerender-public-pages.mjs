@@ -144,6 +144,14 @@ const run = async () => {
     schemas: sharedSchema(),
     body: `<main><h1>Zanzibar Tours & Activities</h1><p>Explore available Zanzibar experiences.</p><ul>${details.map((tour) => `<li><a href="/tours/${escapeHtml(tour.slug)}">${escapeHtml(tour.title)}</a></li>`).join("")}</ul></main>`
   }));
+  // Transfers: a static booking page whose prices come from the Transfer API at run time, so nothing is fetched here.
+  await writePage(template, "/transfers", metadata({
+    title: "Zanzibar Airport & Hotel Transfers | Riser Tours & Safaris",
+    description: "Book private Zanzibar airport, port and hotel transfers. Instant prices per vehicle for one-way and round trips.",
+    canonical: `${siteUrl}/transfers`,
+    schemas: sharedSchema(),
+    body: '<main><h1>Zanzibar airport &amp; hotel transfers</h1><p>One price per vehicle, not per person. Choose your route and see the price instantly.</p><p><a href="/transfers">Book a transfer</a></p></main>'
+  }));
   for (const tour of details) {
     const canonical = `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`;
     const description = truncate(tour.shortDescription || tour.description || `Explore ${tour.title} with Riser Tours & Safaris.`);
@@ -169,7 +177,7 @@ const run = async () => {
       title: `${tour.title} | Riser Tours & Safaris`, description, canonical, image, schemas, body: buildTourMarkup(tour)
     }));
   }
-  const urls = [homeCanonical, `${siteUrl}/tours`, ...details.map((tour) => `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`)];
+  const urls = [homeCanonical, `${siteUrl}/tours`, `${siteUrl}/transfers`, ...details.map((tour) => `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`)];
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((url) => `  <url><loc>${escapeHtml(url)}</loc></url>`).join("\n")}\n</urlset>\n`;
   await fs.writeFile(path.join(dist, "sitemap.xml"), sitemap);
   console.log(JSON.stringify({ generatedPages: urls.length, generatedTourPages: details.length, sitemap: "dist/sitemap.xml" }));

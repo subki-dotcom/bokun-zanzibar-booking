@@ -122,3 +122,28 @@ test("the private link keeps the access token in the URL fragment", () => {
   assert.equal(accessTokenFromHash(""), "");
   assert.equal(zanzibarToday(new Date("2026-10-11T22:30:00Z")), "2026-10-12");
 });
+
+test("the form shows the agreed age bands and that infants need a seat", async () => {
+  const html = await render("/src/pages/public/TransfersPage.jsx", "/transfers");
+  assert.ok(html.includes("12+ years"));
+  assert.ok(html.includes("4–11 years"));
+  assert.ok(html.includes("0–3 years · need a seat in the vehicle"));
+});
+
+test("flight numbers accept real airline formats and stay optional", async () => {
+  const { FLIGHT_NUMBER_PATTERN } = await import("../src/utils/transferBooking.js");
+  for (const valid of ["PW 1234", "KQ-488", "TK0605", "5H123", "ET815A", "ATC123"]) assert.ok(FLIGHT_NUMBER_PATTERN.test(valid), valid);
+  for (const invalid of ["HELLO", "PW  12", "-PW1"]) assert.equal(FLIGHT_NUMBER_PATTERN.test(invalid), false, invalid);
+  const now = new Date("2099-05-01T00:00:00Z");
+  assert.equal(validateTransferForm(filled({ flightNumber: "" }), now).flightNumber, undefined);
+  assert.equal(validateTransferForm(filled({ flightNumber: "kq-488" }), now).flightNumber, undefined);
+});
+
+test("/transfers is in the static sitemap and the SEO prerender, which fetches nothing for it", () => {
+  assert.match(read("public/sitemap.xml"), /<loc>https:\/\/zanzibartoursandsafaris\.co\.tz\/transfers<\/loc>/);
+  const prerender = read("scripts/prerender-public-pages.mjs");
+  assert.match(prerender, /await writePage\(template, "\/transfers", metadata\(\{/);
+  assert.match(prerender, /`\$\{siteUrl\}\/transfers`, \.\.\.details/);
+  const block = prerender.slice(prerender.indexOf('writePage(template, "/transfers"'), prerender.indexOf("for (const tour of details)"));
+  assert.equal(/requestJson|fetch\(/.test(block), false);
+});

@@ -1,5 +1,5 @@
 const { z } = require("zod");
-const { LOCATION_TYPES, INFANT_PRICING } = require("./models");
+const { LOCATION_TYPES, INFANT_PRICING, MAX_ADVANCE_DAYS_LIMIT } = require("./models");
 const { TRANSFER_ROLES } = require("./security/permissions");
 const { TRIP_TYPES, MAX_PASSENGERS } = require("./pricing/engine");
 const { passwordSchema } = require("./security/password");
@@ -103,7 +103,10 @@ const updateRateSchema = z.object({
 });
 
 const updateSettingsSchema = z.object({
-  body: z.object({ infantPricing: z.enum(Object.values(INFANT_PRICING)), reason }).strict(),
+  body: z
+    .object({ infantPricing: z.enum(Object.values(INFANT_PRICING)).optional(), maxAdvanceDays: z.number().int().min(1).max(MAX_ADVANCE_DAYS_LIMIT).optional(), reason })
+    .strict()
+    .refine((body) => body.infantPricing !== undefined || body.maxAdvanceDays !== undefined, "Nothing to update"),
   query: noQuery,
   params: z.object({}).passthrough()
 });
@@ -141,6 +144,9 @@ const resetPasswordSchema = z.object({
 
 
 // ---------- Public (website) ----------
+// Airline formats vary (PW 1234, KQ-488, TK0605, 5H123, ICAO codes such as ATC123); accept letters, digits, one
+// space or hyphen, 2–12 characters, with at least one digit.
+const FLIGHT_NUMBER_PATTERN = /^(?=.*\d)[A-Z0-9](?:[A-Z0-9]|[ -](?=[A-Z0-9])){1,11}$/;
 const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 const localTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:mm");
 const optionalText = (max) => z.string().trim().max(max).optional().default("");
@@ -161,7 +167,7 @@ const publicBookingSchema = z.object({
         .object({ largeBags: z.coerce.number().int().min(0).max(40).default(0), smallBags: z.coerce.number().int().min(0).max(40).default(0), notes: optionalText(300) })
         .strict()
         .default({}),
-      flightNumber: z.string().trim().toUpperCase().regex(/^([A-Z0-9]{2,3}\s?\d{1,5}[A-Z]?)?$/,"Enter a flight number like PW 1234").optional().default(""),
+      flightNumber: z.string().trim().toUpperCase().regex(FLIGHT_NUMBER_PATTERN, "Enter the flight number as shown on your ticket").or(z.literal("")).optional().default(""),
       pickupAddress: optionalText(300),
       dropoffAddress: optionalText(300),
       customer: z
@@ -199,6 +205,7 @@ const publicBookingLookupSchema = z.object({
 });
 
 module.exports = {
+  FLIGHT_NUMBER_PATTERN,
   publicQuoteSchema,
   publicBookingSchema,
   publicBookingLookupSchema,

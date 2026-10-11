@@ -3,6 +3,8 @@
 
 export const TRIP_TYPES = Object.freeze({ ONE_WAY: "ONE_WAY", ROUND_TRIP: "ROUND_TRIP" });
 export const MAX_PASSENGERS = 99;
+// Same rule as the server: letters, digits, one space or hyphen, 2–12 characters, at least one digit.
+export const FLIGHT_NUMBER_PATTERN = /^(?=.*\d)[A-Z0-9](?:[A-Z0-9]|[ -](?=[A-Z0-9])){1,11}$/;
 
 export const emptyTransferForm = () => ({
   tripType: TRIP_TYPES.ONE_WAY,
@@ -75,7 +77,7 @@ export const validateTransferForm = (form, now = new Date()) => {
   if (!whole(form.children)) errors.children = "Enter a whole number";
   if (!whole(form.infants)) errors.infants = "Enter a whole number";
   if (adults + Number(form.children) + Number(form.infants) > MAX_PASSENGERS) errors.adults = `At most ${MAX_PASSENGERS} passengers`;
-  if (form.flightNumber && !/^[A-Za-z0-9]{2,3}\s?\d{1,5}[A-Za-z]?$/.test(form.flightNumber.trim())) errors.flightNumber = "Enter a flight number like PW 1234";
+  if (form.flightNumber && !FLIGHT_NUMBER_PATTERN.test(form.flightNumber.trim().toUpperCase())) errors.flightNumber = "Enter the flight number as shown on your ticket";
 
   if (String(form.fullName).trim().length < 2) errors.fullName = "Enter your full name";
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(form.email).trim())) errors.email = "Enter a valid email address";

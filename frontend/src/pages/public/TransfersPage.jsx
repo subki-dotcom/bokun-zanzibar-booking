@@ -296,9 +296,9 @@ const TransfersPage = () => {
               <section className="transfer-card" aria-labelledby="transfer-pax-heading">
                 <h2 id="transfer-pax-heading" className="transfer-card-title"><span>2</span> Passengers &amp; luggage</h2>
                 <div className="transfer-counters">
-                  <Counter id="transfer-adults" label="Adults" value={form.adults} min={1} onChange={update("adults")} error={errors.adults} />
-                  <Counter id="transfer-children" label="Children" value={form.children} onChange={update("children")} error={errors.children} />
-                  <Counter id="transfer-infants" label="Infants" hint="Count toward the seats in the vehicle" value={form.infants} onChange={update("infants")} error={errors.infants} />
+                  <Counter id="transfer-adults" label="Adults" hint="12+ years" value={form.adults} min={1} onChange={update("adults")} error={errors.adults} />
+                  <Counter id="transfer-children" label="Children" hint="4–11 years" value={form.children} onChange={update("children")} error={errors.children} />
+                  <Counter id="transfer-infants" label="Infants" hint="0–3 years · need a seat in the vehicle" value={form.infants} onChange={update("infants")} error={errors.infants} />
                 </div>
                 {errors.adults ? <div className="transfer-error" role="alert">{errors.adults}</div> : null}
                 <div className="transfer-counters">

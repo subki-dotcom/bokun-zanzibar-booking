@@ -2,7 +2,7 @@ const AppError = require("../../utils/AppError");
 const { toDecimal, toDecimal128, moneyString } = require("../../utils/money");
 const { withTransaction } = require("../db/connection");
 const { recordTransferAudit } = require("./audit");
-const { BOOKING_STATUS, PAYMENT_STATUS } = require("../models");
+const { BOOKING_STATUS, PAYMENT_STATUS, DEFAULT_MAX_ADVANCE_DAYS } = require("../models");
 const { QUOTE_STATUS } = require("../pricing/engine");
 const {
   REFERENCE_PATTERN,
@@ -17,7 +17,6 @@ const {
 
 // Zanzibar is UTC+3 all year (no daylight saving).
 const ZANZIBAR_OFFSET_MINUTES = 3 * 60;
-const MAX_ADVANCE_DAYS = 730;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_-]{16,128}$/;
 
 const notFound = () => new AppError("Booking not found", 404, "TRANSFER_BOOKING_NOT_FOUND");
@@ -34,18 +33,20 @@ const zanzibarInstant = (localDate, localTime) => {
   return new Date(utc);
 };
 
-const scheduleFor = (input, now) => {
+const scheduleFor = (input, now, maxAdvanceDays = DEFAULT_MAX_ADVANCE_DAYS) => {
+  const horizon = maxAdvanceDays * 86400000;
+  const tooFar = `Bookings can be made up to ${maxAdvanceDays} days ahead`;
   const invalid = (message, field) => new AppError(message, 422, "TRANSFER_INVALID_SCHEDULE", { field });
   const outbound = zanzibarInstant(input.travelDate, input.travelTime);
   if (!outbound) throw invalid("Enter a valid travel date and time", "travelDate");
   if (outbound <= now) throw invalid("The travel date and time must be in the future", "travelDate");
-  if (outbound.getTime() - now.getTime() > MAX_ADVANCE_DAYS * 86400000) throw invalid("Bookings can be made up to two years ahead", "travelDate");
+  if (outbound.getTime() - now.getTime() > horizon) throw invalid(tooFar, "travelDate");
   const schedule = { outbound };
   if (input.tripType === "ROUND_TRIP") {
     const back = zanzibarInstant(input.returnDate, input.returnTime);
     if (!back) throw invalid("Enter a valid return date and time", "returnDate");
     if (back <= outbound) throw invalid("The return must be after the outbound transfer", "returnDate");
-    if (back.getTime() - now.getTime() > MAX_ADVANCE_DAYS * 86400000) throw invalid("Bookings can be made up to two years ahead", "returnDate");
+    if (back.getTime() - now.getTime() > horizon) throw invalid(tooFar, "returnDate");
     schedule.back = back;
   }
   return schedule;
@@ -145,7 +146,8 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
     if (existing) return replay(existing, fingerprint);
 
     const at = now();
-    const schedule = scheduleFor(input, at);
+    const settings = (await models.Settings.findOne({ key: "pricing" }, { maxAdvanceDays: 1 }).lean()) || {};
+    const schedule = scheduleFor(input, at, settings.maxAdvanceDays || DEFAULT_MAX_ADVANCE_DAYS);
     const priced = await pricing.quote({
       tripType: input.tripType,
       pickupLocationId: input.pickupLocationId,
@@ -253,4 +255,4 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
   return { listPublicLocations, quote, createBooking, getBooking };
 };
 
-module.exports = { zanzibarInstant, publicBookingView, createTransferBookingService };
+module.exports = { zanzibarInstant, scheduleFor, publicBookingView, createTransferBookingService };

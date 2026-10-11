@@ -77,3 +77,19 @@ test("the public booking view exposes no internal ids, tokens or full contact de
   assert.equal(view.legs[0].price, "45.00");
   assert.equal(view.customer.fullName, "Jane Doe");
 });
+
+test("the booking horizon is a setting, two years by default", () => {
+  const { scheduleFor } = require("../src/transfers/services/bookings");
+  const now = new Date("2026-10-11T00:00:00Z");
+  const input = (date) => ({ tripType: "ONE_WAY", travelDate: date, travelTime: "10:00" });
+  assert.ok(scheduleFor(input("2028-10-01"), now).outbound);
+  assert.throws(() => scheduleFor(input("2028-10-20"), now), /up to 730 days ahead/);
+  assert.throws(() => scheduleFor(input("2026-11-20"), now, 30), /up to 30 days ahead/);
+  assert.ok(scheduleFor(input("2026-11-01"), now, 30).outbound);
+});
+
+test("flight numbers accept real airline formats", () => {
+  const { FLIGHT_NUMBER_PATTERN } = require("../src/transfers/validators");
+  for (const valid of ["PW 1234", "KQ-488", "TK0605", "5H123", "ET815A", "QR 1349", "ATC123"]) assert.ok(FLIGHT_NUMBER_PATTERN.test(valid), valid);
+  for (const invalid of ["HELLO", "-PW1", "PW  12", "A", "ABCDEFGHIJKLM1", "PW_12"]) assert.equal(FLIGHT_NUMBER_PATTERN.test(invalid), false, invalid);
+});

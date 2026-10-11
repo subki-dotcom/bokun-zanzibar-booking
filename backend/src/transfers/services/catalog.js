@@ -4,7 +4,7 @@ const { withTransaction } = require("../db/connection");
 const { recordTransferAudit } = require("./audit");
 const { findOverlappingTier } = require("../pricing/rules");
 const { MAX_PASSENGERS } = require("../pricing/engine");
-const { INFANT_PRICING, TRANSFER_CURRENCY } = require("../models");
+const { INFANT_PRICING, TRANSFER_CURRENCY, DEFAULT_MAX_ADVANCE_DAYS } = require("../models");
 
 const MAX_PRICE = "1000000";
 
@@ -63,6 +63,7 @@ const rateToApi = (rate) =>
 
 const settingsToApi = (settings) => ({
   infantPricing: settings?.infantPricing || INFANT_PRICING.EXCLUDED,
+  maxAdvanceDays: settings?.maxAdvanceDays || DEFAULT_MAX_ADVANCE_DAYS,
   currency: TRANSFER_CURRENCY,
   updatedAt: settings?.updatedAt || null
 });
@@ -369,6 +370,7 @@ const createCatalogService = ({ getStore }) => {
         const before = settings ? settings.toObject() : null;
         if (!settings) settings = new models.Settings({ key: "pricing" });
         if (input.infantPricing !== undefined) settings.infantPricing = input.infantPricing;
+        if (input.maxAdvanceDays !== undefined) settings.maxAdvanceDays = input.maxAdvanceDays;
         await settings.save(session ? { session } : {});
         return { record: settings, before, reason: input.reason || "" };
       }

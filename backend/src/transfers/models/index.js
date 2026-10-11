@@ -6,6 +6,8 @@ const { Schema } = mongoose;
 const LOCATION_TYPES = Object.freeze(["AIRPORT", "PORT", "HOTEL", "AREA", "OTHER"]);
 const INFANT_PRICING = Object.freeze({ EXCLUDED: "EXCLUDED", COUNTED: "COUNTED" });
 const TRANSFER_CURRENCY = "USD";
+const DEFAULT_MAX_ADVANCE_DAYS = 730;
+const MAX_ADVANCE_DAYS_LIMIT = 3650;
 
 const zoneSchema = new Schema(
   {
@@ -68,6 +70,8 @@ const settingsSchema = new Schema(
     key: { type: String, default: "pricing", unique: true },
     // Infants always count toward vehicle capacity (safety); whether they count toward the price tier is configurable.
     infantPricing: { type: String, enum: Object.values(INFANT_PRICING), default: INFANT_PRICING.EXCLUDED },
+    // How far ahead customers may book (days). Configurable; two years by default.
+    maxAdvanceDays: { type: Number, default: DEFAULT_MAX_ADVANCE_DAYS, min: 1, max: MAX_ADVANCE_DAYS_LIMIT },
     currency: { type: String, enum: [TRANSFER_CURRENCY], default: TRANSFER_CURRENCY }
   },
   { timestamps: true, collection: "transfer_settings" }
@@ -237,6 +241,8 @@ module.exports = {
   LOCATION_TYPES,
   INFANT_PRICING,
   TRANSFER_CURRENCY,
+  DEFAULT_MAX_ADVANCE_DAYS,
+  MAX_ADVANCE_DAYS_LIMIT,
   BOOKING_STATUS,
   PAYMENT_STATUS,
   BOOKING_SOURCES,

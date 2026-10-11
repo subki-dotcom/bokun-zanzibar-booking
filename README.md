@@ -231,7 +231,7 @@ Agent System or the Business Back Office, and it does not post to the existing a
   `transfer_manager`, `dispatcher`, `transfer_accountant`, account lockout after 5 failed sign-ins, and an immutable
   audit log (`transfer_audit_logs`).
 - Pricing: zones → locations, zone-to-zone routes (one-way or bidirectional) and passenger tiers priced per vehicle in
-  USD. Prices are always computed on the server. Adults and children count toward the tier; infants always count
+  USD. Prices are always computed on the server. Age bands: adults 12+, children 4–11, infants 0–3. Adults and children count toward the tier; infants always count
   toward capacity, and whether they count toward the tier is a setting. Routes or passenger counts without a rate
   become "Request a Quote".
 
@@ -264,7 +264,7 @@ Transfer Admin API (`/api/transfer-admin`, Transfer Admin token required except 
 
 - `POST /auth/login`, `GET /auth/me`, `POST /auth/change-password`, `POST /auth/logout-everywhere`
 - `GET|POST /zones`, `PATCH /zones/:zoneId`; same for `/locations`, `/routes`, `/rates`
-- `GET|PATCH /settings/pricing` (infant pricing policy)
+- `GET|PATCH /settings/pricing` (infant pricing policy; booking horizon `maxAdvanceDays`, 730 days by default)
 - `POST /pricing/preview` (server-side price for a one-way or round trip)
 - `GET|POST /users`, `PATCH /users/:userId`, `POST /users/:userId/reset-password`
 - `GET /audit-logs`

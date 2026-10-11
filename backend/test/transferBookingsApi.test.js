@@ -209,6 +209,16 @@ test("public transfer booking API against a real database", async (t) => {
       assert.equal((await book(booking({ customer: { fullName: "J", email: "bad", phone: "x" } }))).status, 422);
     });
 
+    await t.test("the booking horizon set by the admin limits how far ahead customers can book", async () => {
+      await catalog.updateSettings({ actor, input: { maxAdvanceDays: 30, reason: "test" } });
+      const tooFar = await book(booking({ travelDate: daysAhead(40) }));
+      assert.equal(tooFar.code, "TRANSFER_INVALID_SCHEDULE");
+      assert.match(tooFar.json.message, /up to 30 days ahead/);
+      assert.equal((await book(booking({ travelDate: daysAhead(20), travelTime: "07:15" }))).status, 201);
+      await catalog.updateSettings({ actor, input: { maxAdvanceDays: 730 } });
+      assert.equal((await book(booking({ flightNumber: "kq-488", travelTime: "07:45" }))).status, 201);
+    });
+
     await t.test("a booking opens only with its own access token; the reference alone is not enough", async () => {
       const mine = await book(booking({ travelTime: "16:45" }));
       const other = await book(booking({ travelTime: "17:45" }));
