@@ -868,6 +868,8 @@ const verifyOrderWithPesapal = async ({
       amount: mockAmount,
       currency: mockCurrency,
       confirmationCode,
+      // Real GetTransactionStatus responses carry payment_method; payment posting requires it.
+      paymentMethod: mockConfirmsPayment ? "Visa" : "",
       isPaid: mockConfirmsPayment,
       statusCode: mockConfirmsPayment ? 1 : 0,
       raw: {
@@ -879,7 +881,8 @@ const verifyOrderWithPesapal = async ({
         merchant_reference: merchantReference,
         amount: mockAmount,
         currency: mockCurrency,
-        confirmation_code: confirmationCode
+        confirmation_code: confirmationCode,
+        payment_method: mockConfirmsPayment ? "Visa" : ""
       }
     };
   }

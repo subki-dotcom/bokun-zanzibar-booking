@@ -25,7 +25,10 @@ const SALES_CHANNEL_ALIASES = {
   DIRECT_WEBSITE: SALES_CHANNEL.DIRECT_WEBSITE,
   WEBSITE: SALES_CHANNEL.DIRECT_WEBSITE,
   INTERNAL: SALES_CHANNEL.DIRECT_WEBSITE,
-  SYSTEM: SALES_CHANNEL.DIRECT_WEBSITE
+  SYSTEM: SALES_CHANNEL.DIRECT_WEBSITE,
+  // Booking sourceChannel values written by the agent portal and agent referral links.
+  AGENT_PORTAL: SALES_CHANNEL.AGENT,
+  AGENT_REFERRAL: SALES_CHANNEL.AGENT
 };
 
 const normalizeSalesChannel = (value = "") => {
@@ -164,7 +167,8 @@ const mapBokunSalesChannel = (raw = {}, fallback = "") => {
     };
   }
 
-  if (fallbackToken === "agent") {
+  // The booking service records agent bookings as agent_portal or agent_referral.
+  if (["agent", "agent_portal", "agent_referral"].includes(fallbackToken)) {
     return {
       salesChannel: SALES_CHANNEL.AGENT,
       rawChannel: fallback,

@@ -212,18 +212,22 @@ const mockQuestions = ({ optionId }) => {
     });
   }
 
+  // The public checkout blocks required per-passenger questions. Mock catalogue option ids are not numeric, so they
+  // reach this request without a rateId; keep the question optional for them so local end-to-end bookings can
+  // complete, while numeric rate ids still exercise the required-passenger block.
   common.push({
     id: "passport_name",
     label: "Passenger full name",
     type: "text",
     scope: "passenger",
-    required: true,
+    required: Boolean(optionId),
     options: []
   });
 
   return common;
 };
 
+// Real Bokun pricing category ids are numeric; bookings reject anything else (BOKUN_PRICING_CATEGORY_REQUIRED).
 const mockPriceList = (productId = "") => {
   const product = mockProducts.find((item) => String(item.id) === String(productId));
   if (!product) {
@@ -238,7 +242,7 @@ const mockPriceList = (productId = "") => {
     const passengers = isPrivate
       ? [
           {
-            pricingCategoryId: "group",
+            pricingCategoryId: 103,
             title: "Group",
             ticketCategory: "GROUP",
             minPerBooking: 1,
@@ -247,14 +251,14 @@ const mockPriceList = (productId = "") => {
         ]
       : [
           {
-            pricingCategoryId: "adult",
+            pricingCategoryId: 101,
             title: "Adult",
             ticketCategory: "ADULT",
             minPerBooking: 0,
             maxPerBooking: 20
           },
           {
-            pricingCategoryId: "child",
+            pricingCategoryId: 102,
             title: "Child",
             ticketCategory: "CHILD",
             minPerBooking: 0,
@@ -305,16 +309,23 @@ const mockBookingCreate = ({
   };
 };
 
+// Lookups may pass either the confirmation code or the mock booking id; strip the prefix so repeated
+// refreshes return the same identity instead of growing "mock_mock_..." ids.
 const mockConfirmedBooking = ({
   reference = "MOCK-BOKUN-CONFIRMED",
   status = "CONFIRMED",
   channel = { title: "Direct Website" }
-} = {}) => ({
+} = {}) => {
+  const code = String(reference).replace(/^(mock_)+/, "");
+  return mockConfirmedBookingPayload({ code, status, channel });
+};
+
+const mockConfirmedBookingPayload = ({ code, status, channel }) => ({
   booking: {
-    bookingId: `mock_${reference}`,
-    id: `mock_${reference}`,
-    confirmationCode: reference,
-    externalBookingReference: reference,
+    bookingId: `mock_${code}`,
+    id: `mock_${code}`,
+    confirmationCode: code,
+    externalBookingReference: code,
     status,
     currency: "USD",
     totalPrice: 85,
@@ -324,13 +335,13 @@ const mockConfirmedBooking = ({
     customer: {
       firstName: "Mock",
       lastName: "Traveler",
-      email: `mock-${String(reference).toLowerCase()}@example.com`,
+      email: `mock-${String(code).toLowerCase()}@example.com`,
       phoneNumber: "+255700000000",
       country: "TZ"
     },
     activityBookings: [
       {
-        id: `activity_${reference}`,
+        id: `activity_${code}`,
         productId: "bk_prod_znz_dolphin",
         title: "Mnemba Atoll Dolphin & Snorkeling Adventure",
         rateId: "bk_opt_znz_dolphin_shared",

@@ -82,6 +82,51 @@ const toDateOnly = (value) => {
   return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
 };
 
+const MONTH_INDEX = Object.freeze({
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+});
+
+// Offset in minutes between UTC and the given time zone at an instant (positive east of UTC).
+const timeZoneOffsetMinutes = (instant, timeZone) => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).formatToParts(instant).reduce((acc, part) => ({ ...acc, [part.type]: part.value }), {});
+  const asUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour) % 24, Number(parts.minute));
+  return Math.round((asUtc - instant.getTime()) / 60000);
+};
+
+// Bokun sends some activity dates as display text, e.g. "Wed, September 23 2026 - 6:30 AM", which
+// new Date() cannot parse. The clock time is local to the Bokun reporting time zone.
+const BOKUN_DISPLAY_DATE_PATTERN =
+  /^(?:[A-Za-z]{3,9},?\s+)?([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})(?:\s*[-–,]?\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?)?$/i;
+
+const parseBokunDisplayDate = (text = "") => {
+  const match = String(text).match(BOKUN_DISPLAY_DATE_PATTERN);
+  if (!match) return null;
+  const month = MONTH_INDEX[match[1].slice(0, 3).toLowerCase()];
+  const day = Number(match[2]);
+  const year = Number(match[3]);
+  if (month === undefined) return null;
+  const dateOnly = new Date(Date.UTC(year, month, day));
+  if (dateOnly.getUTCMonth() !== month || dateOnly.getUTCDate() !== day) return null;
+  if (match[4] === undefined) return dateOnly;
+  let hour = Number(match[4]);
+  const minute = Number(match[5] || 0);
+  const marker = (match[6] || "").toUpperCase();
+  if (marker === "PM" && hour < 12) hour += 12;
+  if (marker === "AM" && hour === 12) hour = 0;
+  if (hour > 23 || minute > 59) return null;
+  const wallClockAsUtc = Date.UTC(year, month, day, hour, minute);
+  const offset = timeZoneOffsetMinutes(new Date(wallClockAsUtc), BOKUN_REPORTING_TIME_ZONE);
+  return new Date(wallClockAsUtc - offset * 60000);
+};
+
 const toDateFromBokunValue = (value) => {
   const candidate = unwrapBokunDateValue(value);
   if (candidate instanceof Date) {
@@ -95,6 +140,9 @@ const toDateFromBokunValue = (value) => {
     const dateOnly = new Date(`${text}T00:00:00.000Z`);
     return Number.isNaN(dateOnly.getTime()) ? null : dateOnly;
   }
+
+  // Display-format text is never handed to new Date(), which would silently roll invalid days forward.
+  if (BOKUN_DISPLAY_DATE_PATTERN.test(text)) return parseBokunDisplayDate(text);
 
   const numeric = Number(text);
   const parsed = Number.isFinite(numeric) && numeric > 0 ? new Date(numeric) : new Date(text);

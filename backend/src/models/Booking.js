@@ -123,7 +123,8 @@ const bookingSchema = new mongoose.Schema(
       discountAmount: Number,
       subsidyAmount: Number,
       finalPayable: Number,
-      lineItems: [{ label: String, amount: Number }]
+      // quantity/unitPrice/total come from quotes and are read by invoices; amount is kept for legacy rows.
+      lineItems: [{ label: String, quantity: Number, unitPrice: Number, total: Number, amount: Number }]
     },
     estimatedCostSnapshot: {
       type: mongoose.Schema.Types.Mixed,

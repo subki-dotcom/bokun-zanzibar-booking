@@ -192,9 +192,9 @@ const AgentBookingDetailsPage = () => {
           {(booking.pricingSnapshot?.lineItems || []).length ? (
             booking.pricingSnapshot.lineItems.map((item) => (
               <InfoRow
-                key={`${item.label}-${item.amount}`}
+                key={`${item.label}-${item.total ?? item.amount}`}
                 label={item.label}
-                value={formatCurrency(item.amount || 0, booking.currency || "USD")}
+                value={formatCurrency(item.total ?? item.amount ?? 0, booking.currency || "USD")}
               />
             ))
           ) : (

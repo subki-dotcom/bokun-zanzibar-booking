@@ -2,6 +2,7 @@ const ProductSnapshot = require("../../models/ProductSnapshot");
 const SyncLog = require("../../models/SyncLog");
 const AppError = require("../../utils/AppError");
 const bokunService = require("../../integrations/bokun");
+const { mapProductItineraryItems } = require("../../integrations/bokun/bokun.mapper");
 const mongoose = require("mongoose");
 const logger = require("../../config/logger");
 
@@ -13,6 +14,8 @@ let publicSnapshotAutoSyncInFlight = null;
 let lastPublicSnapshotAutoSyncAt = 0;
 const listingSignalHydrationInFlight = new Set();
 const listingSignalHydrationAttemptedAt = new Map();
+const CONTENT_GAP_HYDRATION_COOLDOWN_MS = 30 * 60 * 1000;
+const contentGapHydrationAttemptedAt = new Map();
 
 const isFallbackOption = (option = {}, productId = "") => {
   const optionId = String(option.bokunOptionId || "");
@@ -71,7 +74,9 @@ const hasLegacyContentGap = (tour = {}) => {
   const rawExcludedPresent = Boolean(raw.excluded || (Array.isArray(raw.exclusions) && raw.exclusions.length));
   const rawKnowBeforePresent = Array.isArray(raw.knowBeforeYouGoItems) && raw.knowBeforeYouGoItems.length > 0;
   const rawItineraryPresent = Boolean(raw.itinerary || (Array.isArray(raw.itineraryItems) && raw.itineraryItems.length));
-  const rawAgendaItemsPresent = Array.isArray(raw.agendaItems) && raw.agendaItems.length > 0;
+  // Agenda items without a title, description or image are dropped by the mapper, so they are not a gap.
+  const rawAgendaItemsPresent =
+    Array.isArray(raw.agendaItems) && mapProductItineraryItems({ agendaItems: raw.agendaItems }).length > 0;
   const itineraryItems = Array.isArray(tour.itineraryItems) ? tour.itineraryItems : [];
   const rawOptionItineraryPresent = Array.isArray(raw.options || raw.rates)
     ? (raw.options || raw.rates).some(
@@ -258,12 +263,23 @@ const enrichProductWithLiveOptions = async (product, requestId) => {
   }
 };
 
-const hydrateTourOptionsIfNeeded = async (tour, requestId) => {
-  const needsHydration =
-    hasOnlyFallbackOptions(tour) || hasMissingPriceCatalogs(tour) || hasLegacyContentGap(tour);
+const hydrateTourOptionsIfNeeded = async (tour, requestId, { now = Date.now() } = {}) => {
+  const bookingDataMissing = hasOnlyFallbackOptions(tour) || hasMissingPriceCatalogs(tour);
+  const needsHydration = bookingDataMissing || hasLegacyContentGap(tour);
 
   if (!tour?.bokunProductId || !needsHydration) {
     return tour;
+  }
+
+  // A content gap that live data cannot fill would otherwise re-fetch Bokun and rewrite the whole snapshot on
+  // every page view. Booking-critical gaps (options, price catalogs) are never throttled.
+  const productKey = String(tour.bokunProductId);
+  if (!bookingDataMissing) {
+    const lastAttemptAt = Number(contentGapHydrationAttemptedAt.get(productKey) || 0);
+    if (now - lastAttemptAt < CONTENT_GAP_HYDRATION_COOLDOWN_MS) {
+      return tour;
+    }
+    contentGapHydrationAttemptedAt.set(productKey, now);
   }
 
   const liveProduct = await enrichProductWithLiveOptions(tour, requestId);
@@ -885,5 +901,12 @@ module.exports = {
   getTourOptions,
   checkOptionsAvailability,
   searchToursByAvailability,
-  syncProducts
+  syncProducts,
+  __testables: {
+    contentGapHydrationAttemptedAt,
+    hasLegacyContentGap,
+    hydrateTourOptionsIfNeeded,
+    hasMissingPriceCatalogs,
+    hasOnlyFallbackOptions
+  }
 };

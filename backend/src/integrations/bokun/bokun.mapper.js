@@ -549,6 +549,21 @@ const compactJoin = (parts = [], separator = ", ") =>
     .filter(Boolean)
     .join(separator);
 
+// Bokun pickup locations often repeat parts ("Kiwengwa, Kiwengwa, TZ"); keep the first occurrence of each part.
+const dedupeAddressParts = (value = "") => {
+  const seen = new Set();
+  return String(value || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => {
+      const key = part.toLowerCase();
+      if (!part || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .join(", ");
+};
+
 const formatAddress = (address = {}) =>
   compactJoin([
     address.addressLine1,
@@ -604,7 +619,7 @@ const mapPickupPlaces = (pickupPlaceGroups = []) => {
         id,
         title,
         groupTitle,
-        address: formatAddress(place?.address || {}),
+        address: dedupeAddressParts(formatAddress(place?.address || {})),
         latitude: place?.latitude || place?.geoPoint?.latitude || null,
         longitude: place?.longitude || place?.geoPoint?.longitude || null
       });
@@ -629,9 +644,9 @@ const mapActivityPickupPlaces = (activityPlaces = {}) => {
     const countryCode = String(location.countryCode || "").trim();
     const wholeAddressHasCountry =
       countryCode && wholeAddress.toLowerCase().split(/\s|,/).includes(countryCode.toLowerCase());
-    const address = wholeAddress
+    const address = dedupeAddressParts(wholeAddress
       ? compactJoin([wholeAddress, wholeAddressHasCountry ? "" : countryCode])
-      : compactJoin([location.address, location.city, countryCode]);
+      : compactJoin([location.address, location.city, countryCode]));
     const id = String(place?.id || place?.pickupPlaceId || title).trim();
     const key = `${id}:${title}`.toLowerCase();
     if (seen.has(key)) {
@@ -1931,6 +1946,7 @@ const mapBookingResponse = (raw = {}) => {
 module.exports = {
   mapProduct,
   mapActivityPickupPlaces,
+  mapProductItineraryItems,
   mapOption,
   mapBokunRatesToPriceCatalogOptions,
   mapBokunPricingCategories,
