@@ -15,5 +15,8 @@ router.get("/:settlementId", controller.detail);
 router.post("/", authorizePermission(PERMISSIONS.SETTLEMENT_CREATE), validateRequest(schemas.createSettlementSchema), controller.create);
 router.post("/:settlementId/allocate", authorizePermission(PERMISSIONS.SETTLEMENT_ALLOCATE), validateRequest(schemas.allocationSchema), controller.allocate);
 router.post("/:settlementId/reconcile", authorizePermission(PERMISSIONS.SETTLEMENT_RECONCILE), validateRequest(schemas.reconcileSchema), controller.reconcile);
+// Posting a reconciled provider payout to the general ledger is an approval-level accounting action.
+router.post("/:settlementId/posting-preview", authorizePermission(PERMISSIONS.GL_PREVIEW_POSTING), validateRequest(schemas.reconcileSchema), controller.postingPreview);
+router.post("/:settlementId/post", authorizePermission(PERMISSIONS.GL_APPROVE_JOURNAL), validateRequest(schemas.reconcileSchema), controller.post);
 router.post("/allocations/:allocationId/reverse", authorizePermission(PERMISSIONS.SETTLEMENT_ALLOCATE), validateRequest(schemas.reverseAllocationSchema), controller.reverseAllocation);
 module.exports = router;

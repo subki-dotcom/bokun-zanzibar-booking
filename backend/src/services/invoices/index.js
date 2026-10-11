@@ -6,6 +6,7 @@ const paymentsService = require("../payments");
 const logger = require("../../config/logger");
 const { Decimal, decimalString, normalizeCurrency, toDecimal } = require("../../utils/money");
 const { resolveGuestPaymentPolicy } = require("../bookingPayment/policy");
+const { bookingStatusClearsBalance } = require("../../accounting/salesPolicy");
 
 const roundMoney = (value = 0) => Number(toDecimal(value).toDecimalPlaces(2).toFixed(2));
 
@@ -28,9 +29,10 @@ const resolveInvoiceAccounting = ({
   const amountRefunded = Number(amountRefundedDecimal.toFixed(2));
   const netAmountPaid = Number(netAmountPaidDecimal.toFixed(2));
   const invoiceTotal = Number(invoiceTotalDecimal.toFixed(2));
-  const isCancelled = String(bookingStatus || "").toLowerCase() === "cancelled";
+  // Cancelled and failed bookings are not sales, so the customer owes nothing on them.
+  const clearsBalance = bookingStatusClearsBalance(bookingStatus);
   const normalizedBookingPaymentStatus = String(bookingPaymentStatus || "").toLowerCase();
-  const balanceDueDecimal = isCancelled
+  const balanceDueDecimal = clearsBalance
     ? zero
     : Decimal.max(zero, invoiceTotalDecimal.minus(netAmountPaidDecimal)).toDecimalPlaces(2);
   const balanceDue = Number(balanceDueDecimal.toFixed(2));
@@ -230,6 +232,7 @@ module.exports = {
   upsertInvoiceFromSnapshot,
   getInvoiceByBookingReference,
   getInvoiceByNumber,
+  resolveInvoiceAccounting,
   __testables: {
     resolveInvoiceAccounting,
     resolveGuestPaymentPolicy

@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/apiResponse");
 const settlements = require("../services/settlements");
+const settlementAccounting = require("../services/settlementAccounting");
 
 const list = asyncHandler(async (req, res) => successResponse(res, { message: "Settlements fetched", data: await settlements.list(req.validated?.query || req.query || {}) }));
 const detail = asyncHandler(async (req, res) => successResponse(res, { message: "Settlement detail fetched", data: await settlements.detail(req.params.settlementId) }));
@@ -10,4 +11,7 @@ const reconcile = asyncHandler(async (req, res) => successResponse(res, { messag
 const reverseAllocation = asyncHandler(async (req, res) => successResponse(res, { message: "Settlement allocation reversed", data: await settlements.reverseAllocation({ allocationId: req.params.allocationId, reason: req.validated.body.reason, auth: req.auth, requestId: req.requestId }) }));
 const importPreview = asyncHandler(async (req, res) => successResponse(res, { message: "Settlement import preview created", data: await settlements.previewImport({ csv: req.validated.body.csv }) }));
 const importCommit = asyncHandler(async (req, res) => successResponse(res, { message: "Settlement import committed", data: await settlements.commitImport({ token: req.validated.body.token, auth: req.auth, requestId: req.requestId }) }));
-module.exports = { list, detail, create, allocate, reconcile, reverseAllocation, importPreview, importCommit };
+const postingPreview = asyncHandler(async (req, res) => successResponse(res, { message: "Settlement posting preview evaluated", data: await settlementAccounting.preview({ settlementId: req.params.settlementId }) }));
+const post = asyncHandler(async (req, res) => successResponse(res, { message: "Settlement posting evaluated", data: await settlementAccounting.post({ settlementId: req.params.settlementId, auth: req.auth, requestId: req.requestId }) }));
+
+module.exports = { postingPreview, post, list, detail, create, allocate, reconcile, reverseAllocation, importPreview, importCommit };

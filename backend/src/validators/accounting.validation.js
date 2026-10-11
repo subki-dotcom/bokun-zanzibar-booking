@@ -61,6 +61,12 @@ const customerPaymentPreviewSchema = z.object({
   body: z.object({ paymentId: mongoObjectId })
 });
 
+const customerRefundPreviewSchema = z.object({
+  params: z.object({}).optional(),
+  query: z.object({}).optional(),
+  body: z.object({ refundId: mongoObjectId })
+});
+
 const listChartOfAccountsSchema = z.object({
   params: z.object({}).optional(),
   body: z.object({}).optional(),
@@ -418,6 +424,7 @@ module.exports = {
   previewPostingSchema,
   customerInvoicePreviewSchema,
   customerPaymentPreviewSchema,
+  customerRefundPreviewSchema,
   createPeriodSchema,
   exportLedgerReportSchema,
   historicalMigrationSchema,

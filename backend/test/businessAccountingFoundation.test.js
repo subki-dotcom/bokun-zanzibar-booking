@@ -124,7 +124,7 @@ const createFakeModels = ({
 
   const matches = (row, query = {}) =>
     Object.entries(query).every(([key, value]) => {
-      if (key === "status" && value?.$in) return value.$in.includes(row.status);
+      if (value?.$in) return value.$in.includes(row[key]);
       if (value && typeof value === "object" && (value.$gte || value.$lte)) {
         const date = new Date(row[key]);
         if (value.$gte && date < value.$gte) return false;

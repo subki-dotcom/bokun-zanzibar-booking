@@ -26,7 +26,8 @@ const {
   updateChartAccountSchema
   ,previewPostingSchema,
   customerInvoicePreviewSchema,
-  customerPaymentPreviewSchema
+  customerPaymentPreviewSchema,
+  customerRefundPreviewSchema
 } = require("../validators/accounting.validation");
 
 const router = express.Router();
@@ -52,6 +53,29 @@ router.post(
   authorizePermission(PERMISSIONS.GL_PREVIEW_POSTING),
   validateRequest(customerPaymentPreviewSchema),
   accountingController.previewCustomerPaymentPosting
+);
+
+router.post(
+  "/postings/customer-refund-preview",
+  authorizePermission(PERMISSIONS.GL_PREVIEW_POSTING),
+  validateRequest(customerRefundPreviewSchema),
+  accountingController.previewCustomerRefundPosting
+);
+
+// Posting a verified payment or a provider-confirmed refund is an approval-level accounting action. It still
+// honours CUSTOMER_PAYMENT_AUTOMATIC_POSTING_ENABLED and every evidence blocker.
+router.post(
+  "/postings/customer-payment",
+  authorizePermission(PERMISSIONS.GL_APPROVE_JOURNAL),
+  validateRequest(customerPaymentPreviewSchema),
+  accountingController.postCustomerPayment
+);
+
+router.post(
+  "/postings/customer-refund",
+  authorizePermission(PERMISSIONS.GL_APPROVE_JOURNAL),
+  validateRequest(customerRefundPreviewSchema),
+  accountingController.postCustomerRefund
 );
 
 router.get(

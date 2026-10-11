@@ -13,6 +13,7 @@ const toursService = require("../tours");
 const AppError = require("../../utils/AppError");
 const { toDecimal } = require("../../utils/money");
 const { configuredBaseCurrency } = require("../../accounting/currencyPolicy");
+const { isReceivableInvoice, isSaleBooking } = require("../../accounting/salesPolicy");
 const { BOOKING_DIRECT_COST_CATEGORIES, validateBookingExpenseCategory, resolveBookingExpenseFx, bookingExpenseRequestHash, isCountedBookingExpense } = require("../../accounting/bookingExpensePolicy");
 const {
   STATUS: REVENUE_BASIS_STATUS,
@@ -824,6 +825,18 @@ const compareNumber = (current = 0, previous = 0) => {
   };
 };
 
+// The single currency of a booking's counted costs, "" when it has none (no FX comparison is needed) and
+// "MIXED" when costs span currencies.
+const bookingCostCurrency = (expenses = [], fallbackCurrency = "") => {
+  const currencies = [...new Set(
+    expenses
+      .filter((expense) => isCountedBookingExpense(expense))
+      .map((expense) => normalizeUpper(expense.baseCurrency || expense.currency || fallbackCurrency))
+  )];
+  if (!currencies.length) return "";
+  return currencies.length === 1 ? currencies[0] : "MIXED";
+};
+
 const summarizeProfitabilityItems = (items = []) => {
   const totals = asArray(items).reduce(
     (summary, item) => {
@@ -836,7 +849,14 @@ const summarizeProfitabilityItems = (items = []) => {
       summary.displayDirectCost += item.displayDirectCost;
       summary.netRevenue += item.netRevenue;
       summary.grossProfit += item.grossProfit;
-      summary.dashboardGrossProfit += item.dashboardGrossProfit;
+      if (item.dashboardGrossProfit !== null && item.dashboardGrossProfit !== undefined) {
+        summary.dashboardGrossProfit += item.dashboardGrossProfit;
+        summary.dashboardGrossProfitRevenue += item.bookedRevenue;
+      } else if (item.isSale !== false) {
+        summary.missingCostCount += 1;
+        summary.missingCostRevenue += item.bookedRevenue;
+      }
+      if (item.isSale === false) summary.notSaleCount += 1;
       summary.revenueBasis += item.revenueBasis ?? 0;
       summary.actualProfit += item.actualProfit ?? 0;
       summary.estimatedProfit += item.estimatedProfit ?? 0;
@@ -862,6 +882,10 @@ const summarizeProfitabilityItems = (items = []) => {
       netRevenue: 0,
       grossProfit: 0,
       dashboardGrossProfit: 0,
+      dashboardGrossProfitRevenue: 0,
+      missingCostCount: 0,
+      missingCostRevenue: 0,
+      notSaleCount: 0,
       revenueBasis: 0,
       actualProfit: 0,
       actualProfitRevenueBasis: 0,
@@ -871,6 +895,7 @@ const summarizeProfitabilityItems = (items = []) => {
     }
   );
   Object.keys(totals).forEach((key) => {
+    if (["missingCostCount", "notSaleCount", "actualProfitCount", "estimatedProfitCount"].includes(key)) return;
     totals[key] = roundMoney(totals[key]);
   });
   totals.actualProfitMargin = totals.actualProfitCount > 0 && totals.actualProfitRevenueBasis > 0
@@ -881,7 +906,7 @@ const summarizeProfitabilityItems = (items = []) => {
     : null;
   totals.profitMargin = totals.actualProfitMargin ?? totals.estimatedProfitMargin ?? 0;
   totals.dashboardProfitMargin =
-    totals.bookedRevenue > 0 ? Number(((totals.dashboardGrossProfit / totals.bookedRevenue) * 100).toFixed(2)) : 0;
+    totals.dashboardGrossProfitRevenue > 0 ? Number(((totals.dashboardGrossProfit / totals.dashboardGrossProfitRevenue) * 100).toFixed(2)) : 0;
   return totals;
 };
 
@@ -1954,16 +1979,18 @@ const createBookingAccountingService = ({
           fallbackAmount: reportedBookingRevenue,
           fallbackCurrency: currency
         }),
-        costCurrency: [...new Set(
-          bookingExpenses
-            .filter((expense) => isCountedBookingExpense(expense))
-            .map((expense) => normalizeUpper(expense.baseCurrency || expense.currency || currency))
-        )].length === 1
-          ? bookingExpenses.find((expense) => isCountedBookingExpense(expense))?.baseCurrency || currency
-          : "MIXED"
+        costCurrency: bookingCostCurrency(bookingExpenses, currency)
       });
-      const profitabilityRevenue = revenueBasis.status === REVENUE_BASIS_STATUS.VERIFIED ? roundMoney(revenueBasis.amount) : null;
-      const bookedRevenue = profitabilityRevenue === null ? reportedBookingRevenue : profitabilityRevenue;
+      // Failed, unpaid abandoned and cancelled bookings are not sales: they carry no booked revenue or
+      // direct cost, while collected and refunded cash on them stays visible.
+      const isSale = isSaleBooking({
+        bookingStatus: booking?.bookingStatus || invoice?.bookingStatus,
+        collectedAmount: collectedRevenue
+      });
+      const profitabilityRevenue = !isSale
+        ? null
+        : revenueBasis.status === REVENUE_BASIS_STATUS.VERIFIED ? roundMoney(revenueBasis.amount) : null;
+      const bookedRevenue = !isSale ? 0 : profitabilityRevenue === null ? reportedBookingRevenue : profitabilityRevenue;
       const actualDirectCost = roundMoney(
         bookingExpenses
           .filter((expense) => isCountedBookingExpense(expense) && toNumber(expense.baseCurrencyAmount ?? expense.amount) >= 0)
@@ -1981,7 +2008,9 @@ const createBookingAccountingService = ({
             ? "COMPLETE"
             : "IN_PROGRESS";
       const financialDate = getFinancialDate({ booking, invoice, payments: bookingPayments, expenses: bookingExpenses });
-      const estimatedCost = booking?.estimatedCostSnapshot
+      const estimatedCost = !isSale
+        ? { estimatedDirectCost: 0, costTemplateId: "", costTemplateName: "", costTemplateCurrency: currency, costBreakdown: [] }
+        : booking?.estimatedCostSnapshot
         ? {
             estimatedDirectCost: roundMoney(booking.estimatedCostSnapshot.totalEstimatedCost),
             costTemplateId: normalizeToken(booking.estimatedCostSnapshot.templateId),
@@ -2015,6 +2044,8 @@ const createBookingAccountingService = ({
       const requiresPolicyReview = ["CANCELLED", "NO_SHOW"].includes(normalizeUpper(booking?.bookingStatus)) || ["REFUNDED", "PARTIALLY_REFUNDED"].includes(normalizeUpper(booking?.paymentStatus));
       const profitabilityStatus = requiresPolicyReview
         ? "NEEDS_POLICY"
+        : !isSale
+          ? "NOT_A_SALE"
         : hasInvalidDirectCost
           ? "NEEDS_REVIEW"
           : revenueBasis.status === REVENUE_BASIS_STATUS.UNKNOWN
@@ -2030,8 +2061,11 @@ const createBookingAccountingService = ({
         : estimatedDirectCost > 0
           ? "ESTIMATED_ONLY"
           : "NEEDS_REVIEW";
-      const dashboardGrossProfit = roundMoney(bookedRevenue - actualDirectCost);
-      const dashboardProfitMargin = bookedRevenue > 0 ? Number(((dashboardGrossProfit / bookedRevenue) * 100).toFixed(2)) : 0;
+      // Gross profit uses actual costs where recorded, otherwise estimated costs. With neither, the cost is
+      // unknown and the profit stays null instead of treating the supplier cost as zero.
+      const costKnown = isSale && costStatus !== "missing_cost";
+      const dashboardGrossProfit = costKnown ? roundMoney(bookedRevenue - displayDirectCost) : null;
+      const dashboardProfitMargin = costKnown && bookedRevenue > 0 ? Number(((dashboardGrossProfit / bookedRevenue) * 100).toFixed(2)) : null;
       const displayGrossProfit = roundMoney(bookedRevenue - displayDirectCost);
       const displayProfitMargin = bookedRevenue > 0 ? Number(((displayGrossProfit / bookedRevenue) * 100).toFixed(2)) : 0;
 
@@ -2065,6 +2099,7 @@ const createBookingAccountingService = ({
         estimatedDirectCost,
         displayDirectCost,
         costStatus,
+        isSale,
         estimatedProfit,
         estimatedProfitMargin,
         actualProfit,
@@ -2203,20 +2238,22 @@ const createBookingAccountingService = ({
     const openRefunds = scopedRefunds.filter((refund) =>
       openRefundStatuses.includes(normalizeLower(refund.status))
     );
-    const overdueInvoices = scopedInvoices.filter((invoice) => isInvoiceOverdue(invoice));
-    const outstandingAmount = roundMoney(scopedInvoices.reduce((sum, invoice) => sum + getInvoiceBalance(invoice), 0));
+    // Only sale bookings carry a customer balance; failed or abandoned checkouts are not receivables.
+    const receivableInvoices = scopedInvoices.filter((invoice) => isReceivableInvoice(invoice));
+    const overdueInvoices = receivableInvoices.filter((invoice) => isInvoiceOverdue(invoice));
+    const outstandingAmount = roundMoney(receivableInvoices.reduce((sum, invoice) => sum + getInvoiceBalance(invoice), 0));
     const overdueAmount = roundMoney(overdueInvoices.reduce((sum, invoice) => sum + getInvoiceBalance(invoice), 0));
     const bookingRevenue = profitability.totals.bookedRevenue;
     const collectedRevenue = profitability.totals.collectedRevenue;
     const directCosts = profitability.totals.displayDirectCost;
-    const dashboardGrossProfit = roundMoney(bookingRevenue - directCosts);
-    const dashboardProfitMargin = bookingRevenue > 0 ? Number(((dashboardGrossProfit / bookingRevenue) * 100).toFixed(2)) : 0;
+    // Same figures as the Profitability page: costs unknown for a booking are excluded, not treated as zero.
+    const dashboardGrossProfit = profitability.totals.dashboardGrossProfit;
+    const dashboardProfitMargin = profitability.totals.dashboardProfitMargin;
     const previousBookingRevenue = previousProfitability.totals.bookedRevenue || 0;
     const previousCollectedRevenue = previousProfitability.totals.collectedRevenue || 0;
     const previousDirectCosts = previousProfitability.totals.displayDirectCost || 0;
-    const previousGrossProfit = roundMoney(previousBookingRevenue - previousDirectCosts);
-    const previousProfitMargin =
-      previousBookingRevenue > 0 ? Number(((previousGrossProfit / previousBookingRevenue) * 100).toFixed(2)) : 0;
+    const previousGrossProfit = previousProfitability.totals.dashboardGrossProfit || 0;
+    const previousProfitMargin = previousProfitability.totals.dashboardProfitMargin || 0;
     const recentBookingFinancials = buildRecentFinancialRows(profitability.items, 8);
     const revenueVsCosts = buildTrend(profitability.items, range.current);
     const profitabilityOverview = buildTrend(profitability.items, range.current, chooseTimeBucket(range.current));
@@ -2261,7 +2298,7 @@ const createBookingAccountingService = ({
           value: bookingRevenue,
           previousValue: previousBookingRevenue,
           tone: "green",
-          detail: "Recognized booking revenue",
+          detail: "Booked value of confirmed sales",
           href: "/admin/booking-accounting/profitability"
         }),
         collectedRevenue: makeKpi({
@@ -2303,7 +2340,7 @@ const createBookingAccountingService = ({
           value: outstandingAmount,
           type: "money",
           tone: "orange",
-          detail: `${scopedInvoices.filter((invoice) => getInvoiceBalance(invoice) > 0).length} invoices`,
+          detail: `${receivableInvoices.filter((invoice) => getInvoiceBalance(invoice) > 0).length} invoices`,
           href: "/admin/booking-accounting/invoices"
         }),
         refunds: makeKpi({
@@ -2357,10 +2394,11 @@ const createBookingAccountingService = ({
         channels: profitability.filters?.channels || []
       },
       definitions: {
-        bookingRevenue: "Sum of booked/invoiced revenue in the selected booking accounting scan.",
+        bookingRevenue: "Booked value of sales (confirmed bookings, or paid checkouts awaiting confirmation). Failed, unpaid abandoned and cancelled bookings are excluded. This is not general-ledger recognised revenue.",
         collectedRevenue: "Sum of invoice paid amount or successful linked payment amount.",
         directCosts: "Actual booking-linked expenses where recorded; otherwise active estimated cost templates.",
-        dashboardGrossProfit: "Booking revenue minus displayed direct costs; estimated until actual expenses are recorded.",
+        dashboardGrossProfit: "Booking revenue minus actual direct costs where recorded, otherwise estimated costs. Bookings with neither are excluded (see missingCostCount) and the margin is over the remaining revenue.",
+        outstandingAmount: "Unpaid balance on sale bookings only; failed and abandoned checkouts are not receivables.",
         refundRate: "Confirmed refunded amount divided by collected revenue.",
         collectionRate: "Collected revenue divided by booking revenue."
       },
@@ -2736,6 +2774,7 @@ module.exports = {
   ...service,
   createBookingAccountingService,
   __testables: {
+    bookingCostCurrency,
     buildReconciliationIssues,
     getRefundConfirmedAmount,
     normalizeExpense,

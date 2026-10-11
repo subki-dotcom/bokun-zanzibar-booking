@@ -24,11 +24,19 @@ const SOURCES = new Set([
   'DRIVER_CONFIRMATION',
   'GUIDE_CONFIRMATION',
   'ADMIN_VERIFIED',
+  // The Service Completion API only accepts ADMIN_CONFIRMATION for COMPLETED evidence.
+  'ADMIN_CONFIRMATION',
   'BOKUN_ARRIVED',
   'OTHER_VERIFIED_SOURCE',
 ]);
 const ISSUE =
   /CANCEL|NO_SHOW|REFUND|DISPUT|REVERSE|NEEDS_REVIEW|NEEDS_POLICY|VERIFICATION_ERROR|REJECT|FAILED/;
+// Explicitly negated states such as Bokun's NOT_CANCELLED describe the absence of an issue.
+const NEGATED_STATE = /^(NOT|NO|NON)_(CANCELL?ED|CANCELLATION|REFUNDED|REFUND|DISPUTED|REVERSED|REJECTED|FAILED)$/;
+const isIssueState = (state) => {
+  const value = upper(state);
+  return Boolean(value) && !NEGATED_STATE.test(value) && ISSUE.test(value);
+};
 const approved = (evidence) =>
   evidence?.status === 'VERIFIED' &&
   Boolean(evidence.verifiedBy && date(evidence.verifiedAt) && evidence.reference);
@@ -109,7 +117,7 @@ const evaluateRevenue = ({
     (completedAt && verifiedAt && completedAt > verifiedAt)
   )
     blockers.push('COMPLETION_DATE_INVALID');
-  if (completion.evidenceSource === 'ADMIN_VERIFIED' && !completion.reason)
+  if (['ADMIN_VERIFIED', 'ADMIN_CONFIRMATION'].includes(completion.evidenceSource) && !completion.reason)
     blockers.push('COMPLETION_REASON_REQUIRED');
   if (!completion.reason && !completion.externalReference)
     blockers.push('COMPLETION_SUPPORT_REQUIRED');
@@ -130,7 +138,7 @@ const evaluateRevenue = ({
     booking.bokunFinancialEvidence?.paymentStatus,
     booking.bokunFinancialEvidence?.cancellationStatus,
   ];
-  if (states.some((state) => ISSUE.test(upper(state))))
+  if (states.some(isIssueState))
     blockers.push('CANCELLATION_REFUND_OR_EVIDENCE_REVIEW_REQUIRED');
   if (booking.cancellation?.cancelledAt) blockers.push('CANCELLATION_REVIEW_REQUIRED');
   if (

@@ -4,6 +4,9 @@ const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/apiResponse");
 const { createGlPreviewService } = require("../services/glPosting/preview");
 const customerAccounting = require("../services/customerAccounting");
+const Payment = require("../models/Payment");
+const AppError = require("../utils/AppError");
+const Refund = require("../models/Refund");
 const glPreviewService = createGlPreviewService();
 
 const listChartOfAccounts = asyncHandler(async (req, res) => {
@@ -17,6 +20,21 @@ const listChartOfAccounts = asyncHandler(async (req, res) => {
 const previewPosting = asyncHandler(async (req, res) => successResponse(res, { message: "Accounting posting preview evaluated", data: await glPreviewService.previewRevenue(req.validated.body) }));
 const previewCustomerInvoicePosting = asyncHandler(async (req, res) => successResponse(res, { message: "Customer invoice posting preview evaluated", data: await customerAccounting.previewInvoice(req.validated.body) }));
 const previewCustomerPaymentPosting = asyncHandler(async (req, res) => successResponse(res, { message: "Customer payment posting preview evaluated", data: await customerAccounting.previewPayment(req.validated.body) }));
+const previewCustomerRefundPosting = asyncHandler(async (req, res) => successResponse(res, { message: "Customer refund posting preview evaluated", data: await customerAccounting.previewRefund(req.validated.body) }));
+
+const postCustomerPayment = asyncHandler(async (req, res) => {
+  const payment = await Payment.findById(req.validated.body.paymentId).lean();
+  if (!payment) throw new AppError("Payment not found", 404, "PAYMENT_NOT_FOUND");
+  const data = await customerAccounting.postPayment({ payment, auth: req.auth, requestId: req.requestId });
+  return successResponse(res, { message: "Customer payment posting evaluated", data });
+});
+
+const postCustomerRefund = asyncHandler(async (req, res) => {
+  const refund = await Refund.findById(req.validated.body.refundId).lean();
+  if (!refund) throw new AppError("Refund not found", 404, "REFUND_NOT_FOUND");
+  const data = await customerAccounting.postRefund({ refund, auth: req.auth, requestId: req.requestId });
+  return successResponse(res, { message: "Customer refund posting evaluated", data });
+});
 
 const createChartAccount = asyncHandler(async (req, res) => {
   const data = await chartOfAccountsService.createAccount({
@@ -328,6 +346,9 @@ const exportLedgerReport = asyncHandler(async (req, res) => {
 
 module.exports = {
   accountingHealth,
+  postCustomerPayment,
+  postCustomerRefund,
+  previewCustomerRefundPosting,
   approveJournal,
   balanceSheet,
   cashBank,

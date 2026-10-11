@@ -12,12 +12,8 @@ const AccountingMapping = require("../src/models/AccountingMapping");
 const ChartOfAccount = require("../src/models/ChartOfAccount");
 const AccountingPeriod = require("../src/models/AccountingPeriod");
 const ledger = require("../src/services/generalLedger/ledger");
+const RevenueRecognition = require("../src/models/RevenueRecognition");
 
-const invoiceJournalOnly = (query) => ({
-  lean: async () => query?.["source.postingKey"] === service.paymentKey({ _id: "payment-1" })
-    ? null
-    : { _id: "journal-1", lineCount: 2 }
-});
 
 test("customer accounting uses stable source identities", () => {
   assert.equal(service.invoiceKey({ _id: "invoice-1" }), "customer-invoice:invoice-1:v1");
@@ -72,157 +68,154 @@ test("payment evidence blocks missing FX support and closed accounting periods",
   }
 });
 
-test("explicit advance payment treatment is blocked until deposit posting policy exists", async () => {
+// Stubs the persistence the payment evaluation reads, restoring originals afterwards.
+const withPaymentStubs = async ({ invoice = { _id: "invoice-1", bookingReference: "BR-1" }, allocation = null, recognition = null, recognitionJournal = null }, run) => {
   const originals = {
     invoiceFindOne: Invoice.findOne,
     allocationFindOne: PaymentAllocation.findOne,
     journalFindOne: JournalEntry.findOne,
-    lineFind: JournalEntryLine.find
+    lineFind: JournalEntryLine.find,
+    recognitionFindOne: RevenueRecognition.findOne,
+    mappingFindOne: AccountingMapping.findOne,
+    accountFindOne: ChartOfAccount.findOne
   };
   try {
-    Invoice.findOne = () => ({ lean: async () => ({ _id: "invoice-1", bookingReference: "BR-1" }) });
-    PaymentAllocation.findOne = () => ({ lean: async () => ({ paymentId: "payment-1", bookingReference: "BR-1", status: "applied", amount: "100", currency: "USD" }) });
-    JournalEntry.findOne = invoiceJournalOnly;
-    JournalEntryLine.find = () => ({ lean: async () => [{ _id: "line-1" }, { _id: "line-2" }] });
-
-    const result = await service.postPayment({
-      payment: {
-        _id: "payment-1",
-        bookingReference: "BR-1",
-        intentId: "intent-1",
-        status: "paid",
-        verificationStatus: "verified",
-        accountingAmount: 100,
-        accountingCurrency: "USD",
-        accountingTreatment: "ADVANCE_PAYMENT"
-      }
+    Invoice.findOne = () => ({ lean: async () => invoice });
+    PaymentAllocation.findOne = () => ({ lean: async () => allocation });
+    RevenueRecognition.findOne = () => ({ sort: () => ({ lean: async () => recognition }) });
+    // Only the recognition journal exists; customer payment journals are absent unless a test says otherwise.
+    JournalEntry.findOne = (query) => ({
+      lean: async () => (recognitionJournal && String(query?._id) === String(recognitionJournal._id) ? recognitionJournal : null)
     });
-
-    assert.equal(result.action, "blocked");
-    assert.deepEqual(result.eligibility.blockers, ["ADVANCE_PAYMENT_CLASSIFICATION_REQUIRED", "PAYMENT_INVOICE_ASSOCIATION_REQUIRED"]);
+    JournalEntryLine.find = () => ({ lean: async () => [{ _id: "line-1" }, { _id: "line-2" }] });
+    AccountingMapping.findOne = () => ({ lean: async () => null });
+    ChartOfAccount.findOne = () => ({ lean: async () => ({ code: "2030", active: true }) });
+    return await run();
   } finally {
     Invoice.findOne = originals.invoiceFindOne;
     PaymentAllocation.findOne = originals.allocationFindOne;
     JournalEntry.findOne = originals.journalFindOne;
     JournalEntryLine.find = originals.lineFind;
+    RevenueRecognition.findOne = originals.recognitionFindOne;
+    AccountingMapping.findOne = originals.mappingFindOne;
+    ChartOfAccount.findOne = originals.accountFindOne;
   }
+};
+
+const verifiedPayment = (overrides = {}) => ({
+  _id: "payment-1",
+  bookingReference: "BR-1",
+  intentId: "intent-1",
+  status: "paid",
+  verificationStatus: "verified",
+  accountingAmount: 100,
+  accountingCurrency: "USD",
+  ...overrides
+});
+
+const appliedAllocation = { _id: "allocation-1", paymentId: "payment-1", bookingReference: "BR-1", status: "applied", amount: "100", currency: "USD" };
+
+test("a payment before revenue recognition is a customer deposit, not a receivable settlement", async () => {
+  await withPaymentStubs({ allocation: appliedAllocation }, async () => {
+    const result = await service.evaluatePayment({ payment: verifiedPayment() });
+    assert.equal(result.treatment, service.TREATMENT.CUSTOMER_DEPOSIT);
+    assert.equal(result.creditMappingKey, "CUSTOMER_DEPOSIT");
+    // Real allocations carry no invoiceId; the booking's invoice is the association.
+    assert.deepEqual(result.blockers, []);
+  });
+});
+
+test("a payment after revenue recognition settles the receivable", async () => {
+  await withPaymentStubs({
+    allocation: appliedAllocation,
+    recognition: { _id: "recognition-1", bookingReference: "BR-1", status: "POSTED", journalEntryId: "journal-r1" },
+    recognitionJournal: { _id: "journal-r1", lineCount: 2 }
+  }, async () => {
+    const result = await service.evaluatePayment({ payment: verifiedPayment() });
+    assert.equal(result.treatment, service.TREATMENT.SETTLE_RECEIVABLE);
+    assert.equal(result.creditMappingKey, "ACCOUNTS_RECEIVABLE");
+    assert.deepEqual(result.blockers, []);
+  });
+});
+
+test("explicit advance payment treatment is accepted before recognition and blocked after it", async () => {
+  await withPaymentStubs({ allocation: appliedAllocation }, async () => {
+    const result = await service.evaluatePayment({ payment: verifiedPayment({ accountingTreatment: "ADVANCE_PAYMENT" }) });
+    assert.equal(result.treatment, service.TREATMENT.CUSTOMER_DEPOSIT);
+    assert.deepEqual(result.blockers, []);
+  });
+  await withPaymentStubs({
+    allocation: appliedAllocation,
+    recognition: { _id: "recognition-1", bookingReference: "BR-1", status: "POSTED", journalEntryId: "journal-r1" },
+    recognitionJournal: { _id: "journal-r1", lineCount: 2 }
+  }, async () => {
+    const result = await service.postPayment({ payment: verifiedPayment({ accountingTreatment: "ADVANCE_PAYMENT" }) });
+    assert.equal(result.action, "blocked");
+    assert.deepEqual(result.eligibility.blockers, ["ADVANCE_PAYMENT_CLASSIFICATION_REQUIRED"]);
+  });
 });
 
 test("verified customer payment remains preview-only while automatic posting is disabled", async () => {
-  const originals = {
-    invoiceFindOne: Invoice.findOne,
-    allocationFindOne: PaymentAllocation.findOne,
-    paymentUpdateOne: Payment.updateOne,
-    journalFindOne: JournalEntry.findOne,
-    lineFind: JournalEntryLine.find,
-    postCustomerPayment: ledger.postCustomerPayment
-  };
+  const originals = { paymentUpdateOne: Payment.updateOne, postCustomerPayment: ledger.postCustomerPayment };
   let updates = 0;
   let ledgerCalls = 0;
   try {
     assert.equal(env.CUSTOMER_PAYMENT_AUTOMATIC_POSTING_ENABLED, false);
-    Invoice.findOne = () => ({ lean: async () => ({ _id: "invoice-1", bookingReference: "BR-1" }) });
-    PaymentAllocation.findOne = () => ({ lean: async () => ({ _id: "allocation-1", invoiceId: "invoice-1", paymentId: "payment-1", bookingReference: "BR-1", status: "applied", amount: "100", currency: "USD" }) });
-    JournalEntry.findOne = invoiceJournalOnly;
-    JournalEntryLine.find = () => ({ lean: async () => [{ _id: "line-1" }, { _id: "line-2" }] });
     Payment.updateOne = async () => { updates += 1; };
     ledger.postCustomerPayment = async () => { ledgerCalls += 1; };
-
-    const result = await service.postPayment({
-      payment: {
-        _id: "payment-1",
-        bookingReference: "BR-1",
-        intentId: "intent-1",
-        status: "paid",
-        verificationStatus: "verified",
-        accountingAmount: 100,
-        accountingCurrency: "USD"
-      }
+    await withPaymentStubs({ allocation: appliedAllocation }, async () => {
+      const result = await service.postPayment({ payment: verifiedPayment() });
+      assert.equal(result.action, "preview");
+      assert.equal(result.eligibility.status, service.STATES.READY_TO_POST);
+      assert.deepEqual(result.eligibility.blockers, []);
     });
-
-    assert.equal(result.action, "preview");
-    assert.equal(result.eligibility.status, service.STATES.READY_TO_POST);
-    assert.deepEqual(result.eligibility.blockers, []);
     assert.equal(updates, 0);
     assert.equal(ledgerCalls, 0);
   } finally {
-    Invoice.findOne = originals.invoiceFindOne;
-    PaymentAllocation.findOne = originals.allocationFindOne;
     Payment.updateOne = originals.paymentUpdateOne;
-    JournalEntry.findOne = originals.journalFindOne;
-    JournalEntryLine.find = originals.lineFind;
     ledger.postCustomerPayment = originals.postCustomerPayment;
   }
 });
 
 test("verified customer payment without an applied allocation is blocked", async () => {
-  const originals = {
-    invoiceFindOne: Invoice.findOne,
-    allocationFindOne: PaymentAllocation.findOne,
-    journalFindOne: JournalEntry.findOne,
-    lineFind: JournalEntryLine.find
-  };
-  try {
-    Invoice.findOne = () => ({ lean: async () => ({ _id: "invoice-1", bookingReference: "BR-1" }) });
-    PaymentAllocation.findOne = () => ({ lean: async () => null });
-    JournalEntry.findOne = invoiceJournalOnly;
-    JournalEntryLine.find = () => ({ lean: async () => [{ _id: "line-1" }, { _id: "line-2" }] });
-
-    const result = await service.postPayment({
-      payment: {
-        _id: "payment-1",
-        bookingReference: "BR-1",
-        intentId: "intent-1",
-        status: "paid",
-        verificationStatus: "verified",
-        accountingAmount: 100
-      }
-    });
-
+  await withPaymentStubs({ allocation: null }, async () => {
+    const result = await service.postPayment({ payment: verifiedPayment({ accountingCurrency: "" }) });
     assert.equal(result.action, "blocked");
     assert.equal(result.eligibility.status, service.STATES.POSTING_BLOCKED);
     assert.deepEqual(result.eligibility.blockers, ["PAYMENT_ALLOCATION_REQUIRED", "MISSING_PAYMENT_CURRENCY"]);
-  } finally {
-    Invoice.findOne = originals.invoiceFindOne;
-    PaymentAllocation.findOne = originals.allocationFindOne;
-    JournalEntry.findOne = originals.journalFindOne;
-    JournalEntryLine.find = originals.lineFind;
-  }
+  });
 });
 
 test("verified customer payment with changed amount or currency is blocked", async () => {
-  const originals = {
-    invoiceFindOne: Invoice.findOne,
-    allocationFindOne: PaymentAllocation.findOne,
-    journalFindOne: JournalEntry.findOne,
-    lineFind: JournalEntryLine.find
-  };
-  try {
-    Invoice.findOne = () => ({ lean: async () => ({ _id: "invoice-1", bookingReference: "BR-1" }) });
-    PaymentAllocation.findOne = () => ({ lean: async () => ({ _id: "allocation-1", paymentId: "payment-1", bookingReference: "BR-1", status: "applied", amount: "100", currency: "USD" }) });
-    JournalEntry.findOne = invoiceJournalOnly;
-    JournalEntryLine.find = () => ({ lean: async () => [{ _id: "line-1" }, { _id: "line-2" }] });
-
-    const result = await service.postPayment({
-      payment: {
-        _id: "payment-1",
-        bookingReference: "BR-1",
-        intentId: "intent-1",
-        status: "paid",
-        verificationStatus: "verified",
-        accountingAmount: 125,
-        accountingCurrency: "USD"
-      }
-    });
-
+  await withPaymentStubs({ allocation: appliedAllocation }, async () => {
+    const result = await service.postPayment({ payment: verifiedPayment({ accountingAmount: 125 }) });
     assert.equal(result.action, "blocked");
-    assert.deepEqual(result.eligibility.blockers, ["PAYMENT_ALLOCATION_MISMATCH", "PAYMENT_INVOICE_ASSOCIATION_REQUIRED"]);
-  } finally {
-    Invoice.findOne = originals.invoiceFindOne;
-    PaymentAllocation.findOne = originals.allocationFindOne;
-    JournalEntry.findOne = originals.journalFindOne;
-    JournalEntryLine.find = originals.lineFind;
-  }
+    assert.deepEqual(result.eligibility.blockers, ["PAYMENT_ALLOCATION_MISMATCH"]);
+  });
+});
+
+test("a payment whose booking has no invoice cannot be associated", async () => {
+  await withPaymentStubs({ invoice: null, allocation: appliedAllocation }, async () => {
+    const result = await service.evaluatePayment({ payment: verifiedPayment() });
+    assert.deepEqual(result.blockers, ["PAYMENT_INVOICE_ASSOCIATION_REQUIRED", "INVOICE_NOT_FOUND"]);
+  });
+});
+
+test("refund requests are never posted as cash; completed refunds return deposits before recognition", async () => {
+  await withPaymentStubs({}, async () => {
+    const requested = await service.evaluateRefund({
+      refund: { _id: "refund-1", bookingReference: "BR-1", status: "processing", provider: "pesapal", currency: "USD", confirmedRefundedAmount: 0 }
+    });
+    assert.equal(requested.eligible, false);
+    assert.equal(requested.blockers.includes("REFUND_NOT_COMPLETED"), true);
+    assert.equal(requested.blockers.includes("CONFIRMED_REFUND_AMOUNT_REQUIRED"), true);
+
+    const completed = await service.evaluateRefund({
+      refund: { _id: "refund-1", bookingReference: "BR-1", status: "refunded", provider: "pesapal", currency: "USD", confirmedRefundedAmount: 40 }
+    });
+    assert.deepEqual(completed.blockers, []);
+    assert.equal(completed.debitMappingKey, "CUSTOMER_DEPOSIT");
+  });
 });
 
 test("incomplete customer invoice journal moves the invoice to needs review", async () => {

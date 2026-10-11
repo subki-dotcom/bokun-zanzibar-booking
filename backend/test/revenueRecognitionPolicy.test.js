@@ -182,3 +182,27 @@ test('activation accepts only new verified completion events strictly after the 
   f.completion.completedAt = '2026-09-21T10:59:59Z';
   assert.deepEqual(activationBlockers({ config, ...f, now: f.now }), ['OUTSIDE_ACTIVATION_BOUNDARY']);
 });
+
+test('completions recorded through the Service Completion API (ADMIN_CONFIRMATION) are accepted with a reason', () => {
+  const f = fixture();
+  f.completion.evidenceSource = 'ADMIN_CONFIRMATION';
+  f.completion.reason = 'Guest arrived; confirmed by operations';
+  const ready = evaluateRevenue(f);
+  assert.equal(ready.status, 'READY');
+  assert.equal(ready.blockers.includes('VERIFIED_COMPLETION_REQUIRED'), false);
+
+  delete f.completion.reason;
+  assert.equal(evaluateRevenue(f).blockers.includes('COMPLETION_REASON_REQUIRED'), true);
+});
+
+test("Bokun's NOT_CANCELLED evidence is not a cancellation, while real cancellation states still block", () => {
+  const f = fixture();
+  f.booking.bokunFinancialEvidence = { cancellationStatus: 'NOT_CANCELLED' };
+  assert.equal(evaluateRevenue(f).blockers.includes('CANCELLATION_REFUND_OR_EVIDENCE_REVIEW_REQUIRED'), false);
+
+  for (const state of ['CANCELLED', 'PARTIALLY_CANCELLED', 'NO_SHOW', 'REFUNDED']) {
+    const blocked = fixture();
+    blocked.booking.bokunFinancialEvidence = { cancellationStatus: state };
+    assert.equal(evaluateRevenue(blocked).blockers.includes('CANCELLATION_REFUND_OR_EVIDENCE_REVIEW_REQUIRED'), true, state);
+  }
+});

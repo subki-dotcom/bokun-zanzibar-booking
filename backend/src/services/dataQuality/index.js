@@ -1,5 +1,7 @@
 const { BUSINESS_UNIT, EXPENSE_CATEGORY } = require("../../accounting/constants");
-const { SALES_CHANNEL } = require("../../integrations/bokun/salesChannel.adapter");
+const { SALES_CHANNEL, normalizeSalesChannel } = require("../../integrations/bokun/salesChannel.adapter");
+const { resolveGuestPaymentPolicy } = require("../bookingPayment/policy");
+const { bookingStatusClearsBalance } = require("../../accounting/salesPolicy");
 const AccountingPosting = require("../../models/AccountingPosting");
 const Booking = require("../../models/Booking");
 const BusinessExpense = require("../../models/BusinessExpense");
@@ -104,8 +106,8 @@ const defaultModels = {
 };
 
 const DATA_QUALITY_PROJECTIONS = Object.freeze({
-  Booking: "_id bookingReference bokunBookingId bokunStatus.normalized bookingStatus paymentStatus operationalSource salesChannel rawChannelSource bokunImport.rawSalesChannel bokunOperationalDates.bookingCreatedAtBokun.normalizedAt bokunOperationalDates.travelDate.normalizedAt bokunOperationalDates.travelDate.localDate bokunOperationalDates.activityDate.normalizedAt bokunOperationalDates.activityDate.localDate pricingSnapshot.finalPayable amount createdAt updatedAt",
-  Invoice: "_id invoiceNumber bookingReference paymentStatus totalAmount total amountPaid amountRefunded paidAccountingAmount refundedAccountingAmount paidAccountingAmount balanceDue balanceDueAmount issueDate createdAt updatedAt",
+  Booking: "_id bookingReference bokunBookingId bokunStatus.normalized bookingStatus paymentStatus operationalSource salesChannel sourceChannel bookingPaymentStatus bookingPaymentStatusSource rawChannelSource bokunImport.rawSalesChannel bokunOperationalDates.bookingCreatedAtBokun.normalizedAt bokunOperationalDates.travelDate.normalizedAt bokunOperationalDates.travelDate.localDate bokunOperationalDates.activityDate.normalizedAt bokunOperationalDates.activityDate.localDate pricingSnapshot.finalPayable amount createdAt updatedAt",
+  Invoice: "_id invoiceNumber invoiceType bookingReference bookingStatus guestPaymentSource guestPaymentCollector paymentStatus totalAmount total amountPaid amountRefunded paidAccountingAmount refundedAccountingAmount paidAccountingAmount balanceDue balanceDueAmount issueDate createdAt updatedAt",
   Payment: "_id bookingReference merchantReference intentId provider status paymentStatus verificationStatus amountPaid paidAmount providerTransactionId orderTrackingId chargedCurrency orderCurrency currency accountingCurrency settlementCurrency fxRate historicalFxRate anomaly.flagged accountingAllocationStatus paidAt createdAt updatedAt",
   Refund: "_id refundReference bookingId bookingReference provider status confirmedRefundedAmount providerRefundReference providerRefundRequestReference originalTransactionReference originalProviderTransactionId historicalFxRate requestedAt completedAt createdAt updatedAt",
   BusinessExpense: "_id expenseReference sourceReference category supplier.name supplier.supplierId businessUnit currency baseCurrency exchangeRate expenseDate createdAt updatedAt",
@@ -224,17 +226,43 @@ const hasBokunOperationalDate = (booking = {}) => {
 };
 
 const hasCrossCurrencyMissingFx = (record = {}) => {
-  const currency = normalizeUpper(record.currency || record.chargedCurrency || record.orderCurrency);
+  // Canonical chargedCurrency wins over the legacy payment currency field, which never represents charged FX.
+  const currency = normalizeUpper(record.chargedCurrency || record.currency || record.orderCurrency);
   const baseCurrency = normalizeUpper(record.baseCurrency || record.accountingCurrency || record.settlementCurrency);
   if (!currency || !baseCurrency || currency === baseCurrency) return false;
   return !isPresent(record.exchangeRate) && !isPresent(record.fxRate) && !isPresent(record.historicalFxRate);
 };
 
+// Compares either the canonical accounting amounts or the legacy amounts, never a mix of the two:
+// legacy totals are in the transaction currency while *AccountingAmount fields are in the accounting currency.
+const invoiceBalanceFields = (invoice = {}) => {
+  if (decimalLikeToNumber(invoice.totalAmount) !== null) {
+    return {
+      total: invoice.totalAmount,
+      paid: invoice.paidAccountingAmount,
+      refunded: invoice.refundedAccountingAmount,
+      balance: invoice.balanceDueAmount
+    };
+  }
+  return {
+    total: invoice.total,
+    paid: invoice.amountPaid,
+    refunded: invoice.amountRefunded,
+    balance: invoice.balanceDue
+  };
+};
+
 const hasInvoiceBalanceMismatch = (invoice = {}) => {
-  const total = decimalLikeToNumber(invoice.totalAmount ?? invoice.total);
-  const paid = decimalLikeToNumber(invoice.paidAccountingAmount ?? invoice.amountPaid);
-  const refunded = decimalLikeToNumber(invoice.refundedAccountingAmount ?? invoice.amountRefunded) || 0;
-  const balance = decimalLikeToNumber(invoice.balanceDueAmount ?? invoice.balanceDue);
+  // Mirrors the canonical invoice rule: cancelled and failed bookings carry no balance.
+  if (bookingStatusClearsBalance(invoice.bookingStatus)) {
+    const storedBalance = decimalLikeToNumber(invoiceBalanceFields(invoice).balance);
+    return storedBalance !== null && Math.abs(storedBalance) > 0.01;
+  }
+  const fields = invoiceBalanceFields(invoice);
+  const total = decimalLikeToNumber(fields.total);
+  const paid = decimalLikeToNumber(fields.paid);
+  const refunded = decimalLikeToNumber(fields.refunded) || 0;
+  const balance = decimalLikeToNumber(fields.balance);
   if (total === null || paid === null || balance === null) return false;
   const expected = Number((total - paid + refunded).toFixed(2));
   return Math.abs(expected - balance) > 0.01;
@@ -285,7 +313,9 @@ const evaluateBookings = ({ issues, bookings, invoicesByBookingReference, paymen
     const isConfirmed = booking.bookingStatus === "confirmed" || booking.bokunStatus?.normalized === "confirmed";
     const isPaid = booking.paymentStatus === "paid";
 
-    if (!booking.salesChannel || booking.salesChannel === SALES_CHANNEL.OTHER) {
+    // Older website checkouts only recorded sourceChannel; that is still verified channel evidence.
+    const effectiveChannel = booking.salesChannel || (booking.sourceChannel ? normalizeSalesChannel(booking.sourceChannel) : "");
+    if (!effectiveChannel || effectiveChannel === SALES_CHANNEL.OTHER) {
       addIssue(issues, {
         code: DATA_QUALITY_ISSUE.MISSING_SALES_CHANNEL,
         entityType: "Booking",
@@ -342,7 +372,9 @@ const evaluateBookings = ({ issues, bookings, invoicesByBookingReference, paymen
       });
     }
 
-    if (isPaid && !payments.some(hasSuccessfulPayment)) {
+    // GetYourGuide/Viator collect from the guest; the shared guest-payment policy treats them as paid.
+    const otaCollected = resolveGuestPaymentPolicy({ booking, total: 0, verifiedPaidAmount: 0 }).source === "OTA_CHANNEL";
+    if (isPaid && !otaCollected && !payments.some(hasSuccessfulPayment)) {
       addIssue(issues, {
         code: DATA_QUALITY_ISSUE.MISSING_PAYMENT_LINK,
         entityType: "Booking",
@@ -388,7 +420,7 @@ const evaluateInvoices = ({ issues, invoices, paymentsByBookingReference }) => {
   invoices.forEach((invoice) => {
     const reference = invoice.bookingReference || invoice.invoiceNumber || "";
     const payments = paymentsByBookingReference.get(invoice.bookingReference || "") || [];
-    if (invoice.paymentStatus === "paid" && !payments.some(hasSuccessfulPayment)) {
+    if (invoice.paymentStatus === "paid" && invoice.guestPaymentSource !== "OTA_CHANNEL" && !payments.some(hasSuccessfulPayment)) {
       addIssue(issues, {
         code: DATA_QUALITY_ISSUE.MISSING_PAYMENT_LINK,
         entityType: "Invoice",
@@ -420,12 +452,13 @@ const evaluateInvoices = ({ issues, invoices, paymentsByBookingReference }) => {
   });
 };
 
-const evaluatePayments = ({ issues, payments, bookingsByReference }) => {
+const evaluatePayments = ({ issues, payments, bookingsByReference, standaloneInvoiceReferences = new Set() }) => {
   payments.forEach((payment) => {
     const reference = payment.bookingReference || payment.merchantReference || payment.intentId || "";
     const booking = bookingsByReference.get(payment.bookingReference || "")?.[0] || null;
 
-    if (payment.bookingReference && !booking) {
+    // Standalone invoices bill non-booking services; their payments reference the invoice, not a booking.
+    if (payment.bookingReference && !booking && !standaloneInvoiceReferences.has(payment.bookingReference)) {
       addIssue(issues, {
         code: DATA_QUALITY_ISSUE.MISSING_PAYMENT_LINK,
         entityType: "Payment",
@@ -439,7 +472,8 @@ const evaluatePayments = ({ issues, payments, bookingsByReference }) => {
       });
     }
 
-    if (hasCrossCurrencyMissingFx(payment)) {
+    // FX evidence is recorded when money moves; abandoned or failed checkouts have no financial effect.
+    if (hasSuccessfulPayment(payment) && hasCrossCurrencyMissingFx(payment)) {
       addIssue(issues, {
         code: DATA_QUALITY_ISSUE.MISSING_FX,
         entityType: "Payment",
@@ -810,7 +844,8 @@ const createDataQualityService = ({ models = defaultModels, now = () => new Date
       postingsByBookingReference
     });
     evaluateInvoices({ issues, invoices, paymentsByBookingReference });
-    evaluatePayments({ issues, payments, bookingsByReference });
+    const standaloneInvoiceReferences = new Set(invoices.filter((invoice) => invoice.invoiceType === "STANDALONE").map((invoice) => invoice.bookingReference));
+    evaluatePayments({ issues, payments, bookingsByReference, standaloneInvoiceReferences });
     evaluateRefunds({ issues, refunds, bookingsById, bookingsByReference });
     evaluateExpenses({ issues, expenses });
     evaluateIncomes({ issues, incomes });

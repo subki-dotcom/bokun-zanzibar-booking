@@ -75,8 +75,20 @@ const createBusinessIntelligenceService = ({ AccountingPostingModel = Accounting
     return { ...result, excludedCurrency: result.excludedCurrency?.[0]?.count || 0 };
   };
 
+  // Financial figures come only from posted booking contribution postings. Confirmed bookings without one are
+  // excluded, so the count is disclosed instead of silently reporting lower (or zero) revenue.
+  const countMissingContributionPostings = async (range) => {
+    const [row] = await BookingModel.aggregate([
+      { $match: { createdAt: rangeMatch(range), bookingStatus: 'confirmed' } },
+      { $lookup: { from: 'accountingpostings', localField: 'bookingReference', foreignField: 'bookingReference', pipeline: [{ $match: { accountingScope: ACCOUNTING_SCOPE.BUSINESS, postingType: POSTING_TYPE.BOOKING_NET_CONTRIBUTION, status: { $in: COUNTED_FINANCIAL_STATUSES } } }, { $limit: 1 }], as: 'posting' } },
+      { $match: { posting: { $size: 0 } } },
+      { $count: 'count' }
+    ]);
+    return row?.count || 0;
+  };
+
   const getFinancial = async (range, previous) => {
-    const [current, prior] = await Promise.all([financialRange(range, true), financialRange(previous, false)]);
+    const [current, prior, missingPostings] = await Promise.all([financialRange(range, true), financialRange(previous, false), countMissingContributionPostings(range)]);
     const financialSummary = summarize(current.totals);
     const previousSummary = summarize(prior.totals);
     const kpis = Object.fromEntries(['revenue', 'collectedRevenue', 'grossProfit', 'netProfit', 'totalCost', 'refundedAmount'].map((key) => [key, metric(financialSummary[key], previousSummary[key])]));
@@ -87,6 +99,7 @@ const createBusinessIntelligenceService = ({ AccountingPostingModel = Accounting
     const productSources = new Map((current.products || []).map((row) => [JSON.stringify(row._id.dimension), row]));
     financialSummary.costsIncomplete = missingCosts > 0;
     financialSummary.missingCostCount = missingCosts;
+    financialSummary.missingContributionPostingCount = missingPostings;
     return { kpis, financialSummary, previousFinancialSummary: previousSummary,
       trend: fillTrend(dimensionRows(current.trend).map((row) => ({ date: row.dimension, revenue: row.revenue })), range, 'revenue'),
       channels: dimensionRows(current.channels).map((row) => ({ channel: row.dimension || 'OTHER', ...performance(row), contributionPercentage: financialSummary.bookedRevenue > 0 ? row.revenue / financialSummary.bookedRevenue * 100 : null })).sort((a, b) => b.revenue - a.revenue),
@@ -94,7 +107,7 @@ const createBusinessIntelligenceService = ({ AccountingPostingModel = Accounting
         const source = productSources.get(JSON.stringify(row.dimension));
         return { ...row.dimension, ...performance(row), actualDirectCost: source?.actualCostRecords ? Number(source.actualDirectCost.toString()) : null, actualCostRecords: source?.actualCostRecords || 0, templateBookings: source?.templateBookings || 0 };
       }).sort((a, b) => b.revenue - a.revenue),
-      warnings: [missingCosts && warning('DIRECT_BOOKING_COSTS_INCOMPLETE', 'Actual booking cost evidence is pending; profit remains provisional until booking expenses are recorded.', missingCosts, 'info'), missingTemplates && warning('MISSING_COST_TEMPLATE', 'Booking contributions have no currently active product/option cost template.', missingTemplates), current.excludedCurrency && warning('OTHER_BASE_CURRENCY_EXCLUDED', `Postings in other base currencies are excluded from ${currency} totals; historical conversion is unavailable.`, current.excludedCurrency), prior.excludedCurrency && warning('COMPARISON_CURRENCY_EXCLUDED', 'Previous-period postings in other base currencies are excluded from comparisons.', prior.excludedCurrency)].filter(Boolean),
+      warnings: [missingPostings && warning('MISSING_ACCOUNTING_POSTINGS', 'Confirmed bookings in this period have no posted contribution and are excluded from these financial figures.', missingPostings), missingCosts && warning('DIRECT_BOOKING_COSTS_INCOMPLETE', 'Actual booking cost evidence is pending; profit remains provisional until booking expenses are recorded.', missingCosts, 'info'), missingTemplates && warning('MISSING_COST_TEMPLATE', 'Booking contributions have no currently active product/option cost template.', missingTemplates), current.excludedCurrency && warning('OTHER_BASE_CURRENCY_EXCLUDED', `Postings in other base currencies are excluded from ${currency} totals; historical conversion is unavailable.`, current.excludedCurrency), prior.excludedCurrency && warning('COMPARISON_CURRENCY_EXCLUDED', 'Previous-period postings in other base currencies are excluded from comparisons.', prior.excludedCurrency)].filter(Boolean),
       limitations: ['Revenue is booked revenue plus other business income, not earned revenue. Profit follows the existing collection-based executive accounting formula.', 'Financial dates are accounting transaction dates; booking metrics use record creation dates.', 'Product and channel counts are source-linked contribution postings in the financial period.', 'Company expenses are not allocated to products. Cost templates are estimates and are not substituted for posted actual costs.', 'Receivables, payables, ratings and departure punctuality are not included in this report.']
     };
   };

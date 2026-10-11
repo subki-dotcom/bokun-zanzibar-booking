@@ -268,3 +268,88 @@ test("data quality helper detects invoice balance and cross-currency FX gaps", (
     false
   );
 });
+
+test("invoice balance check never mixes legacy transaction amounts with accounting amounts", () => {
+  // Legacy TZS totals with a USD accounting paid amount must not be reported as a mismatch.
+  assert.equal(
+    __testables.hasInvoiceBalanceMismatch({
+      total: 250000,
+      amountPaid: 250000,
+      amountRefunded: 0,
+      balanceDue: 0,
+      totalAmount: null,
+      paidAccountingAmount: 100,
+      balanceDueAmount: null
+    }),
+    false
+  );
+  assert.equal(
+    __testables.hasInvoiceBalanceMismatch({
+      totalAmount: { $numberDecimal: "100.00" },
+      paidAccountingAmount: { $numberDecimal: "100.00" },
+      refundedAccountingAmount: { $numberDecimal: "0" },
+      balanceDueAmount: { $numberDecimal: "0" },
+      total: 250000,
+      amountPaid: 0,
+      balanceDue: 250000
+    }),
+    false
+  );
+  assert.equal(
+    __testables.hasInvoiceBalanceMismatch({
+      totalAmount: { $numberDecimal: "100.00" },
+      paidAccountingAmount: { $numberDecimal: "60.00" },
+      balanceDueAmount: { $numberDecimal: "0" }
+    }),
+    true
+  );
+});
+
+test("payment FX check prefers charged currency over the legacy currency field", () => {
+  assert.equal(
+    __testables.hasCrossCurrencyMissingFx({ currency: "TZS", chargedCurrency: "USD", accountingCurrency: "USD" }),
+    false
+  );
+  assert.equal(
+    __testables.hasCrossCurrencyMissingFx({ currency: "USD", chargedCurrency: "TZS", accountingCurrency: "USD" }),
+    true
+  );
+});
+
+test("data quality does not demand FX evidence for checkouts that never collected money", async () => {
+  const service = createDataQualityService({
+    models: {
+      BookingModel: createModel([]),
+      InvoiceModel: createModel([]),
+      PaymentModel: createModel([
+        {
+          _id: "abandoned",
+          provider: "pesapal",
+          status: "pending",
+          paymentStatus: "pending",
+          chargedCurrency: "TZS",
+          accountingCurrency: "USD",
+          fxRate: null,
+          createdAt: "2026-08-15T09:15:00.000Z"
+        },
+        {
+          _id: "settled",
+          provider: "pesapal",
+          status: "paid",
+          chargedCurrency: "TZS",
+          accountingCurrency: "USD",
+          fxRate: null,
+          createdAt: "2026-08-15T09:16:00.000Z"
+        }
+      ]),
+      RefundModel: createModel([]),
+      BusinessExpenseModel: createModel([]),
+      BusinessIncomeModel: createModel([]),
+      AccountingPostingModel: createModel([])
+    }
+  });
+
+  const result = await service.listIssues({ code: DATA_QUALITY_ISSUE.MISSING_FX });
+  const ids = result.items.map((issue) => issue.entityId);
+  assert.deepEqual(ids, ["settled"]);
+});

@@ -362,6 +362,8 @@ const providerMappingKey = (provider = "") => {
   if (normalized === "PAYPAL") return GL_MAPPING_KEY.PAYPAL_CLEARING;
   if (normalized === "DPO") return GL_MAPPING_KEY.DPO_CLEARING;
   if (normalized === "MOBILE_MONEY") return GL_MAPPING_KEY.MOBILE_MONEY;
+  if (["CASH", "CASH_ON_ARRIVAL"].includes(normalized)) return GL_MAPPING_KEY.CASH;
+  if (["MANUAL_BANK", "BANK_TRANSFER", "MANUAL_BANK_TRANSFER"].includes(normalized)) return GL_MAPPING_KEY.BANK;
   return null;
 };
 
@@ -1010,15 +1012,20 @@ const createGeneralLedgerService = ({
     throw new AppError("Invoice-gross recognition is disabled; use verified service revenue recognition.", 409, "SERVICE_REVENUE_RECOGNITION_REQUIRED");
   };
 
-  const postCustomerPayment = async ({ payment = {}, auth = {}, requestId = "", postingKey = "" } = {}) => {
+  // creditMappingKey is CUSTOMER_DEPOSIT for payments received before service revenue is recognized and
+  // ACCOUNTS_RECEIVABLE for payments settling recognized revenue (see customerAccounting.resolvePaymentTreatment).
+  const postCustomerPayment = async ({ payment = {}, auth = {}, requestId = "", postingKey = "", creditMappingKey = GL_MAPPING_KEY.ACCOUNTS_RECEIVABLE, treatment = "SETTLE_RECEIVABLE" } = {}) => {
     const amount = money(payment.accountingAmount || payment.amountPaid || payment.paidAmount || payment.amount || 0, { allowNegative: false, field: "payment.amount" });
     const fee = money(payment.providerFeeAmount || 0, { allowNegative: false, field: "payment.providerFee" });
     const currency = requireCurrency(payment.accountingCurrency || payment.currency || payment.orderCurrency || "USD");
     const clearingKey = providerMappingKey(payment.provider || payment.paymentProvider || payment.providerName);
     if (!clearingKey) throw new AppError("A provider-specific clearing mapping is required.", 409, "GL_CLEARING_MAPPING_REQUIRED");
+    if (![GL_MAPPING_KEY.ACCOUNTS_RECEIVABLE, GL_MAPPING_KEY.CUSTOMER_DEPOSIT].includes(creditMappingKey)) {
+      throw new AppError("Customer payments credit receivables or customer deposits only.", 409, "GL_PAYMENT_CREDIT_ACCOUNT_INVALID");
+    }
     const lines = [
       { mappingKey: clearingKey, debit: amount, bookingReference: payment.bookingReference },
-      { mappingKey: GL_MAPPING_KEY.ACCOUNTS_RECEIVABLE, credit: amount, bookingReference: payment.bookingReference }
+      { mappingKey: creditMappingKey, credit: amount, bookingReference: payment.bookingReference }
     ];
     if (isPositive(fee)) {
       lines.push(
@@ -1035,10 +1042,13 @@ const createGeneralLedgerService = ({
         postingType: GL_POSTING_TYPE.CUSTOMER_PAYMENT,
         postingKey,
         postingDate: payment.paidAt || payment.verifiedAt || payment.createdAt,
-        description: `Customer payment posted for ${payment.bookingReference || payment.intentId}`,
+        description: treatment === "CUSTOMER_DEPOSIT"
+          ? `Customer prepayment received for ${payment.bookingReference || payment.intentId}`
+          : `Customer payment posted for ${payment.bookingReference || payment.intentId}`,
         currency,
         lines,
-        sourceSnapshot: { payment }
+        sourceSnapshot: { payment },
+        metadata: { paymentTreatment: treatment }
       },
       auth,
       requestId
@@ -1121,6 +1131,40 @@ const createGeneralLedgerService = ({
           { mappingKey: clearingKey, credit: amount, bookingReference: refund.bookingReference }
         ],
         sourceSnapshot: { refund }
+      },
+      auth,
+      requestId
+    });
+  };
+
+  // Cash leaves only when the provider confirms a refund; requests and approvals are not cash movements.
+  // debitMappingKey is CUSTOMER_DEPOSIT while revenue is unrecognized, otherwise REFUND_ALLOWANCE (contra revenue).
+  const postCustomerRefund = async ({ refund = {}, auth = {}, requestId = "", postingKey = "", debitMappingKey = GL_MAPPING_KEY.REFUND_ALLOWANCE } = {}) => {
+    const amount = money(refund.confirmedAccountingRefundedAmount ?? refund.confirmedRefundedAmount ?? 0, { allowNegative: false, field: "refund.confirmedAmount" });
+    if (!isPositive(amount)) throw new AppError("A confirmed refunded amount is required.", 409, "GL_REFUND_AMOUNT_REQUIRED");
+    const currency = requireCurrency(refund.accountingCurrency || refund.currency || "USD");
+    const clearingKey = providerMappingKey(refund.provider);
+    if (!clearingKey) throw new AppError("A provider-specific clearing mapping is required.", 409, "GL_CLEARING_MAPPING_REQUIRED");
+    if (![GL_MAPPING_KEY.REFUND_ALLOWANCE, GL_MAPPING_KEY.CUSTOMER_DEPOSIT].includes(debitMappingKey)) {
+      throw new AppError("Customer refunds debit refund allowance or customer deposits only.", 409, "GL_REFUND_DEBIT_ACCOUNT_INVALID");
+    }
+    return postSourceEvent({
+      event: {
+        sourceModule: SOURCE_MODULE.REFUND,
+        sourceEntityType: "Refund",
+        sourceEntityId: `${normalizeId(refund._id) || refund.refundReference}:COMPLETED`,
+        sourceReference: refund.refundReference || refund.bookingReference,
+        postingType: GL_POSTING_TYPE.REFUND_COMPLETION,
+        postingKey,
+        postingDate: refund.completedAt || refund.refundedAt || refund.updatedAt,
+        description: `Customer refund completed for ${refund.bookingReference || refund.refundReference}`,
+        currency,
+        lines: [
+          { mappingKey: debitMappingKey, debit: amount, bookingReference: refund.bookingReference },
+          { mappingKey: clearingKey, credit: amount, bookingReference: refund.bookingReference }
+        ],
+        sourceSnapshot: { refund },
+        metadata: { refundTreatment: debitMappingKey }
       },
       auth,
       requestId
@@ -2225,7 +2269,14 @@ const createGeneralLedgerService = ({
       getTrialBalance({ fromDate: period.startDate, toDate: period.endDate }),
       leanMaybe(JournalEntryModel.find({ postingDate: range })),
       RefundModel.countDocuments ? RefundModel.countDocuments({ requestedAt: range, status: { $in: ["requested", "eligible", "pending_approval", "approved", "awaiting_merchant_approval", "processing", "verification_required", "manual_review", "manual_refund_required"] } }) : 0,
-      BusinessExpenseModel.countDocuments ? BusinessExpenseModel.countDocuments({ expenseDate: range, accountingPostingId: null, status: { $ne: "VOID" } }) : 0,
+      // The canonical GL expense posting marks accountingStatus POSTED with a journalEntryId; accountingPostingId
+      // belongs to the management-posting layer. Either one means the expense reached the ledger.
+      BusinessExpenseModel.countDocuments ? BusinessExpenseModel.countDocuments({
+        expenseDate: range,
+        status: { $nin: ["VOID", "REJECTED"] },
+        accountingPostingId: null,
+        accountingStatus: { $ne: "POSTED" }
+      }) : 0,
       PaymentModel.countDocuments ? PaymentModel.countDocuments({ paidAt: range, status: "paid", "reconciliation.reviewed": { $ne: true } }) : 0
     ]);
     const journals = asArray(periodJournals);
@@ -2724,6 +2775,7 @@ const createGeneralLedgerService = ({
     postProviderSettlement,
     postRefundApproval,
     postRefundCompletion,
+    postCustomerRefund,
     postSourceEvent,
     reopenPeriod,
     reverseJournal,

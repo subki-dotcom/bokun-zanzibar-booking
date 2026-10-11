@@ -9,6 +9,8 @@ const Invoice = require("../../models/Invoice");
 const Payment = require("../../models/Payment");
 const Refund = require("../../models/Refund");
 const generalLedgerService = require("../generalLedger");
+// The generalLedger module exports { chartOfAccounts, ledger }; AR/AP reconciliation needs the ledger service.
+const defaultGeneralLedgerService = generalLedgerService.ledger;
 const financialReportingService = require("../financialReporting");
 const bookingAccountingService = require("../bookingAccounting");
 const expenseAccountingService = require("../expenseAccounting");
@@ -26,6 +28,7 @@ const {
 } = require("../../accounting/constants");
 const AppError = require("../../utils/AppError");
 const { configuredBaseCurrency, resolveFxEvidence } = require("../../accounting/currencyPolicy");
+const { isReceivableInvoice } = require("../../accounting/salesPolicy");
 const { resolveVerifiedSupplierRevenueBasis } = require("../profitability/revenueBasis");
 const {
   Decimal,
@@ -1203,7 +1206,7 @@ const createBusinessAccountingService = ({
   InvoiceModel = Invoice,
   PaymentModel = Payment,
   RefundModel = Refund,
-  GeneralLedgerService = generalLedgerService,
+  GeneralLedgerService = defaultGeneralLedgerService,
   FinancialReportingService: injectedFinancialReportingService,
   BookingAccountingService = bookingAccountingService,
   ExpenseAccountingService = expenseAccountingService,
@@ -1697,6 +1700,8 @@ const createBusinessAccountingService = ({
       return {
         action: existing ? (changed ? "would_update" : "unchanged") : "would_create",
         dryRun: true,
+        // The approver confirms with this key; without it the two-step approval could never be completed.
+        idempotencyKey: payload.idempotencyKey,
         posting: normalizePostingForApi(payload),
         existing: existing ? normalizePostingForApi(existing) : null
       };
@@ -1902,7 +1907,9 @@ const createBusinessAccountingService = ({
     limit = 10
   } = {}) => {
     const current = now();
-    const query = { accountingScope: ACCOUNTING_SCOPE.BUSINESS };
+    // Booking supplier costs are posted to the same Accounts Payable control account (2010), so Payables must
+    // list them alongside business expenses or the sub-ledger can never reconcile with the general ledger.
+    const query = { accountingScope: { $in: [ACCOUNTING_SCOPE.BUSINESS, ACCOUNTING_SCOPE.BOOKING] } };
     Object.assign(query, buildDateRangeQuery({ fromDate, toDate, field: "expenseDate" }));
     const found = BusinessExpenseModel.find(query);
     const loaded = found && typeof found.sort === "function"
@@ -1952,7 +1959,8 @@ const createBusinessAccountingService = ({
         displayStatus,
         overdue,
         partialEvidenceMissing,
-        counted
+        counted,
+        source: row.accountingScope === ACCOUNTING_SCOPE.BOOKING ? "Booking Accounting" : "Business Accounting"
       };
     };
 
@@ -2122,14 +2130,20 @@ const createBusinessAccountingService = ({
       const paid = Decimal.max(new Decimal(0), toDecimal(invoice.paidAccountingAmount ?? invoice.amountPaid ?? 0));
       const refunded = Decimal.max(new Decimal(0), toDecimal(invoice.refundedAccountingAmount ?? invoice.amountRefunded ?? 0));
       const fallbackBalance = Decimal.max(new Decimal(0), amount.minus(paid).plus(refunded));
-      const balance = Decimal.max(new Decimal(0), toDecimal(invoice.balanceDueAmount ?? invoice.balanceDue ?? fallbackBalance));
+      // Failed and unpaid abandoned checkouts are not sales, so nothing is owed on them (shared sales policy).
+      const receivable = isReceivableInvoice(invoice);
+      const balance = receivable
+        ? Decimal.max(new Decimal(0), toDecimal(invoice.balanceDueAmount ?? invoice.balanceDue ?? fallbackBalance))
+        : new Decimal(0);
       const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : null;
       const overdue = Boolean(balance.greaterThan(0) && dueDate && !Number.isNaN(dueDate.getTime()) && dueDate < startOfUtcDay(current));
       const cancelled = String(invoice.bookingStatus || "").toLowerCase() === "cancelled";
       const rawStatus = String(invoice.status || invoice.paymentStatus || "pending").toLowerCase();
       const displayStatus = cancelled
         ? "cancelled"
-        : rawStatus === "draft"
+        : !receivable
+          ? "not_a_sale"
+          : rawStatus === "draft"
           ? "draft"
           : refunded.greaterThan(0) && refunded.greaterThanOrEqualTo(paid) && paid.greaterThan(0)
             ? "refunded"
@@ -2165,7 +2179,7 @@ const createBusinessAccountingService = ({
         accountingPostingKey: invoice.accountingPostingKey || "",
         accountingJournalEntryId: invoice.accountingJournalEntryId ? String(invoice.accountingJournalEntryId) : "",
         overdue,
-        counted: !cancelled && displayStatus !== "draft",
+        counted: receivable && !cancelled && displayStatus !== "draft",
         source: invoice.bookingReference ? "Booking Accounting" : "Invoice"
       };
     };
@@ -2379,6 +2393,7 @@ module.exports = {
   ...service,
   createBusinessAccountingService,
   __testables: {
+    defaultGeneralLedgerService,
     buildBookingContributionPosting,
     buildBusinessExpensePosting,
     buildBusinessExpenseValues,

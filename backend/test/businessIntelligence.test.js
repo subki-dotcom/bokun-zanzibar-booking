@@ -34,9 +34,12 @@ test('financial endpoint reports currency exclusions and incomplete costs withou
   const service = createBusinessIntelligenceService({ currency: 'EUR', now: () => new Date('2026-09-09T08:00:00Z'), AccountingPostingModel: { aggregate: async (pipeline) => {
     queries.push(pipeline);
     return [{ excludedCurrency: [{ count: 2 }], totals: [posting], products: [{ ...posting, _id: { type: POSTING_TYPE.BOOKING_NET_CONTRIBUTION, dimension: { productId: '7', productTitle: 'Tour' } } }], trend: [], channels: [] }];
-  } } });
+  } }, BookingModel: { aggregate: async () => [{ count: 3 }] } });
   const result = await service.getBusinessIntelligence({ section: 'financial' });
   assert.equal(result.currency, 'EUR');
+  // Confirmed bookings without a contribution posting are disclosed rather than silently excluded.
+  assert.ok(result.warnings.some((row) => row.code === 'MISSING_ACCOUNTING_POSTINGS' && row.count === 3));
+  assert.equal(result.financialSummary.missingContributionPostingCount, 3);
   assert.equal(result.financialSummary.revenue, 100);
   assert.equal(result.financialSummary.costsIncomplete, true);
   assert.equal(result.products[0].grossProfit, null);
