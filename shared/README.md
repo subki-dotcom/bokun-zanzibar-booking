@@ -11,6 +11,7 @@ Code used by both the public website (`frontend/`) and the Back Office.
 | `src/context/AuthContext.jsx`, `src/hooks/useAuth.js` | Session state and the `useAuth` hook |
 | `src/components/common/` | `Loader`, `ErrorAlert`, `ProtectedRoute`, `ListingPagination` |
 | `src/utils/` | `formatters`, `cancellationPolicy`, `pagination` |
+| `src/styles/app.css` | Global stylesheet loaded by both apps |
 
 Rules:
 
@@ -18,3 +19,4 @@ Rules:
 - There is no `node_modules` here. Each app resolves the packages from its own install. The app's `vite.config.js` lists them in `resolve.dedupe` and allows `../shared` in `server.fs.allow`.
 - The old paths in `frontend/src` still exist as re-exports, so existing imports keep working. New code should import from here.
 - Each app is built separately, so the auth session is stored per origin. The website (5173) and the Back Office (5174) each need their own login.
+- The website mounts the Back Office route table (`backoffice/src/routes/AdminRoutes.jsx`) as its `/admin` fallback, so the website build also resolves Back Office files; `SHARED_PACKAGES` in `vite.shared.js` covers their packages too.

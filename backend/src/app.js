@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const hpp = require("hpp");
 const { env } = require("./config/env");
+const { buildAllowedOrigins, isOriginAllowed, normalizeOriginValue } = require("./config/corsOrigins");
 const logger = require("./config/logger");
 const systemHealthService = require("./services/systemHealth");
 const apiRoutes = require("./routes");
@@ -19,22 +20,11 @@ app.set("trust proxy", 1);
 morgan.token("request-id", (req) => req.requestId || "-");
 app.use(requestId);
 app.use(helmet());
-const productionFrontendOrigins = [
-  "https://zanzibartoursandsafaris.co.tz",
-  "https://bokun-zanzibar-booking.vercel.app"
-];
-const normalizeOriginValue = (value = "") => String(value || "").trim().replace(/\/+$/, "");
-const configuredFrontendOrigins = String(env.FRONTEND_URL || "")
-  .split(",")
-  .map((value) => normalizeOriginValue(value))
-  .filter(Boolean);
-const allowedOrigins = Array.from(
-  new Set([
-    ...configuredFrontendOrigins,
-    ...productionFrontendOrigins.map(normalizeOriginValue)
-  ])
-);
-const devOriginPattern = /^https?:\/\/(127\.0\.0\.1|localhost):\d+$/i;
+const allowedOrigins = buildAllowedOrigins({
+  frontendUrl: env.FRONTEND_URL,
+  backofficeUrl: env.BACKOFFICE_URL,
+  nodeEnv: env.NODE_ENV
+});
 const pesapalIpnPath = "/api/payments/pesapal/ipn";
 
 const corsMiddleware = cors({
@@ -45,11 +35,7 @@ const corsMiddleware = cors({
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(normalizedOrigin)) {
-        return callback(null, true);
-      }
-
-      if (env.NODE_ENV !== "production" && devOriginPattern.test(origin)) {
+      if (isOriginAllowed({ origin, allowedOrigins, nodeEnv: env.NODE_ENV })) {
         return callback(null, true);
       }
 

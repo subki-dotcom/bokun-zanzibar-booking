@@ -47,7 +47,7 @@ backend/
     validators/
   scripts/seedAdmin.js
 
-frontend/
+frontend/          Customer website and agent portal (port 5173)
   src/
     api/
     app/
@@ -57,10 +57,27 @@ frontend/
     hooks/
     layouts/
     pages/
-      public admin agent
-    routes/
+      public agent
+    routes/          AppRoutes mounts the Back Office route table at /admin as a fallback
     utils/
+
+backoffice/        Back Office (admin and staff), a separate Vite app (port 5174)
+  src/
+    api/adminApi.js
+    components/admin/ components/invoice/
+    config/adminNavigation.js
+    layouts/admin/
+    pages/admin/
+    routes/AdminRoutes.jsx      the admin route table, used by both apps
+  test/
+
+shared/            Code used by both apps (API client, auth, common components, utilities, global styles)
+  src/
+  vite.shared.js   package de-duplication used by both Vite configs
 ```
+
+The website keeps `/admin` working as a fallback: it mounts the same route table from `backoffice/`. Admins sign in
+separately on each app because the session is stored per origin.
 
 ## Environment Variables
 
@@ -115,9 +132,14 @@ Required backend vars:
 - `PAYPAL_ALLOW_LOCAL_REDIRECTS` (default: `false`)
 - `DEFAULT_CURRENCY`
 - `FRONTEND_URL`
+- `BACKOFFICE_URL` (optional, comma separated Back Office origins for CORS; local: `http://localhost:5174`. In production only `https` origins are accepted.)
 
 Required frontend vars:
 - `VITE_API_BASE_URL` (example: `https://bokun-zanzibar-booking.onrender.com`)
+
+Back Office vars (`backoffice/.env.example`):
+- `VITE_API_BASE_URL` (local: `http://127.0.0.1:5000/api`)
+- `VITE_WEBSITE_URL` (local: `http://localhost:5173`; used for password recovery and links to customer pages)
 
 Development fallback:
 - `BOKUN_MOCK_MODE=true` enables mock Bokun layer for frontend and local development.
@@ -137,6 +159,7 @@ Development fallback:
 ```bash
 cd backend && npm install
 cd ../frontend && npm install
+cd ../backoffice && npm install
 ```
 
 2. Configure env
@@ -146,7 +169,11 @@ cd ../frontend && npm install
 cp .env.example .env
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
+cp backoffice/.env.example backoffice/.env
 ```
+
+For local development set `BACKOFFICE_URL=http://localhost:5174` in `backend/.env`, and point both apps at the local
+backend (`VITE_API_BASE_URL=http://127.0.0.1:5000/api`).
 
 3. Seed first admin (super_admin on first run)
 
@@ -162,11 +189,34 @@ cd backend
 npm run dev
 ```
 
-5. Start frontend
+5. Start the customer website (http://localhost:5173)
 
 ```bash
 cd frontend
 npm run dev
+```
+
+6. Start the Back Office (http://localhost:5174)
+
+```bash
+cd backoffice
+npm run dev
+```
+
+Run the three in separate terminals. On Windows, from the repository root:
+
+```powershell
+Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd backend; npm run dev'
+Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd frontend; npm run dev'
+Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd backoffice; npm run dev'
+```
+
+7. Tests and builds
+
+```bash
+cd frontend && npm test && npx vite build     # website (npm run build also prerenders SEO pages from a public API)
+cd backoffice && npm test && npm run build    # Back Office
+cd backend && npm test && npm run lint
 ```
 
 ## GitHub Hardening + Deployment
@@ -366,7 +416,7 @@ Public:
 - My booking page
 - Invoice details page
 
-Admin:
+Admin (Back Office app in `backoffice/`, also reachable at the website's /admin fallback):
 - Dashboard starter (KPI cards + recent bookings + top metrics)
 - Bookings list
 - Sync logs page
