@@ -48,4 +48,10 @@ const startJobMemoryDiagnostics = (job) => {
   };
 };
 
-module.exports = { startJobMemoryDiagnostics };
+const recordJobMemoryStage = (job, stage) => {
+  // Only trace scheduled cycles already being measured, not manual requests.
+  if (![...active.values()].includes(job)) return;
+  sample(stage, undefined, job);
+};
+
+module.exports = { startJobMemoryDiagnostics, recordJobMemoryStage };
