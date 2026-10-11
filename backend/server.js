@@ -62,4 +62,7 @@ process.on("SIGTERM", () => {
   stopRefundReconciliationPoller();
 });
 
-bootstrap();
+bootstrap().catch((error) => {
+  logger.error("Server bootstrap failed", { error: error.message });
+  process.exit(1);
+});

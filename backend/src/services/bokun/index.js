@@ -175,7 +175,7 @@ const withBokunReadRetry = async (
 ) => {
   let attempt = 0;
 
-  while (true) {
+  for (;;) {
     try {
       return await operation(attempt);
     } catch (error) {

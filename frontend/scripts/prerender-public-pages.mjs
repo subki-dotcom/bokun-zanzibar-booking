@@ -30,12 +30,33 @@ const truncate = (value = "", length = 160) => {
   return text.length <= length ? text : `${text.slice(0, length - 1).trim()}...`;
 };
 
+const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
+const RETRY_DELAYS_MS = [2000, 5000];
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Transient gateway errors from the API host should not fail a deploy; persistent failures still do.
 const requestJson = async (url) => {
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!response.ok) throw new Error(`SEO data request failed (${response.status}): ${url}`);
-  const payload = await response.json();
-  if (!payload?.success) throw new Error(`SEO data request returned an invalid payload: ${url}`);
-  return payload;
+  for (let attempt = 0; ; attempt += 1) {
+    let response;
+    try {
+      response = await fetch(url, { headers: { Accept: "application/json" } });
+    } catch (error) {
+      if (attempt >= RETRY_DELAYS_MS.length) throw new Error(`SEO data request failed (${error.message}): ${url}`);
+      await wait(RETRY_DELAYS_MS[attempt]);
+      continue;
+    }
+    if (!response.ok) {
+      if (RETRYABLE_STATUS.has(response.status) && attempt < RETRY_DELAYS_MS.length) {
+        console.warn(`SEO data request returned ${response.status}; retrying: ${url}`);
+        await wait(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      throw new Error(`SEO data request failed (${response.status}): ${url}`);
+    }
+    const payload = await response.json();
+    if (!payload?.success) throw new Error(`SEO data request returned an invalid payload: ${url}`);
+    return payload;
+  }
 };
 
 const fetchActiveTours = async () => {

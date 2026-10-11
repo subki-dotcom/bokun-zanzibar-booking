@@ -1,12 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-let env = {};
-try {
-  env = require('../../config/env').env;
-} catch (e) {
-  // allow tests to require this module without env installed
-  env = {};
-}
 
 const normalizeKey = (v) => {
   if (v === null || v === undefined) return '';

@@ -80,4 +80,8 @@ jobs:
         run: npm test
 
       - name: Build frontend
+        env:
+          # Prerendering reads public tour data only; override with the SEO_API_BASE_URL repository variable.
+          SEO_API_BASE_URL: ${{ vars.SEO_API_BASE_URL || 'https://bokun-zanzibar-booking.onrender.com/api' }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://bokun-zanzibar-booking.onrender.com' }}
         run: npm run build
