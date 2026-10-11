@@ -120,6 +120,100 @@ auditLogSchema.pre("save", function preventUpdate(next) {
   auditLogSchema.pre(operation, (next) => next(immutable()));
 });
 
+// Booking lifecycle. T2 only creates QUOTE_REQUESTED (no price yet) and AWAITING_PAYMENT (priced by the server).
+// CONFIRMED is reached only after a server-verified payment or an approved cash-on-arrival arrangement.
+const BOOKING_STATUS = Object.freeze({
+  QUOTE_REQUESTED: "QUOTE_REQUESTED",
+  AWAITING_PAYMENT: "AWAITING_PAYMENT",
+  CONFIRMED: "CONFIRMED",
+  CANCELLED: "CANCELLED"
+});
+const PAYMENT_STATUS = Object.freeze({ UNPAID: "UNPAID", PAID: "PAID", REFUNDED: "REFUNDED" });
+const BOOKING_SOURCES = Object.freeze(["WEBSITE", "MANUAL"]);
+
+const bookingLegSchema = new Schema(
+  {
+    direction: { type: String, enum: ["OUTBOUND", "RETURN"], required: true },
+    pickupLocationId: { type: Schema.Types.ObjectId, required: true },
+    pickupLocationName: { type: String, required: true },
+    pickupZoneCode: { type: String, default: "" },
+    dropoffLocationId: { type: Schema.Types.ObjectId, required: true },
+    dropoffLocationName: { type: String, required: true },
+    dropoffZoneCode: { type: String, default: "" },
+    // Local Zanzibar date/time as entered, and the same instant in UTC.
+    localDate: { type: String, required: true },
+    localTime: { type: String, required: true },
+    pickupAt: { type: Date, required: true },
+    routeId: { type: Schema.Types.ObjectId, default: null },
+    rateId: { type: Schema.Types.ObjectId, default: null },
+    tier: { minPassengers: Number, maxPassengers: Number },
+    price: { type: Schema.Types.Decimal128, default: null },
+    priceStatus: { type: String, enum: ["PRICED", "QUOTE_REQUIRED"], required: true },
+    priceReason: { type: String, default: "" }
+  },
+  { _id: false }
+);
+
+const bookingSchema = new Schema(
+  {
+    reference: { type: String, required: true, unique: true },
+    source: { type: String, enum: BOOKING_SOURCES, default: "WEBSITE" },
+    status: { type: String, enum: Object.values(BOOKING_STATUS), required: true, index: true },
+    paymentStatus: { type: String, enum: Object.values(PAYMENT_STATUS), default: PAYMENT_STATUS.UNPAID },
+    tripType: { type: String, enum: ["ONE_WAY", "ROUND_TRIP"], required: true },
+    legs: { type: [bookingLegSchema], required: true },
+    pickupAddress: { type: String, default: "" },
+    dropoffAddress: { type: String, default: "" },
+    passengers: {
+      adults: { type: Number, required: true },
+      children: { type: Number, default: 0 },
+      infants: { type: Number, default: 0 },
+      priced: { type: Number, required: true },
+      capacity: { type: Number, required: true }
+    },
+    luggage: {
+      largeBags: { type: Number, default: 0 },
+      smallBags: { type: Number, default: 0 },
+      notes: { type: String, default: "" }
+    },
+    flightNumber: { type: String, default: "" },
+    customer: {
+      fullName: { type: String, required: true },
+      email: { type: String, required: true, lowercase: true },
+      phone: { type: String, required: true },
+      whatsapp: { type: Boolean, default: false }
+    },
+    specialRequests: { type: String, default: "" },
+    pricing: {
+      status: { type: String, enum: ["PRICED", "QUOTE_REQUIRED"], required: true },
+      currency: { type: String, default: TRANSFER_CURRENCY },
+      total: { type: Schema.Types.Decimal128, default: null },
+      basis: { type: String, default: "PER_VEHICLE" },
+      infantPricing: { type: String, default: INFANT_PRICING.EXCLUDED },
+      reasons: { type: [String], default: [] },
+      quotedAt: { type: Date, required: true }
+    },
+    statusHistory: [
+      {
+        _id: false,
+        status: String,
+        at: Date,
+        by: String,
+        note: String
+      }
+    ],
+    // Duplicate-submission protection: the client's Idempotency-Key and a fingerprint of what it submitted.
+    idempotencyKey: { type: String, required: true, unique: true, select: false },
+    requestFingerprint: { type: String, required: true, select: false },
+    // Random per-booking value; the customer's access token is an HMAC of it, so the token is never stored.
+    accessNonce: { type: String, required: true, select: false }
+  },
+  { timestamps: true, collection: "transfer_bookings" }
+);
+bookingSchema.index({ createdAt: -1 });
+bookingSchema.index({ "legs.pickupAt": 1 });
+bookingSchema.index({ "customer.email": 1, createdAt: -1 });
+
 const registry = new WeakMap();
 
 // Models are bound to the Transfer System connection only, never to the Business Platform connection.
@@ -132,7 +226,8 @@ const defineTransferModels = (connection) => {
     Rate: connection.model("TransferRate", rateSchema),
     Settings: connection.model("TransferSettings", settingsSchema),
     AdminUser: connection.model("TransferAdminUser", adminUserSchema),
-    AuditLog: connection.model("TransferAuditLog", auditLogSchema)
+    AuditLog: connection.model("TransferAuditLog", auditLogSchema),
+    Booking: connection.model("TransferBooking", bookingSchema)
   };
   registry.set(connection, models);
   return models;
@@ -142,5 +237,8 @@ module.exports = {
   LOCATION_TYPES,
   INFANT_PRICING,
   TRANSFER_CURRENCY,
+  BOOKING_STATUS,
+  PAYMENT_STATUS,
+  BOOKING_SOURCES,
   defineTransferModels
 };

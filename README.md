@@ -248,6 +248,18 @@ TRANSFER_ADMIN_NAME="Your Name" TRANSFER_ADMIN_EMAIL=you@example.com TRANSFER_AD
 npm run transfers:seed-demo
 ```
 
+Customer booking (website `/transfers`, public API `/api/transfers`):
+
+- `GET /locations` (active locations only), `POST /quote` (server price or "Request a Quote")
+- `POST /bookings` with an `Idempotency-Key` header. The server prices the booking again and refuses it with
+  `409 TRANSFER_PRICE_CHANGED` if the price differs from the `expectedTotal` the customer saw. A priced booking is
+  stored as `AWAITING_PAYMENT`; one without a rate is `QUOTE_REQUESTED`. Nothing is marked confirmed until payment
+  is verified (T5). Retries with the same key return the same booking.
+- `GET /bookings/:reference` with an `X-Transfer-Access-Token` header. References are random (`TRF-XXXXXXXX`) and
+  never open a booking on their own. The token is an HMAC of a per-booking nonce, so it is not stored. The website
+  keeps it in the link's `#fragment`. Responses mask email and phone and contain no internal ids.
+- Rate limits per IP: 10 bookings per 15 minutes, 60 quotes per minute, 60 lookups per 15 minutes.
+
 Transfer Admin API (`/api/transfer-admin`, Transfer Admin token required except for login):
 
 - `POST /auth/login`, `GET /auth/me`, `POST /auth/change-password`, `POST /auth/logout-everywhere`

@@ -10,7 +10,7 @@ import FooterBottom from "./FooterBottom";
 const quickLinks = [
   { label: "Home", to: "/" },
   { label: "Tours", to: "/tours" },
-  { label: "Transfers", to: "/tours" },
+  { label: "Transfers", to: "/transfers" },
   { label: "My Booking", to: "/my-booking" },
   { label: "Contact Us", to: "/tours" }
 ];

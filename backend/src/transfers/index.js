@@ -7,21 +7,30 @@ const { createPricingService } = require("./pricing/service");
 const { createTransferAuthService } = require("./services/auth");
 const { createTransferUserService, createTransferAuditQueryService } = require("./services/users");
 const { createTransferAdminRouter } = require("./routes/admin.routes");
+const { createTransferPublicRouter } = require("./routes/public.routes");
+const { createTransferBookingService } = require("./services/bookings");
 
 const tokenConfig = () => {
   const config = transferConfig();
   return { secret: config.jwtSecret, expiresIn: config.jwtExpiresIn };
 };
 
-const createTransferServices = ({ getStore = getTransferStore, tokens = tokenConfig } = {}) => ({
-  auth: createTransferAuthService({ getStore, tokenConfig: tokens }),
-  catalog: createCatalogService({ getStore }),
-  pricing: createPricingService({ getStore }),
-  users: createTransferUserService({ getStore }),
-  audit: createTransferAuditQueryService({ getStore })
-});
+const createTransferServices = ({ getStore = getTransferStore, tokens = tokenConfig } = {}) => {
+  const pricing = createPricingService({ getStore });
+  return {
+    auth: createTransferAuthService({ getStore, tokenConfig: tokens }),
+    catalog: createCatalogService({ getStore }),
+    pricing,
+    bookings: createTransferBookingService({ getStore, pricing, accessSecret: () => tokens().secret }),
+    users: createTransferUserService({ getStore }),
+    audit: createTransferAuditQueryService({ getStore })
+  };
+};
 
 const createTransferAdminApi = ({ getStore = getTransferStore, tokens = tokenConfig } = {}) =>
   createTransferAdminRouter({ getStore, tokenConfig: tokens, services: createTransferServices({ getStore, tokens }) });
 
-module.exports = { tokenConfig, createTransferServices, createTransferAdminApi };
+const createTransferPublicApi = ({ getStore = getTransferStore, tokens = tokenConfig } = {}) =>
+  createTransferPublicRouter({ bookings: createTransferServices({ getStore, tokens }).bookings });
+
+module.exports = { tokenConfig, createTransferServices, createTransferAdminApi, createTransferPublicApi };

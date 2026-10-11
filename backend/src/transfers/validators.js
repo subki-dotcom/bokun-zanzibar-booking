@@ -139,7 +139,69 @@ const resetPasswordSchema = z.object({
   params: idParams("userId")
 });
 
+
+// ---------- Public (website) ----------
+const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+const localTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:mm");
+const optionalText = (max) => z.string().trim().max(max).optional().default("");
+const publicQuoteSchema = quoteSchema;
+
+const publicBookingSchema = z.object({
+  body: z
+    .object({
+      tripType: z.enum(Object.values(TRIP_TYPES)),
+      pickupLocationId: objectId,
+      dropoffLocationId: objectId,
+      travelDate: localDate,
+      travelTime: localTime,
+      returnDate: localDate.optional(),
+      returnTime: localTime.optional(),
+      passengers: z.object({ adults: count.min(1), children: count.default(0), infants: count.default(0) }).strict(),
+      luggage: z
+        .object({ largeBags: z.coerce.number().int().min(0).max(40).default(0), smallBags: z.coerce.number().int().min(0).max(40).default(0), notes: optionalText(300) })
+        .strict()
+        .default({}),
+      flightNumber: z.string().trim().toUpperCase().regex(/^([A-Z0-9]{2,3}\s?\d{1,5}[A-Z]?)?$/,"Enter a flight number like PW 1234").optional().default(""),
+      pickupAddress: optionalText(300),
+      dropoffAddress: optionalText(300),
+      customer: z
+        .object({
+          fullName: z.string().trim().min(2).max(120),
+          email: z.string().trim().toLowerCase().email().max(200),
+          phone: z.string().trim().regex(/^\+?[0-9 ()-]{7,24}$/, "Enter a valid phone number").refine((value) => value.replace(/\D/g, "").length >= 7, "Enter a valid phone number"),
+          whatsapp: z.boolean().optional().default(false)
+        })
+        .strict(),
+      specialRequests: optionalText(1000),
+      // The total the customer saw (null when they saw "Request a Quote"); never used as the price.
+      expectedTotal: z.union([z.string().regex(/^\d+(\.\d{1,2})?$/), z.null()]),
+      // Honeypot: hidden on the form, so people leave it empty.
+      website: z.string().max(0, "Rejected").optional()
+    })
+    .strict()
+    .superRefine((body, ctx) => {
+      const hasReturn = body.returnDate !== undefined || body.returnTime !== undefined;
+      if (body.tripType === TRIP_TYPES.ROUND_TRIP && (!body.returnDate || !body.returnTime)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["returnDate"], message: "Return date and time are required for a round trip" });
+      }
+      if (body.tripType === TRIP_TYPES.ONE_WAY && hasReturn) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["returnDate"], message: "A one-way transfer has no return" });
+      }
+    }),
+  query: noQuery,
+  params: z.object({}).passthrough()
+});
+
+const publicBookingLookupSchema = z.object({
+  body: z.any().optional(),
+  query: noQuery,
+  params: z.object({ reference: z.string().trim().toUpperCase().max(20) })
+});
+
 module.exports = {
+  publicQuoteSchema,
+  publicBookingSchema,
+  publicBookingLookupSchema,
   loginSchema,
   changePasswordSchema,
   emptyBodySchema,

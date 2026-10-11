@@ -14,7 +14,7 @@ const PublicLayout = () => {
   const isCheckoutRoute = /^(\/booking\/|\/payment\/checkout\/|\/payment-(success|failure|processing)(?:\/|$)|\/payment-status\/)/.test(
     location.pathname
   );
-  const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
+  const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/transfers\/booking\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
 
   useEffect(() => {
     persistMarketingAttribution(location.search);
@@ -34,6 +34,9 @@ const PublicLayout = () => {
             <Nav className="ms-auto gap-2 public-nav-links">
               <Nav.Link as={NavLink} to="/tours" className="nav-pill-link">
                 Tours
+              </Nav.Link>
+              <Nav.Link as={NavLink} to="/transfers" className="nav-pill-link">
+                Transfers
               </Nav.Link>
               <Nav.Link as={NavLink} to="/my-booking" className="nav-pill-link">
                 My Booking

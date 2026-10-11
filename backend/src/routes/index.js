@@ -34,7 +34,7 @@ const performanceReviewRoutes = require("./performanceReview.routes");
 const productionReadinessRoutes = require("./productionReadiness.routes");
 const settlementsRoutes = require("./settlements.routes");
 const serviceCompletionRoutes = require("./serviceCompletion.routes");
-const { createTransferAdminApi } = require("../transfers");
+const { createTransferAdminApi, createTransferPublicApi } = require("../transfers");
 
 const router = express.Router();
 
@@ -73,6 +73,8 @@ router.use("/admin/settlements", settlementsRoutes);
 router.use("/admin/service-completions", serviceCompletionRoutes);
 // Transfer System admin API: its own users, token secret and database.
 router.use("/transfer-admin", createTransferAdminApi());
+// Transfer System public API for the website (booking form, quotes, booking status).
+router.use("/transfers", createTransferPublicApi());
 router.use("/", bookingRequestsRoutes);
 router.use("/admin", adminBookingRequestsRoutes);
 

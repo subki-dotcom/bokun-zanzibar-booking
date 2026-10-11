@@ -22,6 +22,9 @@ import AgentRegisterPage from "../pages/public/AgentRegisterPage";
 import LegalPage from "../pages/public/LegalPage";
 // The Back Office owns the admin pages; the website keeps /admin as a fallback that mounts the same routes.
 import adminRoutes from "../../../backoffice/src/routes/AdminRoutes";
+// Transfer System pages: independent of the tour (Bókun) booking flow.
+const TransfersPage = lazy(() => import("../pages/public/TransfersPage"));
+const TransferBookingStatusPage = lazy(() => import("../pages/public/TransferBookingStatusPage"));
 
 const AgentDashboardPage = lazy(() => import("../pages/agent/AgentDashboardPage"));
 const AgentProductsPage = lazy(() => import("../pages/agent/AgentProductsPage"));
@@ -56,6 +59,8 @@ const AppRoutes = () => {
         <Route index element={<HomePage />} />
         <Route path="/tours" element={<ToursPage />} />
         <Route path="/tours/:slug" element={<TourDetailsPage />} />
+        <Route path="/transfers" element={<TransfersPage />} />
+        <Route path="/transfers/booking/:reference" element={<TransferBookingStatusPage />} />
         <Route path="/booking/:slug" element={<BookingFlowPage />} />
         <Route path="/booking-confirmation/:reference" element={<BookingConfirmationPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
