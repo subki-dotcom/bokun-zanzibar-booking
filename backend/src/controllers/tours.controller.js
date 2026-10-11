@@ -39,11 +39,13 @@ const listCategories = asyncHandler(async (req, res) => {
 
 const getTourBySlug = asyncHandler(async (req, res) => {
   const data = await toursService.getTourBySlug(req.params.slug, req.requestId);
+  const publicTour = { ...data };
+  delete publicTour.rawBokunProduct;
 
   setPublicCache(res, { maxAge: 60, staleWhileRevalidate: 300 });
   return successResponse(res, {
     message: "Tour details fetched",
-    data
+    data: publicTour
   });
 });
 
