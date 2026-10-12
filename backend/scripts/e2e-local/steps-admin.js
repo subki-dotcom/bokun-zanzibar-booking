@@ -73,7 +73,7 @@ module.exports = async ({ call, record, ctx, ADMIN, backendDir }) => {
       record("refund verification", verify.ok, `status ${verify.status} ${short(verify.json?.data?.refund?.status || verify.json?.data?.status || verify.json?.message)}`);
       const again = await call("POST", `/admin/refunds/${refundId}/process`, { token, body: { confirm: true } });
       const m = require(path.join(backendDir, "node_modules/mongoose"));
-      await m.connect("mongodb://127.0.0.1:27017/bokun_e2e_local");
+      await m.connect(ctx.mongoUri || "mongodb://127.0.0.1:27017/bokun_e2e_local");
       const refunds = await m.connection.db.collection("refunds").find({}).toArray();
       await m.disconnect();
       record("refund double-submit is idempotent", refunds.length === 1 && new Set(refunds.map((r) => r.providerRefundRequestReference)).size === 1, `second call status ${again.status}, refunds ${refunds.length}, msg ${short(again.json?.message)}`);
@@ -86,7 +86,8 @@ module.exports = async ({ call, record, ctx, ADMIN, backendDir }) => {
   record("forgot-password unavailable without email (no token issued)", forgot.status === 503, `status ${forgot.status}`);
   const mongoose = require(path.join(backendDir, "node_modules/mongoose"));
   const resetToken = crypto.randomBytes(32).toString("hex");
-  await mongoose.connect("mongodb://127.0.0.1:27017/bokun_e2e_local");
+  // The harness database: the shared local scratch DB or the isolated mongod (--isolated-mongo).
+  await mongoose.connect(ctx.mongoUri || "mongodb://127.0.0.1:27017/bokun_e2e_local");
   await mongoose.connection.db.collection("users").updateOne({ email: ADMIN.email }, {
     $set: {
       passwordResetHash: crypto.createHash("sha256").update(resetToken).digest("hex"),

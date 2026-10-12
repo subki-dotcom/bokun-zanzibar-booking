@@ -23,5 +23,7 @@ module.exports = async ({ call, record, ADMIN, ctx, backendDir }) => {
   const me = await call("GET", "/auth/me", { token: ctx.token });
   record("auth me", me.ok, `role ${me.json?.data?.role || me.json?.data?.user?.role}`);
   await require("./steps-booking.js")({ call, record, ctx });
+  // Runs before steps-admin.js, which later cancels the booking.
+  await require("./steps-phase3c.js")({ call, record, ctx, backendDir });
   await require("./steps-admin.js")({ call, record, ctx, ADMIN, backendDir });
 };

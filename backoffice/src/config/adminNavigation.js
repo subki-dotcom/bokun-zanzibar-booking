@@ -407,6 +407,18 @@ export const adminNavigation = [
         icon: BsShieldCheck,
         roles: ADMIN_ROLES.ALL,
         status: "active"
+      },
+      {
+        // Read-only queue of customer requests Tour Operations escalated to Finance.
+        id: "finance-escalations",
+        label: "Finance Escalations",
+        path: "/admin/finance/escalations",
+        matchPrefix: "/admin/finance/escalations",
+        detailLabel: "Escalation Details",
+        icon: BsBell,
+        roles: ADMIN_ROLES.ALL,
+        permissions: [ADMIN_PERMISSIONS.BOOKING_ACCOUNTING_READ],
+        status: "active"
       }
     ]
   },

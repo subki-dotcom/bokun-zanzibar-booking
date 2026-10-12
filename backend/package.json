@@ -36,6 +36,7 @@
     "test": "node --test",
     "test:smoke": "node scripts/smoke.js",
     "test:e2e-local": "node scripts/e2e-local/e2e.js",
+    "test:e2e-local:isolated": "node scripts/e2e-local/e2e.js --isolated-mongo",
     "test:financial-local": "node scripts/e2e-local/financial-scenarios.js",
     "test:receivables-local": "node scripts/e2e-local/receivable-workflows.js",
     "repair:financial-data-quality": "node scripts/repair-financial-data-quality.js",

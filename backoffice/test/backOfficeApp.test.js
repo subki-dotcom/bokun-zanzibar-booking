@@ -58,8 +58,12 @@ test("every admin route sits behind the Back Office role guard and keeps its pag
   assert.equal(layout.children.length, 2);
   // Every existing screen is still behind exactly the original Back Office roles.
   assert.deepEqual(existingScreens.element.props.roles, BACK_OFFICE_ROLES);
-  // 76 declared routes; the CRM customer list declares three paths through one .map.
-  assert.equal(existingScreens.children.length, 78);
+  // 78 declared routes (including the two Finance escalation screens); the CRM customer list declares
+  // three paths through one .map.
+  assert.equal(existingScreens.children.length, 80);
+  const financeGuard = matchRoutes(adminRouteTable(), "/admin/finance/escalations/abc").at(-1).route.element.props;
+  assert.deepEqual(financeGuard.permissions, [ADMIN_PERMISSIONS.BOOKING_ACCOUNTING_READ]);
+  assert.deepEqual(matchRoutes(adminRouteTable(), "/admin/finance/escalations")[1].route.element.props.roles, BACK_OFFICE_ROLES);
   assert.deepEqual(tourAdminScreens.element.props.permissions, [ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ, ADMIN_PERMISSIONS.TOUR_REQUESTS_READ]);
   assert.equal(tourAdminScreens.element.props.roles, undefined);
   assert.deepEqual(tourAdminScreens.children.map((route) => route.path), [

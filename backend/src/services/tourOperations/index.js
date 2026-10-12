@@ -424,5 +424,9 @@ module.exports = {
   addNote,
   transition,
   setCategory,
+  // Shared read-only projections (the Finance escalation queue reuses them).
+  BOOKING_FIELDS,
+  toTourBooking,
+  operationsView,
   __testables: { toTourBooking, toTourRequest, prefixFilter }
 };

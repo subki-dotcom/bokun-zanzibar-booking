@@ -1,14 +1,13 @@
 // Phase 3B: the Tour Admin screens inside the Back Office. The real routes, guards, layout and AuthProvider
 // render in JSDOM; the shared axiosClient is answered by an in-test adapter that plays the server, records
 // every call and refuses (403) anything outside what each role may read. No network is used.
-import test, { before, after, beforeEach, afterEach } from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
-import React, { act } from "react";
-import { createServer } from "vite";
-import { sharedResolve } from "../../shared/vite.shared.js";
+import { act } from "react";
+// Uses the Back Office's own jsdom dev dependency: these access-control tests run, never skip.
+import { createRenderHarness, serverError } from "./support/backOfficeRenderHarness.js";
 import {
   ADMIN_PERMISSIONS,
   filterAdminNavigation,
@@ -20,13 +19,6 @@ import { bookingAttention, bokunSyncSummary, TOUR_PERMISSIONS } from "../src/con
 const root = process.cwd();
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
 
-// The Back Office has no DOM library of its own; the website's jsdom is reused rather than adding one.
-let JSDOM = null;
-try {
-  ({ JSDOM } = createRequire(path.join(root, "../frontend/package.json"))("jsdom"));
-} catch {
-  JSDOM = null;
-}
 
 const TOUR_ADMIN_PERMISSIONS = [TOUR_PERMISSIONS.OPERATIONS_READ, TOUR_PERMISSIONS.REQUESTS_READ, TOUR_PERMISSIONS.REQUESTS_PROCESS];
 const STAFF_PERMISSIONS = [
@@ -105,7 +97,6 @@ test("the Tour Admin API client only calls Tour Operations endpoints and only se
 });
 
 // ---- Rendered behaviour ----
-let dom, server, mods, rootElement, reactRoot, calls, routes;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const bookingItem = (n, overrides = {}) => ({
@@ -156,121 +147,18 @@ const defaultRoutes = () => ({
   "POST /tour-operations/requests/r1/category": ({ body }) => requestDetail({ operations: operations({ category: body.category, version: 1 }) })
 });
 
-const serverError = (status, code, message) => ({ __error: { status, code, message } });
-
-before(async () => {
-  if (!JSDOM) return;
-  dom = new JSDOM("<!doctype html><html><body><div id=\"root\"></div></body></html>", { url: "http://localhost:5174/", pretendToBeVisual: true });
-  for (const name of ["window", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLSelectElement", "HTMLTextAreaElement", "Node", "Event", "CustomEvent", "MouseEvent", "MutationObserver", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame", "localStorage", "sessionStorage"]) {
-    try {
-      const value = dom.window[name];
-      Object.defineProperty(globalThis, name, { value: typeof value === "function" && /^[a-z]/.test(name) ? value.bind(dom.window) : value, configurable: true, writable: true });
-    } catch { /* read-only in this Node version */ }
-  }
-  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
-  server = await createServer({ configFile: false, resolve: sharedResolve, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, watch: null, hmr: false }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
-  mods = {
-    routes: await server.ssrLoadModule("/src/routes/BackOfficeRoutes.jsx"),
-    auth: await server.ssrLoadModule("/../shared/src/context/AuthContext.jsx"),
-    axios: await server.ssrLoadModule("/../shared/src/api/axiosClient.js"),
-    router: await import("react-router-dom"),
-    client: await import("react-dom/client")
-  };
-});
-after(async () => {
-  await server?.close();
-  dom?.window.close();
-});
-
-let currentUser;
-let locationNow = "";
-beforeEach(() => {
-  if (!JSDOM) return;
-  calls = [];
-  routes = defaultRoutes();
-  // The adapter plays the server: unknown routes are refused, as the backend refuses a tour_admin.
-  mods.axios.default.defaults.adapter = async (config) => {
-    const url = new URL(config.url, "http://api.test/api");
-    const method = String(config.method || "get").toUpperCase();
-    const pathname = url.pathname.replace(/^\/api/, "");
-    const body = config.data ? JSON.parse(config.data) : {};
-    calls.push({ method, pathname, query: url.searchParams, body, headers: config.headers });
-    const handler = routes[`${method} ${pathname}`];
-    const result = handler ? await handler({ user: currentUser, query: url.searchParams, body }) : serverError(403, "FORBIDDEN", "Forbidden");
-    if (result?.__error) {
-      return Promise.reject({ config, response: { status: result.__error.status, data: { success: false, message: result.__error.message, error: { code: result.__error.code } } } });
-    }
-    return { data: { success: true, message: "ok", data: result }, status: 200, statusText: "OK", headers: {}, config };
-  };
-});
-afterEach(async () => {
-  if (!reactRoot) return;
-  await act(async () => { reactRoot.unmount(); await sleep(10); });
-  reactRoot = null;
-  document.body.innerHTML = "<div id=\"root\"></div>";
-});
-
-const LocationProbe = () => {
-  const location = mods.router.useLocation();
-  locationNow = `${location.pathname}${location.search}`;
-  return null;
-};
-
-const mount = async (pathname, user) => {
-  currentUser = user;
-  localStorage.clear();
-  if (user) {
-    localStorage.setItem("zanzibar_auth_token", "test-token");
-    localStorage.setItem("zanzibar_auth_user", JSON.stringify(user));
-  }
-  rootElement = document.getElementById("root");
-  reactRoot = mods.client.createRoot(rootElement);
-  await act(async () => {
-    reactRoot.render(
-      React.createElement(mods.router.MemoryRouter, { initialEntries: [pathname] },
-        React.createElement(mods.auth.AuthProvider, null,
-          React.createElement(mods.routes.default),
-          React.createElement(LocationProbe)))
-    );
-    await sleep(20);
-  });
-};
-
-const text = () => document.body.textContent || "";
-const waitFor = async (predicate, label = "condition") => {
-  for (let attempt = 0; attempt < 150; attempt += 1) {
-    if (predicate()) return;
-    await act(async () => { await sleep(20); });
-  }
-  assert.fail(`Timed out waiting for ${label}. Location ${locationNow}. Text: ${text().slice(0, 400)}`);
-};
-const buttons = () => [...document.querySelectorAll("button")];
-const button = (label) => buttons().find((element) => element.textContent.trim() === label);
-const click = async (element) => {
-  await act(async () => { element.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); await sleep(10); });
-};
-const setValue = async (element, value) => {
-  const prototype = element.tagName === "SELECT" ? dom.window.HTMLSelectElement.prototype : element.tagName === "TEXTAREA" ? dom.window.HTMLTextAreaElement.prototype : dom.window.HTMLInputElement.prototype;
-  Object.getOwnPropertyDescriptor(prototype, "value").set.call(element, value);
-  await act(async () => {
-    element.dispatchEvent(new dom.window.Event(element.tagName === "SELECT" ? "change" : "input", { bubbles: true }));
-    await sleep(5);
-  });
-};
-const submit = async (form) => {
-  await act(async () => { form.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true })); await sleep(10); });
-};
-const apiPaths = () => calls.map((call) => `${call.method} ${call.pathname}`);
+const h = createRenderHarness({ defaultRoutes });
+const { mount, text, waitFor, buttons, button, click, setValue, submit, apiPaths } = h;
 const FINANCIAL = /\$|USD|TZS|amount|price|revenue|profit|commission|invoice|ledger|cost|settlement/i;
-const rendered = (name, body) => test(name, { skip: !JSDOM && "jsdom is not installed" }, body);
+const rendered = (name, body) => test(name, body);
 
 rendered("tour_admin lands on the Tour Dashboard and never reaches staff screens or staff APIs", async () => {
   await mount("/admin", USERS.tour_admin);
-  await waitFor(() => locationNow === "/admin/tour-admin" && /Escalated to Finance/.test(text()), "tour dashboard");
+  await waitFor(() => h.locationNow === "/admin/tour-admin" && /Escalated to Finance/.test(text()), "tour dashboard");
   for (const pathname of ["/admin/booking-accounting/invoices", "/admin/business-accounting/settlements", "/admin/operations/booking-requests", "/admin/business-accounting/general-ledger", "/admin/settings/create-admin"]) {
-    await act(async () => { reactRoot.unmount(); });
+    await h.unmount();
     await mount(pathname, USERS.tour_admin);
-    await waitFor(() => locationNow === "/admin/tour-admin", `${pathname} redirects`);
+    await waitFor(() => h.locationNow === "/admin/tour-admin", `${pathname} redirects`);
   }
   const reached = new Set(apiPaths());
   assert.ok([...reached].every((call) => call === "GET /auth/me" || call.startsWith("GET /tour-operations/")), [...reached].join(", "));
@@ -283,22 +171,22 @@ rendered("tour_admin lands on the Tour Dashboard and never reaches staff screens
 
 rendered("staff and agents cannot open Tour Admin; admins can", async () => {
   await mount("/admin/tour-admin/bookings", USERS.staff);
-  await waitFor(() => locationNow === "/admin", "staff redirected to their own landing page");
+  await waitFor(() => h.locationNow === "/admin", "staff redirected to their own landing page");
   assert.ok(!apiPaths().some((call) => call.includes("/tour-operations/")), "no Tour Operations call for staff");
-  await act(async () => { reactRoot.unmount(); });
+  await h.unmount();
 
   await mount("/admin/tour-admin/requests", USERS.agent);
   await waitFor(() => /No Back Office access/.test(text()), "agent refused");
   assert.ok(!apiPaths().some((call) => call.includes("/tour-operations/")));
-  await act(async () => { reactRoot.unmount(); });
+  await h.unmount();
 
   await mount("/admin/tour-admin/requests", USERS.admin);
   await waitFor(() => /REQ-1/.test(text()), "admin sees requests");
-  assert.equal(locationNow, "/admin/tour-admin/requests");
+  assert.equal(h.locationNow, "/admin/tour-admin/requests");
 });
 
 rendered("dashboard shows server totals only, marks failed figures Unavailable and shows no money", async () => {
-  routes["GET /tour-operations/requests"] = ({ query }) => (query.get("state") === "AWAITING_FINANCE" ? serverError(500, "BOOM", "boom") : { items: [], page: 1, limit: 1, total: 2, hasMore: false });
+  h.routes["GET /tour-operations/requests"] = ({ query }) => (query.get("state") === "AWAITING_FINANCE" ? serverError(500, "BOOM", "boom") : { items: [], page: 1, limit: 1, total: 2, hasMore: false });
   await mount("/admin/tour-admin", USERS.tour_admin);
   await waitFor(() => /Escalated to Finance/.test(text()) && /Unavailable/.test(text()), "dashboard figures");
   const metric = (label) => [...document.querySelectorAll(".tour-admin-metric")].find((card) => card.textContent.includes(label))?.querySelector("strong")?.textContent;
@@ -309,7 +197,7 @@ rendered("dashboard shows server totals only, marks failed figures Unavailable a
   assert.match(text(), /Some figures could not be loaded|Something went wrong|boom/);
   assert.doesNotMatch(document.querySelector(".tour-admin-dashboard").textContent, FINANCIAL);
   const normalized = (query) => [...query.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([key, value]) => `${key}=${value}`).join("&");
-  const bookingQueries = calls.filter((call) => call.pathname === "/tour-operations/bookings").map((call) => normalized(call.query)).sort();
+  const bookingQueries = h.calls.filter((call) => call.pathname === "/tour-operations/bookings").map((call) => normalized(call.query)).sort();
   assert.deepEqual(bookingQueries, ["bookingStatus=cancelled&limit=1", "bookingStatus=confirmed&limit=1", "bookingStatus=failed&limit=1", "limit=1&origin=AGENT_PORTAL", "limit=1&origin=WEBSITE", "limit=1&supplierStatus=supplier_pending"].sort());
 });
 
@@ -332,14 +220,14 @@ rendered("booking list: separate payment, Bókun and supplier columns, filters a
   await setValue(document.getElementById("tour-bookings-origin"), "AGENT_PORTAL");
   await setValue(document.getElementById("tour-bookings-supplier"), "supplier_pending");
   await submit(document.querySelector(".tour-admin-filters"));
-  await waitFor(() => locationNow.includes("origin=AGENT_PORTAL"), "filters in URL");
-  await waitFor(() => calls.at(-1).query.get("origin") === "AGENT_PORTAL", "filtered request");
-  assert.equal(calls.at(-1).query.get("supplierStatus"), "supplier_pending");
-  assert.equal(calls.at(-1).query.get("page"), "1");
+  await waitFor(() => h.locationNow.includes("origin=AGENT_PORTAL"), "filters in URL");
+  await waitFor(() => h.calls.at(-1).query.get("origin") === "AGENT_PORTAL", "filtered request");
+  assert.equal(h.calls.at(-1).query.get("supplierStatus"), "supplier_pending");
+  assert.equal(h.calls.at(-1).query.get("page"), "1");
 
   await click(button("Next"));
-  await waitFor(() => calls.at(-1).query.get("page") === "2", "page 2 requested");
-  assert.equal(calls.at(-1).query.get("origin"), "AGENT_PORTAL", "filters kept while paging");
+  await waitFor(() => h.calls.at(-1).query.get("page") === "2", "page 2 requested");
+  assert.equal(h.calls.at(-1).query.get("origin"), "AGENT_PORTAL", "filters kept while paging");
 
   await setValue(document.getElementById("tour-bookings-search"), "ab");
   await submit(document.querySelector(".tour-admin-filters"));
@@ -348,19 +236,19 @@ rendered("booking list: separate payment, Bókun and supplier columns, filters a
 
 rendered("loading, empty, error and access-denied states", async () => {
   let release;
-  routes["GET /tour-operations/bookings"] = () => new Promise((resolve) => { release = () => resolve({ items: [], page: 1, limit: 25, total: 0, hasMore: false }); });
+  h.routes["GET /tour-operations/bookings"] = () => new Promise((resolve) => { release = () => resolve({ items: [], page: 1, limit: 25, total: 0, hasMore: false }); });
   await mount("/admin/tour-admin/bookings", USERS.tour_admin);
   await waitFor(() => /Loading tour bookings/.test(text()), "loading state");
   await act(async () => { release(); await sleep(10); });
   await waitFor(() => /No tour bookings match these filters/.test(text()), "empty state");
-  await act(async () => { reactRoot.unmount(); });
+  await h.unmount();
 
-  routes["GET /tour-operations/bookings"] = () => serverError(500, "INTERNAL", "Something went wrong");
+  h.routes["GET /tour-operations/bookings"] = () => serverError(500, "INTERNAL", "Something went wrong");
   await mount("/admin/tour-admin/bookings", USERS.tour_admin);
   await waitFor(() => document.querySelector(".tour-admin-bookings .alert-danger"), "error state");
-  await act(async () => { reactRoot.unmount(); });
+  await h.unmount();
 
-  routes["GET /tour-operations/bookings"] = () => serverError(403, "FORBIDDEN_PERMISSION", "Forbidden");
+  h.routes["GET /tour-operations/bookings"] = () => serverError(403, "FORBIDDEN_PERMISSION", "Forbidden");
   await mount("/admin/tour-admin/bookings", USERS.tour_admin);
   await waitFor(() => /does not have access to this Tour Admin information/.test(text()), "server refusal explained");
 });
@@ -370,9 +258,9 @@ rendered("booking details: contact, payment versus supplier, its requests, and n
   await waitFor(() => /Customer requests/.test(text()) && /REQ-1/.test(text()), "details with requests");
   assert.match(text(), /guest1@example\.test/);
   assert.match(text(), /Payment is verified, but the supplier has not confirmed this booking yet/);
-  const requestCall = calls.find((call) => call.pathname === "/tour-operations/requests");
+  const requestCall = h.calls.find((call) => call.pathname === "/tour-operations/requests");
   assert.equal(requestCall.query.get("bookingReference"), "ZNZ-170000000001-1001");
-  assert.equal(calls.find((call) => call.pathname === "/tour-operations/bookings").query.get("search"), "ZNZ-170000000001-1001");
+  assert.equal(h.calls.find((call) => call.pathname === "/tour-operations/bookings").query.get("search"), "ZNZ-170000000001-1001");
   const page = document.querySelector(".tour-admin-booking-details");
   assert.equal(page.querySelectorAll("input, select, textarea").length, 0, "no editable fields");
   assert.deepEqual([...page.querySelectorAll("button, a.btn")].map((element) => element.textContent.trim()).sort(), ["All bookings", "Refresh"]);
@@ -398,16 +286,16 @@ rendered("request details: only server-permitted actions, confirmation, reason, 
   await setValue(document.getElementById("tour-transition-reason"), "Refund decision needed");
   assert.equal(confirm().disabled, false);
   await act(async () => {
-    confirm().dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
-    confirm().dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    confirm().dispatchEvent(new h.dom.window.MouseEvent("click", { bubbles: true }));
+    confirm().dispatchEvent(new h.dom.window.MouseEvent("click", { bubbles: true }));
     await sleep(30);
   });
   await waitFor(() => /Only the internal Tour Operations state changed/.test(text()), "success message");
-  const posts = calls.filter((call) => call.method === "POST");
+  const posts = h.calls.filter((call) => call.method === "POST");
   assert.equal(posts.length, 1, "double click sends one request");
   assert.equal(posts[0].pathname, "/tour-operations/requests/r1/transition");
   assert.deepEqual(posts[0].body, { toState: "AWAITING_FINANCE", expectedVersion: 0, reason: "Refund decision needed" });
-  assert.ok(calls.every((call) => call.pathname === "/auth/me" || call.pathname.startsWith("/tour-operations/")), "no refund, payment or supplier endpoint");
+  assert.ok(h.calls.every((call) => call.pathname === "/auth/me" || call.pathname.startsWith("/tour-operations/")), "no refund, payment or supplier endpoint");
 });
 
 rendered("internal notes and category changes go to the Tour Operations endpoints", async () => {
@@ -415,21 +303,21 @@ rendered("internal notes and category changes go to the Tour Operations endpoint
   await waitFor(() => /Tour Operations actions/.test(text()), "actions");
   await setValue(document.getElementById("tour-request-note"), "Called the guest");
   await submit(document.getElementById("tour-request-note").closest("form"));
-  await waitFor(() => calls.some((call) => call.pathname === "/tour-operations/requests/r1/notes"), "note posted");
-  assert.deepEqual(calls.find((call) => call.pathname.endsWith("/notes")).body, { text: "Called the guest" });
+  await waitFor(() => h.calls.some((call) => call.pathname === "/tour-operations/requests/r1/notes"), "note posted");
+  assert.deepEqual(h.calls.find((call) => call.pathname.endsWith("/notes")).body, { text: "Called the guest" });
   await waitFor(() => /Internal note added/.test(text()), "note confirmation");
 
   await setValue(document.getElementById("tour-request-category"), "refund_inquiry");
   await submit(document.getElementById("tour-request-category").closest("form"));
-  await waitFor(() => calls.some((call) => call.pathname.endsWith("/category")), "category posted");
-  assert.deepEqual(calls.find((call) => call.pathname.endsWith("/category")).body, { category: "refund_inquiry", expectedVersion: 0 });
+  await waitFor(() => h.calls.some((call) => call.pathname.endsWith("/category")), "category posted");
+  assert.deepEqual(h.calls.find((call) => call.pathname.endsWith("/category")).body, { category: "refund_inquiry", expectedVersion: 0 });
 });
 
 rendered("a conflicting change reloads the request instead of overwriting it", async () => {
-  routes["POST /tour-operations/requests/r1/transition"] = () => serverError(409, "TOUR_REQUEST_VERSION_CONFLICT", "changed");
+  h.routes["POST /tour-operations/requests/r1/transition"] = () => serverError(409, "TOUR_REQUEST_VERSION_CONFLICT", "changed");
   await mount("/admin/tour-admin/requests/r1", USERS.tour_admin);
   await waitFor(() => /Tour Operations actions/.test(text()), "actions");
-  const detailLoads = () => calls.filter((call) => call.method === "GET" && call.pathname === "/tour-operations/requests/r1").length;
+  const detailLoads = () => h.calls.filter((call) => call.method === "GET" && call.pathname === "/tour-operations/requests/r1").length;
   const before = detailLoads();
   await click(button("Start review"));
   await waitFor(() => document.querySelector(".modal"), "dialog");

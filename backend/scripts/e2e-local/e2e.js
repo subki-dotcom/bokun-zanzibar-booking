@@ -1,10 +1,17 @@
 // Local end-to-end workflow run. Isolated DB, mocked Bokun/Pesapal, email disabled, outbound HTTP blocked.
 // Usage (from backend/): npm run test:e2e-local   — needs a local MongoDB on 127.0.0.1:27017.
 // Drops and recreates the bokun_e2e_local database only.
+//        npm run test:e2e-local:isolated — starts its own throwaway mongod (MONGOD_BINARY or the default
+//        install path) in a temporary directory and deletes it afterwards; no existing database is used.
+const fs = require("node:fs");
+const os = require("node:os");
+const net = require("node:net");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 
-const backendDir = path.resolve(process.argv[2] || path.join(__dirname, "..", ".."));
+const cliArgs = process.argv.slice(2);
+const ISOLATED_MONGO = cliArgs.includes("--isolated-mongo");
+const backendDir = path.resolve(cliArgs.find((arg) => !arg.startsWith("--")) || path.join(__dirname, "..", ".."));
 const PORT = 5055;
 const BASE = `http://127.0.0.1:${PORT}/api`;
 const ADMIN = { email: "e2e-admin@example.test", password: "E2e-Local-Passw0rd!" };
@@ -97,10 +104,44 @@ const startServer = () =>
 
 module.exports = { call, record, results, ADMIN, BASE };
 
+const MONGOD_BINARY = process.env.MONGOD_BINARY || (process.platform === "win32" ? "C:/Program Files/MongoDB/Server/8.2/bin/mongod.exe" : "/usr/bin/mongod");
+
+// A throwaway mongod on a free port in a fresh temporary directory.
+const startIsolatedMongo = async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "riser-e2e-mongo-"));
+  const reservation = net.createServer();
+  await new Promise((resolve) => reservation.listen(0, "127.0.0.1", resolve));
+  const port = reservation.address().port;
+  await new Promise((resolve) => reservation.close(resolve));
+  const child = spawn(MONGOD_BINARY, ["--bind_ip", "127.0.0.1", "--port", String(port), "--dbpath", directory, "--quiet"], { windowsHide: true, stdio: "ignore" });
+  ENV.MONGO_URI = `mongodb://127.0.0.1:${port}/bokun_e2e_local`;
+  const stop = async () => {
+    if (child.exitCode === null) {
+      child.kill();
+      await new Promise((resolve) => child.once("exit", resolve));
+    }
+    // Delete only the unique temporary directory created above.
+    const resolved = fs.realpathSync(directory);
+    if (path.dirname(resolved) === fs.realpathSync(os.tmpdir()) && path.basename(resolved).startsWith("riser-e2e-mongo-")) {
+      fs.rmSync(resolved, { recursive: true, force: true });
+    }
+  };
+  return { stop };
+};
+
 const main = async () => {
+  const isolated = ISOLATED_MONGO ? await startIsolatedMongo() : null;
+  try {
+    await runHarness();
+  } finally {
+    await isolated?.stop();
+  }
+};
+
+const runHarness = async () => {
   await seedAdmin();
   const { child, logs } = await startServer();
-  const ctx = {};
+  const ctx = { mongoUri: ENV.MONGO_URI };
   try {
     const steps = require(path.join(__dirname, "steps.js"));
     await steps({ call, record, ADMIN, ctx, backendDir });

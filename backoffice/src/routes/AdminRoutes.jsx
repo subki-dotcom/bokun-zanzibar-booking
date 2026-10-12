@@ -51,6 +51,8 @@ const AdminReportCenterPage = lazy(() => import("../pages/admin/AdminReportCente
 const AdminAuditControlPage = lazy(() => import("../pages/admin/AdminAuditControlPage"));
 const AdminDataQualityPage = lazy(() => import("../pages/admin/AdminDataQualityPage"));
 const AdminOpsControlPage = lazy(() => import("../pages/admin/AdminOpsControlPage"));
+const FinanceEscalationsPage = lazy(() => import("../pages/admin/finance/FinanceEscalationsPage"));
+const FinanceEscalationDetailsPage = lazy(() => import("../pages/admin/finance/FinanceEscalationDetailsPage"));
 const TourAdminDashboardPage = lazy(() => import("../pages/admin/tourAdmin/TourAdminDashboardPage"));
 const TourAdminBookingsPage = lazy(() => import("../pages/admin/tourAdmin/TourAdminBookingsPage"));
 const TourAdminBookingDetailsPage = lazy(() => import("../pages/admin/tourAdmin/TourAdminBookingDetailsPage"));
@@ -90,6 +92,8 @@ const adminRoutes = () => (
       <Route path="/admin/booking-accounting/dashboard" element={<AdminBookingAccountingPage />} />
       <Route path="/admin/booking-accounting/invoices" element={<AdminInvoicesPage />} />
       <Route path="/admin/booking-accounting/payments" element={<AdminPaymentsPage />} />
+      <Route path="/admin/finance/escalations" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.BOOKING_ACCOUNTING_READ]}><FinanceEscalationsPage /></ProtectedRoute>} />
+      <Route path="/admin/finance/escalations/:requestId" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.BOOKING_ACCOUNTING_READ]}><FinanceEscalationDetailsPage /></ProtectedRoute>} />
       <Route path="/admin/booking-accounting/refunds" element={<AdminBookingAccountingPage />} />
       <Route path="/admin/booking-accounting/expenses" element={<AdminBookingAccountingPage />} />
       <Route path="/admin/booking-accounting/cost-templates" element={<AdminBookingAccountingPage />} />
