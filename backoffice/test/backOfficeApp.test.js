@@ -8,7 +8,7 @@ import { StaticRouter } from "react-router-dom/server.js";
 import { Routes, createRoutesFromChildren, matchRoutes } from "react-router-dom";
 import { createServer } from "vite";
 import { sharedResolve } from "../../shared/vite.shared.js";
-import { BACK_OFFICE_ROLES, backOfficeEntry, canUseBackOffice } from "../src/routes/backOfficeAccess.js";
+import { BACK_OFFICE_LAYOUT_ROLES, BACK_OFFICE_ROLES, backOfficeEntry, backOfficeLandingPath, canUseBackOffice } from "../src/routes/backOfficeAccess.js";
 
 const root = process.cwd();
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
@@ -37,6 +37,11 @@ const adminRouteTable = () => createRoutesFromChildren(adminModule.default());
 
 test("only super admins, admins and staff can use the Back Office; agents get a page of their own", () => {
   assert.deepEqual(BACK_OFFICE_ROLES, ["super_admin", "admin", "staff"]);
+  // Tour Admin shares the layout only; its landing page is its own, so guard redirects cannot loop.
+  assert.deepEqual(BACK_OFFICE_LAYOUT_ROLES, ["super_admin", "admin", "staff", "tour_admin"]);
+  assert.equal(canUseBackOffice("tour_admin"), true);
+  assert.equal(backOfficeLandingPath("tour_admin"), "/admin/tour-admin");
+  for (const role of BACK_OFFICE_ROLES) assert.equal(backOfficeLandingPath(role), "/admin");
   assert.equal(canUseBackOffice("agent"), false);
   assert.equal(backOfficeEntry({ loading: true }), "loading");
   assert.equal(backOfficeEntry({ loading: false, isAuthenticated: false }), "login");
@@ -48,9 +53,19 @@ test("only super admins, admins and staff can use the Back Office; agents get a 
 test("every admin route sits behind the Back Office role guard and keeps its page permission", async () => {
   const { ADMIN_PERMISSIONS } = await server.ssrLoadModule("/src/config/adminNavigation.js");
   const [layout] = adminRouteTable();
-  assert.deepEqual(layout.element.props.roles, BACK_OFFICE_ROLES);
+  assert.deepEqual(layout.element.props.roles, BACK_OFFICE_LAYOUT_ROLES);
+  const [existingScreens, tourAdminScreens] = layout.children;
+  assert.equal(layout.children.length, 2);
+  // Every existing screen is still behind exactly the original Back Office roles.
+  assert.deepEqual(existingScreens.element.props.roles, BACK_OFFICE_ROLES);
   // 76 declared routes; the CRM customer list declares three paths through one .map.
-  assert.equal(layout.children.length, 78);
+  assert.equal(existingScreens.children.length, 78);
+  assert.deepEqual(tourAdminScreens.element.props.permissions, [ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ, ADMIN_PERMISSIONS.TOUR_REQUESTS_READ]);
+  assert.equal(tourAdminScreens.element.props.roles, undefined);
+  assert.deepEqual(tourAdminScreens.children.map((route) => route.path), [
+    "/admin/tour-admin", "/admin/tour-admin/bookings", "/admin/tour-admin/bookings/:bookingReference",
+    "/admin/tour-admin/requests", "/admin/tour-admin/requests/:requestId"
+  ]);
 
   const guardFor = (pathname) => matchRoutes(adminRouteTable(), pathname).at(-1).route.element.props;
   assert.deepEqual(guardFor("/admin/settings/create-admin").roles, ["super_admin"]);

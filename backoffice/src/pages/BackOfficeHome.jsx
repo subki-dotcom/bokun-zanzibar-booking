@@ -2,7 +2,7 @@ import { Navigate } from "react-router-dom";
 import { Button, Card, Col, Container, Row } from "react-bootstrap";
 import Loader from "../../../shared/src/components/common/Loader";
 import useAuth from "../../../shared/src/hooks/useAuth";
-import { backOfficeEntry } from "../routes/backOfficeAccess";
+import { backOfficeEntry, backOfficeLandingPath } from "../routes/backOfficeAccess";
 import { WEBSITE_URL } from "../config/site";
 
 const BackOfficeHome = () => {
@@ -11,7 +11,7 @@ const BackOfficeHome = () => {
 
   if (entry === "loading") return <Loader message="Loading session..." />;
   if (entry === "login") return <Navigate to="/login" replace />;
-  if (entry === "admin") return <Navigate to="/admin" replace />;
+  if (entry === "admin") return <Navigate to={backOfficeLandingPath(user?.role)} replace />;
 
   return (
     <Container className="py-5">

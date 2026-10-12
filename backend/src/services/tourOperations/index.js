@@ -126,8 +126,15 @@ const operationsView = (request = {}) => {
     actorRole: item.actorRole,
     at: item.at
   });
+  const state = operations.state || STATE.RECEIVED;
   return {
-    state: operations.state || STATE.RECEIVED,
+    state,
+    // What this request may move to next, so clients offer only server-permitted actions.
+    allowedTransitions: (TRANSITIONS[state] || []).map((toState) => ({
+      toState,
+      reasonRequired: REASON_REQUIRED.includes(toState),
+      escalatesTo: ESCALATION_TARGET[toState] || ""
+    })),
     category: operations.category || CATEGORY_BY_TYPE[request.type] || "other",
     categorySource: operations.category ? "operations" : "request_type",
     version: Number(operations.version || 0),
@@ -224,6 +231,8 @@ const listRequests = async ({ filters = {} } = {}) => {
   const page = clampInt(filters.page, 1, 1, 1000);
   const limit = clampInt(filters.limit, 25, 1, 100);
   const requestMatch = { $and: [{}] };
+  const bookingMatch = [prefixFilter(operationalBookingFilter(), "bookingDoc.")];
+  if (filters.bookingReference) bookingMatch.push({ "bookingDoc.bookingReference": String(filters.bookingReference).trim().toUpperCase() });
   if (filters.type) requestMatch.$and.push({ type: filters.type });
   if (filters.customerStatus) requestMatch.$and.push({ status: filters.customerStatus });
   if (filters.state) requestMatch.$and.push(operationsStateFilter(filters.state));
@@ -241,7 +250,7 @@ const listRequests = async ({ filters = {} } = {}) => {
     { $match: requestMatch },
     { $lookup: { from: Booking.collection.name, localField: "booking", foreignField: "_id", as: "bookingDoc" } },
     { $unwind: "$bookingDoc" },
-    { $match: prefixFilter(operationalBookingFilter(), "bookingDoc.") },
+    { $match: { $and: bookingMatch } },
     {
       $facet: {
         items: [

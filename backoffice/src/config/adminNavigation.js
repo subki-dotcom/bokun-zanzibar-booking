@@ -80,8 +80,15 @@ export const ADMIN_PERMISSIONS = {
   GL_VIEW_BALANCE_SHEET: "gl.view_balance_sheet",
   GL_VIEW_PROFIT_LOSS: "gl.view_profit_loss",
   GL_VIEW_CASH_FLOW: "gl.view_cash_flow",
-  GL_EXPORT: "gl.export"
+  GL_EXPORT: "gl.export",
+  TOUR_OPERATIONS_READ: "tour_operations.read",
+  TOUR_REQUESTS_READ: "tour_requests.read",
+  TOUR_REQUESTS_PROCESS: "tour_requests.process"
 };
+
+// Tour Admin: website and Agent Portal tour bookings and customer requests. Visible to accounts holding
+// the Tour Operations permissions (tour_admin, admin, super_admin); staff does not hold them.
+const TOUR_ADMIN_ROLES = ["super_admin", "admin", "tour_admin"];
 
 export const adminNavigation = [
   {
@@ -95,6 +102,44 @@ export const adminNavigation = [
         path: "/admin",
         icon: BsHouseDoor,
         roles: ADMIN_ROLES.ALL,
+        status: "active"
+      }
+    ]
+  },
+  {
+    id: "tour-admin",
+    label: "Tour Admin",
+    roles: TOUR_ADMIN_ROLES,
+    permissions: [ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ, ADMIN_PERMISSIONS.TOUR_REQUESTS_READ],
+    children: [
+      {
+        id: "tour-admin-dashboard",
+        label: "Tour Dashboard",
+        path: "/admin/tour-admin",
+        icon: BsSpeedometer2,
+        roles: TOUR_ADMIN_ROLES,
+        permissions: [ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ],
+        status: "active"
+      },
+      {
+        id: "tour-admin-bookings",
+        label: "Tour Bookings",
+        path: "/admin/tour-admin/bookings",
+        matchPrefix: "/admin/tour-admin/bookings",
+        detailLabel: "Booking Details",
+        icon: BsAirplane,
+        roles: TOUR_ADMIN_ROLES,
+        permissions: [ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ],
+        status: "active"
+      },
+      {
+        id: "tour-admin-requests",
+        label: "Customer Requests",
+        path: "/admin/tour-admin/requests",
+        matchPrefix: "/admin/tour-admin/requests",
+        icon: BsClipboard2Check,
+        roles: TOUR_ADMIN_ROLES,
+        permissions: [ADMIN_PERMISSIONS.TOUR_REQUESTS_READ],
         status: "active"
       }
     ]
@@ -741,7 +786,7 @@ export const getAdminRouteMeta = (pathname = "") => {
   if (prefix) {
     return {
       ...prefix,
-      label: pathname === prefix.path ? prefix.label : "Request Details",
+      label: pathname === prefix.path ? prefix.label : prefix.detailLabel || "Request Details",
       breadcrumbs:
         pathname === prefix.path
           ? [...prefix.parents.filter((parent) => parent.label), prefix]
@@ -772,5 +817,6 @@ export const roleLabel = (role = "") =>
   ({
     super_admin: "Super Admin",
     admin: "Admin",
-    staff: "Staff"
+    staff: "Staff",
+    tour_admin: "Tour Admin"
   })[role] || "Admin";

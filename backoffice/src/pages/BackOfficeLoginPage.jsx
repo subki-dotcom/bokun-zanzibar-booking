@@ -4,7 +4,7 @@ import { Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import { warmAuthBackend } from "../../../shared/src/api/authApi";
 import ErrorAlert from "../../../shared/src/components/common/ErrorAlert";
 import useAuth from "../../../shared/src/hooks/useAuth";
-import { canUseBackOffice } from "../routes/backOfficeAccess";
+import { backOfficeLandingPath, canUseBackOffice } from "../routes/backOfficeAccess";
 import { WEBSITE_URL } from "../config/site";
 
 const BackOfficeLoginPage = () => {
@@ -35,7 +35,8 @@ const BackOfficeLoginPage = () => {
         setError("This account cannot use the Back Office. Agents sign in on the website.");
         return;
       }
-      navigate(location.state?.from || "/admin", { replace: true });
+      // A page the role cannot open bounces to "/", which forwards to the role's landing page.
+      navigate(location.state?.from || backOfficeLandingPath(result.user?.role), { replace: true });
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {

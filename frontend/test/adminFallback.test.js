@@ -27,7 +27,10 @@ test("the fallback resolves to the website's own React Router, so there is a sin
   const { default: adminRoutes } = await server.ssrLoadModule(adminRoutesFile);
   // createRoutesFromChildren rejects <Route> elements from a different react-router copy.
   const [layout] = createRoutesFromChildren(adminRoutes());
-  assert.ok(layout.children.some((route) => route.path === "/admin"));
+  // Admin screens sit in role/permission groups under the layout (Back Office screens, Tour Admin screens).
+  const paths = (routes) => routes.flatMap((route) => [route.path, ...paths(route.children || [])]);
+  assert.ok(paths(layout.children).includes("/admin"));
+  assert.ok(paths(layout.children).includes("/admin/tour-admin"));
 });
 
 test("public and agent routes are unchanged", () => {

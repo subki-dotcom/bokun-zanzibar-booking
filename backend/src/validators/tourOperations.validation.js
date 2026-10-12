@@ -31,7 +31,8 @@ const listRequestsSchema = z.object({
     type: z.enum(["reschedule", "change_travelers", "cancel_booking", "combined_change"]).optional(),
     customerStatus: z.enum(BookingRequest.REQUEST_STATUS_VALUES).optional(),
     state: z.enum(BookingRequest.OPERATIONS_STATE_VALUES).optional(),
-    category: z.enum(BookingRequest.OPERATIONS_CATEGORY_VALUES).optional()
+    category: z.enum(BookingRequest.OPERATIONS_CATEGORY_VALUES).optional(),
+    bookingReference: z.string().trim().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$/).optional()
   }).strict()
 });
 

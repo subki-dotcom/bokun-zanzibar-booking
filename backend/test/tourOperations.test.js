@@ -378,6 +378,12 @@ test("isolated Mongo: Tour Operations over HTTP", { skip: !fs.existsSync(binary)
       const filtered = await call("GET", "/tour-operations/requests?category=date_change", { bearer: tour });
       assert.deepEqual(filtered.body.data.items.map((item) => item.requestReference).sort(), ["REQ-historicalWebsite", "REQ-websiteConfirmed"]);
       assert.equal((await call("GET", `/tour-operations/requests/${r.importedCancel._id}`, { bearer: tour })).status, 404, "import-only booking requests stay in the Back Office");
+      const forBooking = await call("GET", `/tour-operations/requests?bookingReference=${b.agentA.bookingReference.toLowerCase()}`, { bearer: tour });
+      assert.deepEqual(forBooking.body.data.items.map((item) => item.requestReference), ["REQ-agentA"]);
+      assert.equal((await call("GET", `/tour-operations/requests?bookingReference=${b.importedOta.bookingReference}`, { bearer: tour })).body.data.total, 0, "no import-only requests by reference either");
+      assert.equal((await call("GET", "/tour-operations/requests?bookingReference=%24ne", { bearer: tour })).status, 422);
+      assert.deepEqual(cancellation.operations.allowedTransitions.map((option) => option.toState), ["UNDER_REVIEW", "AWAITING_SUPPLIER", "AWAITING_FINANCE", "REJECTED"]);
+      assert.deepEqual(cancellation.operations.allowedTransitions.find((option) => option.toState === "AWAITING_FINANCE"), { toState: "AWAITING_FINANCE", reasonRequired: true, escalatesTo: "FINANCE" });
     });
 
     let version = 0;

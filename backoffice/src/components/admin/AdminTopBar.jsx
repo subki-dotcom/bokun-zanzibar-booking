@@ -12,6 +12,7 @@ import {
 import { fetchOperationsOverview } from "../../api/adminApi";
 import { getAdminRouteMeta, roleLabel } from "../../config/adminNavigation";
 import AdminBreadcrumbs from "./AdminBreadcrumbs";
+import { BACK_OFFICE_ROLES } from "../../routes/backOfficeAccess";
 
 const resolveSyncLabel = (status = "") => {
   if (status === "healthy") return "Bokun Sync OK";
@@ -25,9 +26,12 @@ const AdminTopBar = ({ user, collapsed, mobileOpen, menuButtonRef, onToggleSideb
   const routeMeta = useMemo(() => getAdminRouteMeta(location.pathname), [location.pathname]);
   const [overview, setOverview] = useState(null);
   const [syncError, setSyncError] = useState(false);
+  // The sync and alert summary is a staff report; Tour Admin accounts are not authorised to read it.
+  const showOperationsSummary = BACK_OFFICE_ROLES.includes(user?.role);
 
   useEffect(() => {
     let mounted = true;
+    if (!showOperationsSummary) return undefined;
 
     fetchOperationsOverview()
       .then((data) => {
@@ -45,7 +49,7 @@ const AdminTopBar = ({ user, collapsed, mobileOpen, menuButtonRef, onToggleSideb
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [showOperationsSummary]);
 
   const alertCount = useMemo(() => {
     const queue = overview?.queue || {};
@@ -85,14 +89,18 @@ const AdminTopBar = ({ user, collapsed, mobileOpen, menuButtonRef, onToggleSideb
       </div>
 
       <div className="admin-platform-topbar-actions">
-        <span className={`admin-platform-sync-pill is-${syncStatus}`}>
-          <BsCloudCheck aria-hidden="true" />
-          {resolveSyncLabel(syncStatus)}
-        </span>
-        <span className="admin-platform-alert-pill">
-          <BsBell aria-hidden="true" />
-          Alerts {alertCount}
-        </span>
+        {showOperationsSummary ? (
+          <>
+            <span className={`admin-platform-sync-pill is-${syncStatus}`}>
+              <BsCloudCheck aria-hidden="true" />
+              {resolveSyncLabel(syncStatus)}
+            </span>
+            <span className="admin-platform-alert-pill">
+              <BsBell aria-hidden="true" />
+              Alerts {alertCount}
+            </span>
+          </>
+        ) : null}
         <span className="admin-platform-role-pill">
           <BsPersonCircle aria-hidden="true" />
           {roleLabel(user?.role)}
