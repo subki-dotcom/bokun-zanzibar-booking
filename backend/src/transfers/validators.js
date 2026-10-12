@@ -1,5 +1,5 @@
 const { z } = require("zod");
-const { LOCATION_TYPES, INFANT_PRICING, MAX_ADVANCE_DAYS_LIMIT, MANUAL_CHANNELS, DRIVER_AVAILABILITY, VEHICLE_TYPES, VEHICLE_OWNERSHIP, VEHICLE_STATUS, TRIP_STATUS } = require("./models");
+const { LOCATION_TYPES, INFANT_PRICING, MAX_ADVANCE_DAYS_LIMIT, DRIVER_AVAILABILITY, VEHICLE_TYPES, VEHICLE_OWNERSHIP, VEHICLE_STATUS, TRIP_STATUS } = require("./models");
 const { TRANSFER_ROLES } = require("./security/permissions");
 const { TRIP_TYPES, MAX_PASSENGERS } = require("./pricing/engine");
 const { passwordSchema } = require("./security/password");
@@ -211,20 +211,6 @@ const publicBookingSchema = z.object({
   params: z.object({}).passthrough()
 });
 
-const manualBookingSchema = z.object({
-  body: z
-    .object({
-      ...bookingFields,
-      manualChannel: z.enum(MANUAL_CHANNELS),
-      allowDuplicate: z.boolean().optional().default(false),
-      duplicateReason: z.string().trim().max(500).optional().default("")
-    })
-    .strict()
-    .superRefine(returnRule),
-  query: noQuery,
-  params: z.object({}).passthrough()
-});
-
 const bookingIdParams = z.object({ bookingId: objectId });
 const requiredReason = z.string().trim().min(3, "Give a reason").max(500);
 const bookingReasonSchema = z.object({ body: z.object({ reason: requiredReason }).strict(), query: noQuery, params: bookingIdParams });
@@ -318,7 +304,6 @@ module.exports = {
   publicQuoteSchema,
   publicBookingSchema,
   publicBookingLookupSchema,
-  manualBookingSchema,
   bookingReasonSchema,
   bookingQuoteSchema,
   bookingIdSchema,

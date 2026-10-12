@@ -75,17 +75,23 @@ test("fleet and dispatch against a real database", async (t) => {
     await services.catalog.updateSettings({ actor, input: { assignmentBufferMinutes: 30 } });
 
     const date = daysAhead(6);
-    const booking = async ({ name, time, adults = 2, infants = 0, tripType = "ONE_WAY", confirm = true }) => {
+    // Bookings are made on the website. A paid booking stands in for one the payment phase has confirmed after a
+    // verified online payment (written directly to this throwaway database, as the payment code will).
+    const booking = async ({ name, time, adults = 2, infants = 0, tripType = "ONE_WAY", paid = true }) => {
       const body = {
-        manualChannel: "PHONE", tripType, pickupLocationId: airport.id, dropoffLocationId: hotel.id, travelDate: date, travelTime: time,
+        tripType, pickupLocationId: airport.id, dropoffLocationId: hotel.id, travelDate: date, travelTime: time,
         ...(tripType === "ROUND_TRIP" ? { returnDate: daysAhead(9), returnTime: "10:00" } : {}),
         passengers: { adults, infants }, customer: { fullName: name, email: `${name.replace(/\s/g, "").toLowerCase()}@example.test`, phone: "+255 700 000 100" },
         expectedTotal: tripType === "ROUND_TRIP" ? "90.00" : "45.00"
       };
-      const created = await call("POST", "/bookings", { token: manager, body, headers: { "Idempotency-Key": crypto.randomUUID() } });
-      assert.equal(created.status, 201, JSON.stringify(created.json));
-      if (confirm) await call("POST", `/bookings/${created.data.id}/approve-cash-on-arrival`, { token: manager, body: { reason: "Cash to the driver" } });
-      return created.data;
+      const response = await fetch(`${base.replace("/transfer-admin", "/transfers")}/bookings`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify(body) });
+      const created = (await response.json()).data;
+      assert.equal(response.status, 201, JSON.stringify(created));
+      const stored = await store.models.Booking.findOne({ reference: created.reference }).lean();
+      if (paid) {
+        await store.models.Booking.updateOne({ _id: stored._id }, { $set: { status: "CONFIRMED", paymentStatus: "PAID" }, $push: { statusHistory: { status: "CONFIRMED", at: new Date(), by: "payment", note: "Test: verified online payment" } } }, { verifiedPayment: true });
+      }
+      return { id: String(stored._id), reference: created.reference };
     };
     const tripsOf = async (bookingId, token = manager) => (await call("GET", `/bookings/${bookingId}`, { token })).data.trips;
     const assign = (trip, driverId, vehicleId, extra = {}, token = dispatcher) => call("POST", `/dispatch/trips/${trip.id}/assign`, { token, body: { driverId, vehicleId, expectedVersion: trip.version, ...extra } });
@@ -119,7 +125,7 @@ test("fleet and dispatch against a real database", async (t) => {
 
     await t.test("a one-way booking has one trip, a round trip has two; unconfirmed bookings cannot be dispatched", async () => {
       ctx.b1 = await booking({ name: "Family One", time: "09:00", adults: 3, infants: 1 });
-      ctx.roundTrip = await booking({ name: "Round Unpaid", time: "15:00", tripType: "ROUND_TRIP", confirm: false });
+      ctx.roundTrip = await booking({ name: "Round Unpaid", time: "15:00", tripType: "ROUND_TRIP", paid: false });
       const oneWay = await tripsOf(ctx.b1.id);
       assert.equal(oneWay.length, 1);
       assert.equal(oneWay[0].status, "SCHEDULED");
@@ -213,7 +219,7 @@ test("fleet and dispatch against a real database", async (t) => {
       assert.equal((await assign(ctx.t1, ctx.d1, ctx.v4, { reason: "too late" })).code, "TRANSFER_TRIP_NOT_REASSIGNABLE");
     });
 
-    await t.test("the lifecycle is enforced and completing a trip leaves the booking unpaid", async () => {
+    await t.test("the lifecycle is enforced and completing a trip never changes the booking or its payment", async () => {
       assert.equal((await status(ctx.t1, "COMPLETED")).code, "TRANSFER_INVALID_TRIP_TRANSITION");
       ctx.t1 = (await status(ctx.t1, "IN_PROGRESS")).data;
       ctx.t1 = (await status(ctx.t1, "COMPLETED")).data;
@@ -222,7 +228,10 @@ test("fleet and dispatch against a real database", async (t) => {
       assert.equal((await status(ctx.t1, "IN_PROGRESS")).code, "TRANSFER_INVALID_TRIP_TRANSITION");
       const stored = await store.models.Booking.findById(ctx.b1.id).lean();
       assert.equal(stored.status, "CONFIRMED");
-      assert.equal(stored.paymentStatus, "UNPAID", "a completed trip is not a payment");
+      assert.equal(stored.paymentStatus, "PAID");
+      assert.equal(stored.statusHistory.length, 2, "the trip added nothing to the booking's history");
+      const unpaid = await store.models.Booking.findById(ctx.roundTrip.id).lean();
+      assert.deepEqual([unpaid.status, unpaid.paymentStatus], ["AWAITING_PAYMENT", "UNPAID"], "an unpaid booking stays unpaid and undispatchable");
     });
 
     await t.test("a no-show needs a note, and unassigned trips cannot start", async () => {
@@ -278,7 +287,9 @@ test("fleet and dispatch against a real database", async (t) => {
       assert.equal(dashboard.dispatch.unassignedCount, expectedUnassigned);
       assert.equal(dashboard.dispatch.completedLast7Days, 1);
       assert.equal(dashboard.dispatch.noShowsLast7Days, 1);
-      assert.equal(dashboard.paidRevenue.amount, "0.00", "trips do not create revenue");
+      const paid = await store.models.Booking.find({ paymentStatus: "PAID" }).lean();
+      assert.equal(dashboard.paidRevenue.count, paid.length, "revenue is the verified payments only; trips add none");
+      assert.equal(dashboard.paidRevenue.amount, (paid.length * 45).toFixed(2));
       assert.equal((await call("GET", "/dashboard", { token: accountant })).data.dispatch, undefined);
     });
 

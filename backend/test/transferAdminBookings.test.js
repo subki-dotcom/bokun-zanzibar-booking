@@ -86,7 +86,6 @@ test("Transfer Admin booking management against a real database", async (t) => {
       expectedTotal: "45.00",
       ...overrides
     });
-    const manual = (body, token = manager, key = crypto.randomUUID()) => call("POST", "/transfer-admin/bookings", { token, body, headers: { "Idempotency-Key": key } });
     const website = (body) => call("POST", "/transfers/bookings", { body, headers: { "Idempotency-Key": crypto.randomUUID() } });
     const ctx = {};
 
@@ -99,54 +98,93 @@ test("Transfer Admin booking management against a real database", async (t) => {
       assert.deepEqual(dashboard.data.upcoming, []);
     });
 
-    await t.test("staff create manual bookings priced by the server, once per Idempotency-Key", async () => {
-      const key = crypto.randomUUID();
-      const first = await manual(bookingBody({ manualChannel: "WHATSAPP" }), manager, key);
-      const retry = await manual(bookingBody({ manualChannel: "WHATSAPP" }), manager, key);
-      assert.equal(first.status, 201);
-      assert.equal(retry.status, 200);
-      assert.equal(retry.data.reference, first.data.reference);
-      assert.equal(await store.models.Booking.countDocuments({ "customer.email": "walkin@example.test" }), 1);
-      ctx.manualId = first.data.id;
-      const detail = await call("GET", `/transfer-admin/bookings/${first.data.id}`, { token: manager });
-      assert.equal(detail.data.source, "MANUAL");
-      assert.equal(detail.data.manualChannel, "WHATSAPP");
+    await t.test("bookings come from the website: unpaid, online payment, and readable in Transfer Admin", async () => {
+      const created = await website(bookingBody());
+      assert.equal(created.status, 201);
+      const stored = await store.models.Booking.findOne({ reference: created.data.reference }).lean();
+      ctx.websiteId = String(stored._id);
+      const detail = await call("GET", `/transfer-admin/bookings/${ctx.websiteId}`, { token: manager });
+      assert.equal(detail.data.source, "WEBSITE");
       assert.equal(detail.data.status, "AWAITING_PAYMENT");
+      assert.equal(detail.data.paymentStatus, "UNPAID");
+      assert.equal(detail.data.paymentArrangement, "ONLINE");
       assert.equal(detail.data.pricing.total, "45.00");
-      assert.equal(detail.data.createdBy.email, "manager@example.test");
       assert.equal(detail.data.pricingHistory[0].source, "ENGINE");
       assert.equal(detail.data.audit, undefined, "managers do not see the audit trail");
-      assert.equal((await manual(bookingBody({ manualChannel: "PHONE", expectedTotal: "1.00" }))).code, "TRANSFER_PRICE_CHANGED");
-      assert.equal((await manual(bookingBody({ manualChannel: "PHONE", price: "1" }))).status, 422);
     });
 
-    await t.test("simultaneous manual submissions all get the same booking id back", async () => {
-      const key = crypto.randomUUID();
-      const body = bookingBody({ manualChannel: "EMAIL", travelTime: "13:13", customer: { fullName: "Burst", email: "burst@example.test", phone: "+255 700 000 009" } });
-      const results = await Promise.all(Array.from({ length: 6 }, () => manual(body, manager, key)));
-      assert.ok(results.every((result) => [200, 201].includes(result.status)), results.map((result) => result.status).join(","));
-      assert.equal(new Set(results.map((result) => result.data.id)).size, 1);
-      assert.match(results[0].data.id, /^[a-f0-9]{24}$/);
-      assert.ok(results.every((result) => /^[a-f0-9]{24}$/.test(result.data.id)), "every response, including replays, carries the id");
-      assert.equal(await store.models.Booking.countDocuments({ "customer.email": "burst@example.test" }), 1);
+    await t.test("no Transfer Admin role can create a booking through the API, and each attempt is audited", async () => {
+      const before = await store.models.Booking.countDocuments();
+      for (const token of [admin, manager, dispatcher, accountant]) {
+        const attempt = await call("POST", "/transfer-admin/bookings", { token, body: { ...bookingBody({ travelTime: "11:00" }), manualChannel: "PHONE" }, headers: { "Idempotency-Key": crypto.randomUUID() } });
+        assert.equal(attempt.status, 410);
+        assert.equal(attempt.code, "TRANSFER_ADMIN_BOOKING_CREATION_DISABLED");
+      }
+      assert.equal((await call("POST", "/transfer-admin/bookings", { body: bookingBody() })).status, 401, "unauthenticated callers are refused before anything else");
+      assert.equal(await store.models.Booking.countDocuments(), before, "nothing was created");
+      const refused = await store.models.AuditLog.find({ action: "booking.create_refused" }).lean();
+      assert.deepEqual(refused.map((entry) => entry.actorEmail).sort(), ["accountant@example.test", "admin@example.test", "dispatcher@example.test", "manager@example.test"]);
     });
 
-    await t.test("a likely duplicate needs an explicit reason", async () => {
-      const duplicate = await manual(bookingBody({ manualChannel: "PHONE" }));
-      assert.equal(duplicate.code, "TRANSFER_POSSIBLE_DUPLICATE");
-      assert.equal(duplicate.json.error.details.id, ctx.manualId);
-      assert.equal((await manual(bookingBody({ manualChannel: "PHONE", allowDuplicate: true }))).code, "TRANSFER_DUPLICATE_REASON_REQUIRED");
-      const accepted = await manual(bookingBody({ manualChannel: "PHONE", allowDuplicate: true, duplicateReason: "Second vehicle for the same group" }));
-      assert.equal(accepted.status, 201);
-      const audit = await store.models.AuditLog.findOne({ entityId: accepted.data.id, action: "booking.created_manually" }).lean();
-      assert.match(audit.reason, /Second vehicle/);
+    await t.test("cash on arrival cannot be approved for any booking, by any role", async () => {
+      for (const token of [admin, manager]) {
+        const attempt = await call("POST", `/transfer-admin/bookings/${ctx.websiteId}/approve-cash-on-arrival`, { token, body: { reason: "Pays the driver" } });
+        assert.equal(attempt.status, 410);
+        assert.equal(attempt.code, "TRANSFER_CASH_ON_ARRIVAL_DISABLED");
+      }
+      const unchanged = await store.models.Booking.findById(ctx.websiteId).lean();
+      assert.equal(unchanged.status, "AWAITING_PAYMENT");
+      assert.equal(unchanged.paymentStatus, "UNPAID");
+      assert.equal(unchanged.paymentArrangement, "ONLINE");
+      assert.equal(await store.models.AuditLog.countDocuments({ action: "booking.cash_on_arrival_refused", entityId: ctx.websiteId }), 2);
+    });
+
+    await t.test("no code path can confirm, mark paid, switch to cash or create a non-website booking without a verified payment", async () => {
+      const { Booking } = store.models;
+      const refusedWith = async (operation) => assert.rejects(operation, (error) => error.code === "TRANSFER_PAYMENT_RULE");
+      await refusedWith(() => Booking.updateOne({ _id: ctx.websiteId }, { $set: { status: "CONFIRMED" } }));
+      await refusedWith(() => Booking.findOneAndUpdate({ _id: ctx.websiteId }, { $set: { paymentStatus: "PAID" } }));
+      await refusedWith(() => Booking.updateMany({}, { status: "CONFIRMED" }));
+      await refusedWith(() => Booking.updateOne({ _id: ctx.websiteId }, { $set: { paymentArrangement: "CASH_ON_ARRIVAL" } }));
+      await refusedWith(() => Booking.updateOne({ _id: ctx.websiteId }, { $set: { source: "MANUAL" } }));
+      await refusedWith(() => Booking.updateOne({ reference: "TRF-NEWXXXXX" }, { $set: { status: "AWAITING_PAYMENT" } }, { upsert: true }));
+      const document = await Booking.findById(ctx.websiteId);
+      document.status = "CONFIRMED";
+      await refusedWith(() => document.save());
+      const copy = { ...(await Booking.findById(ctx.websiteId).select("+idempotencyKey +requestFingerprint +accessNonce").lean()), _id: undefined, reference: "TRF-COPYAAAA", idempotencyKey: crypto.randomUUID() };
+      await refusedWith(() => Booking.create({ ...copy, source: "MANUAL" }));
+      await refusedWith(() => Booking.create({ ...copy, paymentArrangement: "CASH_ON_ARRIVAL" }));
+      await refusedWith(() => Booking.create({ ...copy, status: "CONFIRMED" }));
+      await refusedWith(() => Booking.insertMany([{ ...copy, paymentStatus: "PAID" }]));
+      const stored = await Booking.findById(ctx.websiteId).lean();
+      assert.deepEqual([stored.status, stored.paymentStatus, stored.paymentArrangement, stored.source], ["AWAITING_PAYMENT", "UNPAID", "ONLINE", "WEBSITE"]);
+      // The payment phase confirms a booking only with a verified payment, which it marks explicitly.
+      const verified = await Booking.findOneAndUpdate({ _id: ctx.websiteId }, { $set: { status: "CONFIRMED", paymentStatus: "PAID" } }, { new: true, verifiedPayment: true }).lean();
+      assert.equal(verified.status, "CONFIRMED");
+      ctx.paidId = ctx.websiteId;
+    });
+
+    await t.test("historical manual and cash-on-arrival bookings stay readable", async () => {
+      // A record written before these rules existed, inserted directly as it would already be in the database.
+      const legacy = await store.models.Booking.findById(ctx.websiteId).select("+idempotencyKey +requestFingerprint +accessNonce").lean();
+      const { insertedId } = await store.connection.db.collection("transfer_bookings").insertOne({
+        ...legacy, _id: new mongoose.Types.ObjectId(), reference: "TRF-LEGACY22", idempotencyKey: crypto.randomUUID(), source: "MANUAL", manualChannel: "WHATSAPP",
+        createdBy: { id: "", email: "manager@example.test" }, status: "CONFIRMED", paymentStatus: "UNPAID", paymentArrangement: "CASH_ON_ARRIVAL",
+        customer: { fullName: "Legacy Guest", email: "legacy@example.test", phone: "+255 700 000 077", whatsapp: false }
+      });
+      ctx.legacyId = String(insertedId);
+      const detail = await call("GET", `/transfer-admin/bookings/${ctx.legacyId}`, { token: manager });
+      assert.equal(detail.status, 200);
+      assert.deepEqual([detail.data.source, detail.data.manualChannel, detail.data.paymentArrangement, detail.data.createdBy.email], ["MANUAL", "WHATSAPP", "CASH_ON_ARRIVAL", "manager@example.test"]);
+      const listed = await call("GET", "/transfer-admin/bookings?source=MANUAL", { token: accountant });
+      assert.deepEqual(listed.data.items.map((item) => item.reference), ["TRF-LEGACY22"]);
+      assert.equal((await call("POST", `/transfer-admin/bookings/${ctx.legacyId}/reject`, { token: manager, body: { reason: "too late" } })).code, "TRANSFER_INVALID_TRANSITION", "a confirmed booking cannot be rejected");
     });
 
     await t.test("dispatchers and accountants can view bookings but not change them", async () => {
       assert.equal((await call("GET", "/transfer-admin/bookings", { token: dispatcher })).status, 200);
       assert.equal((await call("GET", "/transfer-admin/bookings", { token: accountant })).status, 200);
-      assert.equal((await manual(bookingBody({ manualChannel: "PHONE", travelTime: "11:00" }), dispatcher)).status, 403);
-      assert.equal((await call("POST", `/transfer-admin/bookings/${ctx.manualId}/reject`, { token: accountant, body: { reason: "test reason" } })).status, 403);
+      assert.equal((await call("POST", `/transfer-admin/bookings/${ctx.websiteId}/reject`, { token: accountant, body: { reason: "test reason" } })).status, 403);
       assert.equal((await call("GET", "/transfer-admin/bookings")).status, 401);
     });
 
@@ -170,25 +208,16 @@ test("Transfer Admin booking management against a real database", async (t) => {
       assert.equal((await call("POST", quoteUrl, { token: manager, body: { legs: [{ direction: "OUTBOUND", price: "1" }, { direction: "RETURN", price: "1" }], reason: "again" } })).code, "TRANSFER_INVALID_TRANSITION");
     });
 
-    await t.test("cash on arrival confirms the booking but leaves it unpaid", async () => {
-      const approved = await call("POST", `/transfer-admin/bookings/${ctx.manualId}/approve-cash-on-arrival`, { token: manager, body: { reason: "Regular guest, pays driver" } });
-      assert.equal(approved.status, 200);
-      assert.equal(approved.data.status, "CONFIRMED");
-      assert.equal(approved.data.paymentStatus, "UNPAID");
-      assert.equal(approved.data.paymentArrangement, "CASH_ON_ARRIVAL");
-      assert.equal((await call("POST", `/transfer-admin/bookings/${ctx.manualId}/reject`, { token: manager, body: { reason: "too late" } })).code, "TRANSFER_INVALID_TRANSITION");
-      assert.equal((await call("POST", `/transfer-admin/bookings/${ctx.manualId}/approve-cash-on-arrival`, { token: manager, body: { reason: "x" } })).status, 422, "a reason is required");
-    });
-
-    await t.test("approve and reject at the same moment: exactly one wins", async () => {
-      const contested = await manual(bookingBody({ manualChannel: "EMAIL", travelTime: "15:00", customer: { fullName: "Race", email: "race@example.test", phone: "+255 700 000 003" } }));
-      const [approve, rejectResult] = await Promise.all([
-        call("POST", `/transfer-admin/bookings/${contested.data.id}/approve-cash-on-arrival`, { token: admin, body: { reason: "approve it" } }),
-        call("POST", `/transfer-admin/bookings/${contested.data.id}/reject`, { token: manager, body: { reason: "reject it" } })
-      ]);
-      assert.deepEqual([approve.status, rejectResult.status].sort(), [200, 409]);
-      const final = await store.models.Booking.findById(contested.data.id).lean();
-      assert.ok(["CONFIRMED", "REJECTED"].includes(final.status));
+    await t.test("two staff pricing the same quote request at the same moment: exactly one price is kept", async () => {
+      const request = await website(bookingBody({ dropoffLocationId: villa.id, expectedTotal: null, travelTime: "15:00", customer: { fullName: "Race", email: "race@example.test", phone: "+255 700 000 003" } }));
+      const stored = await store.models.Booking.findOne({ reference: request.data.reference }).lean();
+      const results = await Promise.all(["70", "75"].map((price, index) =>
+        call("POST", `/transfer-admin/bookings/${stored._id}/quote`, { token: index ? manager : admin, body: { legs: [{ direction: "OUTBOUND", price }], reason: "price it" } })));
+      assert.deepEqual(results.map((result) => result.status).sort(), [200, 409]);
+      const final = await store.models.Booking.findById(stored._id).lean();
+      assert.equal(final.status, "AWAITING_PAYMENT");
+      assert.equal(final.paymentStatus, "UNPAID", "pricing a quote never marks it paid");
+      assert.equal(final.pricingHistory.filter((entry) => entry.source === "ADMIN_QUOTE").length, 1);
       assert.equal(final.statusHistory.length, 2);
     });
 
@@ -231,11 +260,13 @@ test("Transfer Admin booking management against a real database", async (t) => {
       for (const status of ["QUOTE_REQUESTED", "AWAITING_PAYMENT", "CONFIRMED", "REJECTED"]) {
         assert.equal(dashboard.counts[status], stored.filter((booking) => booking.status === status).length, status);
       }
-      assert.deepEqual(dashboard.paidRevenue, { amount: "0.00", count: 0 }, "nothing is paid yet");
+      const paid = stored.filter((booking) => booking.paymentStatus === "PAID");
+      assert.deepEqual(dashboard.paidRevenue, { amount: paid.reduce((sum, booking) => sum + Number(booking.pricing.total.toString()), 0).toFixed(2), count: paid.length }, "only verified payments are revenue");
+      assert.equal(paid.length, 1);
       const awaiting = stored.filter((booking) => booking.status === "AWAITING_PAYMENT");
       assert.equal(dashboard.awaitingPayment.count, awaiting.length);
       assert.equal(dashboard.awaitingPayment.amount, awaiting.reduce((sum, booking) => sum + Number(booking.pricing.total.toString()), 0).toFixed(2));
-      assert.equal(dashboard.cashToCollect.count, stored.filter((booking) => booking.paymentArrangement === "CASH_ON_ARRIVAL" && booking.status === "CONFIRMED").length);
+      assert.equal(dashboard.cashToCollect, undefined, "the dashboard no longer reports cash to collect");
       assert.ok(dashboard.upcoming.length > 0);
       assert.equal(dashboard.createdToday, stored.length);
     });
@@ -247,8 +278,11 @@ test("Transfer Admin booking management against a real database", async (t) => {
       assert.equal(quotedEntry.before.status, "QUOTE_REQUESTED");
       assert.equal(quotedEntry.after.status, "AWAITING_PAYMENT");
       assert.equal(quotedEntry.actorEmail, "manager@example.test");
-      for (const action of ["booking.created_manually", "booking.approved_cash_on_arrival", "booking.rejected"]) {
+      for (const action of ["booking.created", "booking.rejected", "booking.create_refused", "booking.cash_on_arrival_refused"]) {
         assert.ok(await store.models.AuditLog.countDocuments({ action }), action);
+      }
+      for (const action of ["booking.created_manually", "booking.approved_cash_on_arrival"]) {
+        assert.equal(await store.models.AuditLog.countDocuments({ action }), 0, `${action} no longer happens`);
       }
     });
   } finally {

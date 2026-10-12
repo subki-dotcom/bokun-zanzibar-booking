@@ -1,7 +1,6 @@
 import client from "./client";
 
 const data = async (request) => (await request).data.data;
-const key = (idempotencyKey) => ({ headers: { "Idempotency-Key": idempotencyKey } });
 
 // Auth
 export const login = (body) => data(client.post("/auth/login", body));
@@ -9,13 +8,12 @@ export const fetchMe = () => data(client.get("/auth/me"));
 export const changePassword = (body) => data(client.post("/auth/change-password", body));
 export const logoutEverywhere = () => data(client.post("/auth/logout-everywhere", {}));
 
-// Dashboard and bookings
+// Dashboard and bookings. Bookings are created only by customers on the website; staff view, price quote
+// requests, reject and share the customer's link.
 export const fetchDashboard = () => data(client.get("/dashboard"));
 export const fetchBookings = (params) => data(client.get("/bookings", { params }));
 export const fetchBooking = (id) => data(client.get(`/bookings/${id}`));
-export const createManualBooking = (body, idempotencyKey) => data(client.post("/bookings", body, key(idempotencyKey)));
 export const quoteBooking = (id, body) => data(client.post(`/bookings/${id}/quote`, body));
-export const approveCashOnArrival = (id, reason) => data(client.post(`/bookings/${id}/approve-cash-on-arrival`, { reason }));
 export const rejectBooking = (id, reason) => data(client.post(`/bookings/${id}/reject`, { reason }));
 export const issueCustomerLink = (id) => data(client.post(`/bookings/${id}/customer-link`, {}));
 

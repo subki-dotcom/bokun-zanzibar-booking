@@ -1,4 +1,5 @@
 const express = require("express");
+const AppError = require("../../utils/AppError");
 const validateRequest = require("../../middleware/validateRequest");
 const asyncHandler = require("../../utils/asyncHandler");
 const { successResponse } = require("../../utils/apiResponse");
@@ -74,14 +75,16 @@ const createTransferAdminRouter = ({ getStore, tokenConfig, services }) => {
       ...(await bookingsAdmin.get({ bookingId: params(req).bookingId, actor: actor(req) })),
       ...(seesFleet(req) ? { trips: await services.dispatch.tripsForBooking({ bookingId: params(req).bookingId }) } : {})
     })));
-  router.post("/bookings", can(P.BOOKINGS_MANAGE), validateRequest(v.manualBookingSchema), asyncHandler(async (req, res) => {
-    const result = await bookingsAdmin.createManual({ actor: actor(req), input: body(req), idempotencyKey: req.get("Idempotency-Key"), context: requestContext(req) });
-    return ok(res, result, result.replayed ? 200 : 201);
-  }));
+  // Transfer Admin never creates bookings and never takes cash on arrival: bookings come only from the website and
+  // are paid online. The retired endpoints answer 410 for every role, and each attempt is kept in the audit log.
+  const retired = (action, code, message) => asyncHandler(async (req) => {
+    await bookingsAdmin.recordRefusedAction({ actor: actor(req), action, bookingId: req.params.bookingId, context: requestContext(req) });
+    throw new AppError(message, 410, code);
+  });
+  router.post("/bookings", retired("booking.create_refused", "TRANSFER_ADMIN_BOOKING_CREATION_DISABLED", "Transfer Admin cannot create bookings. Bookings are made by customers on the website and paid online."));
   router.post("/bookings/:bookingId/quote", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingQuoteSchema), asyncHandler(async (req, res) =>
     ok(res, await bookingsAdmin.setQuote({ actor: actor(req), bookingId: params(req).bookingId, input: body(req), context: requestContext(req) }))));
-  router.post("/bookings/:bookingId/approve-cash-on-arrival", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingReasonSchema), asyncHandler(async (req, res) =>
-    ok(res, await bookingsAdmin.approveCashOnArrival({ actor: actor(req), bookingId: params(req).bookingId, input: body(req), context: requestContext(req) }))));
+  router.post("/bookings/:bookingId/approve-cash-on-arrival", retired("booking.cash_on_arrival_refused", "TRANSFER_CASH_ON_ARRIVAL_DISABLED", "Cash on arrival is not available. Bookings are paid online and confirmed only after the payment is verified."));
   router.post("/bookings/:bookingId/reject", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingReasonSchema), asyncHandler(async (req, res) =>
     ok(res, await bookingsAdmin.reject({ actor: actor(req), bookingId: params(req).bookingId, input: body(req), context: requestContext(req) }))));
   router.post("/bookings/:bookingId/customer-link", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingIdSchema), asyncHandler(async (req, res) =>

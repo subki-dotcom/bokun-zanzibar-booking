@@ -30,7 +30,8 @@ export const DRIVER_AVAILABILITY = Object.freeze([["AVAILABLE", "Available"], ["
 export const labelOf = (pairs, value) => pairs.find(([key]) => key === value)?.[1] || value;
 
 export const PAYMENT = Object.freeze({ UNPAID: "Unpaid", PAID: "Paid", REFUNDED: "Refunded" });
-export const ARRANGEMENT = Object.freeze({ ONLINE: "Online", CASH_ON_ARRIVAL: "Cash on arrival" });
+// Cash on arrival appears only on bookings made before online payment became the only way to pay.
+export const ARRANGEMENT = Object.freeze({ ONLINE: "Online", CASH_ON_ARRIVAL: "Cash on arrival (legacy)" });
 export const CHANNELS = Object.freeze([
   ["WHATSAPP", "WhatsApp"],
   ["PHONE", "Phone"],

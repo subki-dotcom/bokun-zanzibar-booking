@@ -130,20 +130,6 @@ const createTransferAdminBookingService = ({ getStore, bookings, now = () => new
     return view;
   };
 
-  const createManual = async ({ actor, input, idempotencyKey, context }) => {
-    const { manualChannel, allowDuplicate = false, duplicateReason = "", ...booking } = input;
-    if (allowDuplicate && !String(duplicateReason).trim()) {
-      throw new AppError("Give a reason for creating a booking that looks like a duplicate.", 422, "TRANSFER_DUPLICATE_REASON_REQUIRED");
-    }
-    const result = await bookings.createBooking({
-      input: booking,
-      idempotencyKey,
-      context,
-      origin: { actor, manualChannel, allowDuplicate, duplicateReason: String(duplicateReason).trim() }
-    });
-    return { id: result.id, reference: result.reference, replayed: result.replayed };
-  };
-
   // Applies a status change only if the booking is still in one of the expected states, so two admins acting
   // at once cannot both succeed (for example, approving and rejecting the same booking).
   const transition = async ({ actor, bookingId, from, context, action, reason, build }) => {
@@ -210,22 +196,6 @@ const createTransferAdminBookingService = ({ getStore, bookings, now = () => new
       }
     });
 
-  // Cash on arrival: the booking is confirmed but stays UNPAID until the cash is collected and recorded.
-  const approveCashOnArrival = async ({ actor, bookingId, input, context }) =>
-    transition({
-      actor,
-      bookingId,
-      context,
-      from: [BOOKING_STATUS.AWAITING_PAYMENT],
-      action: "booking.approved_cash_on_arrival",
-      reason: input.reason,
-      build: () => ({
-        status: BOOKING_STATUS.CONFIRMED,
-        note: `Approved for cash on arrival: ${input.reason}`,
-        set: { paymentArrangement: PAYMENT_ARRANGEMENTS.CASH_ON_ARRIVAL }
-      })
-    });
-
   const reject = async ({ actor, bookingId, input, context }) =>
     transition({
       actor,
@@ -247,8 +217,8 @@ const createTransferAdminBookingService = ({ getStore, bookings, now = () => new
     return { reference: booking.reference, path: `/transfers/booking/${booking.reference}#t=${encodeURIComponent(bookings.tokenFor(booking))}` };
   };
 
-  // Real figures only. Revenue counts verified payments (PAID) only; priced-but-unpaid and cash still to collect
-  // are reported separately and are never called revenue.
+  // Real figures only. Revenue counts verified payments (PAID) only; priced-but-unpaid bookings are reported
+  // separately and are never called revenue.
   const dashboard = async () => {
     const { models } = await getStore();
     const at = now();
@@ -258,7 +228,7 @@ const createTransferAdminBookingService = ({ getStore, bookings, now = () => new
       const [row] = await models.Booking.aggregate([{ $match: match }, { $group: { _id: null, total: { $sum: "$pricing.total" }, count: { $sum: 1 } } }]);
       return { amount: row ? moneyString(row.total) : "0.00", count: row ? row.count : 0 };
     };
-    const [byStatus, createdToday, createdLast7Days, upcoming, paidRevenue, awaitingPayment, cashToCollect] = await Promise.all([
+    const [byStatus, createdToday, createdLast7Days, upcoming, paidRevenue, awaitingPayment] = await Promise.all([
       models.Booking.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
       models.Booking.countDocuments({ createdAt: { $gte: today } }),
       models.Booking.countDocuments({ createdAt: { $gte: new Date(today.getTime() - 6 * 86400000) } }),
@@ -267,8 +237,7 @@ const createTransferAdminBookingService = ({ getStore, bookings, now = () => new
         .limit(10)
         .lean(),
       sumTotal({ paymentStatus: PAYMENT_STATUS.PAID }),
-      sumTotal({ status: BOOKING_STATUS.AWAITING_PAYMENT, paymentStatus: PAYMENT_STATUS.UNPAID }),
-      sumTotal({ status: BOOKING_STATUS.CONFIRMED, paymentArrangement: PAYMENT_ARRANGEMENTS.CASH_ON_ARRIVAL, paymentStatus: PAYMENT_STATUS.UNPAID })
+      sumTotal({ status: BOOKING_STATUS.AWAITING_PAYMENT, paymentStatus: PAYMENT_STATUS.UNPAID })
     ]);
     const counts = Object.fromEntries(Object.values(BOOKING_STATUS).map((status) => [status, 0]));
     byStatus.forEach((row) => {
@@ -283,12 +252,24 @@ const createTransferAdminBookingService = ({ getStore, bookings, now = () => new
       createdLast7Days,
       paidRevenue,
       awaitingPayment,
-      cashToCollect,
       upcoming: upcoming.map(summaryView)
     };
   };
 
-  return { list, get, createManual, setQuote, approveCashOnArrival, reject, customerLink, dashboard };
+  // Keeps a record of a request to a retired action (creating a booking, approving cash on arrival).
+  const recordRefusedAction = async ({ actor, action, bookingId, context }) => {
+    const { models } = await getStore();
+    await recordTransferAudit(models, {
+      actor,
+      action,
+      entityType: "TransferBooking",
+      entityId: validId(bookingId) ? String(bookingId) : "",
+      reason: "Refused: bookings are created only by customers on the website and paid online",
+      context
+    });
+  };
+
+  return { list, get, setQuote, reject, customerLink, dashboard, recordRefusedAction };
 };
 
 module.exports = { createTransferAdminBookingService, detailView, summaryView, zanzibarDayStart };

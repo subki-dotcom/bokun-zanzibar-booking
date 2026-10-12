@@ -8,7 +8,6 @@ import { StaticRouter } from "react-router-dom/server.js";
 import { createServer } from "vite";
 import { sharedResolve } from "../../shared/vite.shared.js";
 import { navigationFor, can, P } from "../src/lib/permissions.js";
-import { buildManualBooking, quoteRequestFor } from "../src/lib/manualBooking.js";
 
 const root = process.cwd();
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
@@ -37,8 +36,8 @@ after(async () => {
 });
 
 test("navigation shows each role only what it may open", () => {
-  assert.deepEqual(labels("transfer_admin"), ["Dashboard", "Bookings", "New booking", "[Operations]", "Dispatch", "Drivers", "Vehicles", "[Pricing]", "Zones", "Locations", "Routes", "Rates & price check", "Booking settings", "[Administration]", "Users & roles", "Audit log"]);
-  assert.deepEqual(labels("transfer_manager"), ["Dashboard", "Bookings", "New booking", "[Operations]", "Dispatch", "Drivers", "Vehicles", "[Pricing]", "Zones", "Locations", "Routes", "Rates & price check", "Booking settings"]);
+  assert.deepEqual(labels("transfer_admin"), ["Dashboard", "Bookings", "[Operations]", "Dispatch", "Drivers", "Vehicles", "[Pricing]", "Zones", "Locations", "Routes", "Rates & price check", "Booking settings", "[Administration]", "Users & roles", "Audit log"]);
+  assert.deepEqual(labels("transfer_manager"), ["Dashboard", "Bookings", "[Operations]", "Dispatch", "Drivers", "Vehicles", "[Pricing]", "Zones", "Locations", "Routes", "Rates & price check", "Booking settings"]);
   assert.deepEqual(labels("dispatcher"), ["Dashboard", "Bookings", "[Operations]", "Dispatch", "Drivers", "Vehicles"]);
   assert.deepEqual(labels("transfer_accountant"), ["Dashboard", "Bookings", "[Pricing]", "Zones", "Locations", "Routes", "Rates & price check", "Booking settings"]);
   assert.equal(can(userWith("transfer_manager"), P.PRICING_MANAGE), false);
@@ -48,7 +47,7 @@ test("navigation shows each role only what it may open", () => {
 test("every page route is guarded by the permission the server enforces", () => {
   const routes = read("src/routes/AppRoutes.jsx");
   for (const [routePath, permission] of [
-    ["/bookings", "BOOKINGS_VIEW"], ["/bookings/new", "BOOKINGS_MANAGE"], ["/bookings/:bookingId", "BOOKINGS_VIEW"], ["/pricing/zones", "PRICING_VIEW"],
+    ["/bookings", "BOOKINGS_VIEW"], ["/bookings/:bookingId", "BOOKINGS_VIEW"], ["/pricing/zones", "PRICING_VIEW"],
     ["/pricing/locations", "PRICING_VIEW"], ["/pricing/routes", "PRICING_VIEW"], ["/pricing/rates", "PRICING_VIEW"], ["/pricing/settings", "PRICING_VIEW"],
     ["/users", "USERS_MANAGE"], ["/audit", "AUDIT_VIEW"], ["/dispatch", "FLEET_VIEW"], ["/fleet/drivers", "FLEET_VIEW"], ["/fleet/vehicles", "FLEET_VIEW"]
   ]) {
@@ -57,23 +56,17 @@ test("every page route is guarded by the permission the server enforces", () => 
   assert.match(routes, /<RequireAuth>\s*<AdminLayout \/>/);
 });
 
-test("the manual booking payload carries no price, only the total staff saw", () => {
-  const form = {
-    manualChannel: "WHATSAPP", tripType: "ONE_WAY", pickupLocationId: "a".repeat(24), dropoffLocationId: "b".repeat(24), travelDate: "2099-01-01", travelTime: "10:00",
-    returnDate: "", returnTime: "", adults: "2", children: "1", infants: "0", largeBags: "1", smallBags: "", luggageNotes: " ", flightNumber: " pw 1 ", pickupAddress: "", dropoffAddress: "",
-    fullName: " Jane ", email: "jane@example.com", phone: "+255 700 000 000", whatsapp: true, specialRequests: ""
-  };
-  assert.deepEqual(quoteRequestFor(form).passengers, { adults: 2, children: 1, infants: 0 });
-  assert.equal(quoteRequestFor({ ...form, dropoffLocationId: form.pickupLocationId }), null);
-  const payload = buildManualBooking(form, { status: "PRICED", total: "45.00" });
-  assert.equal(payload.expectedTotal, "45.00");
-  assert.equal("price" in payload || "total" in payload || "allowDuplicate" in payload, false);
-  assert.equal(payload.customer.fullName, "Jane");
-  assert.equal(buildManualBooking(form, { status: "QUOTE_REQUIRED", total: null }).expectedTotal, null);
-  assert.deepEqual(
-    (({ allowDuplicate, duplicateReason }) => ({ allowDuplicate, duplicateReason }))(buildManualBooking(form, null, { allowDuplicate: true, duplicateReason: " second car " })),
-    { allowDuplicate: true, duplicateReason: "second car" }
-  );
+test("Transfer Admin cannot create bookings or approve cash on arrival anywhere in the app", () => {
+  const files = walk(path.join(root, "src")).filter((file) => /\.jsx?$/.test(file));
+  const source = files.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+  assert.equal(fs.existsSync(path.join(root, "src/pages/NewBookingPage.jsx")), false);
+  assert.equal(fs.existsSync(path.join(root, "src/lib/manualBooking.js")), false);
+  for (const banned of ["/bookings/new", "New booking", "createManualBooking", "approveCashOnArrival", "approve-cash-on-arrival", "Approve cash", "cashToCollect", "client.post(\"/bookings\""]) {
+    assert.equal(source.includes(banned), false, banned);
+  }
+  // Older cash-on-arrival and staff-entered records stay readable and are labelled as legacy.
+  assert.match(read("src/lib/format.js"), /CASH_ON_ARRIVAL: "Cash on arrival \(legacy\)"/);
+  assert.match(read("src/pages/BookingsPage.jsx"), /Staff-entered \(legacy\)/);
 });
 
 test("the login page belongs to the Transfer Admin only", async () => {

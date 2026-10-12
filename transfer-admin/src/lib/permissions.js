@@ -25,7 +25,6 @@ export const can = (user, permission) => Boolean(user?.permissions?.includes(per
 export const NAVIGATION = Object.freeze([
   { to: "/", label: "Dashboard", permission: P.BOOKINGS_VIEW, end: true },
   { to: "/bookings", label: "Bookings", permission: P.BOOKINGS_VIEW },
-  { to: "/bookings/new", label: "New booking", permission: P.BOOKINGS_MANAGE },
   { section: "Operations" },
   { to: "/dispatch", label: "Dispatch", permission: P.FLEET_VIEW },
   { to: "/fleet/drivers", label: "Drivers", permission: P.FLEET_VIEW },

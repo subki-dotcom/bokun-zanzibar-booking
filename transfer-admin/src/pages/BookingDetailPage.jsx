@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
-import { approveCashOnArrival, fetchBooking, issueCustomerLink, quoteBooking, rejectBooking } from "../api/transferAdminApi";
+import { fetchBooking, issueCustomerLink, quoteBooking, rejectBooking } from "../api/transferAdminApi";
 import { useAuth } from "../auth/AuthContext";
-import { ErrorMessage, FormModal, Loading, PageHeader, ReasonModal, StatusBadge, useResource } from "../components/ui";
+import { Empty, ErrorMessage, FormModal, Loading, PageHeader, ReasonModal, StatusBadge, useResource } from "../components/ui";
 import { ARRANGEMENT, PAYMENT, dateTime, passengers, usd, websiteBase } from "../lib/format";
 import { TripActions, TripStatusBadge } from "../components/trips";
 import { P, can } from "../lib/permissions";
@@ -45,13 +45,16 @@ const QuoteModal = ({ booking, show, onHide, onDone }) => {
 const BookingDetailPage = () => {
   const { bookingId } = useParams();
   const { user } = useAuth();
-  const { data: booking, loading, error, reload } = useResource(() => fetchBooking(bookingId), [bookingId]);
+  // Only a booking id opens a booking; any other address (an old bookmark, a typo) is simply not found.
+  const knownId = /^[a-f0-9]{24}$/i.test(bookingId || "");
+  const { data: booking, loading, error, reload } = useResource(() => (knownId ? fetchBooking(bookingId) : Promise.resolve(null)), [bookingId]);
   const [modal, setModal] = useState("");
   const [notice, setNotice] = useState("");
   const [link, setLink] = useState("");
   const [linkError, setLinkError] = useState(null);
   const manage = can(user, P.BOOKINGS_MANAGE);
 
+  if (!knownId) return <Empty>Booking not found. <Link to="/bookings">See all bookings</Link></Empty>;
   if (loading && !booking) return <Loading />;
   if (error && !booking) return <ErrorMessage error={error} onRetry={reload} />;
   if (!booking) return null;
@@ -77,7 +80,7 @@ const BookingDetailPage = () => {
     <>
       <PageHeader
         title={booking.reference}
-        subtitle={`${booking.source === "MANUAL" ? `Entered by ${booking.createdBy?.email} via ${booking.manualChannel}` : "Website booking"} · created ${dateTime(booking.createdAt)}`}
+        subtitle={`${booking.source === "MANUAL" ? `Entered by ${booking.createdBy?.email} via ${booking.manualChannel} (legacy staff booking)` : "Website booking"} · created ${dateTime(booking.createdAt)}`}
         actions={
           <div className="d-flex flex-wrap gap-2 align-items-center">
             <StatusBadge status={booking.status} />
@@ -94,7 +97,6 @@ const BookingDetailPage = () => {
         <Card className="ta-card mb-3">
           <Card.Body className="d-flex flex-wrap gap-2 align-items-center">
             {booking.status === "QUOTE_REQUESTED" && unpaid ? <Button onClick={() => setModal("quote")}>Set quote</Button> : null}
-            {booking.status === "AWAITING_PAYMENT" && unpaid ? <Button variant="success" onClick={() => setModal("cash")}>Approve cash on arrival</Button> : null}
             {open ? <Button variant="outline-danger" onClick={() => setModal("reject")}>Reject</Button> : null}
             <Button variant="outline-secondary" onClick={getLink}>Customer link</Button>
             {!open && booking.status !== "CONFIRMED" ? <span className="small text-muted">No actions available for this status.</span> : null}
@@ -221,18 +223,6 @@ const BookingDetailPage = () => {
       </Row>
 
       <QuoteModal booking={booking} show={modal === "quote"} onHide={() => setModal("")} onDone={done("Quote saved. The booking is now awaiting payment.")} />
-      <ReasonModal
-        show={modal === "cash"}
-        title="Approve cash on arrival"
-        description="The booking becomes confirmed. It stays unpaid until the cash is collected and recorded."
-        submitLabel="Approve"
-        variant="success"
-        onHide={() => setModal("")}
-        onSubmit={async (reason) => {
-          await approveCashOnArrival(booking.id, reason);
-          await done("Approved for cash on arrival.")();
-        }}
-      />
       <ReasonModal
         show={modal === "reject"}
         title="Reject booking"

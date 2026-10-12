@@ -9,7 +9,6 @@ import { P } from "../lib/permissions";
 const DashboardPage = lazy(() => import("../pages/DashboardPage"));
 const BookingsPage = lazy(() => import("../pages/BookingsPage"));
 const BookingDetailPage = lazy(() => import("../pages/BookingDetailPage"));
-const NewBookingPage = lazy(() => import("../pages/NewBookingPage"));
 const ZonesPage = lazy(() => import("../pages/ZonesPage"));
 const LocationsPage = lazy(() => import("../pages/LocationsPage"));
 const RoutesPage = lazy(() => import("../pages/RoutesPage"));
@@ -57,7 +56,6 @@ const AppRoutes = () => (
       >
         <Route index element={<Home />} />
         <Route path="/bookings" element={guarded(P.BOOKINGS_VIEW, BookingsPage)} />
-        <Route path="/bookings/new" element={guarded(P.BOOKINGS_MANAGE, NewBookingPage)} />
         <Route path="/bookings/:bookingId" element={guarded(P.BOOKINGS_VIEW, BookingDetailPage)} />
         <Route path="/dispatch" element={guarded(P.FLEET_VIEW, DispatchPage)} />
         <Route path="/fleet/drivers" element={guarded(P.FLEET_VIEW, DriversPage)} />

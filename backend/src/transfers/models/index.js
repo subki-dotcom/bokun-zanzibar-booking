@@ -141,9 +141,9 @@ const BOOKING_STATUS = Object.freeze({
 });
 const PAYMENT_STATUS = Object.freeze({ UNPAID: "UNPAID", PAID: "PAID", REFUNDED: "REFUNDED" });
 const BOOKING_SOURCES = Object.freeze(["WEBSITE", "MANUAL"]);
-// How a manual booking reached the team.
+// MANUAL bookings and their channels exist only on historical records: Transfer Admin can no longer create bookings.
 const MANUAL_CHANNELS = Object.freeze(["WHATSAPP", "PHONE", "EMAIL", "WALK_IN", "OTHER"]);
-// ONLINE: pay through the payment gateway (later phase). CASH_ON_ARRIVAL: approved by an admin, collected at pickup.
+// ONLINE (Pesapal) is the only arrangement for new bookings. CASH_ON_ARRIVAL is kept so historical records stay valid.
 const PAYMENT_ARRANGEMENTS = Object.freeze({ ONLINE: "ONLINE", CASH_ON_ARRIVAL: "CASH_ON_ARRIVAL" });
 
 const bookingLegSchema = new Schema(
@@ -241,6 +241,46 @@ const bookingSchema = new Schema(
   },
   { timestamps: true, collection: "transfer_bookings" }
 );
+// Payment rules enforced on every write, whichever code path makes it:
+// - a new booking comes only from the website, unpaid, to be paid online, as a quote request or awaiting payment;
+// - cash on arrival (kept only on historical records) can never be set again;
+// - a booking becomes CONFIRMED or PAID only with a verified online payment, which the payment code marks with
+//   `verifiedPayment` (the query option, or `$locals.verifiedPayment` on a document save).
+const OPEN_BOOKING_STATUSES = [BOOKING_STATUS.QUOTE_REQUESTED, BOOKING_STATUS.AWAITING_PAYMENT];
+const paymentRule = (message) => new AppError(message, 409, "TRANSFER_PAYMENT_RULE");
+const newBookingProblem = (booking) =>
+  booking.source !== "WEBSITE" ||
+  (booking.paymentArrangement || PAYMENT_ARRANGEMENTS.ONLINE) !== PAYMENT_ARRANGEMENTS.ONLINE ||
+  (booking.paymentStatus || PAYMENT_STATUS.UNPAID) !== PAYMENT_STATUS.UNPAID ||
+  !OPEN_BOOKING_STATUSES.includes(booking.status);
+const NEW_BOOKING_RULE = "New bookings are created only by customers on the website, unpaid, and are paid online.";
+const CONFIRMATION_RULE = "A booking is confirmed or marked paid only after a verified online payment.";
+const CASH_RULE = "Cash on arrival is not available; bookings are paid online.";
+
+bookingSchema.pre("save", function guardBookingSave(next) {
+  if (this.isNew) return next(newBookingProblem(this) ? paymentRule(NEW_BOOKING_RULE) : undefined);
+  if (this.isModified("source") || (this.isModified("paymentArrangement") && this.paymentArrangement !== PAYMENT_ARRANGEMENTS.ONLINE)) return next(paymentRule(CASH_RULE));
+  const confirming = (this.isModified("status") && this.status === BOOKING_STATUS.CONFIRMED) || (this.isModified("paymentStatus") && this.paymentStatus === PAYMENT_STATUS.PAID);
+  return next(confirming && !this.$locals.verifiedPayment ? paymentRule(CONFIRMATION_RULE) : undefined);
+});
+
+bookingSchema.pre("insertMany", function guardBookingInsert(next, docs) {
+  const list = Array.isArray(docs) ? docs : [docs];
+  return next(list.some(newBookingProblem) ? paymentRule(NEW_BOOKING_RULE) : undefined);
+});
+
+function guardBookingUpdate(next) {
+  const update = this.getUpdate() || {};
+  const fields = { ...update, ...(update.$set || {}), ...(update.$setOnInsert || {}) };
+  if (this.getOptions().upsert) return next(paymentRule(NEW_BOOKING_RULE));
+  if (fields.source !== undefined || (fields.paymentArrangement !== undefined && fields.paymentArrangement !== PAYMENT_ARRANGEMENTS.ONLINE)) return next(paymentRule(CASH_RULE));
+  const confirming = fields.status === BOOKING_STATUS.CONFIRMED || fields.paymentStatus === PAYMENT_STATUS.PAID;
+  return next(confirming && !this.getOptions().verifiedPayment ? paymentRule(CONFIRMATION_RULE) : undefined);
+}
+["updateOne", "updateMany", "findOneAndUpdate", "replaceOne", "findOneAndReplace"].forEach((operation) => {
+  bookingSchema.pre(operation, guardBookingUpdate);
+});
+
 bookingSchema.index({ createdAt: -1 });
 bookingSchema.index({ "legs.pickupAt": 1 });
 bookingSchema.index({ "customer.email": 1, createdAt: -1 });

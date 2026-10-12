@@ -32,7 +32,7 @@ const DashboardPage = () => {
           <Row xs={1} sm={2} xl={4} className="g-3 mb-3">
             <Col><Metric label="Quote requests" value={data.counts.QUOTE_REQUESTED} note="Need a price from the team" to="/bookings?status=QUOTE_REQUESTED" /></Col>
             <Col><Metric label="Awaiting payment" value={data.counts.AWAITING_PAYMENT} note={`${usd(data.awaitingPayment.amount)} priced — not revenue until paid`} to="/bookings?status=AWAITING_PAYMENT" /></Col>
-            <Col><Metric label="Confirmed" value={data.counts.CONFIRMED} note={`${data.cashToCollect.count} cash on arrival · ${usd(data.cashToCollect.amount)} to collect`} to="/bookings?status=CONFIRMED" /></Col>
+            <Col><Metric label="Confirmed" value={data.counts.CONFIRMED} note="Confirmed for travel; payment status is shown on each booking" to="/bookings?status=CONFIRMED" /></Col>
             <Col><Metric label="Paid revenue" value={usd(data.paidRevenue.amount)} note={`${data.paidRevenue.count} verified payment${data.paidRevenue.count === 1 ? "" : "s"}`} /></Col>
           </Row>
           <Row xs={1} sm={3} className="g-3 mb-4">
@@ -125,7 +125,7 @@ const DashboardPage = () => {
             </Card.Body>
           </Card>
           <p className="ta-footnote">
-            Paid revenue counts only payments verified by the server. Bookings awaiting payment and cash still to collect are shown separately and are not revenue.
+            Paid revenue counts only payments verified by the server. Bookings awaiting payment are shown separately and are not revenue.
           </p>
         </>
       ) : null}

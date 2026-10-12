@@ -2,15 +2,12 @@ import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { fetchBookings } from "../api/transferAdminApi";
-import { useAuth } from "../auth/AuthContext";
 import { Empty, ErrorMessage, Loading, PageHeader, Pager, StatusBadge, useResource } from "../components/ui";
 import { ARRANGEMENT, PAYMENT, STATUS, legWhen, passengers, usd } from "../lib/format";
-import { P, can } from "../lib/permissions";
 
 const FILTERS = ["status", "paymentStatus", "source", "from", "to", "search", "sort", "page"];
 
 const BookingsPage = () => {
-  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const query = useMemo(() => Object.fromEntries(FILTERS.filter((key) => params.get(key)).map((key) => [key, params.get(key)])), [params]);
   const { data, loading, error, reload } = useResource(() => fetchBookings({ ...query, limit: 25 }), [JSON.stringify(query)]);
@@ -27,8 +24,7 @@ const BookingsPage = () => {
     <>
       <PageHeader
         title="Bookings"
-        subtitle="Website and staff-entered transfer bookings"
-        actions={can(user, P.BOOKINGS_MANAGE) ? <Link className="btn btn-primary btn-sm" to="/bookings/new">New booking</Link> : null}
+        subtitle="Bookings made by customers on the website. Staff-entered bookings are older records only."
       />
       <Card className="ta-card mb-3">
         <Card.Body>
@@ -47,7 +43,7 @@ const BookingsPage = () => {
               <Form.Select aria-label="Source" value={query.source || ""} onChange={(event) => set("source", event.target.value)}>
                 <option value="">All sources</option>
                 <option value="WEBSITE">Website</option>
-                <option value="MANUAL">Staff-entered</option>
+                <option value="MANUAL">Staff-entered (legacy)</option>
               </Form.Select>
             </Col>
             <Col xs={6} md={2}>
@@ -81,7 +77,7 @@ const BookingsPage = () => {
                   <tr key={booking.id}>
                     <td>
                       <Link to={`/bookings/${booking.id}`}>{booking.reference}</Link>
-                      <div className="small text-muted">{booking.source === "MANUAL" ? `Staff · ${booking.manualChannel}` : "Website"}{booking.tripType === "ROUND_TRIP" ? " · Round trip" : ""}</div>
+                      <div className="small text-muted">{booking.source === "MANUAL" ? `Staff (legacy) · ${booking.manualChannel}` : "Website"}{booking.tripType === "ROUND_TRIP" ? " · Round trip" : ""}</div>
                     </td>
                     <td>{legWhen(booking.firstLeg)}</td>
                     <td>{booking.firstLeg?.pickupLocationName} → {booking.firstLeg?.dropoffLocationName}</td>
