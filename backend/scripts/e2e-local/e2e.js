@@ -45,13 +45,14 @@ const record = (name, ok, detail = "") => {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? `  (${detail})` : ""}`);
 };
 
-const call = async (method, url, { body, token, expect } = {}) => {
+const call = async (method, url, { body, token, headers = {}, expect } = {}) => {
   const started = performance.now();
   const response = await fetch(`${BASE}${url}`, {
     method,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers
     },
     body: body ? JSON.stringify(body) : undefined
   });

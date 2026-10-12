@@ -290,6 +290,12 @@ const bookingSchema = new mongoose.Schema(
     bokunSubmissionStartedAt: { type: Date },
     // Durable provider-attempt ownership survives stale checkout snapshots.
     paymentInitiation: { type: mongoose.Schema.Types.Mixed, default: undefined },
+    // Raising this revokes every customer access link issued for the booking (missing = 0).
+    customerAccessVersion: { type: Number },
+    // One pending emailed verification link: only its SHA-256 hash is stored, consumed atomically.
+    customerAccessChallengeHash: { type: String, select: false },
+    customerAccessChallengeExpiresAt: { type: Date, select: false },
+    customerAccessChallengeRequestedAt: { type: Date, select: false },
     pendingCheckout: mongoose.Schema.Types.Mixed,
     // Only populated for paid legacy bookings that failed because the former
     // Bókun payload omitted a real pricingCategoryId.

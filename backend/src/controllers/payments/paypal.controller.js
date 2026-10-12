@@ -1,5 +1,6 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const { successResponse } = require("../../utils/apiResponse");
+const { withNewBookingAccess, withCustomerPaymentBooking } = require("../../security/bookingAccess");
 const paypalService = require("../../services/payments/paypal");
 
 const create = asyncHandler(async (req, res) => {
@@ -11,7 +12,7 @@ const create = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: "PayPal payment initialized",
-    data,
+    data: withNewBookingAccess(data, req.validated.body),
     statusCode: 201
   });
 });
@@ -24,7 +25,7 @@ const success = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: data.status === "paid" ? "Payment captured" : "Payment verification completed",
-    data
+    data: withCustomerPaymentBooking(data)
   });
 });
 
@@ -37,7 +38,7 @@ const cancel = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: "Payment cancellation handled",
-    data
+    data: withCustomerPaymentBooking(data)
   });
 });
 
@@ -50,7 +51,7 @@ const webhook = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: data.ignored ? "PayPal webhook accepted" : "PayPal webhook processed",
-    data
+    data: withCustomerPaymentBooking(data)
   });
 });
 

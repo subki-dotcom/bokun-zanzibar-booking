@@ -21,6 +21,7 @@ import { fetchBookingByReference } from "../../api/bookingsApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import ManageBookingCard from "../../components/bookingRequests/ManageBookingCard";
+import BookingAccessForm, { isBookingAccessError } from "../../components/booking/BookingAccessForm";
 import CancellationPolicyPanel from "../../components/cancellation/CancellationPolicyPanel";
 import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
 import { buildCancellationTimeline } from "../../utils/cancellationPolicy";
@@ -316,11 +317,13 @@ const MyBookingPage = () => {
   useBookingAnalytics(booking);
   const [loading, setLoading] = useState(Boolean(referenceParam));
   const [error, setError] = useState("");
+  const [accessReference, setAccessReference] = useState("");
 
   const normalizedReference = useMemo(() => reference.trim().toUpperCase(), [reference]);
 
   const loadBooking = async (bookingReference) => {
     setError("");
+    setAccessReference("");
     setLoading(true);
 
     try {
@@ -329,7 +332,8 @@ const MyBookingPage = () => {
       navigate(`/my-booking/${bookingReference}`, { replace: true });
     } catch (err) {
       setBooking(null);
-      setError(err.message || "Booking not found");
+      if (isBookingAccessError(err)) setAccessReference(bookingReference);
+      else setError(err.message || "Booking not found");
     } finally {
       setLoading(false);
     }
@@ -374,6 +378,9 @@ const MyBookingPage = () => {
 
         {loading ? <Loader message="Loading booking..." /> : null}
         <ErrorAlert error={error} />
+        {accessReference && !loading ? (
+          <BookingAccessForm reference={accessReference} />
+        ) : null}
         {booking && !loading ? <BookingDetails booking={booking} /> : null}
       </Container>
     </main>

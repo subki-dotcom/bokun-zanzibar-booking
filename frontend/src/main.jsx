@@ -7,7 +7,10 @@ import App from "./app/App";
 import { AuthProvider } from "./context/AuthContext";
 import { PaymentProvidersProvider } from "./context/PaymentProvidersContext";
 import { initializeConsent } from "./utils/consent";
+import { captureBookingAccessFromLocation } from "../../shared/src/api/bookingAccess.js";
 
+// Move booking access credentials out of the URL before any script (analytics included) can read it.
+captureBookingAccessFromLocation();
 // Synchronous restoration before React effects can emit optional analytics.
 initializeConsent();
 

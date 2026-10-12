@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const hpp = require("hpp");
 const { env } = require("./config/env");
+const { parseTrustProxy } = require("./config/trustProxy");
 const { buildAllowedOrigins, isOriginAllowed, normalizeOriginValue } = require("./config/corsOrigins");
 const logger = require("./config/logger");
 const systemHealthService = require("./services/systemHealth");
@@ -15,7 +16,8 @@ const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
-app.set("trust proxy", 1);
+// Deployment-specific: see TRUST_PROXY in .env.example. Rate limits key on the resulting req.ip.
+app.set("trust proxy", parseTrustProxy(env.TRUST_PROXY));
 
 morgan.token("request-id", (req) => req.requestId || "-");
 app.use(requestId);

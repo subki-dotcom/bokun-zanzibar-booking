@@ -1,4 +1,5 @@
 const dayjs = require("dayjs");
+const Booking = require("../../models/Booking");
 const Invoice = require("../../models/Invoice");
 const Refund = require("../../models/Refund");
 const { env } = require("../../config/env");
@@ -7,6 +8,7 @@ const logger = require("../../config/logger");
 const { Decimal, decimalString, normalizeCurrency, toDecimal } = require("../../utils/money");
 const { resolveGuestPaymentPolicy } = require("../bookingPayment/policy");
 const { bookingStatusClearsBalance } = require("../../accounting/salesPolicy");
+const bookingAccess = require("../../security/bookingAccess");
 
 const roundMoney = (value = 0) => Number(toDecimal(value).toDecimalPlaces(2).toFixed(2));
 
@@ -226,12 +228,51 @@ const getInvoiceByNumber = async (invoiceNumber) => {
   return Invoice.findOne({ invoiceNumber }).lean();
 };
 
+const INVOICE_LOOKUP_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$/;
+
+// Invoice access follows booking access: neither the booking reference nor the invoice number is
+// proof of ownership. Returns null for "missing" and "not allowed" alike.
+const getAuthorizedInvoiceByBookingReference = async ({ bookingReference, auth = null, accessToken = "" } = {}) => {
+  const reference = String(bookingReference || "").trim();
+  if (!INVOICE_LOOKUP_PATTERN.test(reference)) return null;
+  const booking = await Booking.findOne({ bookingReference: reference })
+    .select("_id bookingReference agentId customerAccessVersion")
+    .lean();
+  const access = booking
+    ? bookingAccess.resolveBookingAccess({ booking, auth, accessToken })
+    : bookingAccess.isBackOfficeUser(auth) ? "back_office" : null;
+  if (!access) return null;
+  const invoice = await Invoice.findOne({ bookingReference: reference }).lean();
+  if (!invoice) return null;
+  return access === "back_office" ? { access, invoice } : { access, invoice: bookingAccess.toCustomerInvoice(invoice) };
+};
+
+const getAuthorizedInvoiceByNumber = async ({ invoiceNumber, auth = null } = {}) => {
+  const number = String(invoiceNumber || "").trim();
+  if (!INVOICE_LOOKUP_PATTERN.test(number)) return null;
+  if (bookingAccess.isBackOfficeUser(auth)) {
+    const invoice = await Invoice.findOne({ invoiceNumber: number }).lean();
+    return invoice ? { access: "back_office", invoice } : null;
+  }
+  if (auth?.role !== "agent") return null;
+  const invoice = await Invoice.findOne({ invoiceNumber: number }).lean();
+  if (!invoice?.bookingReference) return null;
+  // Standalone invoices and other Agents' bookings never match: the Agent must own the booking.
+  const booking = await Booking.findOne({ bookingReference: invoice.bookingReference, agentId: auth.id })
+    .select("_id agentId")
+    .lean();
+  if (!bookingAccess.isOwningAgent(auth, booking)) return null;
+  return { access: "agent", invoice: bookingAccess.toCustomerInvoice(invoice) };
+};
+
 module.exports = {
   buildInvoiceSnapshot,
   persistInvoiceFromSnapshot,
   upsertInvoiceFromSnapshot,
   getInvoiceByBookingReference,
   getInvoiceByNumber,
+  getAuthorizedInvoiceByBookingReference,
+  getAuthorizedInvoiceByNumber,
   resolveInvoiceAccounting,
   __testables: {
     resolveInvoiceAccounting,

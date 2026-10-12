@@ -2,30 +2,43 @@ const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/apiResponse");
 const AppError = require("../utils/AppError");
 const invoicesService = require("../services/invoices");
+const { ACCESS_TOKEN_HEADER } = require("../security/bookingAccess");
+
+// Same answer for a missing invoice and one the caller may not see.
+const invoiceNotFound = () => new AppError("Invoice not found", 404, "INVOICE_NOT_FOUND");
 
 const getByBookingReference = asyncHandler(async (req, res) => {
-  const invoice = await invoicesService.getInvoiceByBookingReference(req.params.bookingReference);
+  const result = await invoicesService.getAuthorizedInvoiceByBookingReference({
+    bookingReference: req.params.bookingReference,
+    auth: req.auth || null,
+    accessToken: req.get(ACCESS_TOKEN_HEADER) || ""
+  });
 
-  if (!invoice) {
-    throw new AppError("Invoice not found", 404, "INVOICE_NOT_FOUND");
+  if (!result) {
+    throw invoiceNotFound();
   }
 
   return successResponse(res, {
     message: "Invoice fetched",
-    data: invoice
+    data: result.invoice
   });
 });
 
 const getByInvoiceNumber = asyncHandler(async (req, res) => {
-  const invoice = await invoicesService.getInvoiceByNumber(req.params.invoiceNumber);
+  const result = await invoicesService.getAuthorizedInvoiceByNumber({
+    invoiceNumber: req.params.invoiceNumber,
+    auth: req.auth || null
+  });
 
-  if (!invoice) {
-    throw new AppError("Invoice not found", 404, "INVOICE_NOT_FOUND");
+  if (!result) {
+    throw invoiceNotFound();
   }
 
   return successResponse(res, {
     message: "Invoice fetched",
-    data: (await require('../services/bookingPayment/view').enrichPaymentViews([invoice]))[0]
+    data: result.access === "back_office"
+      ? (await require('../services/bookingPayment/view').enrichPaymentViews([result.invoice]))[0]
+      : result.invoice
   });
 });
 

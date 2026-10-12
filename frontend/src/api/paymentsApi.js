@@ -1,4 +1,5 @@
 import axiosClient from "./axiosClient";
+import { rememberCheckoutAccess } from "../../../shared/src/api/bookingAccess.js";
 
 export const fetchPaymentProviders = async () => {
   const response = await axiosClient.get("/payments/providers");
@@ -7,17 +8,17 @@ export const fetchPaymentProviders = async () => {
 
 export const createPesapalPayment = async (payload) => {
   const response = await axiosClient.post("/payments/pesapal/create", payload);
-  return response.data.data;
+  return rememberCheckoutAccess(response.data.data);
 };
 
 export const createDpoPayment = async (payload) => {
   const response = await axiosClient.post("/payments/dpo/create", payload);
-  return response.data.data;
+  return rememberCheckoutAccess(response.data.data);
 };
 
 export const createPaypalPayment = async (payload) => {
   const response = await axiosClient.post("/payments/paypal/create", payload);
-  return response.data.data;
+  return rememberCheckoutAccess(response.data.data);
 };
 
 export const verifyPesapalPayment = async ({ orderTrackingId = "", orderMerchantReference = "" } = {}) => {

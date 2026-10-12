@@ -48,6 +48,17 @@ const authenticate = async (req, _res, next) => {
   }
 };
 
+// For endpoints that also accept a customer access token: a missing, stale or invalid session
+// simply continues unauthenticated, so the request must still prove access some other way.
+const optionalAuthenticate = (req, res, next) => {
+  if (!req.headers.authorization) return next();
+  return authenticate(req, res, (error) => {
+    if (error) req.auth = undefined;
+    return next();
+  });
+};
+
 module.exports = {
-  authenticate
+  authenticate,
+  optionalAuthenticate
 };

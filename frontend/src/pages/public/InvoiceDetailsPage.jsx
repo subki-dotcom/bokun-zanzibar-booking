@@ -5,6 +5,7 @@ import { BsPrinter } from "react-icons/bs";
 import { fetchInvoiceByBookingReference } from "../../api/invoicesApi";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
+import BookingAccessForm, { isBookingAccessError } from "../../components/booking/BookingAccessForm";
 import PrintableInvoice from "../../components/invoice/PrintableInvoice";
 
 const InvoiceDetailsPage = () => {
@@ -12,14 +13,19 @@ const InvoiceDetailsPage = () => {
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [needsAccess, setNeedsAccess] = useState(false);
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
+      setError("");
+      setNeedsAccess(false);
       try {
         const data = await fetchInvoiceByBookingReference(bookingReference);
         setInvoice(data);
       } catch (err) {
-        setError(err.message || "Failed to fetch invoice");
+        if (isBookingAccessError(err)) setNeedsAccess(true);
+        else setError(err.message || "Failed to fetch invoice");
       } finally {
         setLoading(false);
       }
@@ -33,6 +39,7 @@ const InvoiceDetailsPage = () => {
       <Container className="invoice-shell">
         {loading ? <Loader message="Loading invoice..." /> : null}
         <ErrorAlert error={error} />
+        {needsAccess ? <BookingAccessForm reference={bookingReference} title="Verify to view your invoice" /> : null}
         {invoice ? (
           <>
             <div className="invoice-toolbar">

@@ -5,6 +5,7 @@ import { useParams, Link } from "react-router-dom";
 import { fetchBookingByReference } from "../../api/bookingsApi";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
+import BookingAccessForm, { isBookingAccessError } from "../../components/booking/BookingAccessForm";
 import CancellationPolicyPanel from "../../components/cancellation/CancellationPolicyPanel";
 import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
 
@@ -14,14 +15,19 @@ const BookingConfirmationPage = () => {
   useBookingAnalytics(booking);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [needsAccess, setNeedsAccess] = useState(false);
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
+      setError("");
+      setNeedsAccess(false);
       try {
         const data = await fetchBookingByReference(reference);
         setBooking(data);
       } catch (err) {
-        setError(err.message || "Failed to load confirmation");
+        if (isBookingAccessError(err)) setNeedsAccess(true);
+        else setError(err.message || "Failed to load confirmation");
       } finally {
         setLoading(false);
       }
@@ -41,6 +47,7 @@ const BookingConfirmationPage = () => {
   return (
     <Container className="py-4">
       <ErrorAlert error={error} />
+      {needsAccess ? <BookingAccessForm reference={reference} /> : null}
 
       {booking ? (
         <Card className="surface-card">

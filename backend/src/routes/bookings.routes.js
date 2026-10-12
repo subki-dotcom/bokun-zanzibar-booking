@@ -1,9 +1,16 @@
 const express = require("express");
 const bookingController = require("../controllers/bookings.controller");
 const validateRequest = require("../middleware/validateRequest");
-const { authenticate } = require("../middleware/auth");
+const { authenticate, optionalAuthenticate } = require("../middleware/auth");
+const noStore = require("../middleware/noStore");
 const { authorize } = require("../middleware/rbac");
-const { bookingRequestWriteLimiter } = require("../middleware/rateLimiter");
+const {
+  bookingRequestWriteLimiter,
+  bookingLookupLimiter,
+  bookingAccessRequestLimiter,
+  bookingAccessReferenceLimiter,
+  bookingAccessRedeemLimiter
+} = require("../middleware/rateLimiter");
 const {
   quoteSchema,
   createBookingSchema,
@@ -11,7 +18,9 @@ const {
   editBookingSchema,
   listPendingFinalizationsSchema,
   retryFinalizationSchema,
-  reconcileFinalizationsSchema
+  reconcileFinalizationsSchema,
+  bookingAccessRequestSchema,
+  bookingAccessRedeemSchema
 } = require("../validators/bookings.validation");
 const bookingRequestsController = require("../controllers/bookingRequests.controller");
 const bookingRequestSchemas = require("../validators/bookingRequests.validation");
@@ -28,6 +37,22 @@ const optionalAuth = (req, res, next) => {
 
 router.post("/quote", optionalAuth, validateRequest(quoteSchema), bookingController.quote);
 router.post("/create", optionalAuth, validateRequest(createBookingSchema), bookingController.create);
+// Customer recovery: emails a single-use link to the address on the booking (same answer for any input).
+router.post(
+  "/access/request",
+  noStore,
+  bookingAccessRequestLimiter,
+  bookingAccessReferenceLimiter,
+  validateRequest(bookingAccessRequestSchema),
+  bookingController.requestAccessLink
+);
+router.post(
+  "/access/redeem",
+  noStore,
+  bookingAccessRedeemLimiter,
+  validateRequest(bookingAccessRedeemSchema),
+  bookingController.redeemAccessLink
+);
 router.post("/:bookingId/requests", bookingRequestWriteLimiter, validateRequest(bookingRequestSchemas.submitBookingRequestSchema), bookingRequestsController.submit);
 router.get("/:bookingId/cancellation-estimate", validateRequest(bookingRequestSchemas.cancellationEstimateSchema), bookingRequestsController.cancellationEstimate);
 router.get("/:id/requests", validateRequest(bookingRequestSchemas.customerRequestQuerySchema), bookingRequestsController.listCustomer);
@@ -64,7 +89,8 @@ router.post(
   validateRequest(retryFinalizationSchema),
   bookingController.retryFinalization
 );
-router.get("/:reference", bookingController.getByReference);
+// A reference alone never opens a booking: back office session, owning Agent, or customer access token.
+router.get("/:reference", noStore, bookingLookupLimiter, optionalAuthenticate, bookingController.getByReference);
 router.post(
   "/:id/cancel",
   authenticate,

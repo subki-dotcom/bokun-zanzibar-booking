@@ -2,6 +2,7 @@ const asyncHandler = require("../../utils/asyncHandler");
 const { successResponse } = require("../../utils/apiResponse");
 const pesapalService = require("../../services/payments/pesapal");
 const refundsService = require("../../services/refunds");
+const { withNewBookingAccess } = require("../../security/bookingAccess");
 
 const create = asyncHandler(async (req, res) => {
   const data = await pesapalService.createPayment({
@@ -13,7 +14,7 @@ const create = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: "Pesapal payment initialized",
-    data,
+    data: withNewBookingAccess(data, req.validated.body),
     statusCode: 201
   });
 });

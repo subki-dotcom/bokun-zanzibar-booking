@@ -1,4 +1,5 @@
 import axiosClient from "./axiosClient";
+import { getWithBookingAccess } from "./bookingsApi";
 
 export const fetchInvoiceByNumber = async (invoiceNumber) => {
   const response = await axiosClient.get(`/invoices/${encodeURIComponent(invoiceNumber)}`);
@@ -6,6 +7,6 @@ export const fetchInvoiceByNumber = async (invoiceNumber) => {
 };
 
 export const fetchInvoiceByBookingReference = async (bookingReference) => {
-  const response = await axiosClient.get(`/invoices/booking/${bookingReference}`);
+  const response = await getWithBookingAccess(`/invoices/booking/${encodeURIComponent(bookingReference)}`, bookingReference);
   return response.data.data;
 };

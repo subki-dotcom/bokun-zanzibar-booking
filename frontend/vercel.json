@@ -1,6 +1,22 @@
 {
   "headers": [
     {
+      "source": "/:page(my-booking|invoice|booking-confirmation|payment-status|payment-success|payment-failure|payment-processing)/:rest*",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/payment/checkout/:rest*",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
       "source": "/:page(forgot-password|reset-password)",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" },

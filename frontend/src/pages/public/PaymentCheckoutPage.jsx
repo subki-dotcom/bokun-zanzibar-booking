@@ -7,6 +7,7 @@ import { createDpoPayment, createPaypalPayment, createPesapalPayment } from "../
 import PaymentMethodSelector from "../../components/booking/PaymentMethodSelector";
 import CancellationPolicyPanel from "../../components/cancellation/CancellationPolicyPanel";
 import ErrorAlert from "../../components/common/ErrorAlert";
+import BookingAccessForm, { isBookingAccessError } from "../../components/booking/BookingAccessForm";
 import Loader from "../../components/common/Loader";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { getPaymentMethodLabel } from "../../utils/paymentMethods";
@@ -19,6 +20,7 @@ const PaymentCheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [needsAccess, setNeedsAccess] = useState(false);
   const [fallbackPaymentMethod, setFallbackPaymentMethod] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("pesapal");
   const {
@@ -30,11 +32,15 @@ const PaymentCheckoutPage = () => {
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
+      setError("");
+      setNeedsAccess(false);
       try {
         const data = await fetchBookingByReference(reference);
         setBooking(data);
       } catch (err) {
-        setError(err.message || "Could not load payment checkout");
+        if (isBookingAccessError(err)) setNeedsAccess(true);
+        else setError(err.message || "Could not load payment checkout");
       } finally {
         setLoading(false);
       }
@@ -119,6 +125,7 @@ const PaymentCheckoutPage = () => {
     <main className="payment-status-page">
       <Container className="payment-status-shell">
         <ErrorAlert error={error} className="mb-3" />
+        {needsAccess ? <BookingAccessForm reference={reference} /> : null}
 
         {booking ? (
           <Card className="payment-status-card">

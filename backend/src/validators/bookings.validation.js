@@ -171,6 +171,25 @@ const reconcileFinalizationsSchema = z.object({
   query: z.object({}).optional()
 });
 
+const bookingAccessRequestSchema = z.object({
+  body: z.object({
+    bookingReference: z.string().trim().min(3).max(64),
+    email: z.string().trim().email().max(254)
+  }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
+// Malformed links are rejected by the service with the same answer as expired or used ones.
+const bookingAccessRedeemSchema = z.object({
+  body: z.object({
+    bookingReference: z.string().trim().min(1).max(64),
+    verification: z.string().trim().min(1).max(128)
+  }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
 module.exports = {
   quoteSchema,
   createBookingSchema,
@@ -178,5 +197,7 @@ module.exports = {
   editBookingSchema,
   listPendingFinalizationsSchema,
   retryFinalizationSchema,
-  reconcileFinalizationsSchema
+  reconcileFinalizationsSchema,
+  bookingAccessRequestSchema,
+  bookingAccessRedeemSchema
 };

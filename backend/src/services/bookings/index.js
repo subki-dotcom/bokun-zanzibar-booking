@@ -12,6 +12,7 @@ const logger = require("../../config/logger");
 const { env } = require("../../config/env");
 const { BOOKING_STATUS, PAYMENT_STATUS } = require("../../config/constants");
 const AppError = require("../../utils/AppError");
+const bookingAccess = require("../../security/bookingAccess");
 const { signQuoteToken, verifyQuoteToken } = require("../../utils/quoteToken");
 const bokunService = require("../../integrations/bokun");
 const offersService = require("../offers");
@@ -3188,11 +3189,28 @@ const recoverPaidBookingFromBokun = async ({
   return { booking, created: true };
 };
 
-const getBookingByReference = async (reference) => {
-  const booking = await Booking.findOne({ bookingReference: reference }).lean();
+const BOOKING_REFERENCE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$/;
 
-  if (!booking) {
-    throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
+// One response for "no such booking", "no access" and "bad token", so a reference cannot be
+// confirmed to exist without proving access to it.
+const bookingAccessDenied = () =>
+  new AppError(
+    "We could not open this booking. Use the link from your booking email or verify with the email used to book.",
+    404,
+    "BOOKING_NOT_FOUND"
+  );
+
+const findBookingForAccess = async (reference) => {
+  const normalized = String(reference || "").trim();
+  if (!BOOKING_REFERENCE_PATTERN.test(normalized)) return null;
+  return Booking.findOne({ bookingReference: normalized }).lean();
+};
+
+const getBookingByReference = async (reference, { auth = null, accessToken = "" } = {}) => {
+  const booking = await findBookingForAccess(reference);
+
+  if (!bookingAccess.resolveBookingAccess({ booking, auth, accessToken })) {
+    throw bookingAccessDenied();
   }
 
   const [productSnapshot, cancellationRequest] = await Promise.all([

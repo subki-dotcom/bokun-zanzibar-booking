@@ -8,10 +8,16 @@ module.exports = async ({ call, record, ctx, ADMIN, backendDir }) => {
   const ref = ctx.payment?.bookingReference;
   const bookingId = ctx.payment?.bookingId;
 
-  // Booking + invoice + accounting reads
-  const booking = await call("GET", `/bookings/${ref}`);
-  record("public booking lookup", booking.ok, `status ${booking.status}`);
-  const invoice = await call("GET", `/invoices/booking/${ref}`);
+  // Booking + invoice + accounting reads. A reference alone must never open them; the checkout
+  // response carries the customer's access token.
+  const accessHeaders = { "X-Booking-Access-Token": ctx.payment?.bookingAccessToken || "" };
+  const anonymousBooking = await call("GET", `/bookings/${ref}`);
+  record("booking reference alone is refused", anonymousBooking.status === 404, `status ${anonymousBooking.status}`);
+  const anonymousInvoice = await call("GET", `/invoices/booking/${ref}`);
+  record("invoice by reference alone is refused", anonymousInvoice.status === 404, `status ${anonymousInvoice.status}`);
+  const booking = await call("GET", `/bookings/${ref}`, { headers: accessHeaders });
+  record("customer booking lookup with access token", booking.ok, `status ${booking.status}`);
+  const invoice = await call("GET", `/invoices/booking/${ref}`, { headers: accessHeaders });
   const items = invoice.json?.data?.items || invoice.json?.data?.invoice?.items || [];
   record("invoice by booking reference", invoice.ok, `status ${invoice.status}, ${items.length} items`);
   record(

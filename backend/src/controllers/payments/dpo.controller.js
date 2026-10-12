@@ -1,5 +1,6 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const { successResponse } = require("../../utils/apiResponse");
+const { withNewBookingAccess, withCustomerPaymentBooking } = require("../../security/bookingAccess");
 const dpoService = require("../../services/payments/dpo");
 
 const create = asyncHandler(async (req, res) => {
@@ -11,7 +12,7 @@ const create = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: "DPO payment initialized",
-    data,
+    data: withNewBookingAccess(data, req.validated.body),
     statusCode: 201
   });
 });
@@ -24,7 +25,7 @@ const success = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: data.status === "paid" ? "Payment verified" : "Payment verification completed",
-    data
+    data: withCustomerPaymentBooking(data)
   });
 });
 
@@ -37,7 +38,7 @@ const cancel = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: "Payment cancellation handled",
-    data
+    data: withCustomerPaymentBooking(data)
   });
 });
 
@@ -55,7 +56,7 @@ const callback = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     message: "DPO callback verified",
-    data
+    data: withCustomerPaymentBooking(data)
   });
 });
 

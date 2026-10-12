@@ -3,9 +3,14 @@ const { cleanEnv, str, port, num, bool } = require("envalid");
 const env = cleanEnv(process.env, {
   NODE_ENV: str({ default: "development" }),
   PORT: port({ default: 5000 }),
+  // Proxies in front of the API (hop count or addresses). "1" matches the previous hard-coded value.
+  TRUST_PROXY: str({ default: "1" }),
   MONGO_URI: str(),
   JWT_SECRET: str(),
   JWT_EXPIRES_IN: str({ default: "7d" }),
+  // Customer booking/invoice access links. Empty uses a key derived from JWT_SECRET.
+  BOOKING_ACCESS_TOKEN_SECRET: str({ default: "" }),
+  BOOKING_ACCESS_TOKEN_TTL_DAYS: num({ default: 180 }),
   FRONTEND_URL: str({ default: "https://zanzibartoursandsafaris.co.tz" }),
   // Back Office origins allowed by CORS (comma separated). Production accepts only https values.
   BACKOFFICE_URL: str({ default: "" }),

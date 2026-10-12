@@ -2,6 +2,7 @@ const axios = require("axios");
 const EmailDelivery = require("../../models/EmailDelivery");
 const logger = require("../../config/logger");
 const { env, isEmailConfigured } = require("../../config/env");
+const { customerBookingUrl } = require("../../security/bookingAccess");
 
 const escapeHtml = (value = "") => String(value || "")
   .replace(/&/g, "&amp;")
@@ -18,8 +19,8 @@ const formatMoney = (amount = 0, currency = "USD") => {
   }
 };
 
-const bookingUrl = (booking = {}) =>
-  `${String(env.FRONTEND_URL || "").replace(/\/$/, "")}/my-booking/${encodeURIComponent(booking.bookingReference || "")}`;
+// The access token opens only this booking and travels in the URL fragment (never sent to servers).
+const bookingUrl = (booking = {}) => customerBookingUrl(booking);
 
 const buildEmailShell = ({ heading, body, ctaLabel = "View booking", ctaUrl = "" }) => `
   <div style="background:#f5f7fa;padding:32px 16px;font-family:Arial,sans-serif;color:#0f172a">
@@ -223,4 +224,26 @@ const sendPasswordResetEmail = async ({ to, resetUrl }) => {
   });
 };
 
-module.exports = { sendBookingEmailOnce, sendBookingRequestEmailOnce, sendPasswordResetEmail };
+// Sent only to the email stored on the booking. The body names no traveller details: the link is
+// the only thing of value and it expires in 20 minutes after a single use.
+const sendBookingAccessEmail = async ({ to, bookingReference, verifyUrl }) => {
+  if (!isEmailConfigured) throw new Error("Email delivery is not configured");
+  return sendWithResend({
+    to,
+    subject: `Your secure link for booking ${bookingReference}`,
+    html: buildEmailShell({
+      heading: "View your booking",
+      body: `<p>Use the button below to open booking <strong>${escapeHtml(bookingReference)}</strong>. This link expires in 20 minutes and can be used only once.</p><p>If you did not ask for this link, you can ignore this email. Nobody can open your booking without it.</p>`,
+      ctaLabel: "Open my booking",
+      ctaUrl: verifyUrl
+    })
+  });
+};
+
+module.exports = {
+  sendBookingEmailOnce,
+  sendBookingRequestEmailOnce,
+  sendPasswordResetEmail,
+  sendBookingAccessEmail,
+  __testables: { buildBookingEmail, buildBookingRequestEmail }
+};

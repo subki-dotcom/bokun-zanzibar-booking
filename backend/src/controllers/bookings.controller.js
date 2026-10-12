@@ -1,6 +1,21 @@
 const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/apiResponse");
 const bookingService = require("../services/bookings");
+const { ACCESS_TOKEN_HEADER, customerSiteOrigin } = require("../security/bookingAccess");
+const Booking = require("../models/Booking");
+const logger = require("../config/logger");
+const { isEmailConfigured } = require("../config/env");
+const emailService = require("../services/email");
+const { createCustomerAccessVerification } = require("../services/bookings/customerAccessVerification");
+
+const customerAccessVerification = createCustomerAccessVerification({
+  Booking,
+  // Looked up per call so tests can replace the sender; tests never reach the email provider.
+  sendEmail: (message) => emailService.sendBookingAccessEmail(message),
+  configured: () => isEmailConfigured,
+  siteOrigin: customerSiteOrigin,
+  logFailure: () => logger.error("BOOKING_ACCESS_EMAIL_FAILED")
+});
 
 const quote = asyncHandler(async (req, res) => {
   const data = await bookingService.quoteBooking({
@@ -30,10 +45,35 @@ const create = asyncHandler(async (req, res) => {
 });
 
 const getByReference = asyncHandler(async (req, res) => {
-  const data = await bookingService.getBookingByReference(req.params.reference);
+  const data = await bookingService.getBookingByReference(req.params.reference, {
+    auth: req.auth || null,
+    accessToken: req.get(ACCESS_TOKEN_HEADER) || ""
+  });
 
   return successResponse(res, {
     message: "Booking details fetched",
+    data
+  });
+});
+
+const requestAccessLink = asyncHandler(async (req, res) => {
+  const { message } = await customerAccessVerification.requestAccessLink({
+    bookingReference: req.validated.body.bookingReference,
+    email: req.validated.body.email
+  });
+
+  // Identical for every input: nothing about the booking or the email is revealed.
+  return successResponse(res, { message, statusCode: 202 });
+});
+
+const redeemAccessLink = asyncHandler(async (req, res) => {
+  const data = await customerAccessVerification.redeemAccessLink({
+    bookingReference: req.validated.body.bookingReference,
+    secret: req.validated.body.verification
+  });
+
+  return successResponse(res, {
+    message: "Booking access verified",
     data
   });
 });
@@ -136,6 +176,8 @@ module.exports = {
   quote,
   create,
   getByReference,
+  requestAccessLink,
+  redeemAccessLink,
   listRecent,
   cancel,
   editRequest,
