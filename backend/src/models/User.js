@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
     tokenVersion: { type: Number, default: 0 },
     role: {
       type: String,
-      enum: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.STAFF],
+      enum: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.STAFF, ROLES.TOUR_ADMIN],
       default: ROLES.STAFF
     },
     phone: { type: String, default: "" },

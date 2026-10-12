@@ -456,7 +456,9 @@ const createBokunConfirmedBookingImportService = ({
       booking = typeof existing.save === "function" ? await existing.save() : existing;
     } else {
       try {
-        booking = await BookingModel.create(patch);
+        // Only bookings the importer creates are BOKUN_IMPORT; matched bookings keep their origin
+        // because the patch never carries bookingOrigin.
+        booking = await BookingModel.create({ ...patch, bookingOrigin: "BOKUN_IMPORT" });
       } catch (error) {
         if (error?.code !== 11000) throw error;
         const canonical = await BookingModel.findOne(buildBookingLookupQuery(snapshot));

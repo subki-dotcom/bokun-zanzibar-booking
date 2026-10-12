@@ -292,6 +292,9 @@ const bookingSchema = new mongoose.Schema(
     paymentInitiation: { type: mongoose.Schema.Types.Mixed, default: undefined },
     // Raising this revokes every customer access link issued for the booking (missing = 0).
     customerAccessVersion: { type: Number },
+    // Where the booking entered the system (see services/bookings/origin.js). Written once at creation;
+    // absent on older bookings, which are classified at read time. No index: no migration.
+    bookingOrigin: { type: String, enum: ["WEBSITE", "AGENT_PORTAL", "BOKUN_IMPORT"] },
     // One pending emailed verification link: only its SHA-256 hash is stored, consumed atomically.
     customerAccessChallengeHash: { type: String, select: false },
     customerAccessChallengeExpiresAt: { type: Date, select: false },

@@ -89,7 +89,10 @@ const PERMISSIONS = Object.freeze({
   AGENT_MANAGEMENT_WRITE: "agent_management.write",
   SYSTEM_SETTINGS_WRITE: "system_settings.write",
   AGENT_PORTAL_READ: "agent_portal.read",
-  AGENT_PORTAL_WRITE: "agent_portal.write"
+  AGENT_PORTAL_WRITE: "agent_portal.write",
+  TOUR_OPERATIONS_READ: "tour_operations.read",
+  TOUR_REQUESTS_READ: "tour_requests.read",
+  TOUR_REQUESTS_PROCESS: "tour_requests.process"
 });
 
 const allAdminPermissions = Object.values(PERMISSIONS);
@@ -131,6 +134,12 @@ const ROLE_PERMISSIONS = Object.freeze({
   [ROLES.AGENT]: [
     PERMISSIONS.AGENT_PORTAL_READ,
     PERMISSIONS.AGENT_PORTAL_WRITE
+  ],
+  // Nothing financial, no supplier writes and no staff permissions: see services/tourOperations.
+  [ROLES.TOUR_ADMIN]: [
+    PERMISSIONS.TOUR_OPERATIONS_READ,
+    PERMISSIONS.TOUR_REQUESTS_READ,
+    PERMISSIONS.TOUR_REQUESTS_PROCESS
   ]
 });
 

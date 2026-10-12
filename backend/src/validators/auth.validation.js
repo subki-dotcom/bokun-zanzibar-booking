@@ -16,7 +16,7 @@ const registerAdminSchema = z.object({
     lastName: z.string().min(2),
     email: z.string().email(),
     password: z.string().min(8),
-    role: z.enum(["super_admin", "admin", "staff"]).optional()
+    role: z.enum(["super_admin", "admin", "staff", "tour_admin"]).optional()
   }),
   query: z.object({}).optional(),
   params: z.object({}).optional()

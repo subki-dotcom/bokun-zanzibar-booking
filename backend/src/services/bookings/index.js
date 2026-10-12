@@ -13,6 +13,8 @@ const { env } = require("../../config/env");
 const { BOOKING_STATUS, PAYMENT_STATUS } = require("../../config/constants");
 const AppError = require("../../utils/AppError");
 const bookingAccess = require("../../security/bookingAccess");
+const { originForSourceContext } = require("./origin");
+const { BOOKING_ORIGIN } = require("../../config/constants");
 const { signQuoteToken, verifyQuoteToken } = require("../../utils/quoteToken");
 const bokunService = require("../../integrations/bokun");
 const offersService = require("../offers");
@@ -1966,7 +1968,8 @@ const persistBookingRecord = async ({
     Object.assign(bookingDoc, bookingPatch);
     await bookingDoc.save();
   } else {
-    bookingDoc = await Booking.create(bookingPatch);
+    // Origin is recorded only here, at creation; later updates reuse bookingPatch without it.
+    bookingDoc = await Booking.create({ ...bookingPatch, bookingOrigin: originForSourceContext(sourceContext) });
   }
 
   const alreadyLinked = (customer.bookings || []).some((id) => id.toString() === bookingDoc._id.toString());
@@ -3132,6 +3135,8 @@ const recoverPaidBookingFromBokun = async ({
     amount: recoverySnapshot.amount,
     currency: recoverySnapshot.currency,
     sourceChannel: "direct_website",
+    // Rebuilt from a verified website (Pesapal) checkout payment.
+    bookingOrigin: BOOKING_ORIGIN.WEBSITE,
     createdByRole: "payment_recovery",
     createdByUser: { id: null, name: "Verified provider recovery" },
     cancellationPolicySnapshot: recoverySnapshot.cancellationPolicySnapshot,

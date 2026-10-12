@@ -26,6 +26,7 @@
     "migrate:duplicate-identities": "node scripts/migrate-duplicate-identity-indexes.js",
     "migrate:duplicate-identities:apply": "node scripts/migrate-duplicate-identity-indexes.js --apply",
     "verify:duplicate-identities": "node scripts/verify-duplicate-identity-indexes.js",
+    "report:duplicate-booking-candidates": "node scripts/report-duplicate-booking-candidates.js",
     "check:revenue-readiness": "node scripts/check-revenue-readiness.js",
     "lint": "eslint src --ext .js",
     "format": "prettier --write 'src/**/*.js' 'scripts/**/*.js' server.js",

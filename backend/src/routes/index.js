@@ -34,6 +34,7 @@ const performanceReviewRoutes = require("./performanceReview.routes");
 const productionReadinessRoutes = require("./productionReadiness.routes");
 const settlementsRoutes = require("./settlements.routes");
 const serviceCompletionRoutes = require("./serviceCompletion.routes");
+const tourOperationsRoutes = require("./tourOperations.routes");
 const { createTransferAdminApi, createTransferPublicApi } = require("../transfers");
 
 const router = express.Router();
@@ -71,6 +72,8 @@ router.use("/admin/business-expenses", businessExpensesRoutes);
 router.use("/admin/business-income", businessIncomeRoutes);
 router.use("/admin/settlements", settlementsRoutes);
 router.use("/admin/service-completions", serviceCompletionRoutes);
+// Tour Operations (tour_admin): website and Agent Portal tour bookings and customer requests.
+router.use("/tour-operations", tourOperationsRoutes);
 // Transfer System admin API: its own users, token secret and database.
 router.use("/transfer-admin", createTransferAdminApi());
 // Transfer System public API for the website (booking form, quotes, booking status).

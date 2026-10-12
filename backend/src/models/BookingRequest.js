@@ -45,6 +45,25 @@ const bokunSyncStatusValues = [
   "manual_action_required"
 ];
 
+const operationsStateValues = ["RECEIVED", "UNDER_REVIEW", "AWAITING_SUPPLIER", "AWAITING_FINANCE", "RESOLVED", "REJECTED"];
+const operationsCategoryValues = ["date_change", "cancellation", "traveler_change", "refund_inquiry", "other"];
+
+// One entry in the Tour Operations trail: an internal note or a state/category change.
+const operationsEntrySchema = new mongoose.Schema(
+  {
+    action: { type: String, required: true },
+    text: { type: String, default: "", maxlength: 2000 },
+    fromState: { type: String, default: "" },
+    toState: { type: String, default: "" },
+    category: { type: String, default: "" },
+    escalatedTo: { type: String, default: "" },
+    actorId: { type: String, required: true },
+    actorRole: { type: String, required: true },
+    at: { type: Date, required: true }
+  },
+  { _id: true }
+);
+
 const travelersSchema = new mongoose.Schema(
   {
     adults: { type: Number, min: 0, default: 0 },
@@ -151,7 +170,19 @@ const bookingRequestSchema = new mongoose.Schema(
       action: { type: String, default: "" }
     },
     lastEmailTemplate: { type: String, default: "" },
-    completedAt: { type: Date, default: null }
+    completedAt: { type: Date, default: null },
+    // Tour Operations' internal handling of the request. It never replaces `status` (the customer
+    // decision), refund, additionalPayment or bokunSync: an internal RESOLVED does not mean any
+    // supplier change, payment adjustment or refund happened. Absent until the first Tour Ops action.
+    operations: {
+      state: { type: String, enum: operationsStateValues },
+      category: { type: String, enum: operationsCategoryValues },
+      version: { type: Number },
+      notes: { type: [operationsEntrySchema], default: undefined },
+      history: { type: [operationsEntrySchema], default: undefined },
+      updatedAt: { type: Date },
+      updatedBy: { type: String }
+    }
   },
   { timestamps: true }
 );
@@ -163,3 +194,5 @@ module.exports = mongoose.model("BookingRequest", bookingRequestSchema);
 module.exports.REQUEST_STATUS_VALUES = requestStatusValues;
 module.exports.REFUND_STATUS_VALUES = refundStatusValues;
 module.exports.BOKUN_SYNC_STATUS_VALUES = bokunSyncStatusValues;
+module.exports.OPERATIONS_STATE_VALUES = operationsStateValues;
+module.exports.OPERATIONS_CATEGORY_VALUES = operationsCategoryValues;
