@@ -1,3 +1,5 @@
+const initiation = require("../initiationGuard");
+const { isSupplierBookingConfirmed } = require("../../../integrations/bokun/bookingStatus.adapter");
 const axios = require("axios");
 const Booking = require("../../../models/Booking");
 const logger = require("../../../config/logger");
@@ -223,7 +225,7 @@ const resolveOrCreatePendingBooking = async ({ payload, auth, requestId }) => {
       throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
     }
 
-    if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
+    if (booking.paymentStatus === "paid") {
       return booking;
     }
 
@@ -476,20 +478,22 @@ const updatePaymentLogForVerification = async ({
 const createPayment = async ({ payload, auth, requestId }) => {
   ensureDpoConfiguration();
 
-  const booking = await resolveOrCreatePendingBooking({
+  let booking = await resolveOrCreatePendingBooking({
     payload,
     auth,
     requestId
   });
 
-  if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
+  if (booking.paymentStatus === "paid") {
     return {
       bookingId: booking._id,
       bookingReference: booking.bookingReference,
       redirectUrl: "",
       paymentStatus: booking.paymentStatus,
       bookingStatus: booking.bookingStatus,
-      message: "Booking already paid and confirmed"
+      message: isSupplierBookingConfirmed(booking)
+        ? "Booking already paid and confirmed"
+        : "Payment already verified. Supplier confirmation is still pending."
     };
   }
 
@@ -499,28 +503,39 @@ const createPayment = async ({ payload, auth, requestId }) => {
     currency: payload.currency
   });
 
+  const claimed = await initiation.claim({ booking, provider: "dpo" });
+  if (claimed.response) return claimed.response;
+  booking = claimed.booking;
+
   const tokenResponse = await createTokenWithDpo({
     booking,
     requestId
   });
 
-  booking.dpoTransactionToken = tokenResponse.transactionToken;
-  booking.paymentStatus = "pending";
-  booking.paymentMethod = "dpo";
-  booking.bookingStatus = booking.bokunBookingId ? booking.bookingStatus : "pending";
-  booking.pendingCheckout = {
-    ...(booking.pendingCheckout || {}),
-    dpoInitializedAt: new Date().toISOString(),
-    dpoRequestedAmount: decimalString(booking.amount || booking.pricingSnapshot?.finalPayable || 0),
-    dpoRequestedCurrency: normalizeCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD"),
-    dpoTransactionToken: tokenResponse.transactionToken,
-    dpoTransactionRef: tokenResponse.transactionRef || booking.bookingReference,
-    dpoCreateTokenResult: {
-      resultCode: tokenResponse.resultCode,
-      resultExplanation: tokenResponse.resultExplanation
-    }
+  const response = {
+    bookingId: booking._id, bookingReference: booking.bookingReference,
+    redirectUrl: shouldMock ? `${env.DPO_SUCCESS_URL}?TransactionToken=${encodeURIComponent(tokenResponse.transactionToken)}`
+      : buildDpoPayUrl(env.DPO_BASE_URL, env.DPO_PAYMENT_PATH, tokenResponse.transactionToken),
+    paymentStatus: "pending", bookingStatus: booking.bokunBookingId ? booking.bookingStatus : "pending"
   };
-  await booking.save();
+  const persisted = await initiation.persist({
+    booking, token: claimed.token, response,
+    fields: { dpoTransactionToken: tokenResponse.transactionToken, paymentStatus: "pending", paymentMethod: "dpo",
+      bookingStatus: booking.bokunBookingId ? booking.bookingStatus : "pending" },
+    checkout: {
+      dpoInitializedAt: new Date().toISOString(),
+      dpoRequestedAmount: decimalString(booking.amount || booking.pricingSnapshot?.finalPayable || 0),
+      dpoRequestedCurrency: normalizeCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD"),
+      dpoTransactionToken: tokenResponse.transactionToken,
+      dpoTransactionRef: tokenResponse.transactionRef || booking.bookingReference,
+      dpoCreateTokenResult: {
+        resultCode: tokenResponse.resultCode,
+        resultExplanation: tokenResponse.resultExplanation
+      }
+    }
+  });
+  if (persisted.response) return persisted.response;
+  booking = persisted.booking;
 
   await updatePaymentLogForCreate({
     booking,
@@ -532,10 +547,6 @@ const createPayment = async ({ payload, auth, requestId }) => {
     requestId
   });
 
-  const redirectUrl = shouldMock
-    ? `${env.DPO_SUCCESS_URL}?TransactionToken=${encodeURIComponent(tokenResponse.transactionToken)}`
-    : buildDpoPayUrl(env.DPO_BASE_URL, env.DPO_PAYMENT_PATH, tokenResponse.transactionToken);
-
   logger.info("DPO payment token created", {
     requestId,
     bookingReference: booking.bookingReference,
@@ -543,13 +554,7 @@ const createPayment = async ({ payload, auth, requestId }) => {
     transactionToken: tokenResponse.transactionToken
   });
 
-  return {
-    bookingId: booking._id,
-    bookingReference: booking.bookingReference,
-    redirectUrl,
-    paymentStatus: booking.paymentStatus,
-    bookingStatus: booking.bookingStatus
-  };
+  return initiation.complete({ booking, token: claimed.token, response });
 };
 
 const resolveBookingByToken = async (transactionToken = "") => {
@@ -862,10 +867,12 @@ const handlePaymentCancel = async ({ transactionToken = "", bookingId = "", requ
     };
   }
 
-  if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
+  if (booking.paymentStatus === "paid") {
     return {
       status: "paid",
-      message: "Booking already paid and confirmed",
+      message: isSupplierBookingConfirmed(booking)
+        ? "Booking already paid and confirmed"
+        : "Payment already verified. Supplier confirmation is still pending.",
       booking: {
         bookingId: booking._id,
         bookingReference: booking.bookingReference

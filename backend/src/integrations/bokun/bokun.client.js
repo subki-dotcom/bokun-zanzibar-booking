@@ -249,7 +249,7 @@ const mockRouter = async ({ method, path, payload }) => {
   return null;
 };
 
-const request = async ({ method, path, payload = null, requestId = "", expectedNotFound = false }) => {
+const request = async ({ method, path, payload = null, requestId = "", expectedNotFound = false, retry = true }) => {
   if (shouldMock) {
     const mockResponse = await mockRouter({ method, path, payload });
     if (mockResponse === null) {
@@ -266,6 +266,8 @@ const request = async ({ method, path, payload = null, requestId = "", expectedN
     method,
     url: path,
     bokunExpectedNotFound: Boolean(expectedNotFound),
+    // Creation/confirmation writes must reconcile after ambiguity, never replay.
+    ...(retry === false ? { "axios-retry": { retries: 0 } } : {}),
     headers: {
       "x-request-id": requestId,
       ...(payload?.idempotencyKey ? { "Idempotency-Key": String(payload.idempotencyKey) } : {})

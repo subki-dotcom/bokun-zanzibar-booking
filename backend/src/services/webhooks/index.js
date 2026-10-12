@@ -80,49 +80,6 @@ const extractContextFromEvent = (event = {}) => {
   };
 };
 
-const mapBokunStatusToLocal = (statusValue = "") => {
-  const status = String(statusValue || "").trim().toUpperCase();
-  if (!status) {
-    return BOOKING_STATUS.PENDING;
-  }
-
-  if (
-    status.includes("CANCEL") ||
-    status.includes("VOID")
-  ) {
-    return BOOKING_STATUS.CANCELLED;
-  }
-
-  if (
-    status.includes("EDIT") ||
-    status.includes("CHANGE") ||
-    status.includes("AMEND") ||
-    status.includes("RESCHEDULE")
-  ) {
-    return BOOKING_STATUS.EDIT_REQUESTED;
-  }
-
-  if (
-    status.includes("FAILED") ||
-    status.includes("DECLINED") ||
-    status.includes("REJECTED") ||
-    status.includes("ERROR")
-  ) {
-    return BOOKING_STATUS.FAILED;
-  }
-
-  if (
-    status.includes("CONFIRMED") ||
-    status.includes("BOOKED") ||
-    status.includes("COMPLETE") ||
-    status.includes("SUCCESS")
-  ) {
-    return BOOKING_STATUS.CONFIRMED;
-  }
-
-  return BOOKING_STATUS.PENDING;
-};
-
 const resolveLookupKeys = ({
   booking = null,
   bokunBookingId = "",
@@ -239,7 +196,7 @@ const snapshotBokunSyncFields = (bookingDoc) => {
     .map((field) => [field, plain[field]]));
 };
 
-const updateBokunFieldsWithRetry = async ({ bookingId, mutate, BookingModel = Booking, maxAttempts = 3 }) => {
+const updateBokunFieldsWithRetry = async ({ bookingId, mutate, BookingModel = Booking, maxAttempts = 3, finalizationOwner = null }) => {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const bookingDoc = await BookingModel.findById(bookingId);
     if (!bookingDoc) throw new AppError("Booking not found during Bókun sync", 404, "BOOKING_NOT_FOUND");
@@ -250,9 +207,18 @@ const updateBokunFieldsWithRetry = async ({ bookingId, mutate, BookingModel = Bo
     const patch = Object.fromEntries(Object.entries(after).filter(([field, value]) =>
       JSON.stringify(value) !== JSON.stringify(before[field])));
     const version = Number(bookingDoc.__v || 0);
+    const completed = finalizationOwner && bookingDoc.bookingStatus === "confirmed";
+    const completion = completed ? {
+      $unset: { "pendingCheckout.finalization.lockToken": "", "pendingCheckout.finalization.lockedAt": "", "pendingCheckout.finalization.lastError": "" }
+    } : {};
+    if (completed) Object.assign(patch, {
+      "pendingCheckout.finalization.status": "confirmed",
+      "pendingCheckout.finalization.finalizationPending": false,
+      "pendingCheckout.finalization.processingCompletedAt": new Date().toISOString()
+    });
     const update = await BookingModel.updateOne(
-      { _id: bookingDoc._id, __v: version },
-      { $set: patch, $inc: { __v: 1 } },
+      { _id: bookingDoc._id, __v: version, ...(finalizationOwner ? finalizationOwner() : {}) },
+      { $set: patch, $inc: { __v: 1 }, ...completion },
       { runValidators: true }
     );
 
@@ -261,6 +227,7 @@ const updateBokunFieldsWithRetry = async ({ bookingId, mutate, BookingModel = Bo
       for (const field of Object.keys(patch)) bookingDoc.unmarkModified?.(field);
       return { bookingDoc, before, ...result };
     }
+    if (finalizationOwner) throw new AppError("Finalization ownership or booking state changed", 409, "BOKUN_SUPPLIER_OUTCOME_UNKNOWN", { finalizationOwnershipConflict: true });
   }
 
   const error = new Error("Booking changed repeatedly during Bókun sync");
@@ -274,17 +241,19 @@ const applyBokunSnapshotToBooking = async ({
   statusHint = "",
   source = "system",
   requestId = "",
-  reason = ""
+  reason = "",
+  finalizationOwner = null
 }) => {
   const bookingId = bookingDoc._id;
   const resolvedStatus = bokunBooking?.status || statusHint || "";
-  const strictStatus = normalizeBokunBookingStatus(bokunBooking?.raw || bokunBooking || { status: resolvedStatus });
-  const mappedStatus = strictStatus.known ? strictStatus.localBookingStatus : mapBokunStatusToLocal(resolvedStatus);
+  const strictStatus = normalizeBokunBookingStatus(bokunBooking || {});
+  const mappedStatus = strictStatus.localBookingStatus;
   const mappedBooking = bokunBooking
     ? require("../../integrations/bokun/confirmedBooking.mapper").mapBokunBookingForImport({ bokunBooking })
     : null;
   const { bookingDoc: syncedBookingDoc, before: beforeState, businessChanged } = await updateBokunFieldsWithRetry({
     bookingId,
+    finalizationOwner,
     mutate: (currentBooking) => {
       let changed = false;
       const mappedChannel = mapBokunSalesChannel(bokunBooking?.raw || bokunBooking || {}, currentBooking.sourceChannel || "");
@@ -306,7 +275,9 @@ const applyBokunSnapshotToBooking = async ({
       // Poll responses may be stale; financial currency snapshots have their own evidence pipeline.
       if (source !== "polling" && applyMappedTransactionCurrency({ bookingDoc: currentBooking, mappedBooking })) changed = true;
 
-      if (mappedStatus && currentBooking.bookingStatus !== mappedStatus) {
+      // Missing/unknown lookup evidence cannot revoke a historical confirmation.
+      const preserveConfirmed = !strictStatus.known && currentBooking.bookingStatus === BOOKING_STATUS.CONFIRMED;
+      if (!preserveConfirmed && mappedStatus && currentBooking.bookingStatus !== mappedStatus) {
         currentBooking.bookingStatus = mappedStatus;
         if (mappedStatus === BOOKING_STATUS.CANCELLED && !currentBooking.cancellation?.cancelledAt) {
           currentBooking.cancellation = {
@@ -319,7 +290,9 @@ const applyBokunSnapshotToBooking = async ({
       }
 
       if (currentBooking.bokunBookingId) {
-        const supplierStatus = currentBooking.bookingStatus === BOOKING_STATUS.CONFIRMED ? "confirmed" : "supplier_pending";
+        const supplierStatus = currentBooking.bookingStatus === BOOKING_STATUS.CONFIRMED
+          ? "confirmed"
+          : strictStatus.normalizedStatus === "pending" ? "supplier_pending" : "supplier_failed";
         if (currentBooking.supplierStatus !== supplierStatus) {
           currentBooking.supplierStatus = supplierStatus;
           currentBooking.supplierStatusUpdatedAt = new Date();
@@ -518,7 +491,8 @@ const reconcileExistingBokunBooking = async ({
   bookingDoc,
   requestId = "",
   source = "payment_finalization",
-  reason = "Checked Bokun before retrying paid booking finalization"
+  reason = "Checked Bokun before retrying paid booking finalization",
+  finalizationOwner = null
 } = {}) => {
   if (!bookingDoc) {
     throw new AppError("Booking is required for Bokun reconciliation", 400, "BOOKING_REQUIRED");
@@ -526,14 +500,13 @@ const reconcileExistingBokunBooking = async ({
 
 
   const lookupKeys = resolveLookupKeys({ booking: bookingDoc });
-  if (!lookupKeys.length) {
-    return { found: false, booking: bookingDoc, skipped: "supplier_identifier_missing" };
-  }
-
-  const bokunBooking = await lookupBokunBookingWithFallback({
-    lookupKeys,
-    requestId
-  });
+  // The local reference is an external reference, not a supplier lookup ID.
+  // A timed-out submit may only be discoverable through exact-reference search.
+  const bokunBooking = (lookupKeys.length
+    ? await lookupBokunBookingWithFallback({ lookupKeys, requestId })
+    : null) || (bookingDoc.bookingReference
+    ? await bokunService.findBookingByExternalReference(bookingDoc.bookingReference, requestId)
+    : null);
 
   if (!bokunBooking?.bokunBookingId) {
     return { found: false, booking: bookingDoc };
@@ -544,7 +517,8 @@ const reconcileExistingBokunBooking = async ({
     bokunBooking,
     source,
     requestId,
-    reason
+    reason,
+    finalizationOwner
   });
 
   return {

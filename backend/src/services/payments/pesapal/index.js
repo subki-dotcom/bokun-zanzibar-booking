@@ -1,3 +1,4 @@
+const { isSupplierBookingConfirmed } = require("../../../integrations/bokun/bookingStatus.adapter");
 const axios = require("axios");
 const Booking = require("../../../models/Booking");
 const logger = require("../../../config/logger");
@@ -435,7 +436,7 @@ const isInvoiceReconciledPaid = (booking = {}) =>
   Number(booking?.invoiceSnapshot?.amountPaid || 0) > 0;
 
 const resolveBokunSyncStatus = (booking = {}) => {
-  if (booking?.bokunBookingId) return "synced";
+  if (isSupplierBookingConfirmed(booking)) return "synced";
 
   if (booking?.supplierStatus === "supplier_failed") return "manual_review_required";
   if (booking?.supplierStatus === "supplier_pending") return "processing";
@@ -1324,7 +1325,7 @@ const createPayment = async ({ payload, auth, requestId, checkoutOrigin = "" }) 
       redirectUrl: "",
       paymentStatus: booking.paymentStatus,
       bookingStatus: booking.bookingStatus,
-      message: booking.bokunBookingId
+      message: isSupplierBookingConfirmed(booking)
         ? "Booking already paid and confirmed"
         : "Payment already verified. Supplier confirmation is still processing."
     };
@@ -1373,7 +1374,7 @@ const createPayment = async ({ payload, auth, requestId, checkoutOrigin = "" }) 
   booking.paymentStatus = "initiated";
   booking.paymentMethod = "pesapal";
   booking.bookingStatus = booking.bokunBookingId ? booking.bookingStatus : "pending";
-  booking.supplierStatus = booking.bokunBookingId ? "confirmed" : "awaiting_payment";
+  booking.supplierStatus = booking.bokunBookingId ? booking.supplierStatus || "supplier_pending" : "awaiting_payment";
   booking.supplierStatusUpdatedAt = new Date();
   booking.pendingCheckout = {
     ...(booking.pendingCheckout || {}),
@@ -1514,7 +1515,7 @@ const verifyAndProcessPesapalPayment = async ({
     }
   }
 
-  if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
+  if (booking.paymentStatus === "paid" && isSupplierBookingConfirmed(booking)) {
     return {
       status: "paid",
       alreadyProcessed: true,
@@ -1542,7 +1543,7 @@ const verifyAndProcessPesapalPayment = async ({
 
   if (!processingLock) {
     const latest = await Booking.findById(booking._id);
-    if (latest?.paymentStatus === "paid" && latest?.bokunBookingId) {
+    if (latest?.paymentStatus === "paid" && isSupplierBookingConfirmed(latest)) {
       return {
         status: "paid",
         alreadyProcessed: true,
@@ -1561,6 +1562,7 @@ const verifyAndProcessPesapalPayment = async ({
     };
   }
 
+  booking = processingLock;
   let verification = preverifiedVerification;
 
   try {
@@ -1586,8 +1588,19 @@ const verifyAndProcessPesapalPayment = async ({
       orderMerchantReference
     });
 
-    if (!verification.isPaid) {
-      const paymentState = resolvePesapalPaymentState(verification.raw || verification, verification.status);
+    const previouslyPaid = booking.paymentStatus === "paid";
+    const paymentState = resolvePesapalPaymentState(verification.raw || verification, verification.status);
+    if (previouslyPaid && /REFUND|DISPUT/i.test(String(verification.status || ""))) {
+      return {
+        status: "paid_manual_review",
+        reconciliationRequired: true,
+        message: "Payment adjustment requires reconciliation. Please do not pay again.",
+        booking: toPaymentCallbackBooking(booking)
+      };
+    }
+    // A stale result is not a reversal of independently verified payment evidence.
+    // Explicit reversals still use the provider-verified reversal path below.
+    if (!verification.isPaid && (!previouslyPaid || paymentState === "reversed")) {
       const verificationMessage =
         verification.statusDescription ||
         "We are confirming your payment with Pesapal.";
@@ -1729,86 +1742,91 @@ const verifyAndProcessPesapalPayment = async ({
       };
     }
 
-    const paidAmount = paymentVerification.accountingAmount;
-    const merchantReference =
-      verification.merchantReference ||
-      orderMerchantReference ||
-      booking.pendingCheckout?.pesapalMerchantReference ||
-      booking.bookingReference;
-    const verifiedPayment = await updatePaymentLogForVerification({
-      bookingReference: booking.bookingReference,
-      isPaid: true,
-      amount: paidAmount,
-      verification,
-      orderTrackingId: trackingId,
-      merchantReference,
-      source,
-      paymentVerification
-    });
-
-    if (!paymentVerification.canAllocate) {
-      await Booking.findByIdAndUpdate(booking._id, {
-        $set: {
-          paymentStatus: "processing",
-          supplierStatus: "awaiting_payment",
-          supplierStatusUpdatedAt: new Date(),
-          "pendingCheckout.paymentReview.status": paymentVerification.verificationStatus,
-          "pendingCheckout.paymentReview.reason": paymentVerification.verificationReason,
-          "pendingCheckout.paymentReview.updatedAt": new Date().toISOString()
-        }
-      });
-
-      logger.warn("Pesapal collected payment but accounting allocation is blocked", {
-        requestId,
+    let paidBooking = booking;
+    let needsPaymentReconciliation = false;
+    if (!previouslyPaid) {
+      const paidAmount = paymentVerification.accountingAmount;
+      const merchantReference =
+        verification.merchantReference ||
+        orderMerchantReference ||
+        booking.pendingCheckout?.pesapalMerchantReference ||
+        booking.bookingReference;
+      const verifiedPayment = await updatePaymentLogForVerification({
         bookingReference: booking.bookingReference,
-        verificationStatus: paymentVerification.verificationStatus,
-        chargedCurrency: paymentVerification.providerCurrency || ""
+        isPaid: true,
+        amount: paidAmount,
+        verification,
+        orderTrackingId: trackingId,
+        merchantReference,
+        source,
+        paymentVerification
       });
 
-      return {
-        status: "paid_manual_review",
-        reconciliationRequired: true,
-        message: "Payment was received and is being reconciled. Please do not pay again.",
-        booking: toPaymentCallbackBooking(await Booking.findById(booking._id))
-      };
-    }
+      if (!paymentVerification.canAllocate) {
+        await Booking.findByIdAndUpdate(booking._id, {
+          $set: {
+            paymentStatus: "processing",
+            supplierStatus: "awaiting_payment",
+            supplierStatusUpdatedAt: new Date(),
+            "pendingCheckout.paymentReview.status": paymentVerification.verificationStatus,
+            "pendingCheckout.paymentReview.reason": paymentVerification.verificationReason,
+            "pendingCheckout.paymentReview.updatedAt": new Date().toISOString()
+          }
+        });
 
-    await paymentsService.applyVerifiedPaymentAllocation({
-      paymentId: verifiedPayment?._id,
-      bookingReference: booking.bookingReference,
-      metadata: { provider: "pesapal", source, requestId }
-    });
-
-    const needsPaymentReconciliation = booking.paymentStatus !== "paid" || !isInvoiceReconciledPaid(booking);
-    let paidBooking = needsPaymentReconciliation
-      ? await bookingsService.markBookingPaymentVerified({
-          bookingId: booking._id,
+        logger.warn("Pesapal collected payment but accounting allocation is blocked", {
           requestId,
-          transactionToken: trackingId,
-          paymentMethod: "pesapal",
-          paymentProvider: "pesapal",
-          amountPaid: paidAmount,
-          currency: paymentVerification.accountingCurrency,
-          reason: paymentVerification.currencyConverted
-            ? `Pesapal payment verified after ${paymentVerification.providerCurrency} conversion before Bokun finalization`
-            : "Pesapal payment verified before Bokun finalization"
-        })
-      : booking;
+          bookingReference: booking.bookingReference,
+          verificationStatus: paymentVerification.verificationStatus,
+          chargedCurrency: paymentVerification.providerCurrency || ""
+        });
+
+        return {
+          status: "paid_manual_review",
+          reconciliationRequired: true,
+          message: "Payment was received and is being reconciled. Please do not pay again.",
+          booking: toPaymentCallbackBooking(await Booking.findById(booking._id))
+        };
+      }
+
+      await paymentsService.applyVerifiedPaymentAllocation({
+        paymentId: verifiedPayment?._id,
+        bookingReference: booking.bookingReference,
+        metadata: { provider: "pesapal", source, requestId }
+      });
+
+      needsPaymentReconciliation = booking.paymentStatus !== "paid" || !isInvoiceReconciledPaid(booking);
+      paidBooking = needsPaymentReconciliation
+        ? await bookingsService.markBookingPaymentVerified({
+            bookingId: booking._id,
+            requestId,
+            transactionToken: trackingId,
+            paymentMethod: "pesapal",
+            paymentProvider: "pesapal",
+            amountPaid: paidAmount,
+            currency: paymentVerification.accountingCurrency,
+            reason: paymentVerification.currencyConverted
+              ? `Pesapal payment verified after ${paymentVerification.providerCurrency} conversion before Bokun finalization`
+              : "Pesapal payment verified before Bokun finalization"
+          })
+        : booking;
+
+    }
 
     // Some paid legacy bookings were stopped before Bókun finalization by the
     // former strict Pesapal currency check. A fresh verified transaction is
     // enough to reopen only that narrow failure category.
-    const finalizationReactivation =
-      await bookingsService.reactivateFinalizationAfterPesapalVerification({
+    const finalizationReactivation = verification.isPaid && paymentVerification.canAllocate
+      ? await bookingsService.reactivateFinalizationAfterPesapalVerification({
         bookingId: paidBooking._id,
         requestId,
         source
-      });
+      }) : {};
     if (finalizationReactivation.booking) {
       paidBooking = finalizationReactivation.booking;
     }
 
-    if (paidBooking.bokunBookingId) {
+    if (isSupplierBookingConfirmed(paidBooking)) {
       return {
         status: "paid",
         alreadyProcessed: true,
@@ -2139,6 +2157,7 @@ module.exports = {
   recheckPaymentByBookingReference,
   getCustomerPaymentStatus,
   __testables: {
+    buildCustomerPaymentStatus,
     toPaymentCallbackBooking,
     validatePesapalVerification,
     findPesapalCallbackOriginMismatch,

@@ -1,3 +1,4 @@
+const { normalizeBokunBookingStatus } = require("./bookingStatus.adapter");
 const slugify = require("slugify");
 const { ratePricingMetadata } = require("./pricingType");
 const { requestedParticipantCount, exceedsRateLimits } = require("./bookingLimits");
@@ -1923,7 +1924,7 @@ const mapBookingQuestion = (rawQuestion = {}) => ({
 });
 
 const mapBookingResponse = (raw = {}) => {
-  const booking = raw.booking || raw;
+  const booking = raw?.booking || raw || {};
 
   return {
     bokunBookingId: booking.id || booking.bookingId,
@@ -1932,7 +1933,7 @@ const mapBookingResponse = (raw = {}) => {
       booking.bookingReference ||
       booking.reference,
     confirmationCode: booking.confirmationCode || booking.bookingReference || "",
-    status: booking.status || "CONFIRMED",
+    status: normalizeBokunBookingStatus(raw).rawStatus.toUpperCase() || "UNKNOWN",
     travelDate: booking.travelDate,
     startTime: booking.startTime || "",
     productId: booking.productId,

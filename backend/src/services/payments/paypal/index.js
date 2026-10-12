@@ -1,3 +1,5 @@
+const initiation = require("../initiationGuard");
+const { isSupplierBookingConfirmed } = require("../../../integrations/bokun/bookingStatus.adapter");
 const axios = require("axios");
 const Booking = require("../../../models/Booking");
 const logger = require("../../../config/logger");
@@ -292,7 +294,7 @@ const resolveOrCreatePendingBooking = async ({ payload, auth, requestId }) => {
       throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
     }
 
-    if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
+    if (booking.paymentStatus === "paid") {
       return booking;
     }
 
@@ -372,7 +374,7 @@ const createOrderWithPaypal = async ({ booking, requestId }) => {
     },
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "PayPal-Request-Id": `create-${booking.bookingReference}`
+      "PayPal-Request-Id": `create-${booking.paymentInitiation?.token || booking.bookingReference}`
     },
     requestId
   });
@@ -778,20 +780,22 @@ const resolveBookingByOrderId = async (orderId = "") => {
 const createPayment = async ({ payload, auth, requestId }) => {
   ensurePaypalConfiguration();
 
-  const booking = await resolveOrCreatePendingBooking({
+  let booking = await resolveOrCreatePendingBooking({
     payload,
     auth,
     requestId
   });
 
-  if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
+  if (booking.paymentStatus === "paid") {
     return {
       bookingId: booking._id,
       bookingReference: booking.bookingReference,
       redirectUrl: "",
       paymentStatus: booking.paymentStatus,
       bookingStatus: booking.bookingStatus,
-      message: "Booking already paid and confirmed"
+      message: isSupplierBookingConfirmed(booking)
+        ? "Booking already paid and confirmed"
+        : "Payment already verified. Supplier confirmation is still pending."
     };
   }
 
@@ -801,24 +805,35 @@ const createPayment = async ({ payload, auth, requestId }) => {
     currency: payload.currency
   });
 
+  const claimed = await initiation.claim({ booking, provider: "paypal" });
+  if (claimed.response) return claimed.response;
+  booking = claimed.booking;
+
   const orderResponse = await createOrderWithPaypal({
     booking,
     requestId
   });
 
-  booking.paymentTransactionId = orderResponse.orderId;
-  booking.paymentStatus = "pending";
-  booking.paymentMethod = "paypal";
-  booking.bookingStatus = booking.bokunBookingId ? booking.bookingStatus : "pending";
-  booking.pendingCheckout = {
-    ...(booking.pendingCheckout || {}),
-    paypalInitializedAt: new Date().toISOString(),
-    paypalOrderId: orderResponse.orderId,
-    paypalRequestedAmount: decimalString(booking.amount || booking.pricingSnapshot?.finalPayable || 0),
-    paypalRequestedCurrency: "USD",
-    paypalCreateOrderResult: orderResponse.raw || {}
+  const response = {
+    bookingId: booking._id, bookingReference: booking.bookingReference,
+    redirectUrl: orderResponse.redirectUrl,
+    orderId: orderResponse.orderId,
+    paymentStatus: "pending", bookingStatus: booking.bokunBookingId ? booking.bookingStatus : "pending"
   };
-  await booking.save();
+  const persisted = await initiation.persist({
+    booking, token: claimed.token, response,
+    fields: { paymentTransactionId: orderResponse.orderId, paymentStatus: "pending", paymentMethod: "paypal",
+      bookingStatus: booking.bokunBookingId ? booking.bookingStatus : "pending" },
+    checkout: {
+      paypalInitializedAt: new Date().toISOString(),
+      paypalOrderId: orderResponse.orderId,
+      paypalRequestedAmount: decimalString(booking.amount || booking.pricingSnapshot?.finalPayable || 0),
+      paypalRequestedCurrency: "USD",
+      paypalCreateOrderResult: orderResponse.raw || {}
+    }
+  });
+  if (persisted.response) return persisted.response;
+  booking = persisted.booking;
 
   await updatePaymentLogForCreate({
     booking,
@@ -837,14 +852,7 @@ const createPayment = async ({ payload, auth, requestId }) => {
     paypalOrderId: orderResponse.orderId
   });
 
-  return {
-    bookingId: booking._id,
-    bookingReference: booking.bookingReference,
-    orderId: orderResponse.orderId,
-    redirectUrl: orderResponse.redirectUrl,
-    paymentStatus: booking.paymentStatus,
-    bookingStatus: booking.bookingStatus
-  };
+  return initiation.complete({ booking, token: claimed.token, response });
 };
 
 const handlePaymentSuccess = async ({ orderId = "", requestId = "" } = {}) => {
@@ -1152,10 +1160,12 @@ const handlePaymentCancel = async ({ orderId = "", bookingId = "", requestId = "
     };
   }
 
-  if (booking.paymentStatus === "paid" && booking.bokunBookingId) {
+  if (booking.paymentStatus === "paid") {
     return {
       status: "paid",
-      message: "Booking already paid and confirmed",
+      message: isSupplierBookingConfirmed(booking)
+        ? "Booking already paid and confirmed"
+        : "Payment already verified. Supplier confirmation is still pending.",
       booking: {
         bookingId: booking._id,
         bookingReference: booking.bookingReference

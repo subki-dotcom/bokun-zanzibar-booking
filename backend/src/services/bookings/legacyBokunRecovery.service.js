@@ -1,3 +1,4 @@
+const { normalizeBokunBookingStatus } = require("../../integrations/bokun/bookingStatus.adapter");
 const { v4: uuidv4 } = require("uuid");
 const Booking = require("../../models/Booking");
 const Invoice = require("../../models/Invoice");
@@ -357,20 +358,23 @@ const createLegacyBokunRecoveryService = ({
   };
 
   const reconcileExistingSupplierBooking = async ({ booking, lockToken, supplierBooking, requestId, source }) => {
-    const supplierStatus = String(supplierBooking.status || "").toUpperCase();
-    const confirmed = supplierStatus === "CONFIRMED";
+    const status = normalizeBokunBookingStatus(supplierBooking);
+    const supplierStatus = status.rawStatus.toUpperCase();
+    const confirmed = status.operationallyConfirmed;
     const updated = await BookingModel.findOneAndUpdate(
       { _id: booking._id, "legacyBokunRecovery.lockToken": lockToken },
       {
         $set: {
           bokunBookingId: String(supplierBooking.bokunBookingId || ""),
           bokunConfirmationCode: String(supplierBooking.confirmationCode || supplierBooking.bookingReference || ""),
-          bookingStatus: confirmed ? "confirmed" : "pending",
+          bookingStatus: status.localBookingStatus,
+          supplierStatus: confirmed ? "confirmed" : status.normalizedStatus === "pending" ? "supplier_pending" : "supplier_failed",
+          rawBokunResponse: supplierBooking.raw || supplierBooking,
           "syncState.lastBokunSyncAt": now(),
           "syncState.lastBokunSyncSource": "system",
           "syncState.lastBokunStatus": supplierStatus || "RECONCILED",
           "syncState.lastBokunSyncError": "",
-          "pendingCheckout.finalization.status": confirmed ? "confirmed" : "pending_retry",
+          "pendingCheckout.finalization.status": confirmed ? "confirmed" : status.normalizedStatus === "pending" ? "pending_retry" : "failed",
           "pendingCheckout.finalization.finalizationPending": !confirmed,
           "pendingCheckout.finalization.processingCompletedAt": now(),
           "legacyBokunRecovery.status": LEGACY_RECOVERY_STATUS.RECONCILED,

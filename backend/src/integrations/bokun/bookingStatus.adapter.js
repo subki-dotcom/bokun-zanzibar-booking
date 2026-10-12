@@ -15,9 +15,13 @@ const getPath = (target, path) =>
 const normalizeToken = (value = "") => String(value || "").trim();
 
 const extractRawBookingStatus = (raw = {}) => {
-  const root = raw?.raw || raw || {};
+  const root = Object.prototype.hasOwnProperty.call(raw || {}, "raw") ? raw.raw || {} : raw || {};
 
-  for (const path of STATUS_FIELD_CANDIDATES) {
+  // An envelope status is not evidence about a nested supplier booking.
+  const fields = Object.prototype.hasOwnProperty.call(root, "booking")
+    ? STATUS_FIELD_CANDIDATES.filter((path) => path.startsWith("booking."))
+    : STATUS_FIELD_CANDIDATES;
+  for (const path of fields) {
     const value = getPath(root, path);
     const token = normalizeToken(value);
     if (token) {
@@ -109,7 +113,12 @@ const normalizeBokunBookingStatus = (raw = {}) => {
   };
 };
 
+// Preserve already-confirmed local/history records without inferring from an ID.
+const isSupplierBookingConfirmed = (booking = {}) =>
+  Boolean(booking?.bokunBookingId) && booking?.bookingStatus === BOOKING_STATUS.CONFIRMED;
+
 module.exports = {
+  isSupplierBookingConfirmed,
   extractRawBookingStatus,
   normalizeBokunBookingStatus
 };

@@ -285,6 +285,11 @@ const bookingSchema = new mongoose.Schema(
     },
     supplierStatusUpdatedAt: { type: Date, default: Date.now },
     supplierFailureReason: { type: String, default: "" },
+    // Kept outside Mixed checkout snapshots so stale callback saves cannot
+    // erase evidence that a supplier creation request may have been dispatched.
+    bokunSubmissionStartedAt: { type: Date },
+    // Durable provider-attempt ownership survives stale checkout snapshots.
+    paymentInitiation: { type: mongoose.Schema.Types.Mixed, default: undefined },
     pendingCheckout: mongoose.Schema.Types.Mixed,
     // Only populated for paid legacy bookings that failed because the former
     // Bókun payload omitted a real pricingCategoryId.

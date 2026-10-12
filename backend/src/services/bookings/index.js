@@ -23,7 +23,7 @@ const notificationsService = require("../notifications");
 const { calculateCancellationPolicy } = require("../cancellations/policy");
 const legacyBokunRecoveryService = require("./legacyBokunRecovery.service");
 const { decimalString, equalsWithin, normalizeCurrency } = require("../../utils/money");
-const { normalizeBokunBookingStatus } = require("../../integrations/bokun/bookingStatus.adapter");
+const { normalizeBokunBookingStatus, isSupplierBookingConfirmed } = require("../../integrations/bokun/bookingStatus.adapter");
 const { mapBokunSalesChannel } = require("../../integrations/bokun/salesChannel.adapter");
 const bookingAccountingService = require("../bookingAccounting");
 
@@ -149,6 +149,22 @@ const extractFinalizationMetaFromError = (error) => {
   };
 };
 
+const finalizationOwnershipConflict = () => new AppError(
+  "Finalization ownership or booking state changed; supplier outcome needs reconciliation",
+  409, "BOKUN_SUPPLIER_OUTCOME_UNKNOWN", { finalizationOwnershipConflict: true }
+);
+
+const finalizationOwnerFilter = (bookingId, lockToken) => ({
+  _id: bookingId,
+  paymentStatus: "paid",
+  bookingStatus: { $nin: ["cancelled", "completed", "confirmed"] },
+  "cancellation.cancelledAt": null,
+  "pendingCheckout.finalization.lockToken": lockToken,
+  "pendingCheckout.finalization.lockedAt": {
+    $gt: new Date(Date.now() - FINALIZATION_LOCK_STALE_AFTER_SECONDS * 1000).toISOString()
+  }
+});
+
 const acquireFinalizationLock = async ({ bookingId, idempotencyKey, requestId, source = "system" }) => {
   const lockToken = uuidv4();
   const nowIso = toIsoNow();
@@ -158,6 +174,9 @@ const acquireFinalizationLock = async ({ bookingId, idempotencyKey, requestId, s
 
   const query = {
     _id: bookingId,
+    paymentStatus: "paid",
+    bookingStatus: { $nin: ["cancelled", "completed"] },
+    "cancellation.cancelledAt": null,
     $or: [
       { "pendingCheckout.finalization.lockToken": { $exists: false } },
       { "pendingCheckout.finalization.lockToken": "" },
@@ -192,7 +211,7 @@ const acquireFinalizationLock = async ({ bookingId, idempotencyKey, requestId, s
   }
 
   const latest = await Booking.findById(bookingId);
-  if (latest?.paymentStatus === "paid" && latest?.bokunBookingId) {
+  if (latest?.paymentStatus === "paid" && isSupplierBookingConfirmed(latest)) {
     return {
       booking: latest,
       lockToken: "",
@@ -412,7 +431,7 @@ const reactivateFinalizationAfterPesapalVerification = async ({
 const buildPendingFinalizationQuery = ({ nowIso = toIsoNow(), force = false } = {}) => {
   const query = {
     paymentStatus: "paid",
-    $or: [{ bokunBookingId: { $exists: false } }, { bokunBookingId: "" }],
+    bookingStatus: { $nin: ["confirmed", "completed", "cancelled"] },
     "pendingCheckout.checkoutPayload": { $exists: true }
   };
 
@@ -643,6 +662,7 @@ const createBookingInBokunWithReliability = async ({
   liveQuote,
   requestId,
   bookingReference = "",
+  onSupplierResponse,
   onExhaustedMessage = "Payment verified but Bokun confirmation is still processing. Please retry shortly.",
   onExhaustedCode = "BOKUN_FINALIZATION_PENDING",
   onExhaustedStatusCode = 502
@@ -670,7 +690,7 @@ const createBookingInBokunWithReliability = async ({
     };
 
     try {
-      const bokunBooking = await bokunService.createBooking(attempt.payload, requestId);
+      const bokunBooking = await bokunService.createBooking(attempt.payload, requestId, { onSupplierResponse });
       attempts.push({
         attempt: index + 1,
         label: attempt.label,
@@ -692,10 +712,9 @@ const createBookingInBokunWithReliability = async ({
       };
     } catch (error) {
       const errorSummary = extractBokunErrorSummary(error);
-      const hasMoreAttempts = index < variants.length - 1;
-      const canRetry =
-        hasMoreAttempts &&
-        isRetryableBokunProviderError(errorSummary);
+      // A network/5xx failure can occur after creation. Do not replay a write
+      // with a different payload; the durable finalization marker requires lookup.
+      const canRetry = false;
 
       attempts.push({
         attempt: index + 1,
@@ -1758,10 +1777,14 @@ const persistBookingRecord = async ({
   paymentProvider = "custom",
   paymentNotes = "",
   markAmountPaid = false,
-  createCommission = true
+  createCommission = true,
+  finalizationLockToken = ""
 }) => {
   const { payloadWithCatalog, product, option, selectedPriceCatalog, sourceContext, liveQuote } = context;
-  const customer = await upsertCustomer(payloadWithCatalog.customer);
+  // Finalization effects must wait until the conditional booking transition wins.
+  let customer = finalizationLockToken
+    ? { ...existingBooking.customer, ...payloadWithCatalog.customer, _id: existingBooking.customer?.customerId }
+    : await upsertCustomer(payloadWithCatalog.customer);
   const nowDate = new Date();
   const bokunStatus = bokunBooking ? normalizeBokunBookingStatus(bokunBooking.raw || bokunBooking) : null;
   const bokunChannel = mapBokunSalesChannel(bokunBooking?.raw || {}, sourceContext.sourceChannel);
@@ -1838,7 +1861,7 @@ const persistBookingRecord = async ({
     supplierStatus:
       supplierStatus ||
       (bokunBooking
-        ? bokunBooking.status === "CONFIRMED"
+        ? bokunStatus.operationallyConfirmed
           ? "confirmed"
           : "supplier_pending"
         : existingBooking?.supplierStatus || "awaiting_payment"),
@@ -1914,7 +1937,31 @@ const persistBookingRecord = async ({
       asOfDate: nowDate
     });
   }
-  if (bookingDoc) {
+  if (bookingDoc && finalizationLockToken) {
+    const patch = { ...bookingPatch };
+    delete patch.pendingCheckout;
+    for (const key of ["finalizedAt", "transactionToken", "finalizationStatus", "finalizationAttempts"]) {
+      patch["pendingCheckout." + key] = pendingCheckout[key];
+    }
+    for (const [key, value] of Object.entries(pendingCheckout.finalization)) {
+      if (!["supplierResponses", "supplierRequestStartedAt"].includes(key)) {
+        patch["pendingCheckout.finalization." + key] = value;
+      }
+    }
+    bookingDoc = await Booking.findOneAndUpdate(
+      finalizationOwnerFilter(existingBooking._id, finalizationLockToken),
+      { $set: patch, $inc: { __v: 1 }, $unset: {
+        "pendingCheckout.finalization.lockToken": "",
+        "pendingCheckout.finalization.lockedAt": "",
+        "pendingCheckout.finalization.lastError": ""
+      } },
+      { new: true, runValidators: true }
+    );
+    if (!bookingDoc) throw finalizationOwnershipConflict();
+    customer = await upsertCustomer(payloadWithCatalog.customer);
+    // Only this field is dirty on the fresh document; no stale booking state is saved.
+    bookingDoc.customer.customerId = customer._id;
+  } else if (bookingDoc) {
     Object.assign(bookingDoc, bookingPatch);
     await bookingDoc.save();
   } else {
@@ -2053,6 +2100,71 @@ const preparePendingPaymentBooking = async ({ payload, auth, requestId }) => {
   });
 };
 
+// Supplier status is independent of payment verification. Raw supplier evidence
+// takes precedence over any derived/mapped status.
+const assertSupplierConfirmation = (response, booking = {}) => {
+  const status = normalizeBokunBookingStatus(response);
+  if (status.operationallyConfirmed && (response?.bokunBookingId || booking?.bokunBookingId)) return;
+  const pending = status.normalizedStatus === "pending";
+  throw new AppError(
+    pending
+      ? "Payment verified; supplier confirmation is still pending."
+      : "Supplier confirmation is missing, unsupported, or unsuccessful and needs review.",
+    pending ? 502 : 409,
+    pending ? "BOKUN_FINALIZATION_PENDING" : "BOKUN_SUPPLIER_CONFIRMATION_REVIEW"
+  );
+};
+
+const persistSupplierResponse = async ({ booking, lockToken, response }) => {
+  const status = normalizeBokunBookingStatus(response);
+  const raw = response?.raw ?? response ?? {};
+  const finalization = booking.pendingCheckout.finalization;
+  const responses = finalization.supplierResponses || [];
+  // Retain both reservation and confirmation responses in private persistence,
+  // never in public payloads or error/log metadata.
+  if (responses.length && JSON.stringify(responses[responses.length - 1].raw) === JSON.stringify(raw)) {
+    // Rejected/cancelled evidence cannot enter confirmation persistence.
+    if (!status.operationallyConfirmed) return;
+    const owned = await Booking.findOneAndUpdate(
+      finalizationOwnerFilter(booking._id, lockToken),
+      { $set: { "pendingCheckout.finalization.lastResponseCheckedAt": toIsoNow() } },
+      { new: true }
+    );
+    if (!owned) throw finalizationOwnershipConflict();
+    return;
+  }
+  const supplierResponses = [...responses, { receivedAt: toIsoNow(), raw }];
+  const patch = {
+    rawBokunResponse: raw,
+    bokunStatus: { raw: status.rawStatus, normalized: status.normalizedStatus, sourceField: status.sourceField, mappedAt: new Date() },
+    "pendingCheckout.finalization.supplierResponses": supplierResponses
+  };
+  if (response?.bokunBookingId) patch.bokunBookingId = String(response.bokunBookingId);
+  if (response?.confirmationCode) patch.bokunConfirmationCode = String(response.confirmationCode);
+  if (!status.operationallyConfirmed) {
+    patch.bookingStatus = status.localBookingStatus;
+    patch.supplierStatus = status.normalizedStatus === "pending" ? "supplier_pending" : "supplier_failed";
+    patch.supplierStatusUpdatedAt = new Date();
+  }
+  const saved = await Booking.updateOne(
+    finalizationOwnerFilter(booking._id, lockToken),
+    { $set: patch, $inc: { __v: 1 } }
+  );
+  if ((saved.matchedCount ?? saved.n ?? 0) !== 1) {
+    // A late response still matters for reconciliation, but must not overwrite
+    // status or identifiers owned by a newer lock holder.
+    await Booking.updateOne(
+      { _id: booking._id, bokunSubmissionStartedAt: booking.bokunSubmissionStartedAt },
+      { $push: { "pendingCheckout.finalization.supplierResponses": { receivedAt: toIsoNow(), raw } } }
+    );
+    throw finalizationOwnershipConflict();
+  }
+  finalization.supplierResponses = supplierResponses;
+  for (const [key, value] of Object.entries(patch)) {
+    if (!key.includes(".")) booking[key] = value;
+  }
+};
+
 const finalizePendingBookingAfterPayment = async ({
   bookingId,
   transactionToken = "",
@@ -2068,7 +2180,7 @@ const finalizePendingBookingAfterPayment = async ({
     throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
   }
 
-  if (initialBooking.paymentStatus === "paid" && initialBooking.bokunBookingId) {
+  if (initialBooking.paymentStatus === "paid" && isSupplierBookingConfirmed(initialBooking)) {
     return {
       booking: initialBooking,
       response: toBookingResponsePayload({ bookingDoc: initialBooking })
@@ -2136,6 +2248,15 @@ const finalizePendingBookingAfterPayment = async ({
     );
   }
 
+  const previousFinalization = initialBooking.pendingCheckout?.finalization || {};
+  const supplierRequestMayExist = Boolean(
+    initialBooking.bokunBookingId ||
+    initialBooking.bokunSubmissionStartedAt ||
+    previousFinalization.supplierRequestStartedAt ||
+    previousFinalization.status === FINALIZATION_STATUS.PROCESSING ||
+    (Number(previousFinalization.attemptCount || 0) > 0 &&
+      extractFinalizationMetaFromError(previousFinalization.lastError || {}).isPendingRetry)
+  );
   const idempotencyKey = resolveFinalizationIdempotencyKey(initialBooking);
   const lockResult = await acquireFinalizationLock({
     bookingId: initialBooking._id,
@@ -2144,7 +2265,8 @@ const finalizePendingBookingAfterPayment = async ({
     source
   });
 
-  if (lockResult.alreadyFinalized) {
+  if (lockResult.alreadyFinalized || isSupplierBookingConfirmed(lockResult.booking)) {
+    await releaseFinalizationLock({ bookingId: initialBooking._id, lockToken: lockResult.lockToken, status: FINALIZATION_STATUS.CONFIRMED });
     return {
       booking: lockResult.booking,
       response: toBookingResponsePayload({ bookingDoc: lockResult.booking })
@@ -2176,15 +2298,18 @@ const finalizePendingBookingAfterPayment = async ({
 
     // A retry can follow a network timeout after BÃ³kun already created the
     // supplier booking. Reconcile the reference first so we never create it twice.
-    if (Number(booking.pendingCheckout?.finalization?.attemptCount || 0) > 1) {
+    if (supplierRequestMayExist || Number(booking.pendingCheckout?.finalization?.attemptCount || 0) > 1) {
       const reconciliation = await bokunSyncService.reconcileExistingBokunBooking({
         bookingDoc: booking,
         requestId,
         source: "payment_finalization",
-        reason: "Checked Bokun before retrying paid booking finalization"
+        reason: "Checked Bokun before retrying paid booking finalization",
+        finalizationOwner: () => finalizationOwnerFilter(booking._id, lockToken)
       });
 
       if (reconciliation.found) {
+        // Finding an identifier is not proof that the supplier confirmed it.
+        assertSupplierConfirmation(reconciliation.bokunBooking, reconciliation.booking);
         const reconciledBooking = reconciliation.booking;
         await paymentsService.updatePaymentBokunSyncStatus({
           bookingReference: booking.bookingReference,
@@ -2208,6 +2333,13 @@ const finalizePendingBookingAfterPayment = async ({
           booking: reconciledBooking,
           response: toBookingResponsePayload({ bookingDoc: reconciledBooking })
         };
+      }
+      if (supplierRequestMayExist) {
+        throw new AppError(
+          "A previous supplier request needs reconciliation before any further booking creation.",
+          409,
+          "BOKUN_SUPPLIER_OUTCOME_UNKNOWN"
+        );
       }
     }
 
@@ -2288,7 +2420,26 @@ const finalizePendingBookingAfterPayment = async ({
       }
     });
 
+    // Persist intent under the lock BEFORE dispatch. A timeout, crash, or stale
+    // lock takeover must never make another checkout submission eligible.
+    const supplierRequestStartedAt = toIsoNow();
+    const marked = await Booking.findOneAndUpdate(
+      {
+        ...finalizationOwnerFilter(booking._id, lockToken),
+        bokunSubmissionStartedAt: { $exists: false },
+        "pendingCheckout.finalization.supplierRequestStartedAt": { $exists: false }
+      },
+      { $set: { bokunSubmissionStartedAt: supplierRequestStartedAt, "pendingCheckout.finalization.supplierRequestStartedAt": supplierRequestStartedAt } },
+      { new: true }
+    );
+    if (!marked) {
+      throw new AppError("Supplier submission requires reconciliation", 409, "BOKUN_SUPPLIER_OUTCOME_UNKNOWN");
+    }
+    booking.bokunSubmissionStartedAt = marked.bokunSubmissionStartedAt;
+    booking.pendingCheckout.finalization.supplierRequestStartedAt = supplierRequestStartedAt;
+    const onSupplierResponse = (response) => persistSupplierResponse({ booking, lockToken, response });
     const bokunCreateResult = await createBookingInBokunWithReliability({
+      onSupplierResponse,
       checkoutPayload: {
         ...checkoutPayload,
         customer: customerWithPickupPlace,
@@ -2306,6 +2457,8 @@ const finalizePendingBookingAfterPayment = async ({
       bookingReference: booking.bookingReference
     });
     const bokunBooking = bokunCreateResult.bokunBooking;
+    await onSupplierResponse(bokunBooking);
+    assertSupplierConfirmation(bokunBooking, booking);
 
     const sourceContext = {
       sourceChannel: booking.sourceChannel || "direct_website",
@@ -2358,14 +2511,15 @@ const finalizePendingBookingAfterPayment = async ({
       existingBooking: booking,
       paymentStatus: "paid",
       paymentMethod: paymentMethod || booking.paymentMethod || "pesapal",
-      bookingStatus: bokunBooking.status === "CONFIRMED" ? "confirmed" : "pending",
-      supplierStatus: bokunBooking.status === "CONFIRMED" ? "confirmed" : "supplier_pending",
+      bookingStatus: "confirmed",
+      supplierStatus: "confirmed",
       paymentTransactionId: String(transactionToken || booking.paymentTransactionId || booking.dpoTransactionToken || ""),
       pendingCheckout,
       requestId,
       auditAction: "booking_paid_and_confirmed",
       auditReason,
       createPaymentIntent: false,
+      finalizationLockToken: lockToken,
       markAmountPaid: true,
       createCommission: true,
       paymentProvider
@@ -2387,6 +2541,16 @@ const finalizePendingBookingAfterPayment = async ({
       response: finalized.response
     };
   } catch (error) {
+    const latestBooking = await Booking.findById(booking._id);
+    if (isSupplierBookingConfirmed(latestBooking)) {
+      // A later notification/persistence error is not supplier rejection.
+      await releaseFinalizationLock({ bookingId: booking._id, lockToken, status: FINALIZATION_STATUS.CONFIRMED });
+      throw error;
+    }
+    if (error?.details?.finalizationOwnershipConflict ||
+        latestBooking?.pendingCheckout?.finalization?.lockToken !== lockToken) {
+      throw error;
+    }
     const errorMeta = extractFinalizationMetaFromError(error);
     const attemptCount = Number(booking.pendingCheckout?.finalization?.attemptCount || 1);
     const maxRetries = Math.max(1, Number(env.BOOKING_FINALIZATION_MAX_RETRIES || 8));
@@ -2399,16 +2563,8 @@ const finalizePendingBookingAfterPayment = async ({
       status: allowRetry ? "pending_retry" : "manual_review_required"
     });
 
-    await releaseFinalizationLock({
-      bookingId: booking._id,
-      lockToken,
-      status,
-      nextRetryAt,
-      errorMeta
-    });
-
     await Booking.updateOne(
-      { _id: booking._id },
+      { ...finalizationOwnerFilter(booking._id, lockToken) },
       {
         $set: {
           supplierStatus: allowRetry ? "supplier_pending" : "supplier_failed",
@@ -2417,6 +2573,14 @@ const finalizePendingBookingAfterPayment = async ({
         }
       }
     );
+
+    await releaseFinalizationLock({
+      bookingId: booking._id,
+      lockToken,
+      status,
+      nextRetryAt,
+      errorMeta
+    });
 
     await AuditLog.create({
       actorId: null,
@@ -2496,7 +2660,7 @@ const markBookingPaymentState = async ({
 
   booking.paymentStatus = paymentStatus;
   booking.bookingStatus = booking.bokunBookingId ? booking.bookingStatus : bookingStatus;
-  booking.supplierStatus = booking.bokunBookingId ? "confirmed" : supplierStatus;
+  booking.supplierStatus = booking.bokunBookingId ? booking.supplierStatus : supplierStatus;
   booking.supplierStatusUpdatedAt = new Date();
   booking.paymentMethod = paymentMethod || booking.paymentMethod || "pending";
   if (transactionToken) {
@@ -2584,7 +2748,9 @@ const markBookingPaymentVerified = async ({
   booking.amount = Number(booking.amount || paidAmount || 0);
   booking.currency = currency || booking.currency || booking.pricingSnapshot?.currency || "USD";
   booking.bookingStatus = booking.bokunBookingId ? booking.bookingStatus : "pending";
-  booking.supplierStatus = booking.bokunBookingId ? "confirmed" : "supplier_pending";
+  booking.supplierStatus = isSupplierBookingConfirmed(booking)
+    ? "confirmed"
+    : booking.bokunBookingId ? booking.supplierStatus || "supplier_pending" : "supplier_pending";
   booking.supplierStatusUpdatedAt = new Date();
   booking.supplierFailureReason = "";
   booking.pricingSnapshot = {
@@ -2607,10 +2773,10 @@ const markBookingPaymentVerified = async ({
     paidCurrency: booking.currency,
     finalization: {
       ...(booking.pendingCheckout?.finalization || {}),
-      status: booking.bokunBookingId
+      status: isSupplierBookingConfirmed(booking)
         ? FINALIZATION_STATUS.CONFIRMED
         : booking.pendingCheckout?.finalization?.status || FINALIZATION_STATUS.IDLE,
-      finalizationPending: !booking.bokunBookingId
+      finalizationPending: !isSupplierBookingConfirmed(booking)
     }
   };
 
@@ -2777,7 +2943,7 @@ const normalizeBokunRecoverySnapshot = ({ bokunBooking = {}, expectedBookingRefe
     );
   }
 
-  const supplierStatus = String(supplierBooking?.status || bokunBooking?.status || "").trim().toUpperCase();
+  const supplierStatus = normalizeBokunBookingStatus(bokunBooking).rawStatus.toUpperCase();
   if (supplierStatus !== "CONFIRMED") {
     throw new AppError(
       "Bokun booking is not confirmed and cannot be recovered automatically.",
@@ -3470,7 +3636,7 @@ const listPendingFinalizations = async ({ limit = 20, includeProcessing = true, 
   const query = includeProcessing
     ? {
         paymentStatus: "paid",
-        $or: [{ bokunBookingId: { $exists: false } }, { bokunBookingId: "" }],
+        bookingStatus: { $nin: ["confirmed", "completed", "cancelled"] },
         "pendingCheckout.checkoutPayload": { $exists: true }
       }
     : buildPendingFinalizationQuery({
@@ -3519,7 +3685,7 @@ const retryBookingFinalization = async ({ bookingId, auth, requestId, force = fa
     throw new AppError("Booking not found", 404, "BOOKING_NOT_FOUND");
   }
 
-  if (booking.bokunBookingId) {
+  if (isSupplierBookingConfirmed(booking)) {
     return {
       status: "already_confirmed",
       booking: toBookingResponsePayload({ bookingDoc: booking })

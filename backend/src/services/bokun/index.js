@@ -2352,25 +2352,29 @@ const buildCheckoutPayload = (payload = {}) => {
   };
 };
 
-const createBooking = async (payload, requestId) => {
+const createBooking = async (payload, requestId, { onSupplierResponse } = {}) => {
   const checkoutPayload = buildCheckoutPayload(payload);
   const checkoutResponse = await bokunClient.request({
     method: "post",
     path: "/checkout.json/submit",
+    retry: false,
     payload: checkoutPayload,
     requestId
   });
 
+  const mappedReservation = mapper.mapBookingResponse(checkoutResponse);
+  await onSupplierResponse?.(mappedReservation);
   const reservedBooking = checkoutResponse?.booking || checkoutResponse;
   const confirmationCode = reservedBooking?.confirmationCode || reservedBooking?.bookingReference || "";
 
-  if (!confirmationCode || String(reservedBooking?.status || "").toUpperCase() === "CONFIRMED") {
-    return mapper.mapBookingResponse(checkoutResponse);
+  if (!confirmationCode || mappedReservation.status !== "RESERVED") {
+    return mappedReservation;
   }
 
   const confirmedResponse = await bokunClient.request({
     method: "post",
     path: `/checkout.json/confirm-reserved/${encodeURIComponent(confirmationCode)}`,
+    retry: false,
     payload: {
       externalBookingReference:
         checkoutPayload.directBooking.externalBookingReference || reservedBooking.externalBookingReference || "",
@@ -2384,7 +2388,9 @@ const createBooking = async (payload, requestId) => {
     requestId
   });
 
-  return mapper.mapBookingResponse(confirmedResponse);
+  const mappedConfirmation = mapper.mapBookingResponse(confirmedResponse);
+  await onSupplierResponse?.(mappedConfirmation);
+  return mappedConfirmation;
 };
 
 const normalizeBookingSearchItems = (response = {}) => {

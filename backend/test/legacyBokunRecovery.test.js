@@ -269,3 +269,19 @@ test("temporary provider failures are handed back to the normal retry flow, whil
   });
   assert.equal(permanent.status, "manual_review_required");
 });
+
+for (const status of [undefined, "UNCONFIRMED", "RESERVED", "REJECTED", "CANCELLED"]) {
+  test("legacy reconciliation never confirms supplier status " + String(status), async () => {
+    const raw = { booking: { id: "supplier-1", ...(status ? { status } : {}) } };
+    const harness = createRecoveryHarness({
+      lookupBooking: async () => ({ bokunBookingId: "supplier-1", status: "CONFIRMED", raw })
+    });
+    const result = await harness.service.recoverLegacyBooking({ bookingId: "booking-1", finalizeBooking: harness.finalizeBooking });
+    assert.equal(result.confirmed, false);
+    assert.notEqual(harness.state.booking.bookingStatus, "confirmed");
+    assert.notEqual(harness.state.booking.pendingCheckout.finalization.status, "confirmed");
+    assert.equal(harness.state.booking.paymentStatus, "paid");
+    assert.deepEqual(harness.state.booking.rawBokunResponse, raw);
+    assert.equal(harness.notifications.sent, 0);
+  });
+}
