@@ -4,8 +4,9 @@ import { Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { fetchBookings } from "../api/transferAdminApi";
 import { Empty, ErrorMessage, Loading, PageHeader, Pager, StatusBadge, useResource } from "../components/ui";
 import { ARRANGEMENT, PAYMENT, STATUS, legWhen, passengers, usd } from "../lib/format";
+import { PaymentAlertBadge } from "../components/payments";
 
-const FILTERS = ["status", "paymentStatus", "source", "from", "to", "search", "sort", "page"];
+const FILTERS = ["status", "paymentStatus", "paymentAlert", "source", "from", "to", "search", "sort", "page"];
 
 const BookingsPage = () => {
   const [params, setParams] = useSearchParams();
@@ -47,6 +48,12 @@ const BookingsPage = () => {
               </Form.Select>
             </Col>
             <Col xs={6} md={2}>
+              <Form.Select aria-label="Payment alerts" value={query.paymentAlert || ""} onChange={(event) => set("paymentAlert", event.target.value)}>
+                <option value="">Any payment</option>
+                <option value="any">Needs refund / reversed</option>
+              </Form.Select>
+            </Col>
+            <Col xs={6} md={2}>
               <Form.Control type="date" aria-label="Pickup from" value={query.from || ""} onChange={(event) => set("from", event.target.value)} />
             </Col>
             <Col xs={6} md={2}>
@@ -85,7 +92,7 @@ const BookingsPage = () => {
                     <td>{booking.customer.fullName}<div className="small text-muted">{booking.customer.phone}</div></td>
                     <td className="text-end">{booking.pricing.status === "PRICED" ? usd(booking.pricing.total) : "Quote"}</td>
                     <td><StatusBadge status={booking.status} /></td>
-                    <td>{PAYMENT[booking.paymentStatus]}{booking.paymentArrangement === "CASH_ON_ARRIVAL" ? <div className="small text-muted">{ARRANGEMENT.CASH_ON_ARRIVAL}</div> : null}</td>
+                    <td>{PAYMENT[booking.paymentStatus]}<PaymentAlertBadge alert={booking.paymentAlert} />{booking.paymentArrangement === "CASH_ON_ARRIVAL" ? <div className="small text-muted">{ARRANGEMENT.CASH_ON_ARRIVAL}</div> : null}</td>
                   </tr>
                 ))}
               </tbody>

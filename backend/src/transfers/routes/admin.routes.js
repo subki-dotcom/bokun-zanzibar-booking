@@ -41,6 +41,11 @@ const createTransferAdminRouter = ({ getStore, tokenConfig, services }) => {
   router.patch("/zones/:zoneId", can(P.PRICING_MANAGE), ...write(v.updateZoneSchema, catalog.updateZone));
   router.delete("/zones/:zoneId", can(P.PRICING_MANAGE), ...write(v.deleteZoneSchema, catalog.deleteZone));
 
+  // Popular routes on the website: a pickup and drop-off pair each; their prices stay in routes and rates.
+  router.get("/popular-routes", can(P.PRICING_VIEW), ...list(services.popularRoutes.listAdmin));
+  router.post("/popular-routes", can(P.PRICING_MANAGE), ...write(v.createPopularRouteSchema, services.popularRoutes.create, 201));
+  router.patch("/popular-routes/:popularRouteId", can(P.PRICING_MANAGE), ...write(v.updatePopularRouteSchema, services.popularRoutes.update));
+
   router.get("/locations", can(P.PRICING_VIEW), ...list(catalog.listLocations));
   router.post("/locations", can(P.PRICING_MANAGE), ...write(v.createLocationSchema, catalog.createLocation, 201));
   router.patch("/locations/:locationId", can(P.PRICING_MANAGE), ...write(v.updateLocationSchema, catalog.updateLocation));
@@ -88,6 +93,11 @@ const createTransferAdminRouter = ({ getStore, tokenConfig, services }) => {
   router.post("/bookings/:bookingId/approve-cash-on-arrival", retired("booking.cash_on_arrival_refused", "TRANSFER_CASH_ON_ARRIVAL_DISABLED", "Cash on arrival is not available. Bookings are paid online and confirmed only after the payment is verified."));
   router.post("/bookings/:bookingId/reject", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingReasonSchema), asyncHandler(async (req, res) =>
     ok(res, await bookingsAdmin.reject({ actor: actor(req), bookingId: params(req).bookingId, input: body(req), context: requestContext(req) }))));
+  // Payments: read by anyone who may see payments. A re-check asks Pesapal again; nobody can mark a payment paid.
+  router.get("/bookings/:bookingId/payments", can(P.PAYMENTS_VIEW), validateRequest(v.bookingIdSchema), asyncHandler(async (req, res) =>
+    ok(res, await services.payments.listForBooking({ bookingId: params(req).bookingId }))));
+  router.post("/bookings/:bookingId/payments/:paymentId/recheck", can(P.PAYMENTS_MANAGE), validateRequest(v.paymentRecheckSchema), asyncHandler(async (req, res) =>
+    ok(res, await services.payments.recheck({ ...params(req), actor: actor(req), context: requestContext(req) }))));
   router.post("/bookings/:bookingId/customer-link", can(P.BOOKINGS_MANAGE), validateRequest(v.bookingIdSchema), asyncHandler(async (req, res) =>
     ok(res, await bookingsAdmin.customerLink({ actor: actor(req), bookingId: params(req).bookingId, context: requestContext(req) }))));
 

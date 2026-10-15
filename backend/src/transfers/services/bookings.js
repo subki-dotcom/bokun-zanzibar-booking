@@ -112,7 +112,7 @@ const publicQuoteView = (quote) => ({
   reasons: quote.reasons
 });
 
-const createTransferBookingService = ({ getStore, pricing, accessSecret, now = () => new Date() }) => {
+const createTransferBookingService = ({ getStore, pricing, accessSecret, paymentsAvailable = () => false, now = () => new Date() }) => {
   const tokenFor = (booking) => bookingAccessToken({ secret: accessSecret(), bookingId: String(booking._id), nonce: booking.accessNonce });
 
   const listPublicLocations = async () => {
@@ -127,15 +127,15 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
   const quote = async (input) => publicQuoteView(await pricing.quote(input));
 
   // What the website needs before a quote: the booking horizon and how customers pay. Online payment
-  // (Pesapal) is the only way a customer pays; it stays unavailable until the payment phase is built, so the
-  // website never offers a checkout that does not exist yet.
+  // (Pesapal) is the only way a customer pays; it is offered only while Pesapal is configured, so the website
+  // never offers a checkout that cannot open.
   const publicOptions = async () => {
     const { models } = await getStore();
     const settings = (await models.Settings.findOne({ key: "pricing" }, { maxAdvanceDays: 1 }).lean()) || {};
     return {
       currency: TRANSFER_CURRENCY,
       maxAdvanceDays: settings.maxAdvanceDays || DEFAULT_MAX_ADVANCE_DAYS,
-      payment: { methods: ["PESAPAL"], onlineAvailable: false }
+      payment: { methods: ["PESAPAL"], onlineAvailable: Boolean(paymentsAvailable()) }
     };
   };
 
@@ -272,16 +272,18 @@ const createTransferBookingService = ({ getStore, pricing, accessSecret, now = (
   };
 
   // The reference alone never opens a booking: the access token must match too. Both failures look the same.
-  const getBooking = async ({ reference, accessToken }) => {
+  const loadForCustomer = async ({ reference, accessToken }) => {
     if (!REFERENCE_PATTERN.test(String(reference || "")) || !accessToken) throw notFound();
     const { models } = await getStore();
     const booking = await models.Booking.findOne({ reference }).select("+accessNonce").lean();
     const expected = booking ? tokenFor(booking) : "invalid";
     if (!tokenMatches(accessToken, expected) || !booking) throw notFound();
-    return publicBookingView(booking);
+    return booking;
   };
 
-  return { listPublicLocations, publicOptions, quote, createBooking, getBooking, tokenFor };
+  const getBooking = async (access) => publicBookingView(await loadForCustomer(access));
+
+  return { listPublicLocations, publicOptions, quote, createBooking, getBooking, loadForCustomer, tokenFor };
 };
 
 module.exports = { zanzibarInstant, scheduleFor, publicBookingView, createTransferBookingService };

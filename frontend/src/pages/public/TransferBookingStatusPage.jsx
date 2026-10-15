@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { Alert, Badge, Button, Container, Spinner } from "react-bootstrap";
-import { FiCheckCircle, FiCopy, FiPrinter } from "react-icons/fi";
-import { fetchTransferBooking } from "../../api/transfersApi";
+import { FiCheckCircle, FiCopy, FiLock, FiPrinter } from "react-icons/fi";
+import { fetchTransferBooking, startTransferPayment } from "../../api/transfersApi";
 import { BRAND } from "../../config/brand";
-import { accessTokenFromHash, formatUsd, passengerSummary, statusInfo } from "../../utils/transferBooking";
+import { accessTokenFromHash, formatUsd, goToPesapal, passengerSummary, statusInfo } from "../../utils/transferBooking";
 import "./transfers.css";
 
 const formatDate = (localDate, localTime) => {
@@ -21,6 +21,19 @@ const TransferBookingStatusPage = () => {
   const [booking, setBooking] = useState(null);
   const [state, setState] = useState(accessToken ? "loading" : "no-token");
   const [copied, setCopied] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState(location.state?.paymentError || "");
+
+  const pay = async () => {
+    setPayError("");
+    setPaying(true);
+    try {
+      await goToPesapal({ reference: booking.reference, accessToken, start: startTransferPayment });
+    } catch (error) {
+      setPaying(false);
+      setPayError(error.message || "Pesapal could not be opened. Please try again.");
+    }
+  };
 
   useEffect(() => {
     if (!accessToken) return undefined;
@@ -132,9 +145,18 @@ const TransferBookingStatusPage = () => {
         <p className="mb-0">
           Payment:{" "}
           <strong>
-            {booking.paymentStatus === "PAID" ? "Paid" : booking.paymentArrangement === "CASH_ON_ARRIVAL" ? "Pay on arrival" : "Not paid yet"}
+            {booking.paymentStatus === "PAID" ? "Paid online" : booking.paymentArrangement === "CASH_ON_ARRIVAL" ? "Pay on arrival" : "Not paid yet"}
           </strong>
         </p>
+        {payError ? <Alert variant="danger" role="alert" className="mt-3 mb-0">{payError} Nothing has been charged.</Alert> : null}
+        {booking.canPay ? (
+          <div className="mt-3">
+            <Button variant="success" size="lg" onClick={pay} disabled={paying}>
+              <FiLock aria-hidden="true" /> {paying ? "Opening Pesapal…" : `Pay ${formatUsd(booking.pricing.total)} with Pesapal`}
+            </Button>
+            <p className="small text-muted mt-2 mb-0">Card or mobile money on Pesapal&apos;s secure page. Your transfer is confirmed only after Pesapal confirms the payment to us.</p>
+          </div>
+        ) : null}
       </section>
 
       <section className="transfer-card">

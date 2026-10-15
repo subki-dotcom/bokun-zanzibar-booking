@@ -14,7 +14,7 @@ const PublicLayout = () => {
   const isCheckoutRoute = /^(\/booking\/|\/payment\/checkout\/|\/payment-(success|failure|processing)(?:\/|$)|\/payment-status\/)/.test(
     location.pathname
   );
-  const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/transfers\/booking\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
+  const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/transfers\/booking\/|\/transfers\/payment\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
 
   useEffect(() => {
     persistMarketingAttribution(location.search);

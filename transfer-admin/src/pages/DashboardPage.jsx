@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Button, Card, Col, Row, Table } from "react-bootstrap";
+import { Alert, Button, Card, Col, Row, Table } from "react-bootstrap";
 import { fetchDashboard } from "../api/transferAdminApi";
 import { Empty, ErrorMessage, Loading, PageHeader, StatusBadge, useResource } from "../components/ui";
 import { dateTime, legWhen, passengers, usd } from "../lib/format";
@@ -29,6 +29,11 @@ const DashboardPage = () => {
       {loading && !data ? <Loading /> : null}
       {data ? (
         <>
+          {data.paymentAlerts ? (
+            <Alert variant="danger" role="alert">
+              <Link to="/bookings?paymentAlert=any">{data.paymentAlerts} booking{data.paymentAlerts === 1 ? "" : "s"}</Link> with a payment that needs a refund or was reversed. Handle {data.paymentAlerts === 1 ? "it" : "them"} in the Pesapal dashboard.
+            </Alert>
+          ) : null}
           <Row xs={1} sm={2} xl={4} className="g-3 mb-3">
             <Col><Metric label="Quote requests" value={data.counts.QUOTE_REQUESTED} note="Need a price from the team" to="/bookings?status=QUOTE_REQUESTED" /></Col>
             <Col><Metric label="Awaiting payment" value={data.counts.AWAITING_PAYMENT} note={`${usd(data.awaitingPayment.amount)} priced — not revenue until paid`} to="/bookings?status=AWAITING_PAYMENT" /></Col>

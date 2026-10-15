@@ -7,7 +7,9 @@ import {
   FaCreditCard,
   FaEnvelope,
   FaLink,
+  FaLocationDot,
   FaLock,
+  FaMagnifyingGlass,
   FaPen,
   FaPlaneArrival,
   FaSuitcaseRolling,
@@ -16,20 +18,19 @@ import {
   FaVanShuttle
 } from "react-icons/fa6";
 import { TRIP_TYPES, formatUsd, passengerSummary } from "../../../utils/transferBooking";
-import { PRIVATE_VEHICLE } from "../../../utils/transferWizard";
-import { Counter, FieldError, LocationCombobox, PhoneField } from "./fields";
+import { PRIVATE_VEHICLE, travellerSummary } from "../../../utils/transferWizard";
+import { FieldError, LocationCombobox, PhoneField, TravellerSelector } from "./fields";
 import { PriceLines, formatTripDate, passengersOf } from "./TransferSummary";
 
 export const StepHeading = ({ title, subtitle }) => (
   <header className="tw-step-header">
-    <p className="tw-eyebrow">Zanzibar airport &amp; hotel transfers</p>
     <h1 id="transfer-step-heading" tabIndex={-1}>{title}</h1>
     {subtitle ? <p className="tw-step-subtitle">{subtitle}</p> : null}
   </header>
 );
 
-const TextField = ({ id, label, icon, required, optional, error, help, ...input }) => (
-  <div className={`tw-field ${error ? "is-invalid" : ""}`}>
+const TextField = ({ id, label, icon, required, optional, error, help, fieldClass = "", ...input }) => (
+  <div className={`tw-field ${fieldClass} ${error ? "is-invalid" : ""}`}>
     <label htmlFor={id} className="tw-label">
       {label}
       {required ? <span className="tw-required" aria-hidden="true"> *</span> : null}
@@ -57,77 +58,91 @@ const bagsLabel = (form) => {
   return `${large} large and ${small} small bag${large + small === 1 ? "" : "s"}`;
 };
 
-// ---------- Step 1: Trip ----------
+// ---------- Step 1: Search ----------
+// One horizontal search bar (stacked on phones). Two Ways adds a return bar whose places are the outbound places
+// reversed, so the customer only picks the return date and time.
+const SearchButton = () => (
+  <button type="submit" className="tw-btn tw-btn-primary tw-search-submit">
+    <FaMagnifyingGlass aria-hidden="true" /> Search Availability
+  </button>
+);
+
+const FixedPlace = ({ id, label, name }) => (
+  <div className="tw-field tw-bar-place">
+    <span className="tw-label" id={`${id}-label`}>{label}</span>
+    <div className="tw-input tw-input-fixed" id={id} aria-labelledby={`${id}-label ${id}`}>
+      <FaLocationDot className="tw-fixed-icon" aria-hidden="true" />
+      <span>{name || "Set by your arrival transfer"}</span>
+    </div>
+  </div>
+);
+
 export const TripStep = ({ form, set, errors, locations, today, lastDate }) => {
   const roundTrip = form.tripType === TRIP_TYPES.ROUND_TRIP;
+  const name = (id) => locations.find((location) => location.id === id)?.name || "";
   const swap = () => {
     set("pickupLocationId")(form.dropoffLocationId);
     set("dropoffLocationId")(form.pickupLocationId);
   };
   return (
     <>
-      <StepHeading title="Where are we taking you?" subtitle="Private vehicle. One price per vehicle, not per person." />
+      <h1 id="transfer-step-heading" tabIndex={-1} className="visually-hidden">Search for availability</h1>
       <div className="tw-trip-type" role="radiogroup" aria-label="Trip type">
-        {[[TRIP_TYPES.ONE_WAY, "One-way"], [TRIP_TYPES.ROUND_TRIP, "Round trip"]].map(([value, label]) => (
+        {[[TRIP_TYPES.ONE_WAY, "One Way"], [TRIP_TYPES.ROUND_TRIP, "Two Ways"]].map(([value, label]) => (
           <label key={value} className={`tw-trip-option ${form.tripType === value ? "is-active" : ""}`}>
             <input type="radio" name="tripType" value={value} checked={form.tripType === value} onChange={() => set("tripType")(value)} />
+            <span className="tw-radio-mark" aria-hidden="true" />
             {label}
           </label>
         ))}
       </div>
 
-      <div className="tw-route">
-        <LocationCombobox
-          id="transfer-pickupLocationId"
-          label="Pickup location"
-          placeholder="Airport, hotel or area"
-          value={form.pickupLocationId}
-          locations={locations}
-          exclude={form.dropoffLocationId}
-          onChange={set("pickupLocationId")}
-          error={errors.pickupLocationId}
-        />
-        <button type="button" className="tw-swap" onClick={swap} aria-label="Swap pickup and drop-off" title="Swap pickup and drop-off">
-          <FaArrowRightArrowLeft aria-hidden="true" />
-        </button>
-        <LocationCombobox
-          id="transfer-dropoffLocationId"
-          label="Drop-off location"
-          placeholder="Airport, hotel or area"
-          value={form.dropoffLocationId}
-          locations={locations}
-          exclude={form.pickupLocationId}
-          onChange={set("dropoffLocationId")}
-          error={errors.dropoffLocationId}
-        />
+      <div className="tw-search-bar">
+        {roundTrip ? <p className="tw-bar-title">Arrival transfer</p> : null}
+        <div className={`tw-bar-grid ${roundTrip ? "" : "has-submit"}`}>
+          <LocationCombobox
+            id="transfer-pickupLocationId"
+            label="Pick-up location"
+            placeholder="Airport, hotel or area"
+            value={form.pickupLocationId}
+            locations={locations}
+            exclude={form.dropoffLocationId}
+            onChange={set("pickupLocationId")}
+            error={errors.pickupLocationId}
+          />
+          <button type="button" className="tw-swap" onClick={swap} aria-label="Swap pick-up and drop-off" title="Swap pick-up and drop-off">
+            <FaArrowRightArrowLeft aria-hidden="true" />
+          </button>
+          <LocationCombobox
+            id="transfer-dropoffLocationId"
+            label="Drop-off location"
+            placeholder="Airport, hotel or area"
+            value={form.dropoffLocationId}
+            locations={locations}
+            exclude={form.pickupLocationId}
+            onChange={set("dropoffLocationId")}
+            error={errors.dropoffLocationId}
+          />
+          <TextField id="transfer-travelDate" fieldClass="tw-bar-date" label={roundTrip ? "Arrival date" : "Travel date"} icon={<FaCalendarDays />} type="date" min={today} max={lastDate || undefined} value={form.travelDate} onChange={(event) => set("travelDate")(event.target.value)} error={errors.travelDate} required />
+          <TextField id="transfer-travelTime" fieldClass="tw-bar-time" label="Pick-up time (EAT)" icon={<FaClock />} type="time" value={form.travelTime} onChange={(event) => set("travelTime")(event.target.value)} required />
+          <TravellerSelector form={form} set={set} errors={errors} />
+          {roundTrip ? null : <SearchButton />}
+        </div>
       </div>
 
-      <div className="tw-grid-2">
-        <TextField id="transfer-travelDate" label="Travel date" icon={<FaCalendarDays />} type="date" min={today} max={lastDate || undefined} value={form.travelDate} onChange={(event) => set("travelDate")(event.target.value)} error={errors.travelDate} required />
-        <TextField id="transfer-travelTime" label="Pickup time (Zanzibar time)" icon={<FaClock />} type="time" value={form.travelTime} onChange={(event) => set("travelTime")(event.target.value)} required help="East Africa Time (EAT, UTC+3)" />
-      </div>
       {roundTrip ? (
-        <div className="tw-return">
-          <p className="tw-return-title">Return: {locations.find((location) => location.id === form.dropoffLocationId)?.name || "drop-off"} to {locations.find((location) => location.id === form.pickupLocationId)?.name || "pickup"}</p>
-          <div className="tw-grid-2">
-            <TextField id="transfer-returnDate" label="Return date" icon={<FaCalendarDays />} type="date" min={form.travelDate || today} max={lastDate || undefined} value={form.returnDate} onChange={(event) => set("returnDate")(event.target.value)} error={errors.returnDate} required />
-            <TextField id="transfer-returnTime" label="Return pickup time (Zanzibar time)" icon={<FaClock />} type="time" value={form.returnTime} onChange={(event) => set("returnTime")(event.target.value)} required />
+        <div className="tw-search-bar">
+          <p className="tw-bar-title">Return transfer</p>
+          <div className="tw-bar-grid tw-bar-return has-submit">
+            <FixedPlace id="transfer-returnFrom" label="Pick-up location" name={name(form.dropoffLocationId)} />
+            <FixedPlace id="transfer-returnTo" label="Drop-off location" name={name(form.pickupLocationId)} />
+            <TextField id="transfer-returnDate" fieldClass="tw-bar-date" label="Return date" icon={<FaCalendarDays />} type="date" min={form.travelDate || today} max={lastDate || undefined} value={form.returnDate} onChange={(event) => set("returnDate")(event.target.value)} error={errors.returnDate} required />
+            <TextField id="transfer-returnTime" fieldClass="tw-bar-time" label="Return pick-up time (EAT)" icon={<FaClock />} type="time" value={form.returnTime} onChange={(event) => set("returnTime")(event.target.value)} required />
+            <SearchButton />
           </div>
         </div>
       ) : null}
-
-      <fieldset className="tw-fieldset">
-        <legend className="tw-section-label">Passengers and luggage</legend>
-        <div className="tw-counters">
-          <Counter id="transfer-adults" label="Adults" hint="12+ years" value={form.adults} min={1} onChange={set("adults")} invalid={errors.adults} />
-          <Counter id="transfer-children" label="Children" hint="4–11 years" value={form.children} onChange={set("children")} invalid={errors.children} />
-          <Counter id="transfer-infants" label="Infants" hint="0–3 years" value={form.infants} onChange={set("infants")} invalid={errors.infants} />
-          <Counter id="transfer-largeBags" label="Large bags" hint="Suitcases" value={form.largeBags} max={40} onChange={set("largeBags")} invalid={errors.largeBags} />
-          <Counter id="transfer-smallBags" label="Small bags" hint="Backpacks" value={form.smallBags} max={40} onChange={set("smallBags")} invalid={errors.smallBags} />
-        </div>
-        <p className="tw-help mb-0">Infants need their own seat in the vehicle, so they count towards its capacity.</p>
-        <FieldError id="transfer-passengers-error">{errors.adults || errors.children || errors.infants || errors.largeBags || errors.smallBags}</FieldError>
-      </fieldset>
+      <p className="tw-bar-note">All times are Zanzibar time (EAT, UTC+3). Private vehicle, one price per vehicle, not per person.</p>
     </>
   );
 };
@@ -201,7 +216,7 @@ export const VehicleStep = ({ form, set, errors, quote, quoteState, onRetryQuote
               role="radio"
               aria-checked={selected}
               id="transfer-vehicleOption"
-              className={`tw-btn ${selected ? "tw-btn-teal" : "tw-btn-outline"}`}
+              className={`tw-btn ${selected ? "tw-btn-navy" : "tw-btn-outline"}`}
               onClick={() => set("vehicleOption")(PRIVATE_VEHICLE)}
             >
               {selected ? "✓ Selected" : "Select"}
@@ -215,7 +230,7 @@ export const VehicleStep = ({ form, set, errors, quote, quoteState, onRetryQuote
 };
 
 // ---------- Step 3: Details ----------
-export const DetailsStep = ({ form, set, errors, fields }) => {
+export const DetailsStep = ({ form, set, errors, fields, goTo }) => {
   const flight = fields.flight ? (
     <TextField
       id="transfer-flightNumber"
@@ -233,7 +248,12 @@ export const DetailsStep = ({ form, set, errors, fields }) => {
   ) : null;
   return (
     <>
-      <StepHeading title="Your details" subtitle="Please provide your contact details and any additional information for your transfer." />
+      <StepHeading title="Passenger details" subtitle="Who should our driver expect? We use these details only for this transfer." />
+      <div className="tw-from-search">
+        <FaUser aria-hidden="true" />
+        <span><strong>{travellerSummary(form)}</strong> · {bagsLabel(form)}<span className="tw-summary-muted"> (from your search)</span></span>
+        <button type="button" className="tw-edit" onClick={() => goTo(0)} aria-label="Change travelers">Change</button>
+      </div>
       <div className="tw-grid-2">
         <TextField id="transfer-fullName" label="Full name" icon={<FaUser />} required autoComplete="name" maxLength={120} value={form.fullName} onChange={(event) => set("fullName")(event.target.value)} error={errors.fullName} />
         <TextField id="transfer-email" label="Email address" icon={<FaEnvelope />} required type="email" inputMode="email" autoComplete="email" maxLength={200} value={form.email} onChange={(event) => set("email")(event.target.value)} error={errors.email} />
@@ -265,7 +285,7 @@ export const DetailsStep = ({ form, set, errors, fields }) => {
       </div>
       <div className="tw-field">
         <label htmlFor="transfer-specialRequests" className="tw-label">Special requests <span className="tw-optional">(optional)</span></label>
-        <textarea id="transfer-specialRequests" className="tw-input tw-input-plain tw-textarea" rows={3} maxLength={1000} placeholder="e.g. child seat, name sign, extra stop" value={form.specialRequests} onChange={(event) => set("specialRequests")(event.target.value)} aria-describedby="transfer-specialRequests-help" />
+        <textarea id="transfer-specialRequests" className="tw-input tw-input-plain tw-textarea" rows={3} maxLength={1000} placeholder="e.g. name for the sign, child seats, accessibility needs, extra luggage, pickup instructions" value={form.specialRequests} onChange={(event) => set("specialRequests")(event.target.value)} aria-describedby="transfer-specialRequests-help" />
         <div id="transfer-specialRequests-help" className="tw-help tw-help-split">
           <span>Tell us anything our team should know for your transfer.</span>
           <span>{form.specialRequests.length}/1000</span>
@@ -294,19 +314,19 @@ const ReviewSection = ({ title, icon, onEdit, children }) => (
 
 const Row = ({ label, children }) => (children ? <div><dt>{label}</dt><dd>{children}</dd></div> : null);
 
-export const ReviewStep = ({ form, locations, quote, quoteState, payment, goTo, fields }) => {
+export const ReviewStep = ({ form, set, errors = {}, locations, quote, quoteState, payment, goTo, fields }) => {
   const name = (id) => locations.find((location) => location.id === id)?.name || "";
   const roundTrip = form.tripType === TRIP_TYPES.ROUND_TRIP;
   const priced = quote?.status === "PRICED";
   return (
     <>
       <StepHeading
-        title={priced ? "Review and pay" : "Review your request"}
-        subtitle={priced ? "Please check your transfer details and pay securely online." : "Please check your details before sending your quote request."}
+        title={priced ? "Secure Online Payment" : "Review your request"}
+        subtitle={priced ? "Check your booking, then pay securely online with Pesapal." : "Please check your details before sending your quote request."}
       />
       <ReviewSection title="Trip details" onEdit={() => goTo(0)}>
         <dl className="tw-review-rows">
-          <Row label="Trip type">{roundTrip ? "Round trip" : "One-way"}</Row>
+          <Row label="Trip type">{roundTrip ? "Two Ways" : "One Way"}</Row>
           <Row label="From">{name(form.pickupLocationId)}</Row>
           <Row label="To">{name(form.dropoffLocationId)}</Row>
           <Row label="Date & time">{`${formatTripDate(form.travelDate, form.travelTime)} (Zanzibar time)`}</Row>
@@ -331,7 +351,7 @@ export const ReviewStep = ({ form, locations, quote, quoteState, payment, goTo, 
         )}
       </ReviewSection>
 
-      <ReviewSection title="Your details" onEdit={() => goTo(2)}>
+      <ReviewSection title="Passenger details" onEdit={() => goTo(2)}>
         <dl className="tw-review-rows">
           <Row label="Name">{form.fullName.trim()}</Row>
           <Row label="Email">{form.email.trim()}</Row>
@@ -349,7 +369,7 @@ export const ReviewStep = ({ form, locations, quote, quoteState, payment, goTo, 
       </section>
 
       <section className="tw-review">
-        <header><h2><FaLock aria-hidden="true" />Payment</h2></header>
+        <header><h2><FaLock aria-hidden="true" />Secure Online Payment</h2></header>
         {priced ? (
           <>
             <div className="tw-pay-method" role="radiogroup" aria-label="Payment method">
@@ -369,6 +389,20 @@ export const ReviewStep = ({ form, locations, quote, quoteState, payment, goTo, 
         ) : (
           <p className="mb-0">No payment now. When our team has priced your trip, you will receive a secure link to pay online with Pesapal. Your transfer is confirmed only after the payment has been verified.</p>
         )}
+        <div className={`tw-terms ${errors.acceptTerms ? "is-invalid" : ""}`}>
+          <label className="tw-check" htmlFor="transfer-acceptTerms">
+            <input
+              id="transfer-acceptTerms"
+              type="checkbox"
+              checked={Boolean(form.acceptTerms)}
+              onChange={(event) => set("acceptTerms")(event.target.checked)}
+              aria-invalid={Boolean(errors.acceptTerms)}
+              aria-describedby={errors.acceptTerms ? "transfer-acceptTerms-error" : undefined}
+            />
+            <span>I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms &amp; Cancellation Policy</a></span>
+          </label>
+          <FieldError id="transfer-acceptTerms-error">{errors.acceptTerms}</FieldError>
+        </div>
       </section>
     </>
   );

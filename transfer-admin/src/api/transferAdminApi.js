@@ -15,6 +15,8 @@ export const fetchBookings = (params) => data(client.get("/bookings", { params }
 export const fetchBooking = (id) => data(client.get(`/bookings/${id}`));
 export const quoteBooking = (id, body) => data(client.post(`/bookings/${id}/quote`, body));
 export const rejectBooking = (id, reason) => data(client.post(`/bookings/${id}/reject`, { reason }));
+export const fetchBookingPayments = (id) => data(client.get(`/bookings/${id}/payments`));
+export const recheckPayment = (bookingId, paymentId) => data(client.post(`/bookings/${bookingId}/payments/${paymentId}/recheck`, {}));
 export const issueCustomerLink = (id) => data(client.post(`/bookings/${id}/customer-link`, {}));
 
 // Pricing catalogue
@@ -22,6 +24,9 @@ export const fetchZones = (params) => data(client.get("/zones", { params }));
 export const createZone = (body) => data(client.post("/zones", body));
 export const updateZone = (id, body) => data(client.patch(`/zones/${id}`, body));
 export const deleteZone = (id, body) => data(client.delete(`/zones/${id}`, { data: body }));
+export const fetchPopularRoutes = () => data(client.get("/popular-routes"));
+export const createPopularRoute = (body) => data(client.post("/popular-routes", body));
+export const updatePopularRoute = (id, body) => data(client.patch(`/popular-routes/${id}`, body));
 export const fetchLocations = (params) => data(client.get("/locations", { params }));
 export const createLocation = (body) => data(client.post("/locations", body));
 export const updateLocation = (id, body) => data(client.patch(`/locations/${id}`, body));

@@ -1,26 +1,36 @@
-/* Transfer booking (four-step wizard, .tw-*) and booking status page (.transfer-*). Mobile first. */
+/* Transfer booking (Search → Vehicle → Details → Payment → Confirmed, .tw-*) and booking status page
+   (.transfer-*). Mobile first. Navy widget, golden-yellow accent, light grey page. */
 .tw-page,
-.transfer-status {
-  --tw-teal-900: #06404a;
-  --tw-teal-700: #0c6170;
-  --tw-teal-600: #117a88;
-  --tw-teal-100: #d7ecef;
-  --tw-teal-50: #ecf6f7;
-  --tw-orange: #cc4a1c;
-  --tw-orange-dark: #a83c15;
-  --tw-orange-soft: #fff6f1;
-  --tw-ink: #10262f;
-  --tw-ink-soft: #334b54;
-  --tw-muted: #5b6f78;
-  --tw-border: #dfe6ea;
-  --tw-border-soft: #eef2f4;
-  --tw-bg: #f3f7f8;
+.transfer-status,
+.tw-confirm {
+  --tw-navy: #202b55;
+  --tw-navy-soft: #2e3b6d;
+  --tw-yellow: #ffce45;
+  --tw-yellow-dark: #f0b922;
+  --tw-yellow-soft: #fff8e1;
+  --tw-green: #1f9d55;
+  --tw-green-soft: #e8f6ee;
+  /* The older names map onto the navy and yellow palette. */
+  --tw-teal-900: var(--tw-navy);
+  --tw-teal-700: var(--tw-navy);
+  --tw-teal-600: #3d4c86;
+  --tw-teal-100: #dfe4f1;
+  --tw-teal-50: #eef1f8;
+  --tw-orange: var(--tw-yellow);
+  --tw-orange-dark: var(--tw-yellow-dark);
+  --tw-orange-soft: var(--tw-yellow-soft);
+  --tw-ink: #202b55;
+  --tw-ink-soft: #3b456b;
+  --tw-muted: #667085;
+  --tw-border: #dde2ec;
+  --tw-border-soft: #eef1f6;
+  --tw-bg: #f0f3f8;
   --tw-card: #ffffff;
   --tw-danger: #b42318;
-  --tw-radius: 14px;
-  --tw-radius-lg: 20px;
-  --tw-shadow: 0 12px 32px rgba(6, 64, 74, 0.08);
-  --tw-focus: 0 0 0 3px rgba(17, 122, 136, 0.25);
+  --tw-radius: 10px;
+  --tw-radius-lg: 12px;
+  --tw-shadow: 0 8px 24px rgba(32, 43, 85, 0.08);
+  --tw-focus: 0 0 0 3px rgba(32, 43, 85, 0.22);
   --tw-touch: 44px;
 }
 
@@ -30,13 +40,7 @@
   color: var(--tw-ink);
 }
 
-/* ---------- Progress ---------- */
-.tw-progress-bar {
-  background: var(--tw-card);
-  border-bottom: 1px solid var(--tw-border);
-  padding: 0.75rem 0;
-}
-
+/* ---------- Progress (on the navy widget) ---------- */
 .tw-progress ol {
   display: flex;
   list-style: none;
@@ -61,11 +65,11 @@
   height: 2px;
   min-width: 0.5rem;
   margin: 1rem 0.4rem 0;
-  background: var(--tw-border);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .tw-progress li.is-done::after {
-  background: var(--tw-teal-700);
+  background: var(--tw-green);
 }
 
 .tw-progress-item {
@@ -76,7 +80,7 @@
   background: none;
   border: 0;
   padding: 0;
-  color: var(--tw-muted);
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 600;
   min-width: var(--tw-touch);
   font: inherit;
@@ -92,8 +96,8 @@ button.tw-progress-item {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  border: 2px solid var(--tw-border);
-  background: var(--tw-card);
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  background: transparent;
   font-weight: 700;
   font-size: 0.9rem;
 }
@@ -103,16 +107,21 @@ button.tw-progress-item {
   font-weight: 600;
 }
 
-.tw-progress .is-current .tw-progress-dot,
+.tw-progress .is-current .tw-progress-dot {
+  background: var(--tw-yellow);
+  border-color: var(--tw-yellow);
+  color: var(--tw-navy);
+}
+
 .tw-progress .is-done .tw-progress-dot {
-  background: var(--tw-teal-700);
-  border-color: var(--tw-teal-700);
+  background: var(--tw-green);
+  border-color: var(--tw-green);
   color: #fff;
 }
 
 .tw-progress .is-current .tw-progress-label,
 .tw-progress .is-done .tw-progress-label {
-  color: var(--tw-teal-900);
+  color: #fff;
 }
 
 button.tw-progress-item:hover .tw-progress-label {
@@ -160,7 +169,7 @@ button.tw-progress-item:hover .tw-progress-label {
 }
 
 .tw-step-header h1 {
-  font-size: clamp(1.55rem, 5.5vw, 2.4rem);
+  font-size: clamp(1.3rem, 4vw, 1.6rem);
   line-height: 1.15;
   margin: 0 0 0.4rem;
   color: var(--tw-ink);
@@ -624,8 +633,8 @@ button.tw-progress-item:hover .tw-progress-label {
 }
 
 .tw-btn-primary {
-  background: var(--tw-orange);
-  color: #fff;
+  background: var(--tw-yellow);
+  color: var(--tw-navy);
 }
 
 .tw-btn-primary:not(:disabled):hover {
@@ -722,16 +731,17 @@ button.tw-progress-item:hover .tw-progress-label {
 }
 
 .tw-vehicle.is-selected {
-  border-color: var(--tw-teal-700);
-  box-shadow: 0 0 0 3px rgba(12, 97, 112, 0.12);
+  background: var(--tw-yellow-soft);
+  border-color: var(--tw-yellow);
+  box-shadow: 0 0 0 3px rgba(255, 206, 69, 0.3);
 }
 
 .tw-vehicle-badge {
   position: absolute;
   top: -0.8rem;
   left: 1rem;
-  background: var(--tw-teal-700);
-  color: #fff;
+  background: var(--tw-yellow);
+  color: var(--tw-navy);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -793,7 +803,7 @@ button.tw-progress-item:hover .tw-progress-label {
 }
 
 .tw-vehicle-amount {
-  font-family: "Playfair Display", serif;
+  font-family: inherit;
   font-size: 1.85rem;
   font-weight: 700;
   line-height: 1.1;
@@ -807,7 +817,7 @@ button.tw-progress-item:hover .tw-progress-label {
   display: flex;
   gap: 1rem;
   background: var(--tw-orange-soft);
-  border: 1.5px solid #f3d3c4;
+  border: 1.5px solid #f5e3a6;
   border-radius: 16px;
   padding: 1.25rem;
 }
@@ -815,7 +825,7 @@ button.tw-progress-item:hover .tw-progress-label {
 .tw-quote-card > svg {
   flex-shrink: 0;
   font-size: 1.5rem;
-  color: var(--tw-orange);
+  color: var(--tw-navy);
   margin-top: 0.2rem;
 }
 
@@ -846,13 +856,13 @@ button.tw-progress-item:hover .tw-progress-label {
 }
 
 .tw-summary-band {
-  background: linear-gradient(135deg, var(--tw-teal-900), var(--tw-teal-700));
-  padding: 1.4rem 1.5rem;
+  background: var(--tw-navy);
+  padding: 1.1rem 1.5rem;
 }
 
 .tw-summary-band h2 {
   color: #fff;
-  font-size: 1.6rem;
+  font-size: 1.15rem;
   margin: 0 0 0.25rem;
 }
 
@@ -927,7 +937,7 @@ button.tw-progress-item:hover .tw-progress-label {
 }
 
 .tw-price-amount {
-  font-family: "Playfair Display", serif;
+  font-family: inherit;
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.1;
@@ -945,7 +955,7 @@ button.tw-progress-item:hover .tw-progress-label {
 .tw-price-quote {
   font-weight: 700;
   font-size: 1.15rem;
-  color: var(--tw-orange-dark);
+  color: var(--tw-navy);
 }
 
 .tw-price + .tw-summary-muted,
@@ -1121,7 +1131,7 @@ button.tw-progress-item:hover .tw-progress-label {
 .tw-review-vehicle-price {
   margin-left: auto;
   text-align: right;
-  font-family: "Playfair Display", serif;
+  font-family: inherit;
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.1;
@@ -1553,4 +1563,674 @@ button.tw-progress-item:hover .tw-progress-label {
   .transfer-status-actions {
     display: none !important;
   }
+}
+
+/* ---------- Booking widget (navy) ---------- */
+.tw-widget {
+  position: relative;
+  background: var(--tw-navy);
+  color: #fff;
+  border-radius: var(--tw-radius-lg);
+  box-shadow: var(--tw-shadow);
+  padding: 0 1rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.tw-widget-tab {
+  display: inline-block;
+  background: var(--tw-yellow);
+  color: var(--tw-navy);
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.55rem 1.1rem;
+  margin: 0 0 1rem;
+  border-radius: 0 0 10px 10px;
+}
+
+.tw-widget .tw-progress {
+  margin-bottom: 0.25rem;
+}
+
+.tw-search {
+  margin-top: 1rem;
+}
+
+/* Trip type: radio-style choices on the navy widget. */
+.tw-search .tw-trip-type {
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tw-search .tw-trip-option {
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: var(--tw-touch);
+  gap: 0.55rem;
+  padding: 0 0.25rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.tw-search .tw-trip-option.is-active {
+  background: transparent;
+  color: #fff;
+}
+
+.tw-search .tw-trip-option:focus-within {
+  box-shadow: 0 0 0 3px rgba(255, 206, 69, 0.5);
+}
+
+.tw-radio-mark {
+  position: relative;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  flex-shrink: 0;
+}
+
+.tw-trip-option.is-active .tw-radio-mark {
+  border-color: var(--tw-yellow);
+}
+
+.tw-trip-option.is-active .tw-radio-mark::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--tw-yellow);
+}
+
+/* The search bar: one white row on wide screens, wrapping on smaller ones. */
+.tw-search-bar {
+  background: #fff;
+  color: var(--tw-ink);
+  border-radius: var(--tw-radius);
+  padding: 0.85rem 0.85rem 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.tw-bar-title {
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tw-navy);
+  margin: 0 0 0.6rem;
+}
+
+.tw-bar-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0 0.75rem;
+}
+
+.tw-search-bar .tw-field {
+  margin-bottom: 0.65rem;
+}
+
+.tw-search-bar .tw-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tw-muted);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+}
+
+.tw-search-bar .tw-input {
+  min-height: 2.9rem;
+  border-radius: 8px;
+}
+
+.tw-bar-grid > .tw-combo,
+.tw-bar-grid > .tw-bar-place {
+  flex: 1.4 1 13rem;
+}
+
+.tw-bar-grid > .tw-bar-date {
+  flex: 1 1 9.5rem;
+}
+
+.tw-bar-grid > .tw-bar-time {
+  flex: 0.8 1 7.5rem;
+}
+
+.tw-bar-grid > .tw-travellers {
+  flex: 1.1 1 11rem;
+}
+
+.tw-bar-grid > .tw-swap {
+  flex: 0 0 auto;
+  margin: 1.45rem 0 0.65rem;
+  transform: none;
+}
+
+.tw-search-submit {
+  flex: 1 1 100%;
+  min-height: 2.9rem;
+  margin-bottom: 0.65rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.tw-search-submit:not(:disabled):hover {
+  background: var(--tw-yellow-dark);
+}
+
+.tw-bar-note {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0;
+}
+
+.tw-input-fixed {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--tw-bg);
+  color: var(--tw-ink-soft);
+  overflow: hidden;
+}
+
+.tw-input-fixed span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tw-fixed-icon {
+  flex-shrink: 0;
+  color: var(--tw-navy);
+}
+
+/* Travelers: a compact summary that opens a small panel of counters. */
+.tw-travellers {
+  position: relative;
+}
+
+.tw-travellers-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: left;
+  cursor: pointer;
+  padding-right: 2.6rem;
+}
+
+.tw-travellers-toggle:focus-visible {
+  outline: none;
+  border-color: var(--tw-navy);
+  box-shadow: var(--tw-focus);
+}
+
+.tw-travellers-icon {
+  flex-shrink: 0;
+  color: var(--tw-navy);
+}
+
+.tw-travellers-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tw-travellers-panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% - 0.4rem);
+  right: 0;
+  width: min(22rem, calc(100vw - 2.5rem));
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  background: #fff;
+  color: var(--tw-ink);
+  border: 1px solid var(--tw-border);
+  border-radius: var(--tw-radius);
+  box-shadow: 0 18px 40px rgba(32, 43, 85, 0.18);
+}
+
+.tw-travellers-panel .tw-counter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-width: 1px;
+}
+
+.tw-travellers-panel .tw-counter-control {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin-top: 0;
+}
+
+.tw-travellers-panel .tw-counter-control input {
+  width: 2.5rem;
+}
+
+.tw-travellers-panel .tw-counter-control button {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.tw-travellers-done {
+  width: 100%;
+  min-height: 2.75rem;
+}
+
+.tw-btn-navy {
+  background: var(--tw-navy);
+  color: #fff;
+}
+
+.tw-btn-navy:not(:disabled):hover {
+  background: var(--tw-navy-soft);
+}
+
+/* Facts under the search widget. */
+.tw-body > .tw-facts {
+  margin-top: 0.5rem;
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* Details: the travelers already chosen in the search, not asked for again. */
+.tw-from-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  background: var(--tw-bg);
+  border-radius: var(--tw-radius);
+  padding: 0.35rem 0.9rem;
+  margin-bottom: 1.1rem;
+  font-size: 0.95rem;
+}
+
+.tw-from-search > svg {
+  color: var(--tw-navy);
+}
+
+.tw-from-search .tw-edit {
+  margin-left: auto;
+}
+
+/* Payment: terms acceptance. */
+.tw-terms {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--tw-border-soft);
+}
+
+.tw-terms a {
+  color: var(--tw-navy);
+  font-weight: 700;
+}
+
+.tw-terms.is-invalid .tw-check {
+  color: var(--tw-danger);
+}
+
+@media (min-width: 576px) {
+  .tw-widget {
+    padding: 0 1.5rem 1.25rem;
+  }
+
+  .tw-search-bar {
+    padding: 1rem 1rem 0.35rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .tw-search-submit {
+    flex: 0 0 auto;
+    margin-top: 1.45rem;
+    padding: 0 1.4rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .tw-widget {
+    padding: 0 1.75rem 1.4rem;
+  }
+}
+
+/* ---------- Confirmed (payment return) ---------- */
+.tw-confirm-card {
+  background: #fff;
+  color: var(--tw-ink);
+  border-radius: var(--tw-radius);
+  padding: 1.25rem 1rem;
+  margin-top: 1rem;
+}
+
+.tw-confirm-head {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.tw-confirm-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: var(--tw-green-soft);
+  color: var(--tw-green);
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.tw-confirm-head h1 {
+  font-size: clamp(1.4rem, 4vw, 1.75rem);
+  margin: 0 0 0.35rem;
+}
+
+.tw-confirm-ref {
+  display: inline-block;
+  background: var(--tw-bg);
+  border-radius: 8px;
+  padding: 0.35rem 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin: 0.25rem 0;
+}
+
+.tw-confirm-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.tw-confirm-section {
+  border: 1px solid var(--tw-border);
+  border-radius: var(--tw-radius);
+  padding: 0.9rem 1rem;
+}
+
+.tw-confirm-section h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.tw-paid-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--tw-green-soft);
+  color: var(--tw-green);
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+}
+
+.tw-next-steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.tw-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.tw-confirm-actions .tw-btn {
+  flex: 1 1 14rem;
+  text-decoration: none;
+}
+
+@media (min-width: 768px) {
+  .tw-confirm-card {
+    padding: 1.75rem;
+  }
+
+  .tw-confirm-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Clean sans-serif headings inside the booking widget and its cards. */
+.tw-page h1,
+.tw-page h2,
+.tw-page h3 {
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.tw-bar-grid > .tw-bar-date {
+  flex-basis: 10.5rem;
+}
+
+.tw-bar-grid > .tw-bar-time {
+  flex-basis: 8.5rem;
+}
+
+/* Narrow phones: date and time each get the full width, so native pickers are never cut off. */
+@media (max-width: 419.98px) {
+  .tw-bar-grid > .tw-bar-date,
+  .tw-bar-grid > .tw-bar-time {
+    flex: 1 1 100%;
+  }
+}
+
+/* Wide screens: the whole search, button included, on one line. */
+@media (min-width: 1200px) {
+  .tw-bar-grid > .tw-combo,
+  .tw-bar-grid > .tw-bar-place {
+    flex-basis: 11rem;
+  }
+
+  .tw-bar-grid > .tw-travellers {
+    flex-basis: 10rem;
+  }
+}
+
+/* ---------- Popular transfer routes ---------- */
+.tw-popular {
+  margin: 0.5rem 0 1.75rem;
+}
+
+.tw-popular-head {
+  margin-bottom: 1rem;
+}
+
+.tw-popular-head h2 {
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  color: var(--tw-navy);
+  margin: 0 0 0.25rem;
+}
+
+.tw-popular-head p {
+  color: var(--tw-muted);
+  margin: 0;
+}
+
+.tw-route-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.tw-route-card {
+  display: flex;
+}
+
+.tw-route-card > article {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--tw-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(32, 43, 85, 0.06);
+  padding: 1.1rem;
+}
+
+.tw-route-card-head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 0.85rem;
+}
+
+.tw-route-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 10px;
+  background: var(--tw-teal-50);
+  color: var(--tw-navy);
+  font-size: 1.1rem;
+}
+
+.tw-route-card h3 {
+  font-size: 1.05rem;
+  line-height: 1.3;
+  color: var(--tw-navy);
+  margin: 0 0 0.15rem;
+}
+
+.tw-route-type {
+  font-size: 0.82rem;
+  color: var(--tw-muted);
+  margin: 0;
+}
+
+.tw-route-places {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.tw-route-places div {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--tw-border-soft);
+}
+
+.tw-route-places dt {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 400;
+  color: var(--tw-muted);
+}
+
+.tw-route-places dt svg {
+  color: var(--tw-navy);
+  font-size: 0.8rem;
+}
+
+.tw-route-places dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tw-route-inclusions {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  font-size: 0.85rem;
+  color: var(--tw-ink-soft);
+}
+
+.tw-route-inclusions li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tw-route-inclusions svg {
+  color: var(--tw-green);
+}
+
+/* Price and Book Now always sit at the bottom of the card. */
+.tw-route-foot {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--tw-border-soft);
+}
+
+.tw-route-price {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.tw-route-price span,
+.tw-route-price small {
+  color: var(--tw-muted);
+  font-size: 0.82rem;
+}
+
+.tw-route-price small {
+  display: block;
+}
+
+.tw-route-price strong {
+  font-size: 1.3rem;
+  color: var(--tw-navy);
+}
+
+.tw-route-price .tw-route-quote {
+  font-size: 1.05rem;
+}
+
+.tw-route-book {
+  min-height: 2.75rem;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.95rem;
+  border-radius: 8px;
+}
+
+.tw-route-book:not(:disabled):hover {
+  background: var(--tw-yellow-dark);
+}
+
+@media (min-width: 768px) {
+  .tw-route-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 992px) {
+  .tw-route-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Book Now scrolls to the widget; keep it clear of the sticky site header. */
+.tw-widget {
+  scroll-margin-top: 6.5rem;
 }

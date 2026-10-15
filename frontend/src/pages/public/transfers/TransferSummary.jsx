@@ -55,10 +55,10 @@ const SummaryRows = ({ form, locations, quote }) => {
   const vehicle = quote?.status === "PRICED" && form.vehicleOption === PRIVATE_VEHICLE ? "Private vehicle" : "";
   return (
     <dl className="tw-summary-rows">
-      <div><dt>Trip</dt><dd>{roundTrip ? "Round trip" : "One-way"}</dd></div>
+      <div><dt>Trip type</dt><dd>{roundTrip ? "Two Ways" : "One Way"}</dd></div>
       <div><dt>From</dt><dd>{nameOf(locations, form.pickupLocationId) || "—"}</dd></div>
       <div><dt>To</dt><dd>{nameOf(locations, form.dropoffLocationId) || "—"}</dd></div>
-      <div><dt>When</dt><dd>{formatTripDate(form.travelDate, form.travelTime) || "—"}</dd></div>
+      <div><dt>{roundTrip ? "Arrival" : "Date & time"}</dt><dd>{formatTripDate(form.travelDate, form.travelTime) || "—"}</dd></div>
       {roundTrip ? <div><dt>Return</dt><dd>{formatTripDate(form.returnDate, form.returnTime) || "—"}</dd></div> : null}
       <div><dt>Passengers</dt><dd>{passengerSummary(passengersOf(form))}</dd></div>
       <div><dt>Large bags</dt><dd>{Number(form.largeBags) || 0}</dd></div>
@@ -80,7 +80,7 @@ export const SummaryCard = ({ form, locations, quote, quoteState }) => {
   return (
     <aside className="tw-summary" aria-label="Your transfer">
       <div className="tw-summary-band">
-        <h2>Your transfer</h2>
+        <h2>Trip summary</h2>
         <p>{route}</p>
       </div>
       <div className="tw-summary-body">
@@ -99,7 +99,7 @@ export const SummaryBar = ({ form, locations, quote, quoteState }) => {
     <details className="tw-summary-mobile">
       <summary>
         <span className="tw-summary-mobile-title">
-          <strong>Your transfer</strong>
+          <strong>Trip summary</strong>
           <span>{route}</span>
         </span>
         <span className="tw-summary-mobile-total">{headline}</span>

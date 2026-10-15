@@ -3,19 +3,22 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Alert, Container, Spinner } from "react-bootstrap";
 import { FaArrowLeft, FaArrowRight, FaLock } from "react-icons/fa6";
 import SeoHead from "../../components/common/SeoHead";
-import { createTransferBooking, fetchTransferLocations, fetchTransferOptions, fetchTransferQuote } from "../../api/transfersApi";
-import { bookingLink, bookingPayloadFor, emptyTransferForm, formatUsd, lastBookableDate, newIdempotencyKey, quoteRequestFor, zanzibarToday } from "../../utils/transferBooking";
+import { createTransferBooking, fetchPopularRoutes, fetchTransferLocations, fetchTransferOptions, fetchTransferQuote, startTransferPayment } from "../../api/transfersApi";
+import { TRIP_TYPES, bookingLink, bookingPayloadFor, emptyTransferForm, formatUsd, goToPesapal, lastBookableDate, newIdempotencyKey, quoteRequestFor, zanzibarToday } from "../../utils/transferBooking";
 import { STEPS, clearDraft, detailFieldsFor, furthestStep, loadDraft, relevantForm, saveDraft, stepErrors, stepIndex } from "../../utils/transferWizard";
 import { StepProgress } from "./transfers/fields";
 import { DetailsStep, ReviewStep, TripFacts, TripStep, VehicleStep } from "./transfers/steps";
 import { SummaryBar, SummaryCard } from "./transfers/TransferSummary";
+import PopularRoutes from "./transfers/PopularRoutes";
 import "./transfers.css";
 
-const NEXT_LABELS = ["See vehicle options", "Continue to details", "Review and continue"];
+const NEXT_LABELS = ["Search Availability", "Continue to details", "Continue to payment"];
+// The yellow tab on the booking widget, one per step.
+const TABS = ["Search for availability", "Choose your vehicle", "Passenger details", "Secure online payment"];
 
-// The customer transfer booking: Trip → Vehicle → Details → Review & pay. Moving between steps never creates a
-// booking; the booking is created only from the last step, priced again by the server. Customers pay online
-// only (Pesapal), and a booking is confirmed only after the server has verified the payment.
+// The customer transfer booking: Search → Vehicle → Details → Payment, then Confirmed on the payment return page
+// once the server has verified the payment with Pesapal. Moving between steps never creates a booking; the booking
+// is created only from the payment step, priced again by the server. Customers pay online only (Pesapal).
 const TransfersPage = () => {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -23,6 +26,7 @@ const TransfersPage = () => {
   const [locations, setLocations] = useState([]);
   const [options, setOptions] = useState(null);
   const [loadError, setLoadError] = useState("");
+  const [popular, setPopular] = useState({ state: "loading", routes: [] });
   const [quote, setQuote] = useState(null);
   const [quoteState, setQuoteState] = useState("idle");
   const [quoteRetry, setQuoteRetry] = useState(0);
@@ -32,6 +36,7 @@ const TransfersPage = () => {
   const [submitting, setSubmitting] = useState(false);
   // One Idempotency-Key per distinct submission: a retry of the same details reuses it, an edit gets a new one.
   const submission = useRef({ key: "", payload: "" });
+  const [openingPesapal, setOpeningPesapal] = useState(false);
   const headingFocus = useRef(false);
   const today = zanzibarToday();
   const maxAdvanceDays = options?.maxAdvanceDays;
@@ -41,6 +46,9 @@ const TransfersPage = () => {
       error.status === 503 ? "Transfer booking is temporarily unavailable. Please try again later." : error.message || "Could not load transfer booking.";
     fetchTransferLocations().then(setLocations).catch((error) => setLoadError(unavailable(error)));
     fetchTransferOptions().then(setOptions).catch((error) => setLoadError(unavailable(error)));
+    fetchPopularRoutes()
+      .then((routes) => setPopular({ state: "ready", routes }))
+      .catch(() => setPopular({ state: "error", routes: [] }));
   }, []);
 
   useEffect(() => saveDraft(form), [form]);
@@ -129,7 +137,7 @@ const TransfersPage = () => {
   const submit = async () => {
     setSubmitError("");
     setNotice("");
-    for (const index of [0, 1, 2]) {
+    for (const index of [0, 1, 2, 3]) {
       const found = stepErrors(index, submitted, rules);
       if (Object.keys(found).length) {
         goTo(index);
@@ -156,7 +164,18 @@ const TransfersPage = () => {
       if (submission.current.payload !== serialized) submission.current = { key: newIdempotencyKey(), payload: serialized };
       const result = await createTransferBooking(payload, submission.current.key);
       clearDraft();
-      navigate(bookingLink(result.reference, result.accessToken), { state: { justBooked: true } });
+      if (result.booking.status !== "AWAITING_PAYMENT") {
+        navigate(bookingLink(result.reference, result.accessToken), { state: { justBooked: true } });
+        return;
+      }
+      // The booking exists now; pay it on Pesapal. If Pesapal cannot be opened, the booking page offers to try again.
+      setOpeningPesapal(true);
+      try {
+        await goToPesapal({ reference: result.reference, accessToken: result.accessToken, start: startTransferPayment });
+      } catch (paymentError) {
+        setOpeningPesapal(false);
+        navigate(bookingLink(result.reference, result.accessToken), { state: { justBooked: true, paymentError: paymentError.message || "Pesapal could not be opened." } });
+      }
     } catch (error) {
       if (error.code === "TRANSFER_PRICE_CHANGED" && error.details?.quote) {
         setQuote(error.details.quote);
@@ -175,6 +194,38 @@ const TransfersPage = () => {
     }
   };
 
+  // Book Now on a popular route: the same widget, with its places filled in as a one-way trip. The customer picks the
+  // date, time and travelers, and can still change the places. Prices come from the server as for any search.
+  const bookRoute = (route) => {
+    setForm((previous) => ({
+      ...previous,
+      tripType: TRIP_TYPES.ONE_WAY,
+      pickupLocationId: route.pickup.id,
+      dropoffLocationId: route.dropoff.id,
+      returnDate: "",
+      returnTime: "",
+      vehicleOption: ""
+    }));
+    setErrors({});
+    setNotice(`${route.title}: choose your travel date, pick-up time and travelers.`);
+    setParams({ route: route.slug });
+    setTimeout(() => {
+      document.querySelector(".tw-widget")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("transfer-travelDate")?.focus({ preventScroll: true });
+    }, 0);
+  };
+
+  // A link to /transfers?route=<slug> (from another page) opens the widget with that route filled in, once.
+  const linkedRoute = params.get("route");
+  const appliedRoute = useRef("");
+  useEffect(() => {
+    if (!linkedRoute || appliedRoute.current === linkedRoute || popular.state !== "ready") return;
+    appliedRoute.current = linkedRoute;
+    const route = popular.routes.find((item) => item.slug === linkedRoute);
+    if (route && (form.pickupLocationId !== route.pickup.id || form.dropoffLocationId !== route.dropoff.id)) bookRoute(route);
+    // bookRoute only uses state setters; the form is read once when the link is opened.
+  }, [linkedRoute, popular]);
+
   const onSubmit = (event) => {
     event.preventDefault();
     if (current === 3) submit();
@@ -182,7 +233,13 @@ const TransfersPage = () => {
   };
 
   const stepProps = { form: submitted, set, errors, locations };
-  const finalLabel = priced ? `Pay ${formatUsd(quote.total)} with Pesapal` : "Send quote request";
+  const finalLabel = priced ? `Pay Securely ${formatUsd(quote.total)}` : "Send quote request";
+  const messages = (
+    <>
+      {notice ? <Alert variant="info" role="status" className="mt-3 mb-0">{notice}</Alert> : null}
+      {submitError ? <Alert variant="danger" role="alert" className="mt-3 mb-0">{submitError}</Alert> : null}
+    </>
+  );
 
   return (
     <div className="tw-page">
@@ -190,58 +247,63 @@ const TransfersPage = () => {
         title="Zanzibar Airport & Hotel Transfers | Riser Tours & Safaris"
         description="Book private Zanzibar airport, port and hotel transfers. Instant prices per vehicle for one-way and round trips."
       />
-      <div className="tw-progress-bar">
-        <Container>
-          <StepProgress current={current} onGo={goTo} />
-        </Container>
-      </div>
-
       <Container className="tw-body">
-        {loadError ? <Alert variant="warning" role="alert">{loadError}</Alert> : null}
-        <div className="tw-layout">
-          <div className="tw-main">
-            <SummaryBar form={submitted} locations={locations} quote={quote} quoteState={quoteState} />
-            <form id="transfer-booking-form" className="tw-card" noValidate onSubmit={onSubmit}>
-              {waiting ? (
-                <div className="tw-loading" role="status"><Spinner animation="border" size="sm" /> Loading your booking…</div>
-              ) : current === 0 ? (
-                <TripStep {...stepProps} today={today} lastDate={lastBookableDate(maxAdvanceDays)} />
-              ) : current === 1 ? (
-                <VehicleStep {...stepProps} quote={quote} quoteState={quoteState} onRetryQuote={() => setQuoteRetry((count) => count + 1)} />
-              ) : current === 2 ? (
-                <DetailsStep {...stepProps} fields={fields} />
-              ) : (
-                <ReviewStep {...stepProps} quote={quote} quoteState={quoteState} payment={options?.payment} goTo={goTo} fields={fields} />
-              )}
+        <section className="tw-widget" aria-label="Transfer booking">
+          {/* The step heading itself is the h1 below; the tab repeats it as a visual label. */}
+          <p className="tw-widget-tab" aria-hidden="true">{TABS[current]}</p>
+          <StepProgress current={current} onGo={goTo} />
+          {loadError ? <Alert variant="warning" role="alert" className="mb-0 mt-3">{loadError}</Alert> : null}
+          {current === 0 && !waiting ? (
+            <form id="transfer-booking-form" className="tw-search" noValidate onSubmit={onSubmit}>
+              <TripStep {...stepProps} today={today} lastDate={lastBookableDate(maxAdvanceDays)} />
+              {messages}
+            </form>
+          ) : null}
+        </section>
 
-              {notice ? <Alert variant="info" role="status" className="mt-3 mb-0">{notice}</Alert> : null}
-              {submitError ? <Alert variant="danger" role="alert" className="mt-3 mb-0">{submitError}</Alert> : null}
-
-              <div className="tw-actions">
-                {current > 0 ? (
+        {current === 0 && !waiting ? (
+          <>
+            <PopularRoutes routes={popular.routes} state={popular.state} onBook={bookRoute} />
+            <TripFacts />
+          </>
+        ) : (
+          <div className="tw-layout">
+            <div className="tw-main">
+              <SummaryBar form={submitted} locations={locations} quote={quote} quoteState={quoteState} />
+              <form id="transfer-booking-form" className="tw-card" noValidate onSubmit={onSubmit}>
+                {waiting ? (
+                  <div className="tw-loading" role="status"><Spinner animation="border" size="sm" /> Loading your booking…</div>
+                ) : current === 1 ? (
+                  <VehicleStep {...stepProps} quote={quote} quoteState={quoteState} onRetryQuote={() => setQuoteRetry((count) => count + 1)} />
+                ) : current === 2 ? (
+                  <DetailsStep {...stepProps} fields={fields} goTo={goTo} />
+                ) : (
+                  <ReviewStep {...stepProps} quote={quote} quoteState={quoteState} payment={options?.payment} goTo={goTo} fields={fields} />
+                )}
+                {messages}
+                <div className="tw-actions">
                   <button type="button" className="tw-btn tw-btn-ghost" onClick={() => goTo(current - 1)}>
                     <FaArrowLeft aria-hidden="true" /> Back
                   </button>
-                ) : null}
-                {current < 3 ? (
-                  <button type="submit" className="tw-btn tw-btn-primary" disabled={waiting || (current === 1 && quoteState !== "ready") || Boolean(loadError)}>
-                    {NEXT_LABELS[current]} <FaArrowRight aria-hidden="true" />
-                  </button>
-                ) : (
-                  <button type="submit" className="tw-btn tw-btn-primary" disabled={submitting || quoteState !== "ready" || !canSubmit}>
-                    {priced ? <FaLock aria-hidden="true" /> : null}
-                    {submitting ? "Sending…" : finalLabel}
-                    {submitting ? null : <FaArrowRight aria-hidden="true" />}
-                  </button>
-                )}
-              </div>
-              {current === 0 ? <TripFacts /> : null}
-            </form>
+                  {current < 3 ? (
+                    <button type="submit" className="tw-btn tw-btn-primary" disabled={waiting || (current === 1 && quoteState !== "ready") || Boolean(loadError)}>
+                      {NEXT_LABELS[current]} <FaArrowRight aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <button type="submit" className="tw-btn tw-btn-primary" disabled={submitting || openingPesapal || quoteState !== "ready" || !canSubmit}>
+                      {priced ? <FaLock aria-hidden="true" /> : null}
+                      {openingPesapal ? "Opening Pesapal…" : submitting ? "Sending…" : finalLabel}
+                      {submitting ? null : <FaArrowRight aria-hidden="true" />}
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+            <div className="tw-side">
+              <SummaryCard form={submitted} locations={locations} quote={quote} quoteState={quoteState} />
+            </div>
           </div>
-          <div className="tw-side">
-            <SummaryCard form={submitted} locations={locations} quote={quote} quoteState={quoteState} />
-          </div>
-        </div>
+        )}
       </Container>
     </div>
   );

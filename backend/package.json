@@ -42,7 +42,8 @@
     "repair:financial-data-quality": "node scripts/repair-financial-data-quality.js",
     "transfers:create-db-user": "node scripts/transfers/create-db-user.js",
     "transfers:create-admin": "node scripts/transfers/create-admin.js",
-    "transfers:seed-demo": "node scripts/transfers/seed-demo-pricing.js"
+    "transfers:seed-demo": "node scripts/transfers/seed-demo-pricing.js",
+    "transfers:seed-popular-routes": "node scripts/transfers/seed-popular-routes.js"
   },
   "dependencies": {
     "axios": "^1.8.4",

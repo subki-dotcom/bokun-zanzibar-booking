@@ -12,7 +12,10 @@ import {
   bookingLink,
   bookingPayloadFor,
   emptyTransferForm,
+  goToPesapal,
   quoteRequestFor,
+  recallBookingAccess,
+  rememberBookingAccess,
   validateTransferForm,
   zanzibarToday
 } from "../src/utils/transferBooking.js";
@@ -64,14 +67,19 @@ test("transfer pages are lazy routes beside the unchanged tour routes", () => {
   for (const tourRoute of ['path="/tours"', 'path="/tours/:slug"', 'path="/booking/:slug"', 'path="/payment/checkout/:reference"']) assert.ok(routes.includes(tourRoute), tourRoute);
 });
 
-test("step one asks only for the trip, and shows no price before the server quotes one", async () => {
+test("step one is a search bar: trip type, places, date, time, travelers and Search Availability, with no price yet", async () => {
   const html = await render("/src/pages/public/TransfersPage.jsx", "/transfers");
-  for (const label of ["Where are we taking you?", "One-way", "Round trip", "Pickup location", "Drop-off location", "Travel date", "Pickup time (Zanzibar time)", "Adults", "Children", "Infants", "Large bags", "Small bags", "See vehicle options"]) {
+  for (const label of ["Search for availability", "One Way", "Two Ways", "Pick-up location", "Drop-off location", "Travel date", "Pick-up time (EAT)", "Travelers", "1 Adult", "Search Availability", "Zanzibar time (EAT, UTC+3)"]) {
     assert.ok(html.includes(label), label);
   }
-  assert.match(html, /<h1 id="transfer-step-heading" tabindex="-1">Where are we taking you\?<\/h1>/);
+  assert.match(html, /<h1 id="transfer-step-heading" tabindex="-1" class="visually-hidden">Search for availability<\/h1>/);
   assert.match(html, /aria-current="step"/);
   assert.match(html, /role="combobox"/);
+  // Five steps, the first current; the travelers panel stays closed until opened.
+  for (const step of ["Search", "Vehicle", "Details", "Payment", "Confirmed"]) assert.ok(html.includes(`tw-progress-label">${step}<`), step);
+  assert.match(html, /aria-haspopup="dialog" aria-expanded="false"/);
+  // Point to Point is not offered until stops are built.
+  assert.equal(html.includes("Point to Point"), false);
   // Personal details belong to a later step, and no price exists until the server quotes one.
   assert.equal(html.includes("Full name"), false);
   assert.equal(/USD \d/.test(html), false);
@@ -79,8 +87,8 @@ test("step one asks only for the trip, and shows no price before the server quot
 
 test("later steps cannot be opened from the address bar before the trip is complete", async () => {
   const html = await render("/src/pages/public/TransfersPage.jsx", "/transfers?step=pay");
-  assert.ok(html.includes("Where are we taking you?"));
-  assert.equal(html.includes("Review and pay"), false);
+  assert.ok(html.includes("Search Availability"));
+  assert.equal(html.includes("Secure Online Payment"), false);
 });
 
 test("the status page does not open a booking from the reference alone", async () => {
@@ -136,12 +144,88 @@ test("the private link keeps the access token in the URL fragment", () => {
   assert.equal(zanzibarToday(new Date("2026-10-11T22:30:00Z")), "2026-10-12");
 });
 
-test("the form shows the agreed age bands and that infants need a seat", async () => {
-  const html = await render("/src/pages/public/TransfersPage.jsx", "/transfers");
-  assert.ok(html.includes("12+ years"));
-  assert.ok(html.includes("4–11 years"));
-  assert.ok(html.includes("0–3 years"));
-  assert.ok(html.includes("Infants need their own seat in the vehicle"));
+const memoryStorage = () => {
+  const items = new Map();
+  return { getItem: (key) => (items.has(key) ? items.get(key) : null), setItem: (key, value) => items.set(key, String(value)) };
+};
+
+test("going to Pesapal keeps the private link for this tab only and sends the customer to Pesapal's page", async () => {
+  const storage = memoryStorage();
+  rememberBookingAccess("TRF-ABCDEFGH", "secret-token", storage);
+  assert.equal(recallBookingAccess("TRF-ABCDEFGH", storage), "secret-token");
+  assert.equal(recallBookingAccess("TRF-OTHERREF", storage), "", "a token is only recalled for its own booking");
+  const broken = { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); } };
+  rememberBookingAccess("TRF-ABCDEFGH", "secret-token", broken);
+  assert.equal(recallBookingAccess("TRF-ABCDEFGH", broken), "");
+
+  const visited = [];
+  const started = [];
+  await goToPesapal({ reference: "TRF-ABCDEFGH", accessToken: "secret-token", start: async (...args) => (started.push(args), { redirectUrl: "https://pay.pesapal.com/iframe/x" }), assign: (url) => visited.push(url) });
+  assert.deepEqual(started, [["TRF-ABCDEFGH", "secret-token"]]);
+  assert.deepEqual(visited, ["https://pay.pesapal.com/iframe/x"]);
+  await assert.rejects(goToPesapal({ reference: "TRF-ABCDEFGH", accessToken: "t", start: async () => { throw new Error("Pesapal down"); }, assign: (url) => visited.push(url) }), /Pesapal down/);
+  assert.equal(visited.length, 1, "nothing opens when the server could not start the payment");
+});
+
+test("the payment return page asks the server, never trusts the address bar, and is not indexed", async () => {
+  const routes = read("src/routes/AppRoutes.jsx");
+  assert.match(routes, /<Route path="\/transfers\/payment\/return" element=\{<TransferPaymentReturnPage \/>\} \/>/);
+  assert.match(read("src/layouts/PublicLayout.jsx"), /\\\/transfers\\\/payment\\\//);
+  const checking = await render("/src/pages/public/TransferPaymentReturnPage.jsx", "/transfers/payment/return?OrderTrackingId=abc&OrderMerchantReference=TRF-ABCDEFGH-1A2B3C4D&OrderNotificationType=CALLBACKURL");
+  assert.match(checking, /Checking your payment with Pesapal/);
+  assert.equal(checking.includes("Booking Confirmed!"), false, "nothing is shown as confirmed before the server has verified it");
+  assert.equal(checking.includes("Paid"), false);
+  assert.match(checking, /aria-current="step"/, "the progress stays on the payment step while checking");
+  const missing = await render("/src/pages/public/TransferPaymentReturnPage.jsx", "/transfers/payment/return");
+  assert.match(missing, /Payment not found/);
+  const page = read("src/pages/public/TransferPaymentReturnPage.jsx");
+  assert.match(page, /result\.booking\?\.paymentStatus === "PAID" && result\.payment\.outcome === "APPLIED"/);
+});
+
+test("the booking page offers Pesapal only when the server says the booking can be paid", () => {
+  const page = read("src/pages/public/TransferBookingStatusPage.jsx");
+  assert.match(page, /\{booking\.canPay \? \(/);
+  assert.match(page, /goToPesapal\(\{ reference: booking\.reference, accessToken, start: startTransferPayment \}\)/);
+  for (const offline of ["Cash on arrival", "Bank transfer", "Pay later"]) assert.equal(page.includes(offline), false, offline);
+});
+
+test("popular routes show the server's starting price, Price on Request when unpriced, and only configured inclusions", async () => {
+  const { default: PopularRoutes, approxDuration } = await server.ssrLoadModule("/src/pages/public/transfers/PopularRoutes.jsx");
+  const place = (id, name, type) => ({ id: id.repeat(24), name, type });
+  const routes = [
+    { slug: "airport-to-nungwi", title: "Zanzibar Airport to Nungwi", tripType: "ONE_WAY", pickup: place("a", "Zanzibar Airport", "AIRPORT"), dropoff: place("b", "Nungwi", "AREA"), inclusions: ["PRIVATE_VEHICLE"], durationMinutes: null, price: { status: "PRICED", from: "50.00", currency: "USD", basis: "PER_VEHICLE" } },
+    { slug: "airport-to-paje", title: "Zanzibar Airport to Paje", tripType: "ONE_WAY", pickup: place("a", "Zanzibar Airport", "AIRPORT"), dropoff: place("c", "Paje", "AREA"), inclusions: ["PRIVATE_VEHICLE", "PROFESSIONAL_DRIVER"], durationMinutes: 75, price: { status: "QUOTE_REQUIRED", from: null, currency: "USD", basis: "PER_VEHICLE" } }
+  ];
+  const html = renderToStaticMarkup(React.createElement(PopularRoutes, { routes, state: "ready", onBook: () => {} }));
+  for (const text of ["Popular Transfer Routes", "Book reliable private airport and hotel transfers across Zanzibar.", "Zanzibar Airport to Nungwi", "Private Transfer · One Way", "Pickup", "Drop-off", "USD 50.00", "per vehicle", "Price on Request", "Approx. 1 h 15 min", "Professional driver"]) {
+    assert.ok(html.includes(text), text);
+  }
+  assert.equal((html.match(/Book Now/g) || []).length, 2);
+  assert.equal((html.match(/Duration/g) || []).length, 1, "a duration appears only when the route has one");
+  for (const invented of ["Fuel included", "Luggage assistance", "USD 35", "Free cancellation"]) assert.equal(html.includes(invented), false, invented);
+  assert.equal(approxDuration(45), "Approx. 45 min");
+  assert.equal(approxDuration(null), "");
+  assert.equal(renderToStaticMarkup(React.createElement(PopularRoutes, { routes: [], state: "ready", onBook: () => {} })), "", "no section without routes");
+});
+
+test("Book Now fills the same widget with the route's places as a one-way trip, and ?route= links open it", () => {
+  const page = read("src/pages/public/TransfersPage.jsx");
+  assert.match(page, /tripType: TRIP_TYPES\.ONE_WAY,\s*pickupLocationId: route\.pickup\.id,\s*dropoffLocationId: route\.dropoff\.id,/);
+  assert.match(page, /setParams\(\{ route: route\.slug \}\)/);
+  assert.match(page, /document\.getElementById\("transfer-travelDate"\)\?\.focus/);
+  assert.match(page, /const linkedRoute = params\.get\("route"\);/);
+  assert.match(page, /<PopularRoutes routes=\{popular\.routes\} state=\{popular\.state\} onBook=\{bookRoute\} \/>/);
+  // No second checkout: the cards only fill the search; prices and booking stay with the widget and the server.
+  const cards = read("src/pages/public/transfers/PopularRoutes.jsx");
+  for (const forbidden of ["createTransferBooking", "startTransferPayment", "fetchTransferQuote"]) assert.equal(cards.includes(forbidden), false, forbidden);
+});
+
+test("the travelers panel shows the agreed age bands, luggage and that infants need a seat", () => {
+  // The panel opens on demand, so its contents are checked in the component.
+  const fields = read("src/pages/public/transfers/fields.jsx");
+  for (const text of ["12+ years", "4–11 years", "0–3 years, need a seat", "Large luggage", "Small luggage", "Infants need their own seat, so they count towards the vehicle&apos;s capacity."]) {
+    assert.ok(fields.includes(text), text);
+  }
 });
 
 test("flight numbers accept real airline formats and stay optional", async () => {

@@ -21,6 +21,14 @@ const env = cleanEnv(process.env, {
   TRANSFER_JWT_EXPIRES_IN: str({ default: "12h" }),
   // Transfer Admin app origins allowed by CORS (comma separated). Production accepts only https values.
   TRANSFER_ADMIN_URL: str({ default: "" }),
+  // Transfer payments use the same Pesapal merchant account (PESAPAL_CONSUMER_KEY/SECRET) with their own IPN and
+  // their own return page, so tour payment handling never sees a transfer payment and the other way round.
+  PESAPAL_TRANSFER_IPN_ID: str({ default: "" }),
+  // Optional. Public backend URL of /api/transfers/payments/ipn, registered with Pesapal when PESAPAL_TRANSFER_IPN_ID
+  // is empty. Empty uses the host of PESAPAL_IPN_URL with that path.
+  TRANSFER_PESAPAL_IPN_URL: str({ default: "" }),
+  // Optional. Website page Pesapal sends the customer back to. Empty uses <first FRONTEND_URL>/transfers/payment/return.
+  TRANSFER_PAYMENT_RETURN_URL: str({ default: "" }),
   PASSWORD_RESET_SITE_URL: str({ default: "https://zanzibartoursandsafaris.co.tz" }),
   RATE_LIMIT_WINDOW_MS: num({ default: 15 * 60 * 1000 }),
   RATE_LIMIT_MAX: num({ default: 1200 }),

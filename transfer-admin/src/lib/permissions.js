@@ -8,7 +8,9 @@ export const P = Object.freeze({
   BOOKINGS_MANAGE: "transfer.bookings.manage",
   DISPATCH_MANAGE: "transfer.dispatch.manage",
   FLEET_VIEW: "transfer.fleet.view",
-  FLEET_MANAGE: "transfer.fleet.manage"
+  FLEET_MANAGE: "transfer.fleet.manage",
+  PAYMENTS_VIEW: "transfer.payments.view",
+  PAYMENTS_MANAGE: "transfer.payments.manage"
 });
 
 export const ROLES = Object.freeze([
@@ -34,6 +36,7 @@ export const NAVIGATION = Object.freeze([
   { to: "/pricing/locations", label: "Locations", permission: P.PRICING_VIEW },
   { to: "/pricing/routes", label: "Routes", permission: P.PRICING_VIEW },
   { to: "/pricing/rates", label: "Rates & price check", permission: P.PRICING_VIEW },
+  { to: "/pricing/popular-routes", label: "Popular routes", permission: P.PRICING_VIEW },
   { to: "/pricing/settings", label: "Booking settings", permission: P.PRICING_VIEW },
   { section: "Administration" },
   { to: "/users", label: "Users & roles", permission: P.USERS_MANAGE },

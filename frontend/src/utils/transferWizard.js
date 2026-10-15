@@ -1,14 +1,30 @@
-// Step rules for the four-step transfer booking (Trip → Vehicle → Details → Pay). Field checks come from
-// validateTransferForm, so each step enforces exactly the rules the server enforces. Nothing here prices a
-// trip: every amount shown comes from the server's quote.
+// Step rules for the transfer booking (Search → Vehicle → Details → Payment, then Confirmed once Pesapal's payment is
+// verified). Field checks come from validateTransferForm, so each step enforces exactly the rules the server
+// enforces. Nothing here prices a trip: every amount shown comes from the server's quote.
 import { TRIP_TYPES, composePhone, emptyTransferForm, validateTransferForm } from "./transferBooking.js";
 
+// The steps the customer fills in. Confirmed is not one of them: it is shown only after the server has verified the
+// payment, on the payment return page.
 export const STEPS = Object.freeze([
-  { id: "trip", label: "Trip", fields: ["pickupLocationId", "dropoffLocationId", "travelDate", "returnDate", "adults", "children", "infants", "largeBags", "smallBags"] },
+  { id: "trip", label: "Search", fields: ["pickupLocationId", "dropoffLocationId", "travelDate", "returnDate", "adults", "children", "infants", "largeBags", "smallBags"] },
   { id: "vehicle", label: "Vehicle", fields: ["vehicleOption"] },
   { id: "details", label: "Details", fields: ["fullName", "email", "phone", "flightNumber"] },
-  { id: "pay", label: "Pay", fields: [] }
+  { id: "pay", label: "Payment", fields: ["acceptTerms"] }
 ]);
+
+// The five labels of the progress indicator.
+export const PROGRESS_STEPS = Object.freeze([...STEPS.map((step) => step.label), "Confirmed"]);
+
+// The traveller summary shown in the search bar, e.g. "2 Adults, 1 Child".
+export const travellerSummary = ({ adults = 0, children = 0, infants = 0 } = {}) =>
+  [
+    [Number(adults) || 0, "Adult", "Adults"],
+    [Number(children) || 0, "Child", "Children"],
+    [Number(infants) || 0, "Infant", "Infants"]
+  ]
+    .filter(([count], index) => count || index === 0)
+    .map(([count, one, many]) => `${count} ${count === 1 ? one : many}`)
+    .join(", ");
 
 export const stepIndex = (id) => Math.max(0, STEPS.findIndex((step) => step.id === id));
 
@@ -44,6 +60,7 @@ export const stepErrors = (index, form, { now = new Date(), maxAdvanceDays, quot
     if (!quote) return { vehicleOption: "We are still checking prices for your trip" };
     return quote.status === "PRICED" && form.vehicleOption !== PRIVATE_VEHICLE ? { vehicleOption: "Choose a vehicle to continue" } : {};
   }
+  if (index === 3) return form.acceptTerms ? {} : { acceptTerms: "Please accept the Terms & Cancellation Policy to continue" };
   const all = validateTransferForm(form, now, { maxAdvanceDays });
   return Object.fromEntries(Object.entries(all).filter(([field]) => (STEPS[index]?.fields || []).includes(field)));
 };
@@ -59,7 +76,7 @@ export const furthestStep = (form, { now, maxAdvanceDays, quote, quoteState }) =
 };
 
 // The draft is kept for this browser tab only, so a refresh or the Back button never loses what was entered.
-// It is removed as soon as the booking is created. The honeypot field is never kept.
+// It is removed as soon as the booking is created. The honeypot field and the terms acceptance are never kept.
 export const DRAFT_KEY = "riser_transfer_booking_draft";
 
 const tabStorage = () => {
@@ -76,7 +93,7 @@ export const loadDraft = () => {
     if (!saved || typeof saved !== "object") return null;
     const base = emptyTransferForm();
     const restored = Object.fromEntries(Object.keys(base).map((field) => [field, typeof saved[field] === typeof base[field] ? saved[field] : base[field]]));
-    return { ...restored, website: "" };
+    return { ...restored, acceptTerms: false, website: "" };
   } catch (_error) {
     return null;
   }
@@ -84,7 +101,7 @@ export const loadDraft = () => {
 
 export const saveDraft = (form) => {
   try {
-    const { website: _honeypot, ...kept } = form;
+    const { website: _honeypot, acceptTerms: _terms, ...kept } = form;
     tabStorage()?.setItem(DRAFT_KEY, JSON.stringify(kept));
   } catch (_error) {
     // Storage may be full or blocked; the booking still works without a draft.

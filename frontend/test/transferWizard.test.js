@@ -10,6 +10,7 @@ import { composePhone, emptyTransferForm, lastBookableDate } from "../src/utils/
 import {
   DRAFT_KEY,
   PRIVATE_VEHICLE,
+  PROGRESS_STEPS,
   STEPS,
   clearDraft,
   detailFieldsFor,
@@ -18,6 +19,7 @@ import {
   relevantForm,
   saveDraft,
   stepErrors,
+  travellerSummary,
   stepIndex
 } from "../src/utils/transferWizard.js";
 
@@ -57,8 +59,14 @@ const renderStep = async (name, props) => {
   return renderToStaticMarkup(React.createElement(steps[name], { set: () => () => {}, errors: {}, locations, ...props }));
 };
 
-test("the four steps are Trip, Vehicle, Details and Pay, and unknown step names open the first", () => {
-  assert.deepEqual(STEPS.map((step) => step.label), ["Trip", "Vehicle", "Details", "Pay"]);
+test("the customer fills in Search, Vehicle, Details and Payment; Confirmed follows a verified payment", () => {
+  assert.deepEqual(STEPS.map((step) => step.label), ["Search", "Vehicle", "Details", "Payment"]);
+  assert.deepEqual(PROGRESS_STEPS, ["Search", "Vehicle", "Details", "Payment", "Confirmed"]);
+  assert.equal(travellerSummary({ adults: 2, children: 1, infants: 0 }), "2 Adults, 1 Child");
+  assert.equal(travellerSummary({ adults: 1, children: 0, infants: 2 }), "1 Adult, 2 Infants");
+  // Payment needs the terms accepted; the acceptance is never kept in the draft.
+  assert.equal(stepErrors(3, detailsDone(), { now }).acceptTerms, "Please accept the Terms & Cancellation Policy to continue");
+  assert.deepEqual(stepErrors(3, detailsDone({ acceptTerms: true }), { now }), {});
   assert.equal(stepIndex("pay"), 3);
   assert.equal(stepIndex("nonsense"), 0);
   assert.equal(stepIndex(null), 0);
@@ -157,8 +165,10 @@ test("step two offers the priced private vehicle with the server's total, or a q
 });
 
 test("step three asks for the flight first when the trip starts at the airport", async () => {
-  const html = await renderStep("DetailsStep", { form: detailsDone(), fields: detailFieldsFor("AIRPORT", "HOTEL") });
-  for (const label of ["Your details", "Full name", "Email address", "Phone", "Country code", "This number is on WhatsApp", "Flight number", "Hotel name or exact drop-off address", "Special requests"]) {
+  const html = await renderStep("DetailsStep", { form: detailsDone(), fields: detailFieldsFor("AIRPORT", "HOTEL"), goTo: () => {} });
+  assert.match(html, /2 Adults, 1 Child/, "travelers come from the search, not asked again");
+  assert.match(html, /aria-label="Change travelers"/);
+  for (const label of ["Passenger details", "Full name", "Email address", "Phone", "Country code", "This number is on WhatsApp", "Flight number", "Hotel name or exact drop-off address", "Special requests"]) {
     assert.ok(html.includes(label), label);
   }
   assert.equal(html.includes("exact pickup address"), false, "an airport needs no pickup address");
@@ -173,8 +183,10 @@ test("step three asks for the flight first when the trip starts at the airport",
 test("step four is online payment only, and says so honestly before online payment opens", async () => {
   const props = { form: detailsDone(), quote: priced, quoteState: "ready", goTo: () => {}, fields: detailFieldsFor("AIRPORT", "HOTEL") };
   const closed = await renderStep("ReviewStep", { ...props, payment: { methods: ["PESAPAL"], onlineAvailable: false } });
-  assert.match(closed, /Review and pay/);
+  assert.match(closed, /Secure Online Payment/);
   assert.match(closed, /Pay online with Pesapal/);
+  assert.match(closed, /I agree to the <a href="\/terms" target="_blank" rel="noopener noreferrer">Terms &amp; Cancellation Policy<\/a>/);
+  assert.match(closed, /id="transfer-acceptTerms" type="checkbox"/);
   assert.match(closed, /confirmed only after Pesapal confirms the payment/);
   assert.match(closed, /Online payment is not open yet/);
   assert.match(closed, /Nothing has been saved or charged/);
@@ -191,12 +203,18 @@ test("step four is online payment only, and says so honestly before online payme
 test("the final button pays online or sends a quote request, and is disabled while online payment is closed", () => {
   const page = read("src/pages/public/TransfersPage.jsx");
   assert.match(page, /const canSubmit = !priced \|\| Boolean\(options\?\.payment\?\.onlineAvailable\);/);
-  assert.match(page, /disabled=\{submitting \|\| quoteState !== "ready" \|\| !canSubmit\}/);
-  assert.match(page, /`Pay \$\{formatUsd\(quote\.total\)\} with Pesapal`/);
+  assert.match(page, /disabled=\{submitting \|\| openingPesapal \|\| quoteState !== "ready" \|\| !canSubmit\}/);
+  assert.match(page, /`Pay Securely \$\{formatUsd\(quote\.total\)\}`/);
+  // The terms are checked with every other step before anything is sent.
+  assert.match(page, /for \(const index of \[0, 1, 2, 3\]\)/);
   assert.match(page, /"Send quote request"/);
   // The price is checked with the server again right before the booking is created.
   assert.ok(page.indexOf("await fetchTransferQuote(quoteRequestFor(submitted))") < page.indexOf("await createTransferBooking(payload"));
-  assert.match(page, /clearDraft\(\);\s*navigate\(bookingLink/);
+  // A quote request goes to its booking page; a priced booking goes straight to Pesapal, or back to its booking page
+  // (where the customer can try again) when Pesapal cannot be opened.
+  assert.match(page, /clearDraft\(\);\s*if \(result\.booking\.status !== "AWAITING_PAYMENT"\) \{\s*navigate\(bookingLink/);
+  assert.ok(page.indexOf("await createTransferBooking(payload") < page.indexOf("await goToPesapal({ reference: result.reference, accessToken: result.accessToken, start: startTransferPayment })"));
+  assert.match(page, /paymentError: paymentError\.message/);
 });
 
 test("the styles are mobile first, use tokens, and respect reduced motion", () => {

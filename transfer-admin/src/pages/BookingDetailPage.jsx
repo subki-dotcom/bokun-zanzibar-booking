@@ -7,6 +7,7 @@ import { Empty, ErrorMessage, FormModal, Loading, PageHeader, ReasonModal, Statu
 import { ARRANGEMENT, PAYMENT, dateTime, passengers, usd, websiteBase } from "../lib/format";
 import { TripActions, TripStatusBadge } from "../components/trips";
 import { P, can } from "../lib/permissions";
+import { BookingPayments, PaymentAlertBadge, PaymentAlertNotice } from "../components/payments";
 
 const Row2 = ({ label, children }) => (
   <div className="ta-kv">
@@ -86,10 +87,12 @@ const BookingDetailPage = () => {
             <StatusBadge status={booking.status} />
             <Badge bg="light" text="dark">{PAYMENT[booking.paymentStatus]}</Badge>
             {booking.paymentArrangement === "CASH_ON_ARRIVAL" ? <Badge bg="light" text="dark">{ARRANGEMENT.CASH_ON_ARRIVAL}</Badge> : null}
+            <PaymentAlertBadge alert={booking.paymentAlert} />
           </div>
         }
       />
       <p><Link to="/bookings">← All bookings</Link></p>
+      <PaymentAlertNotice alert={booking.paymentAlert} />
       {notice ? <Alert variant="success" dismissible onClose={() => setNotice("")}>{notice}</Alert> : null}
       <ErrorMessage error={error} onRetry={reload} />
 
@@ -173,6 +176,7 @@ const BookingDetailPage = () => {
           </Card>
         </Col>
         <Col lg={5}>
+          {can(user, P.PAYMENTS_VIEW) ? <BookingPayments bookingId={booking.id} onChanged={reload} /> : null}
           <Card className="ta-card mb-3">
             <Card.Body>
               <h2 className="h6">Price</h2>

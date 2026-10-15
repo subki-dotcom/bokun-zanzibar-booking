@@ -40,6 +40,7 @@ const summaryView = (booking) => ({
   status: booking.status,
   paymentStatus: booking.paymentStatus,
   paymentArrangement: booking.paymentArrangement || PAYMENT_ARRANGEMENTS.ONLINE,
+  paymentAlert: booking.paymentAlert || "",
   source: booking.source,
   manualChannel: booking.manualChannel || "",
   tripType: booking.tripType,
@@ -96,6 +97,7 @@ const createTransferAdminBookingService = ({ getStore, bookings, now = () => new
     if (statuses.length) filter.status = { $in: statuses };
     if (Object.values(PAYMENT_STATUS).includes(query.paymentStatus)) filter.paymentStatus = query.paymentStatus;
     if (["WEBSITE", "MANUAL"].includes(query.source)) filter.source = query.source;
+    if (query.paymentAlert === "any") filter.paymentAlert = { $nin: ["", null] };
     const dateField = query.dateField === "created" ? "createdAt" : "legs.0.pickupAt";
     const range = {};
     if (/^\d{4}-\d{2}-\d{2}$/.test(query.from || "")) range.$gte = new Date(`${query.from}T00:00:00+03:00`);
@@ -228,7 +230,7 @@ const createTransferAdminBookingService = ({ getStore, bookings, now = () => new
       const [row] = await models.Booking.aggregate([{ $match: match }, { $group: { _id: null, total: { $sum: "$pricing.total" }, count: { $sum: 1 } } }]);
       return { amount: row ? moneyString(row.total) : "0.00", count: row ? row.count : 0 };
     };
-    const [byStatus, createdToday, createdLast7Days, upcoming, paidRevenue, awaitingPayment] = await Promise.all([
+    const [byStatus, createdToday, createdLast7Days, upcoming, paidRevenue, awaitingPayment, paymentAlerts] = await Promise.all([
       models.Booking.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
       models.Booking.countDocuments({ createdAt: { $gte: today } }),
       models.Booking.countDocuments({ createdAt: { $gte: new Date(today.getTime() - 6 * 86400000) } }),
@@ -237,7 +239,9 @@ const createTransferAdminBookingService = ({ getStore, bookings, now = () => new
         .limit(10)
         .lean(),
       sumTotal({ paymentStatus: PAYMENT_STATUS.PAID }),
-      sumTotal({ status: BOOKING_STATUS.AWAITING_PAYMENT, paymentStatus: PAYMENT_STATUS.UNPAID })
+      sumTotal({ status: BOOKING_STATUS.AWAITING_PAYMENT, paymentStatus: PAYMENT_STATUS.UNPAID }),
+      // Money received that staff must refund (or a reversed payment) in the Pesapal dashboard.
+      models.Booking.countDocuments({ paymentAlert: { $nin: ["", null] } })
     ]);
     const counts = Object.fromEntries(Object.values(BOOKING_STATUS).map((status) => [status, 0]));
     byStatus.forEach((row) => {
@@ -252,6 +256,7 @@ const createTransferAdminBookingService = ({ getStore, bookings, now = () => new
       createdLast7Days,
       paidRevenue,
       awaitingPayment,
+      paymentAlerts,
       upcoming: upcoming.map(summaryView)
     };
   };

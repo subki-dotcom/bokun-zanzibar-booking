@@ -12,16 +12,29 @@ const { createTransferBookingService } = require("./services/bookings");
 const { createTransferAdminBookingService } = require("./services/adminBookings");
 const { createTransferFleetService } = require("./services/fleet");
 const { createTransferDispatchService } = require("./services/dispatch");
+const { createTransferPaymentService } = require("./services/payments");
+const { createPopularRouteService } = require("./services/popularRoutes");
+const { createPesapalTransferGateway } = require("./payments/pesapalGateway");
+
+// One Pesapal client for the process, so its access token and IPN registration are reused.
+let defaultGateway = null;
+const pesapalGateway = () => {
+  if (!defaultGateway) defaultGateway = createPesapalTransferGateway();
+  return defaultGateway;
+};
 
 const tokenConfig = () => {
   const config = transferConfig();
   return { secret: config.jwtSecret, expiresIn: config.jwtExpiresIn };
 };
 
-const createTransferServices = ({ getStore = getTransferStore, tokens = tokenConfig } = {}) => {
+const createTransferServices = ({ getStore = getTransferStore, tokens = tokenConfig, gateway = pesapalGateway() } = {}) => {
   const pricing = createPricingService({ getStore });
-  const bookings = createTransferBookingService({ getStore, pricing, accessSecret: () => tokens().secret });
+  const bookings = createTransferBookingService({ getStore, pricing, accessSecret: () => tokens().secret, paymentsAvailable: () => gateway.configured() });
+  const payments = createTransferPaymentService({ getStore, bookings, gateway });
   return {
+    payments,
+    popularRoutes: createPopularRouteService({ getStore }),
     auth: createTransferAuthService({ getStore, tokenConfig: tokens }),
     catalog: createCatalogService({ getStore }),
     pricing,
@@ -34,10 +47,12 @@ const createTransferServices = ({ getStore = getTransferStore, tokens = tokenCon
   };
 };
 
-const createTransferAdminApi = ({ getStore = getTransferStore, tokens = tokenConfig } = {}) =>
-  createTransferAdminRouter({ getStore, tokenConfig: tokens, services: createTransferServices({ getStore, tokens }) });
+const createTransferAdminApi = ({ getStore = getTransferStore, tokens = tokenConfig, gateway } = {}) =>
+  createTransferAdminRouter({ getStore, tokenConfig: tokens, services: createTransferServices({ getStore, tokens, gateway }) });
 
-const createTransferPublicApi = ({ getStore = getTransferStore, tokens = tokenConfig } = {}) =>
-  createTransferPublicRouter({ bookings: createTransferServices({ getStore, tokens }).bookings });
+const createTransferPublicApi = ({ getStore = getTransferStore, tokens = tokenConfig, gateway, limits } = {}) => {
+  const services = createTransferServices({ getStore, tokens, gateway });
+  return createTransferPublicRouter({ bookings: services.bookings, payments: services.payments, popularRoutes: services.popularRoutes, ...(limits ? { limits } : {}) });
+};
 
 module.exports = { tokenConfig, createTransferServices, createTransferAdminApi, createTransferPublicApi };

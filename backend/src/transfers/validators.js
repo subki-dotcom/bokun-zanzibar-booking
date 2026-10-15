@@ -1,5 +1,5 @@
 const { z } = require("zod");
-const { LOCATION_TYPES, INFANT_PRICING, MAX_ADVANCE_DAYS_LIMIT, DRIVER_AVAILABILITY, VEHICLE_TYPES, VEHICLE_OWNERSHIP, VEHICLE_STATUS, TRIP_STATUS } = require("./models");
+const { ROUTE_INCLUSIONS, LOCATION_TYPES, INFANT_PRICING, MAX_ADVANCE_DAYS_LIMIT, DRIVER_AVAILABILITY, VEHICLE_TYPES, VEHICLE_OWNERSHIP, VEHICLE_STATUS, TRIP_STATUS } = require("./models");
 const { TRANSFER_ROLES } = require("./security/permissions");
 const { TRIP_TYPES, MAX_PASSENGERS } = require("./pricing/engine");
 const { passwordSchema } = require("./security/password");
@@ -237,6 +237,45 @@ const publicBookingLookupSchema = z.object({
   params: z.object({ reference: z.string().trim().toUpperCase().max(20) })
 });
 
+const popularRouteBody = {
+  slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and hyphens").max(80),
+  title: text(120).min(3),
+  pickupLocationId: objectId,
+  dropoffLocationId: objectId,
+  description: text(300).optional(),
+  inclusions: z.array(z.enum(ROUTE_INCLUSIONS)).max(ROUTE_INCLUSIONS.length).optional(),
+  displayOrder: z.number().int().min(0).max(10000).optional(),
+  active: z.boolean().optional()
+};
+const createPopularRouteSchema = z.object({ body: z.object(popularRouteBody).strict(), query: noQuery, params: z.object({}).passthrough() });
+const updatePopularRouteSchema = z.object({
+  body: z.object(Object.fromEntries(Object.entries(popularRouteBody).map(([key, schema]) => [key, schema.optional()]))).extend({ reason }).strict(),
+  query: noQuery,
+  params: idParams("popularRouteId")
+});
+
+const publicPaymentStartSchema = z.object({
+  body: z.object({}).strict().optional(),
+  query: noQuery,
+  params: z.object({ reference: z.string().trim().toUpperCase().max(20) })
+});
+
+const paymentReturnSchema = z.object({
+  body: z.any().optional(),
+  query: z.object({
+    OrderTrackingId: z.string().trim().min(1).max(100),
+    OrderMerchantReference: z.string().trim().max(100).optional(),
+    OrderNotificationType: z.string().trim().max(40).optional()
+  }).passthrough(),
+  params: z.object({}).passthrough()
+});
+
+const paymentRecheckSchema = z.object({
+  body: z.object({}).strict().optional(),
+  query: noQuery,
+  params: z.object({ bookingId: objectId, paymentId: objectId })
+});
+
 // ---------- Fleet and dispatch ----------
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 const phone = z.string().trim().regex(/^\+?[0-9 ()-]{7,24}$/, "Enter a valid phone number");
@@ -309,6 +348,11 @@ module.exports = {
   publicQuoteSchema,
   publicBookingSchema,
   publicBookingLookupSchema,
+  publicPaymentStartSchema,
+  createPopularRouteSchema,
+  updatePopularRouteSchema,
+  paymentReturnSchema,
+  paymentRecheckSchema,
   bookingReasonSchema,
   bookingQuoteSchema,
   bookingIdSchema,

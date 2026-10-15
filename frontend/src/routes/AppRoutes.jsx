@@ -25,6 +25,7 @@ import adminRoutes from "../../../backoffice/src/routes/AdminRoutes";
 // Transfer System pages: independent of the tour (Bókun) booking flow.
 const TransfersPage = lazy(() => import("../pages/public/TransfersPage"));
 const TransferBookingStatusPage = lazy(() => import("../pages/public/TransferBookingStatusPage"));
+const TransferPaymentReturnPage = lazy(() => import("../pages/public/TransferPaymentReturnPage"));
 
 const AgentDashboardPage = lazy(() => import("../pages/agent/AgentDashboardPage"));
 const AgentProductsPage = lazy(() => import("../pages/agent/AgentProductsPage"));
@@ -61,6 +62,7 @@ const AppRoutes = () => {
         <Route path="/tours/:slug" element={<TourDetailsPage />} />
         <Route path="/transfers" element={<TransfersPage />} />
         <Route path="/transfers/booking/:reference" element={<TransferBookingStatusPage />} />
+        <Route path="/transfers/payment/return" element={<TransferPaymentReturnPage />} />
         <Route path="/booking/:slug" element={<BookingFlowPage />} />
         <Route path="/booking-confirmation/:reference" element={<BookingConfirmationPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />

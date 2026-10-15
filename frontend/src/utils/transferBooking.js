@@ -32,6 +32,8 @@ export const emptyTransferForm = () => ({
   phone: "",
   whatsapp: true,
   specialRequests: "",
+  // Ticked on the payment step; checked in the browser before the booking is sent.
+  acceptTerms: false,
   website: ""
 });
 
@@ -145,6 +147,32 @@ export const bookingLink = (reference, accessToken) => `/transfers/booking/${enc
 export const accessTokenFromHash = (hash = "") => {
   const match = /(?:^#|&)t=([^&]+)/.exec(String(hash));
   return match ? decodeURIComponent(match[1]) : "";
+};
+
+// The private link's token, kept for this tab only while the customer is on Pesapal's page, so the return page
+// can open the booking again. It is never sent to Pesapal.
+const ACCESS_KEY = "riser.transfer.access";
+export const rememberBookingAccess = (reference, accessToken, storage = globalThis.sessionStorage) => {
+  try {
+    storage?.setItem(ACCESS_KEY, JSON.stringify({ reference, accessToken }));
+  } catch (_error) {
+    // Private browsing or blocked storage: the customer still has the private link.
+  }
+};
+export const recallBookingAccess = (reference, storage = globalThis.sessionStorage) => {
+  try {
+    const saved = JSON.parse(storage?.getItem(ACCESS_KEY) || "null");
+    return saved && saved.reference === reference && saved.accessToken ? saved.accessToken : "";
+  } catch (_error) {
+    return "";
+  }
+};
+
+// Sends the customer to Pesapal to pay this booking. Nothing is marked paid here: the server verifies with Pesapal.
+export const goToPesapal = async ({ reference, accessToken, start, assign = (url) => window.location.assign(url) }) => {
+  const { redirectUrl } = await start(reference, accessToken);
+  rememberBookingAccess(reference, accessToken);
+  assign(redirectUrl);
 };
 
 export const formatUsd = (amount) => (amount === null || amount === undefined ? "" : `USD ${Number(amount).toFixed(2)}`);

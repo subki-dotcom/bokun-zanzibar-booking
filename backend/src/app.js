@@ -29,6 +29,7 @@ const allowedOrigins = buildAllowedOrigins({
   nodeEnv: env.NODE_ENV
 });
 const pesapalIpnPath = "/api/payments/pesapal/ipn";
+const transferPesapalIpnPath = "/api/transfers/payments/ipn";
 
 const corsMiddleware = cors({
   origin(origin, callback) {
@@ -59,7 +60,7 @@ app.use((req, res, next) => {
   // Pesapal's IPN is a server-to-server notification, not a browser request.
   // Its transaction is still authenticated by a server-side Pesapal status
   // verification, so it must not be blocked by the public website allow-list.
-  if (req.path === pesapalIpnPath) {
+  if (req.path === pesapalIpnPath || req.path === transferPesapalIpnPath) {
     return next();
   }
 

@@ -146,6 +146,8 @@ const MANUAL_CHANNELS = Object.freeze(["WHATSAPP", "PHONE", "EMAIL", "WALK_IN", 
 // ONLINE (Pesapal) is the only arrangement for new bookings. CASH_ON_ARRIVAL is kept so historical records stay valid.
 const PAYMENT_ARRANGEMENTS = Object.freeze({ ONLINE: "ONLINE", CASH_ON_ARRIVAL: "CASH_ON_ARRIVAL" });
 
+const PAYMENT_ALERTS = Object.freeze({ NONE: "", NEEDS_REFUND: "NEEDS_REFUND", PAYMENT_REVERSED: "PAYMENT_REVERSED" });
+
 const bookingLegSchema = new Schema(
   {
     direction: { type: String, enum: ["OUTBOUND", "RETURN"], required: true },
@@ -178,6 +180,10 @@ const bookingSchema = new Schema(
     status: { type: String, enum: Object.values(BOOKING_STATUS), required: true, index: true },
     paymentStatus: { type: String, enum: Object.values(PAYMENT_STATUS), default: PAYMENT_STATUS.UNPAID },
     paymentArrangement: { type: String, enum: Object.values(PAYMENT_ARRANGEMENTS), default: PAYMENT_ARRANGEMENTS.ONLINE },
+    // Set by payment verification when money arrived that cannot be applied (the booking was already paid,
+    // rejected or cancelled, or the amount differs), or a verified payment was later reversed. Staff handle it
+    // in the Pesapal dashboard; the booking status itself is never changed by an alert.
+    paymentAlert: { type: String, enum: Object.values(PAYMENT_ALERTS), default: PAYMENT_ALERTS.NONE, index: true },
     tripType: { type: String, enum: ["ONE_WAY", "ROUND_TRIP"], required: true },
     legs: { type: [bookingLegSchema], required: true },
     pickupAddress: { type: String, default: "" },
@@ -376,6 +382,62 @@ tripSchema.index({ "assignmentHistory.vehicleId": 1 });
 
 const registry = new WeakMap();
 
+// ---------- Popular routes ----------
+// A bookable product on the website: a fixed pickup and drop-off for the booking widget. It holds no price: the price
+// always comes from the zones, routes and rates. Inclusions are shown only when staff have switched them on.
+const ROUTE_INCLUSIONS = Object.freeze(["PRIVATE_VEHICLE", "PROFESSIONAL_DRIVER", "FUEL_INCLUDED", "HOTEL_PICKUP", "HOTEL_DROPOFF", "LUGGAGE_ASSISTANCE"]);
+
+const popularRouteSchema = new Schema(
+  {
+    slug: { type: String, required: true, trim: true, lowercase: true, unique: true },
+    title: { type: String, required: true, trim: true },
+    pickupLocationId: { type: Schema.Types.ObjectId, ref: "TransferLocation", required: true },
+    dropoffLocationId: { type: Schema.Types.ObjectId, ref: "TransferLocation", required: true },
+    description: { type: String, default: "", trim: true },
+    inclusions: { type: [{ type: String, enum: ROUTE_INCLUSIONS }], default: ["PRIVATE_VEHICLE"] },
+    displayOrder: { type: Number, default: 0 },
+    active: { type: Boolean, default: true, index: true }
+  },
+  { timestamps: true, collection: "transfer_popular_routes" }
+);
+popularRouteSchema.index({ active: 1, displayOrder: 1 });
+
+// ---------- Payments ----------
+// One record per Pesapal checkout attempt. Only the payment service writes them, and only from what Pesapal's
+// transaction status says (never from the customer's browser).
+const TRANSFER_PAYMENT_STATUS = Object.freeze({ PENDING: "PENDING", PAID: "PAID", FAILED: "FAILED", CANCELLED: "CANCELLED", REVERSED: "REVERSED" });
+// What a verified payment did: confirmed its booking, or could not be applied and must be refunded by staff.
+const TRANSFER_PAYMENT_OUTCOME = Object.freeze({ NONE: "", APPLIED: "APPLIED", NEEDS_REFUND: "NEEDS_REFUND" });
+
+const paymentSchema = new Schema(
+  {
+    bookingId: { type: Schema.Types.ObjectId, required: true, index: true },
+    bookingReference: { type: String, required: true, index: true },
+    provider: { type: String, enum: ["PESAPAL"], default: "PESAPAL" },
+    // Our id for the Pesapal order (sent as `id`) and Pesapal's id for it.
+    merchantReference: { type: String, required: true, unique: true },
+    orderTrackingId: { type: String },
+    amount: { type: Schema.Types.Decimal128, required: true },
+    currency: { type: String, default: TRANSFER_CURRENCY },
+    status: { type: String, enum: Object.values(TRANSFER_PAYMENT_STATUS), default: TRANSFER_PAYMENT_STATUS.PENDING, index: true },
+    outcome: { type: String, enum: Object.values(TRANSFER_PAYMENT_OUTCOME), default: TRANSFER_PAYMENT_OUTCOME.NONE },
+    outcomeReason: { type: String, default: "" },
+    failureReason: { type: String, default: "" },
+    // Evidence from Pesapal's GetTransactionStatus.
+    providerStatus: { type: String, default: "" },
+    providerStatusCode: { type: Number, default: null },
+    paidAmount: { type: String, default: "" },
+    paidCurrency: { type: String, default: "" },
+    paymentMethod: { type: String, default: "" },
+    confirmationCode: { type: String, default: "" },
+    verifiedAt: { type: Date, default: null },
+    lastCheckedAt: { type: Date, default: null },
+    checks: [{ _id: false, at: Date, source: String, status: String, statusCode: Number, by: String }]
+  },
+  { timestamps: true, collection: "transfer_payments" }
+);
+paymentSchema.index({ orderTrackingId: 1 }, { unique: true, partialFilterExpression: { orderTrackingId: { $type: "string" } } });
+
 // Models are bound to the Transfer System connection only, never to the Business Platform connection.
 const defineTransferModels = (connection) => {
   if (registry.has(connection)) return registry.get(connection);
@@ -390,7 +452,9 @@ const defineTransferModels = (connection) => {
     Booking: connection.model("TransferBooking", bookingSchema),
     Driver: connection.model("TransferDriver", driverSchema),
     Vehicle: connection.model("TransferVehicle", vehicleSchema),
-    Trip: connection.model("TransferTrip", tripSchema)
+    Trip: connection.model("TransferTrip", tripSchema),
+    Payment: connection.model("TransferPayment", paymentSchema),
+    PopularRoute: connection.model("TransferPopularRoute", popularRouteSchema)
   };
   registry.set(connection, models);
   return models;
@@ -407,6 +471,10 @@ module.exports = {
   BOOKING_SOURCES,
   MANUAL_CHANNELS,
   PAYMENT_ARRANGEMENTS,
+  PAYMENT_ALERTS,
+  ROUTE_INCLUSIONS,
+  TRANSFER_PAYMENT_STATUS,
+  TRANSFER_PAYMENT_OUTCOME,
   DEFAULT_TRIP_MINUTES,
   DEFAULT_BUFFER_MINUTES,
   DRIVER_AVAILABILITY,

@@ -11,6 +11,7 @@ const BookingsPage = lazy(() => import("../pages/BookingsPage"));
 const BookingDetailPage = lazy(() => import("../pages/BookingDetailPage"));
 const ZonesPage = lazy(() => import("../pages/ZonesPage"));
 const LocationsPage = lazy(() => import("../pages/LocationsPage"));
+const PopularRoutesPage = lazy(() => import("../pages/PopularRoutesPage"));
 const RoutesPage = lazy(() => import("../pages/RoutesPage"));
 const RatesPage = lazy(() => import("../pages/RatesPage"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
@@ -64,6 +65,7 @@ const AppRoutes = () => (
         <Route path="/pricing/locations" element={guarded(P.PRICING_VIEW, LocationsPage)} />
         <Route path="/pricing/routes" element={guarded(P.PRICING_VIEW, RoutesPage)} />
         <Route path="/pricing/rates" element={guarded(P.PRICING_VIEW, RatesPage)} />
+        <Route path="/pricing/popular-routes" element={guarded(P.PRICING_VIEW, PopularRoutesPage)} />
         <Route path="/pricing/settings" element={guarded(P.PRICING_VIEW, SettingsPage)} />
         <Route path="/users" element={guarded(P.USERS_MANAGE, UsersPage)} />
         <Route path="/audit" element={guarded(P.AUDIT_VIEW, AuditLogPage)} />
