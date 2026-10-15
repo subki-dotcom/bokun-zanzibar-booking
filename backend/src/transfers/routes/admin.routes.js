@@ -39,6 +39,7 @@ const createTransferAdminRouter = ({ getStore, tokenConfig, services }) => {
   router.get("/zones", can(P.PRICING_VIEW), ...list(catalog.listZones));
   router.post("/zones", can(P.PRICING_MANAGE), ...write(v.createZoneSchema, catalog.createZone, 201));
   router.patch("/zones/:zoneId", can(P.PRICING_MANAGE), ...write(v.updateZoneSchema, catalog.updateZone));
+  router.delete("/zones/:zoneId", can(P.PRICING_MANAGE), ...write(v.deleteZoneSchema, catalog.deleteZone));
 
   router.get("/locations", can(P.PRICING_VIEW), ...list(catalog.listLocations));
   router.post("/locations", can(P.PRICING_MANAGE), ...write(v.createLocationSchema, catalog.createLocation, 201));

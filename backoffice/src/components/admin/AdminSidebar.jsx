@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   BsBoxArrowRight,
+  BsBoxArrowUpRight,
   BsChevronDown,
   BsChevronRight,
   BsMoon,
@@ -13,6 +14,16 @@ import {
   isAdminNavItemActive,
   roleLabel
 } from "../../config/adminNavigation";
+import { TRANSFER_ADMIN_URL } from "../../config/site";
+
+// Separate apps linked from the menu. An app without a configured address is left out.
+const EXTERNAL_APP_URLS = { transferAdmin: TRANSFER_ADMIN_URL };
+
+const withoutUnavailableApps = (items) =>
+  items
+    .filter((item) => !item.externalApp || Boolean(EXTERNAL_APP_URLS[item.externalApp]))
+    .map((item) => (item.children ? { ...item, children: withoutUnavailableApps(item.children) } : item))
+    .filter((item) => !item.children || item.children.length > 0);
 
 const SECTION_STATE_KEY = "riser_admin_sidebar_sections";
 
@@ -116,6 +127,25 @@ const SidebarItem = ({ item, depth = 0, pathname, collapsed, onNavigate, openSec
     );
   }
 
+  // A separate app with its own login: opens in a new tab.
+  if (item.externalApp) {
+    return (
+      <a
+        href={EXTERNAL_APP_URLS[item.externalApp]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`admin-platform-nav-link depth-${depth}`}
+        aria-label={`${item.label} (opens in a new tab)`}
+        data-tooltip={tooltip}
+        onClick={onNavigate}
+      >
+        {Icon ? <Icon aria-hidden="true" /> : null}
+        <span>{item.label}</span>
+        <BsBoxArrowUpRight className="admin-platform-nav-row-arrow" aria-hidden="true" />
+      </a>
+    );
+  }
+
   if (isPlanned) {
     return (
       <div
@@ -191,9 +221,9 @@ const SidebarFooter = ({ collapsed, onLogout }) => (
   </footer>
 );
 
-const AdminSidebar = ({ user, collapsed, mobileOpen, onNavigate, onClose, onLogout }) => {
+const AdminSidebar = ({ user, websiteAdmin = false, collapsed, mobileOpen, onNavigate, onClose, onLogout }) => {
   const location = useLocation();
-  const navigation = useMemo(() => filterAdminNavigation(undefined, user), [user]);
+  const navigation = useMemo(() => withoutUnavailableApps(filterAdminNavigation(undefined, user, { websiteAdmin })), [user, websiteAdmin]);
   const [openSections, setOpenSections] = useState(() => ({
     ...loadOpenSections()
   }));

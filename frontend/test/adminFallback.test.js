@@ -19,18 +19,23 @@ after(async () => {
 
 test("the website keeps /admin as a fallback that mounts the Back Office route table", () => {
   assert.match(routes, /import adminRoutes from "\.\.\/\.\.\/\.\.\/backoffice\/src\/routes\/AdminRoutes";/);
-  assert.match(routes, /\{adminRoutes\(\)\}/);
+  // The website admin is the day-to-day admin; Back-Office-only sections are not mounted here.
+  assert.match(routes, /\{adminRoutes\(\{ websiteAdmin: true \}\)\}/);
   assert.doesNotMatch(routes, /pages\/admin\//, "admin pages are owned by the Back Office");
 });
 
 test("the fallback resolves to the website's own React Router, so there is a single router instance", async () => {
   const { default: adminRoutes } = await server.ssrLoadModule(adminRoutesFile);
   // createRoutesFromChildren rejects <Route> elements from a different react-router copy.
-  const [layout] = createRoutesFromChildren(adminRoutes());
+  const [layout] = createRoutesFromChildren(adminRoutes({ websiteAdmin: true }));
   // Admin screens sit in role/permission groups under the layout (Back Office screens, Tour Admin screens).
   const paths = (routes) => routes.flatMap((route) => [route.path, ...paths(route.children || [])]);
   assert.ok(paths(layout.children).includes("/admin"));
   assert.ok(paths(layout.children).includes("/admin/tour-admin"));
+  assert.ok(
+    !paths(layout.children).some((value) => /^\/admin\/(booking-accounting|business-accounting|crm|report-center|system-health)/.test(value || "")),
+    "accounting, CRM, reports and system stay in the Back Office"
+  );
 });
 
 test("public and agent routes are unchanged", () => {

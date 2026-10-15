@@ -155,6 +155,38 @@ const createCatalogService = ({ getStore }) => {
       })
     );
 
+  // Deletes a zone with its locations, routes and rates. Refused while any booking uses them (deactivate instead),
+  // and only when the caller repeats the zone code.
+  const deleteZone = async ({ actor, context, zoneId, input }) => {
+    const record = await audited({
+      actor, context, action: "zone.deleted", entityType: "TransferZone",
+      run: async (models, session) => {
+        const zone = await withSession(models.Zone.findById(zoneId), session);
+        if (!zone) throw notFound("Zone");
+        if (String(input.confirmCode || "").trim().toUpperCase() !== zone.code) {
+          throw new AppError("Type the zone code to confirm the delete", 422, "TRANSFER_ZONE_DELETE_UNCONFIRMED");
+        }
+        const locationIds = (await withSession(models.Location.find({ zoneId }, { _id: 1 }).lean(), session)).map((item) => item._id);
+        const routeIds = (await withSession(models.Route.find({ $or: [{ fromZoneId: zoneId }, { toZoneId: zoneId }] }, { _id: 1 }).lean(), session)).map((item) => item._id);
+        const bookings = await withSession(
+          models.Booking.countDocuments({ $or: [{ pickupLocationId: { $in: locationIds } }, { dropoffLocationId: { $in: locationIds } }, { routeId: { $in: routeIds } }] }),
+          session
+        );
+        if (bookings) {
+          throw new AppError("This zone is used by bookings and cannot be deleted. Deactivate it instead.", 409, "TRANSFER_ZONE_IN_USE", { bookings });
+        }
+        const options = session ? { session } : {};
+        const rates = (await models.Rate.deleteMany({ routeId: { $in: routeIds } }, options)).deletedCount;
+        const routes = (await models.Route.deleteMany({ _id: { $in: routeIds } }, options)).deletedCount;
+        const locations = (await models.Location.deleteMany({ _id: { $in: locationIds } }, options)).deletedCount;
+        await models.Zone.deleteOne({ _id: zone._id }, options);
+        const removed = { locations, routes, rates };
+        return { record: zone, before: zone.toObject(), after: { deleted: true, removed }, reason: input.reason || "" };
+      }
+    });
+    return { id: id(record._id), code: record.code, deleted: true };
+  };
+
   // ---------- Locations ----------
   const listLocations = async ({ query = {} } = {}) => {
     const { models } = await getStore();
@@ -383,7 +415,7 @@ const createCatalogService = ({ getStore }) => {
   };
 
   return {
-    listZones, createZone, updateZone,
+    listZones, createZone, updateZone, deleteZone,
     listLocations, createLocation, updateLocation,
     listRoutes, createRoute, updateRoute,
     listRates, createRate, updateRate,

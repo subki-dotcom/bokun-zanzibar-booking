@@ -185,6 +185,40 @@ test("Transfer Admin API against a real database", async (t) => {
       await call("PATCH", `/zones/${ctx.zones.B}`, { token: ctx.admin, body: { active: true } });
     });
 
+    await t.test("an admin deletes an unused zone with its locations, routes and rates; a zone used by bookings is kept", async () => {
+      const zone = (await call("POST", "/zones", { token: ctx.admin, body: { code: "DEL", name: "To delete" } })).data;
+      const location = (await call("POST", "/locations", { token: ctx.admin, body: { name: "Old hotel", type: "HOTEL", zoneId: zone.id } })).data;
+      const route = (await call("POST", "/routes", { token: ctx.admin, body: { fromZoneId: ctx.zones.A, toZoneId: zone.id } })).data;
+      await call("POST", "/rates", { token: ctx.admin, body: { routeId: route.id, minPassengers: 1, maxPassengers: 4, price: "30" } });
+
+      assert.equal((await call("DELETE", `/zones/${zone.id}`, { token: ctx.manager, body: { confirmCode: "DEL" } })).status, 403);
+      assert.equal((await call("DELETE", `/zones/${zone.id}`, { token: ctx.admin, body: {} })).status, 422);
+      assert.equal((await call("DELETE", `/zones/${zone.id}`, { token: ctx.admin, body: { confirmCode: "A" } })).code, "TRANSFER_ZONE_DELETE_UNCONFIRMED");
+
+      // A booking at one of its locations keeps the zone.
+      const booking = await store.models.Booking.collection.insertOne({ pickupLocationId: new mongoose.Types.ObjectId(location.id), dropoffLocationId: new mongoose.Types.ObjectId() });
+      const inUse = await call("DELETE", `/zones/${zone.id}`, { token: ctx.admin, body: { confirmCode: "del" } });
+      assert.equal(inUse.status, 409);
+      assert.equal(inUse.code, "TRANSFER_ZONE_IN_USE");
+      assert.ok(await store.models.Zone.findById(zone.id));
+      await store.models.Booking.collection.deleteOne({ _id: booking.insertedId });
+
+      const deleted = await call("DELETE", `/zones/${zone.id}`, { token: ctx.admin, body: { confirmCode: "del", reason: "imported by mistake" } });
+      assert.equal(deleted.status, 200);
+      assert.equal(deleted.data.deleted, true);
+      assert.equal(await store.models.Zone.countDocuments({ _id: zone.id }), 0);
+      assert.equal(await store.models.Location.countDocuments({ zoneId: zone.id }), 0);
+      assert.equal(await store.models.Route.countDocuments({ _id: route.id }), 0);
+      assert.equal(await store.models.Rate.countDocuments({ routeId: route.id }), 0);
+      assert.ok(await store.models.Zone.findById(ctx.zones.A), "other zones stay");
+      assert.equal((await call("DELETE", `/zones/${zone.id}`, { token: ctx.admin, body: { confirmCode: "DEL" } })).status, 404);
+
+      const log = (await call("GET", "/audit-logs?action=zone.deleted", { token: ctx.admin })).data.items[0];
+      assert.equal(log.before.code, "DEL");
+      assert.deepEqual(log.after.removed, { locations: 1, routes: 1, rates: 1 });
+      assert.equal(log.reason, "imported by mistake");
+    });
+
     await t.test("every change is in the audit log, with before/after and no secrets, and the log cannot be edited", async () => {
       const logs = await call("GET", "/audit-logs?limit=100", { token: ctx.admin });
       assert.equal(logs.status, 200);

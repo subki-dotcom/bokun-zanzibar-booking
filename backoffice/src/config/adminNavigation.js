@@ -727,6 +727,23 @@ export const adminNavigation = [
     ]
   },
   {
+    // Website /admin only: a shortcut to the separate Transfer Admin app, which keeps its own login.
+    id: "transfers",
+    label: "Transfers",
+    roles: ADMIN_ROLES.MANAGE,
+    websiteOnly: true,
+    children: [
+      {
+        id: "transfer-admin-link",
+        label: "Transfer Admin",
+        externalApp: "transferAdmin",
+        icon: BsTruck,
+        roles: ADMIN_ROLES.MANAGE,
+        status: "active"
+      }
+    ]
+  },
+  {
     id: "settings-section",
     label: "Settings",
     roles: ADMIN_ROLES.MANAGE,
@@ -764,8 +781,40 @@ const canViewItem = (item, actor) => {
   return item.roles.includes(role);
 };
 
-export const filterAdminNavigation = (items = adminNavigation, actor = "") =>
+// The website's /admin is the day-to-day admin: dashboard, Tour Admin, operations and settings. These
+// sections exist only in the Back Office app.
+export const BACK_OFFICE_ONLY_SECTIONS = Object.freeze([
+  "crm",
+  "booking-accounting",
+  "business-accounting",
+  "reports-analytics",
+  "integrations",
+  "control-system"
+]);
+
+// Every admin URL belonging to those sections, including pages that are not in the menu.
+export const BACK_OFFICE_ONLY_PATH_PREFIXES = Object.freeze([
+  "/admin/crm",
+  "/admin/booking-accounting",
+  "/admin/finance",
+  "/admin/business-accounting",
+  "/admin/business-intelligence",
+  "/admin/report-center",
+  "/admin/performance-review",
+  "/admin/operations/bokun-sync",
+  "/admin/audit-control",
+  "/admin/system-health",
+  "/admin/disaster-recovery",
+  "/admin/production-readiness"
+]);
+
+export const isBackOfficeOnlyPath = (pathname = "") =>
+  BACK_OFFICE_ONLY_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+
+export const filterAdminNavigation = (items = adminNavigation, actor = "", { websiteAdmin = false } = {}) =>
   items
+    .filter((item) => !(websiteAdmin && BACK_OFFICE_ONLY_SECTIONS.includes(item.id)))
+    .filter((item) => websiteAdmin || !item.websiteOnly)
     .filter((item) => canViewItem(item, actor))
     .map((item) => ({
       ...item,

@@ -12,7 +12,8 @@ const loadSidebarPreference = () => {
   return stored === "true";
 };
 
-const AdminLayout = () => {
+// websiteAdmin: the website's /admin, which hides the Back-Office-only sections.
+const AdminLayout = ({ websiteAdmin = false }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const menuButtonRef = useRef(null);
@@ -81,6 +82,7 @@ const AdminLayout = () => {
     <div className={`admin-platform-shell ${isSidebarCollapsed ? "is-sidebar-collapsed" : ""} ${isMobileMenuOpen ? "is-mobile-menu-open" : ""}`}>
       <AdminSidebar
         user={user}
+        websiteAdmin={websiteAdmin}
         collapsed={isSidebarCollapsed}
         mobileOpen={isMobileMenuOpen}
         onNavigate={() => setIsMobileMenuOpen(false)}

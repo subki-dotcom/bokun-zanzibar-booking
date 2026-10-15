@@ -12,7 +12,8 @@ const read = (relativePath) => readFileSync(resolve(root, relativePath), "utf8")
 test("admin sidebar redesign reuses one navigation source and split components", () => {
   const sidebar = read("src/components/admin/AdminSidebar.jsx");
 
-  assert.match(sidebar, /filterAdminNavigation\(undefined, user\)/);
+  // One navigation source; the website's /admin passes { websiteAdmin } to hide Back-Office-only sections.
+  assert.match(sidebar, /filterAdminNavigation\(undefined, user, \{ websiteAdmin \}\)/);
   assert.match(sidebar, /const SidebarBrand/);
   assert.match(sidebar, /const SidebarProfile/);
   assert.match(sidebar, /const SidebarSection/);

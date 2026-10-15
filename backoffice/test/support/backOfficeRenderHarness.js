@@ -13,7 +13,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const serverError = (status, code, message) => ({ __error: { status, code, message } });
 
-export const createRenderHarness = ({ defaultRoutes = () => ({}) } = {}) => {
+// websiteAdmin: render the admin the way the website mounts it (adminRoutes({ websiteAdmin: true })).
+export const createRenderHarness = ({ defaultRoutes = () => ({}), websiteAdmin = false } = {}) => {
   const state = { dom: null, server: null, mods: null, reactRoot: null, calls: [], routes: {}, currentUser: null, locationNow: "" };
 
   before(async () => {
@@ -28,6 +29,7 @@ export const createRenderHarness = ({ defaultRoutes = () => ({}) } = {}) => {
     state.server = await createServer({ configFile: false, resolve: sharedResolve, esbuild: { jsx: "automatic" }, server: { middlewareMode: true, watch: null, hmr: false }, optimizeDeps: { noDiscovery: true }, appType: "custom" });
     state.mods = {
       routes: await state.server.ssrLoadModule("/src/routes/BackOfficeRoutes.jsx"),
+      adminRoutes: await state.server.ssrLoadModule("/src/routes/AdminRoutes.jsx"),
       auth: await state.server.ssrLoadModule("/../shared/src/context/AuthContext.jsx"),
       axios: await state.server.ssrLoadModule("/../shared/src/api/axiosClient.js"),
       router: await import("react-router-dom"),
@@ -87,7 +89,10 @@ export const createRenderHarness = ({ defaultRoutes = () => ({}) } = {}) => {
       state.reactRoot.render(
         React.createElement(state.mods.router.MemoryRouter, { initialEntries: [pathname] },
           React.createElement(state.mods.auth.AuthProvider, null,
-            React.createElement(state.mods.routes.default),
+            websiteAdmin
+              ? React.createElement(React.Suspense, { fallback: null },
+                React.createElement(state.mods.router.Routes, null, state.mods.adminRoutes.default({ websiteAdmin: true })))
+              : React.createElement(state.mods.routes.default),
             React.createElement(LocationProbe)))
       );
       await sleep(20);

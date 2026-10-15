@@ -43,6 +43,11 @@ const updateZoneSchema = z.object({
   query: noQuery,
   params: idParams("zoneId")
 });
+const deleteZoneSchema = z.object({
+  body: z.object({ confirmCode: z.string().trim().min(1).max(20), reason }).strict(),
+  query: noQuery,
+  params: idParams("zoneId")
+});
 
 const locationBody = {
   name: text(150).min(1),
@@ -313,6 +318,7 @@ module.exports = {
   listSchema,
   createZoneSchema,
   updateZoneSchema,
+  deleteZoneSchema,
   createLocationSchema,
   updateLocationSchema,
   createRouteSchema,

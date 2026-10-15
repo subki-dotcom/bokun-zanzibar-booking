@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Badge, Button, Card, Form, Table } from "react-bootstrap";
-import { createZone, fetchZones, updateZone } from "../api/transferAdminApi";
+import { createZone, deleteZone, fetchZones, updateZone } from "../api/transferAdminApi";
 import { useAuth } from "../auth/AuthContext";
 import { Empty, ErrorMessage, FormModal, Loading, PageHeader, useResource } from "../components/ui";
 import { P, can } from "../lib/permissions";
@@ -25,11 +25,30 @@ const ZoneModal = ({ zone, show, onHide, onSaved }) => {
   );
 };
 
+// Deleting removes the zone with its locations, routes and rates. The server refuses it while bookings use the zone.
+const DeleteZoneModal = ({ zone, onHide, onDeleted }) => {
+  const [confirmCode, setConfirmCode] = useState("");
+  const [reason, setReason] = useState("");
+  const submit = async () => {
+    await deleteZone(zone.id, { confirmCode, reason: reason || undefined });
+    onDeleted();
+  };
+  return (
+    <FormModal show={Boolean(zone)} title={`Delete zone ${zone?.code || ""}`} submitLabel="Delete zone" variant="danger" onHide={onHide} onSubmit={submit}>
+      <p>This permanently deletes <strong>{zone?.name}</strong> together with all its locations, routes and rates. It cannot be undone.</p>
+      <p className="small text-muted">A zone used by bookings cannot be deleted; deactivate it instead.</p>
+      <Form.Group className="mb-3" controlId="zone-delete-code"><Form.Label>Type <strong>{zone?.code}</strong> to confirm</Form.Label><Form.Control value={confirmCode} onChange={(event) => setConfirmCode(event.target.value)} maxLength={20} autoComplete="off" required /></Form.Group>
+      <Form.Group controlId="zone-delete-reason"><Form.Label>Reason (optional)</Form.Label><Form.Control value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} /></Form.Group>
+    </FormModal>
+  );
+};
+
 const ZonesPage = () => {
   const { user } = useAuth();
   const manage = can(user, P.PRICING_MANAGE);
   const { data, loading, error, reload } = useResource(() => fetchZones(), []);
   const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [actionError, setActionError] = useState(null);
 
   const toggle = async (zone) => {
@@ -62,7 +81,8 @@ const ZonesPage = () => {
                     {manage ? (
                       <td className="text-end text-nowrap">
                         <Button size="sm" variant="outline-secondary" onClick={() => setEditing(zone)}>Edit</Button>{" "}
-                        <Button size="sm" variant={zone.active ? "outline-danger" : "outline-success"} onClick={() => toggle(zone)}>{zone.active ? "Deactivate" : "Activate"}</Button>
+                        <Button size="sm" variant={zone.active ? "outline-danger" : "outline-success"} onClick={() => toggle(zone)}>{zone.active ? "Deactivate" : "Activate"}</Button>{" "}
+                        <Button size="sm" variant="danger" onClick={() => setDeleting(zone)}>Delete</Button>
                       </td>
                     ) : null}
                   </tr>
@@ -75,6 +95,7 @@ const ZonesPage = () => {
         )
       ) : null}
       <ZoneModal key={editing?.id || editing || "none"} zone={editing && editing !== "new" ? editing : null} show={Boolean(editing)} onHide={() => setEditing(null)} onSaved={reload} />
+      <DeleteZoneModal key={deleting?.id || "none-delete"} zone={deleting} onHide={() => setDeleting(null)} onDeleted={reload} />
     </>
   );
 };

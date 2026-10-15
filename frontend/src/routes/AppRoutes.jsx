@@ -77,7 +77,8 @@ const AppRoutes = () => {
         <Route path="/terms" element={<LegalPage />} />
       </Route>
 
-      {adminRoutes()}
+      {/* The website's admin: day-to-day screens only; accounting, CRM, reports and system stay in the Back Office. */}
+      {adminRoutes({ websiteAdmin: true })}
 
       <Route
         element={

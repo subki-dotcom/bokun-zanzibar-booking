@@ -21,6 +21,7 @@ export const issueCustomerLink = (id) => data(client.post(`/bookings/${id}/custo
 export const fetchZones = (params) => data(client.get("/zones", { params }));
 export const createZone = (body) => data(client.post("/zones", body));
 export const updateZone = (id, body) => data(client.patch(`/zones/${id}`, body));
+export const deleteZone = (id, body) => data(client.delete(`/zones/${id}`, { data: body }));
 export const fetchLocations = (params) => data(client.get("/locations", { params }));
 export const createLocation = (body) => data(client.post("/locations", body));
 export const updateLocation = (id, body) => data(client.patch(`/locations/${id}`, body));
