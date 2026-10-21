@@ -5,6 +5,7 @@ import Button from "react-bootstrap/Button";
 import { BsArrowLeft, BsArrowRight, BsInfoCircle } from "react-icons/bs";
 import {
   applyDialCodeToPhone,
+  browserCountryCode,
   countryCodeToFlagEmoji,
   getCountryFlagUrl,
   getDialCodeFromCountries,
@@ -103,7 +104,12 @@ const CustomerStep = ({
     }
 
     if (!customer.country) {
-      const defaultCountry = resolveDefaultCountryCode(countries, "TZ");
+      // Start from the guest's own country (browser language), Tanzania when it is not known.
+      const detected = browserCountryCode();
+      const defaultCountry = resolveDefaultCountryCode(
+        countries,
+        countries.some((country) => String(country.code || "").toUpperCase() === detected) ? detected : "TZ"
+      );
       if (defaultCountry) {
         setCustomer((prev) => ({
           ...prev,

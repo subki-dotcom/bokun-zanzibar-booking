@@ -166,6 +166,22 @@ export const checkTourOptionsAvailability = (slug, payload) => {
   return promise;
 };
 
+// Dates with a bookable start time, for the tour calendar.
+const availableDatesRequests = new Map();
+export const fetchTourAvailableDates = (slug, { from = "", days = 90 } = {}) => {
+  const key = `${slug}|${from}|${days}`;
+  if (!availableDatesRequests.has(key)) {
+    availableDatesRequests.set(key, axiosClient
+      .get(`/tours/${encodeURIComponent(slug)}/available-dates`, { params: { from, days } })
+      .then((response) => response.data.data)
+      .catch((error) => {
+        availableDatesRequests.delete(key);
+        throw error;
+      }));
+  }
+  return availableDatesRequests.get(key);
+};
+
 export const prefetchTourOptionsAvailability = (slug, payload) => {
   if (!slug || !payload?.travelDate) return;
   checkTourOptionsAvailability(slug, payload).catch(() => {});

@@ -763,6 +763,51 @@ const perPersonStartingAmount = (startingPrice = {}) => {
   return Number((amount / adults).toFixed(2));
 };
 
+// Dates with at least one bookable start time, for the tour calendar. Bókun returns at most 100 slots per request,
+// so the range is asked for one week at a time (four weeks in parallel) and kept for ten minutes.
+const AVAILABLE_DATES_CACHE_TTL_MS = 10 * 60 * 1000;
+const AVAILABLE_DATES_CHUNK_DAYS = 7;
+const availableDatesCache = new Map();
+
+const isBookableSlot = (slot = {}) =>
+  !slot.soldOut && !slot.unavailable && (slot.unlimitedAvailability || Number(slot.availabilityCount || 0) > 0);
+
+const fetchAvailableDates = async ({ productId, startDate, days = 60 }, requestId) => {
+  const safeProductId = String(productId || "").trim();
+  if (!safeProductId) throw new AppError("productId is required", 400, "PRODUCT_ID_REQUIRED");
+  const start = /^\d{4}-\d{2}-\d{2}$/.test(String(startDate || "")) ? String(startDate) : formatIsoDate(new Date());
+  const span = Math.max(1, Math.min(90, Number(days) || 60));
+  const end = addDaysIso(start, span - 1);
+  const cacheKey = `dates:${safeProductId}:${start}:${span}`;
+  const cached = getCacheEntry(availableDatesCache, cacheKey);
+  if (cached) return cached;
+
+  const chunks = [];
+  for (let offset = 0; offset < span; offset += AVAILABLE_DATES_CHUNK_DAYS) {
+    chunks.push([addDaysIso(start, offset), addDaysIso(start, Math.min(span - 1, offset + AVAILABLE_DATES_CHUNK_DAYS - 1))]);
+  }
+  const dates = new Set();
+  for (let index = 0; index < chunks.length; index += 4) {
+    const batch = await Promise.all(chunks.slice(index, index + 4).map(([from, to]) => bokunClient.request({
+      method: "get",
+      path: `/activity.json/${encodeURIComponent(safeProductId)}/availabilities?${new URLSearchParams({ start: from, end: to, currency: env.DEFAULT_CURRENCY })}`,
+      requestId
+    })));
+    batch.forEach((slots) => ensureArray(slots).forEach((slot) => {
+      if (!isBookableSlot(slot)) return;
+      const date = formatIsoDate(new Date(slot.date));
+      if (date) dates.add(date);
+    }));
+  }
+
+  return setCacheEntry(availableDatesCache, cacheKey, {
+    productId: safeProductId,
+    startDate: start,
+    endDate: end,
+    availableDates: [...dates].sort()
+  }, AVAILABLE_DATES_CACHE_TTL_MS);
+};
+
 const fetchProductBookingConfig = async (productId, options = {}, requestId) => {
   const safeProductId = String(productId || "").trim();
   const requestedRateId = String(options?.rateId || "").trim();
@@ -2605,6 +2650,7 @@ module.exports = {
   fetchOptionAvailabilityMatrix,
   fetchStartingPricePreview,
   fetchOneAdultStartingPreview,
+  fetchAvailableDates,
   perPersonStartingAmount,
   fetchBookingQuestions,
   resolveBookingQuestions,

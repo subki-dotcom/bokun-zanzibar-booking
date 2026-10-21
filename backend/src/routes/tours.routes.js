@@ -11,6 +11,7 @@ router.get("/", toursController.listTours);
 router.get("/categories", toursController.listCategories);
 router.post("/availability-search", validateRequest(availabilitySearchSchema), toursController.searchToursByAvailability);
 router.get("/:id/options", toursController.getTourOptions);
+router.get("/:slug/available-dates", toursController.getAvailableDates);
 router.post("/:slug/options-availability", toursController.checkOptionsAvailability);
 router.get("/:slug", toursController.getTourBySlug);
 router.post("/sync", authenticate, authorize("super_admin", "admin", "staff"), toursController.syncProducts);

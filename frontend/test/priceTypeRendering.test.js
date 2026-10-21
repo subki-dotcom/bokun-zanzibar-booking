@@ -20,14 +20,24 @@ test("option displays a group price and its actual limit", () => {
   assert.doesNotMatch(html, /per person/);
 });
 
-test("availability cards distinguish group prices from per-person preview totals", () => {
-  for (const [pricingType, total, label] of [["per_group", 20, "per group up to 5"], ["per_person", 60, "per person"]]) {
+test("availability cards show the live total for the chosen party, group prices as one total", () => {
+  for (const [pricingType, total, label] of [["per_group", 20, "Total $20.00 for your group"], ["per_person", 60, "Total $60.00 for 3 adults"]]) {
     const html = renderToStaticMarkup(React.createElement(AvailabilityOptionCard, { option: {
       name: "Transfer", liveAvailability: { lowestPriceForTwo: total, pricingType, maxPerBooking: 5, comparedAdults: 3, currency: "USD" }
     } }));
-    assert.match(html, /From \$20/);
-    assert.ok(html.includes(label));
+    assert.ok(html.includes(label), html);
+    assert.doesNotMatch(html, /Select option/, "one button per option");
   }
+});
+
+test("availability cards pick the first start time so the guest can book at once", () => {
+  const html = renderToStaticMarkup(React.createElement(AvailabilityOptionCard, { option: {
+    name: "Dolphins", bokunOptionId: "1",
+    liveAvailability: { lowestPriceForTwo: 170, pricingType: "per_person", comparedAdults: 1, currency: "USD", slots: [{ time: "06:00", status: "available", capacityLeft: 9, startTimeId: "a" }, { time: "07:00", status: "available", capacityLeft: 9, startTimeId: "b" }] }
+  } }));
+  assert.match(html, /<option value="a:06:00:0" selected="">06:00/);
+  assert.match(html, /Book this option/);
+  assert.doesNotMatch(html, /<button[^>]*disabled[^>]*>Book this option/);
 });
 
 test("a selected per-person booking total is never labelled per person", () => {

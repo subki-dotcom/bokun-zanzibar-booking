@@ -238,7 +238,12 @@ const SingleTourPage = ({
     quote = null,
     triggerSource = "manual"
   } = {}) => {
-    if (!nextTravelDate || checkingAvailability) {
+    if (!nextTravelDate) {
+      return;
+    }
+    // A click opens the options even while the background check for the same date is still running.
+    if (checkingAvailability) {
+      if (triggerSource === "manual") setShowAvailabilityPicker(true);
       return;
     }
 

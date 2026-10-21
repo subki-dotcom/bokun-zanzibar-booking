@@ -54,6 +54,20 @@ const getTourBySlug = asyncHandler(async (req, res) => {
   });
 });
 
+const getAvailableDates = asyncHandler(async (req, res) => {
+  const data = await toursService.getAvailableDates(
+    req.params.slug,
+    { from: String(req.query.from || ""), days: parsePositiveInt(req.query.days, 60) },
+    req.requestId
+  );
+
+  setPublicCache(res, { maxAge: 300, staleWhileRevalidate: 600 });
+  return successResponse(res, {
+    message: "Available dates fetched",
+    data
+  });
+});
+
 const getTourOptions = asyncHandler(async (req, res) => {
   const data = await toursService.getTourOptions(req.params.id, req.requestId);
 
@@ -100,6 +114,7 @@ module.exports = {
   listTours,
   listCategories,
   getTourBySlug,
+  getAvailableDates,
   getTourOptions,
   checkOptionsAvailability,
   searchToursByAvailability,

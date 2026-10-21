@@ -7,6 +7,7 @@ import { saveBookingSession } from "../../../../utils/bookingSession";
 import PassengerCategorySelector from "./PassengerCategorySelector";
 import DateAvailabilityPicker from "./DateAvailabilityPicker";
 import StartingPriceBox from "./StartingPriceBox";
+import BookingTrustPanel from "./BookingTrustPanel";
 import { pricePresentation } from "../pricePresentation";
 import {
   buildDefaultPassengerState,
@@ -63,6 +64,9 @@ const derivePaxFromPassengers = (passengers = [], categories = []) => {
   return summary;
 };
 
+// A live quote shown on the card is reused for "Check availability" for this long.
+const QUOTE_REUSE_MS = 3 * 60 * 1000;
+
 const BookingAvailabilityCard = ({
   tour = {},
   selectedOption = null,
@@ -80,6 +84,7 @@ const BookingAvailabilityCard = ({
   const onLiveAvailabilityCheckedRef = useRef(onLiveAvailabilityChecked);
   const quoteRequestSeqRef = useRef(0);
   const quoteLoadingRef = useRef(false);
+  const pendingManualOpenRef = useRef(false);
   const lastQuoteRequestKeyRef = useRef("");
   const lastQuoteRequestAtRef = useRef(0);
   const [configLoading, setConfigLoading] = useState(false);
@@ -91,6 +96,7 @@ const BookingAvailabilityCard = ({
   const [travelDate, setTravelDate] = useState("");
   const [startingFromPrice, setStartingFromPrice] = useState(0);
   const [startingPrice, setStartingPrice] = useState(null);
+  const [cancellationSummary, setCancellationSummary] = useState("");
   const [bookingCurrency, setBookingCurrency] = useState(tour.currency || "USD");
   const [quote, setQuote] = useState(null);
   const [quoteStatus, setQuoteStatus] = useState("idle");
@@ -143,6 +149,7 @@ const BookingAvailabilityCard = ({
         setBookingCurrency(config.currency || tour.currency || "USD");
         setStartingFromPrice(Number(config.startingFromPrice || 0));
         setStartingPrice(config.startingPrice || null);
+        setCancellationSummary(String(config.cancellationPolicy?.policySummary || ""));
         setQuote((prev) =>
           resetQuoteOnSelectionChange({
             ...prev
@@ -207,7 +214,12 @@ const BookingAvailabilityCard = ({
 
   const requestLiveQuote = useCallback(
     async ({ silent = false } = {}) => {
-      if (!canRequestQuote || quoteLoadingRef.current) {
+      if (!canRequestQuote) {
+        return null;
+      }
+      // A click while the background quote is loading opens the options as soon as it arrives.
+      if (quoteLoadingRef.current) {
+        if (!silent) pendingManualOpenRef.current = true;
         return null;
       }
 
@@ -219,10 +231,23 @@ const BookingAvailabilityCard = ({
         passengers
       });
 
-      if (payloadKey === lastQuoteRequestKeyRef.current) {
+      // The quote for this date and party is already on screen (fetched in the background): reuse it.
+      if (payloadKey === lastQuoteRequestKeyRef.current && quote && quoteStatus === "success") {
         const elapsedMs = Date.now() - Number(lastQuoteRequestAtRef.current || 0);
-        if (elapsedMs < 1200) {
-          return quote || null;
+        if (elapsedMs < QUOTE_REUSE_MS) {
+          if (!silent) {
+            const selectedCatalog = rateOptions.find((catalog) => String(catalog?.id || "") === String(selectedRateId || ""));
+            onLiveAvailabilityCheckedRef.current?.({
+              travelDate,
+              rateId: selectedRateId,
+              rateLabel: selectedCatalog?.label || "",
+              passengers,
+              pax: paxSummary,
+              quote,
+              triggerSource: "manual"
+            });
+          }
+          return quote;
         }
       }
 
@@ -255,6 +280,8 @@ const BookingAvailabilityCard = ({
           (catalog) => String(catalog?.id || "") === String(selectedRateId || "")
         );
 
+        const openOptions = !silent || pendingManualOpenRef.current;
+        pendingManualOpenRef.current = false;
         onLiveAvailabilityCheckedRef.current?.({
           travelDate,
           rateId: selectedRateId,
@@ -262,7 +289,7 @@ const BookingAvailabilityCard = ({
           passengers,
           pax: paxSummary,
           quote: response,
-          triggerSource: silent ? "auto" : "manual"
+          triggerSource: openOptions ? "manual" : "auto"
         });
 
         return response;
@@ -271,6 +298,7 @@ const BookingAvailabilityCard = ({
           return null;
         }
 
+        pendingManualOpenRef.current = false;
         setQuote(null);
         setQuoteStatus("error");
         setQuoteError(error.message || "Could not fetch live pricing");
@@ -287,9 +315,13 @@ const BookingAvailabilityCard = ({
       passengers,
       bookingCurrency,
       paxSummary,
-      rateOptions
+      rateOptions,
+      quote,
+      quoteStatus
     ]
   );
+  const requestLiveQuoteRef = useRef(requestLiveQuote);
+  requestLiveQuoteRef.current = requestLiveQuote;
 
   const handlePassengerChange = (pricingCategoryId, quantity) => {
     quoteRequestSeqRef.current += 1;
@@ -338,6 +370,8 @@ const BookingAvailabilityCard = ({
     if (!travelDate || totalPassengers <= 0 || configLoading) return undefined;
     const timer = setTimeout(() => {
       onPrefetchAvailabilityRef.current?.({ travelDate, pax: paxSummary, rateId: selectedRateId });
+      // The live total for this date and party appears without a click.
+      requestLiveQuoteRef.current?.({ silent: true });
     }, 250);
     return () => clearTimeout(timer);
   }, [travelDate, totalPassengers, paxSummary, selectedRateId, configLoading]);
@@ -448,6 +482,7 @@ const BookingAvailabilityCard = ({
           />
 
           <DateAvailabilityPicker
+            slug={tour.slug}
             value={travelDate}
             disabled={configLoading}
             onChange={handleDateChange}
@@ -492,6 +527,8 @@ const BookingAvailabilityCard = ({
             <BsArrowRight className="ms-2" />
           </Button>
         ) : null}
+
+        <BookingTrustPanel tourTitle={tour.title} cancellationSummary={cancellationSummary} />
       </Card.Body>
     </Card>
   );

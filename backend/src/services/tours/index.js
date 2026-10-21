@@ -771,6 +771,14 @@ const syncProducts = async (requestId, actor = {}) => {
   }
 };
 
+// Bookable dates for the tour calendar (no date is excluded when Bókun cannot be reached; the page then lets the
+// guest pick any future date and checks it as before).
+const getAvailableDates = async (slug, { from = "", days = 60 } = {}, requestId) => {
+  const tour = await ProductSnapshot.findOne({ slug }).select("bokunProductId").lean();
+  if (!tour) throw new AppError("Tour not found", 404, "TOUR_NOT_FOUND");
+  return bokunService.fetchAvailableDates({ productId: tour.bokunProductId, startDate: from, days }, requestId);
+};
+
 const availabilityCacheKey = (slug, payload = {}) => JSON.stringify([
   slug,
   payload.travelDate || "",
@@ -940,6 +948,7 @@ module.exports = {
   listTours,
   listTourCategories,
   getTourBySlug,
+  getAvailableDates,
   getTourOptions,
   checkOptionsAvailability,
   searchToursByAvailability,

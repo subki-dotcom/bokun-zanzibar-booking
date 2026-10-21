@@ -81,19 +81,24 @@ const AvailabilityOptionCard = ({
 
       return slot.time === normalizedSelectedTime;
     }) || null;
-  const selectedSlotKey = selectedSlot?.selectionKey || "";
+  // The first available start time is chosen until the guest picks another one.
+  const effectiveSlot = selectedSlot || slots[0] || null;
+  const selectedSlotKey = effectiveSlot?.selectionKey || "";
+  const liveTotal = Number(option?.liveAvailability?.lowestPriceForTwo || 0);
+  const liveAdults = Math.max(0, Number(option?.liveAvailability?.comparedAdults || 0));
+  const isGroupPrice = String(option?.liveAvailability?.pricingType || option?.pricingType || "") === "per_group";
   const startTimeSelectId = `available-start-time-${String(option?.bokunOptionId || option?.name || "option")
     .replace(/[^a-z0-9_-]/gi, "-")
     .toLowerCase()}`;
 
   const handleContinue = () => {
-    if (!selectedSlot) {
+    if (!effectiveSlot) {
       return;
     }
 
     onSelectOption?.(option);
-    onChangeTime?.(option?.bokunOptionId || "", selectedSlot);
-    onContinue?.(option, selectedSlot.time, selectedSlot);
+    onChangeTime?.(option?.bokunOptionId || "", effectiveSlot);
+    onContinue?.(option, effectiveSlot.time, effectiveSlot);
   };
 
   return (
@@ -135,7 +140,13 @@ const AvailabilityOptionCard = ({
         ) : null}
         <div>
           <BsCashCoin />
-          <span>{priceAmount > 0 ? `From ${formatCurrency(displayPrice.amount, currency)} ${displayPrice.label}` : "Price shown at checkout"}</span>
+          <span>
+            {liveTotal > 0 && liveAdults > 0
+              ? `Total ${formatCurrency(liveTotal, currency)} ${isGroupPrice ? "for your group" : `for ${liveAdults} adult${liveAdults > 1 ? "s" : ""}`}`
+              : priceAmount > 0
+                ? `From ${formatCurrency(displayPrice.amount, currency)} ${displayPrice.label}`
+                : "Price shown at checkout"}
+          </span>
         </div>
       </div>
 
@@ -173,15 +184,12 @@ const AvailabilityOptionCard = ({
       </div>
 
       <div className="availability-option-footer">
-        <Button variant="outline-secondary" className="availability-option-select-btn" onClick={() => onSelectOption?.(option)}>
-          Select option
-        </Button>
         <Button
-          className="premium-btn text-white availability-option-continue-btn"
+          className="premium-btn text-white availability-option-continue-btn w-100"
           onClick={handleContinue}
-          disabled={!selectedSlot}
+          disabled={!effectiveSlot}
         >
-          Continue
+          Book this option
           <BsArrowRight className="ms-2" />
         </Button>
       </div>

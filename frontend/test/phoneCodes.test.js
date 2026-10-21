@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   applyDialCodeToPhone,
+  browserCountryCode,
   replacePhoneDialCode,
   validatePhoneNumber
 } from "../src/utils/phoneCodes.js";
@@ -45,4 +46,11 @@ test("changing the country never rewrites a number the guest typed", () => {
 test("changing the country swaps the dial code while no number is typed", () => {
   assert.equal(replacePhoneDialCode("+255", "TZ", "KE", countries), "+254");
   assert.equal(replacePhoneDialCode("", "TZ", "KE", countries), "+254");
+});
+
+test("the default country comes from the browser language", () => {
+  assert.equal(browserCountryCode(["en-GB", "en"]), "GB");
+  assert.equal(browserCountryCode(["de", "fr-CH"]), "CH");
+  assert.equal(browserCountryCode(["zh-Hant-TW"]), "TW");
+  assert.equal(browserCountryCode(["en"]), "");
 });
