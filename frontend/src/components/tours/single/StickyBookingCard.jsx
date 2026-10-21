@@ -168,7 +168,7 @@ const StickyBookingCard = ({
         <div className="single-booking-form mt-3">
           {activePriceCatalogs.length ? (
             <div>
-              <div className="single-booking-inline-label">Price catalog (Bokun)</div>
+              <div className="single-booking-inline-label">Price type</div>
               <div className="single-booking-select-wrap">
                 <BsTag className="single-booking-input-icon" />
                 <Form.Select
@@ -187,7 +187,7 @@ const StickyBookingCard = ({
               </div>
             </div>
           ) : (
-            <div className="single-booking-inline-muted">Using default Bokun price catalog</div>
+            <div className="single-booking-inline-muted">Standard price</div>
           )}
 
           <div className="single-booking-select-wrap">

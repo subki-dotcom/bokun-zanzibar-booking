@@ -27,7 +27,7 @@ const inferEntranceLabel = (option = {}) => {
     return "Entrance included";
   }
 
-  return "Entrance details in checkout";
+  return "";
 };
 
 const resolveLiveAmount = (option = {}) => {
@@ -46,11 +46,9 @@ const AvailabilityOptionCard = ({
   onChangeTime,
   onContinue
 }) => {
-  const optionLanguage = option?.language || "English";
-  const shortDescription = truncateText(
-    toPlainText(option?.description || "Live option details are confirmed in Bokun during checkout."),
-    130
-  );
+  const optionLanguage = String(option?.language || "").trim();
+  const entranceLabel = inferEntranceLabel(option);
+  const shortDescription = truncateText(toPlainText(option?.description || ""), 130);
   const priceAmount = resolveLiveAmount(option);
   const displayPrice = pricePresentation({
     ...option, ...option.liveAvailability, amount: priceAmount,
@@ -116,21 +114,25 @@ const AvailabilityOptionCard = ({
         </div>
       </header>
 
-      <p className="availability-option-copy">{shortDescription}</p>
+      {shortDescription ? <p className="availability-option-copy">{shortDescription}</p> : null}
 
       <div className="availability-option-meta">
-        <div>
-          <BsTranslate />
-          <span>{optionLanguage}</span>
-        </div>
+        {optionLanguage ? (
+          <div>
+            <BsTranslate />
+            <span>{optionLanguage}</span>
+          </div>
+        ) : null}
         <div>
           <BsTruck />
           <span>{option?.pickupSupported ? "Pickup available" : "Meeting point option"}</span>
         </div>
-        <div>
-          <BsGeoAlt />
-          <span>{inferEntranceLabel(option)}</span>
-        </div>
+        {entranceLabel ? (
+          <div>
+            <BsGeoAlt />
+            <span>{entranceLabel}</span>
+          </div>
+        ) : null}
         <div>
           <BsCashCoin />
           <span>{priceAmount > 0 ? `From ${formatCurrency(displayPrice.amount, currency)} ${displayPrice.label}` : "Price shown at checkout"}</span>

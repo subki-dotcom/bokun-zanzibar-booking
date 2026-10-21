@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { importantInfoForTour } from "./tourDisplayText";
 import { Container } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProductGallery from "./ProductGallery";
@@ -432,7 +433,8 @@ const SingleTourPage = ({
 
   const hasIncluded = Boolean((tour.included || []).length || (tour.excluded || []).length);
   const hasMeeting = Boolean(tour.meetingInfo || tour.pickupInfo);
-  const hasImportantInformation = Boolean((tour.importantInformation || []).length);
+  const importantInformation = importantInfoForTour(tour);
+  const hasImportantInformation = Boolean(importantInformation.length);
   const hasReviews = Number(tour.reviewCount || 0) > 0 && Number(tour.rating || 0) > 0;
 
   return (
@@ -458,7 +460,7 @@ const SingleTourPage = ({
             <ItineraryTimeline itinerary={itinerary} />
             {hasIncluded ? <div id="included" className="product-detail-section"><IncludedExcludedCards included={tour.included} excluded={tour.excluded} /></div> : null}
             {hasMeeting ? <div id="meeting-pickup" className="product-detail-section"><MeetingPickupCards meetingInfo={tour.meetingInfo} pickupInfo={tour.pickupInfo} /></div> : null}
-            {hasImportantInformation ? <div id="important-info" className="product-detail-section"><ImportantInfoCard importantInformation={tour.importantInformation} /></div> : null}
+            {hasImportantInformation ? <div id="important-info" className="product-detail-section"><ImportantInfoCard importantInformation={importantInformation} /></div> : null}
             {hasReviews ? <section id="reviews" className="single-tour-section product-detail-section product-reviews-summary"><h3>Reviews</h3><p>{Number(tour.rating).toFixed(1)} rating from {Number(tour.reviewCount || 0)} guest reviews.</p></section> : null}
             {portal === "public" ? <RelatedToursSection tour={tour} /> : null}
 

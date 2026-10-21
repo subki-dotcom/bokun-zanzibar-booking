@@ -1132,7 +1132,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
         <SmartCheckoutInitializer onInitialize={initializeCheckout} onError={handleInitializerError} />
         <BookingFlowLayout
           title="Preparing your checkout"
-          subtitle="Loading your selected trip details and live Bokun quote."
+          subtitle="Preparing your booking..."
           left={<Loader message="Initializing smart checkout..." />}
           right={null}
         />

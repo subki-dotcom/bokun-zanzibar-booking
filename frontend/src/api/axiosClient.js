@@ -116,6 +116,15 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Customers never see the name of the booking system behind the site: on public pages a message that mentions it
+// is replaced with plain wording. Staff pages (/admin, /agent) keep the original message.
+const isStaffPage = () =>
+  typeof window !== "undefined" && /^\/(admin|agent)(\/|$)/.test(window.location?.pathname || "");
+export const customerFacingMessage = (message = "", staffPage = isStaffPage()) =>
+  !staffPage && /b[oó]kun/i.test(String(message))
+    ? "We could not reach the tour operator right now. Please try again in a moment."
+    : message;
+
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -150,7 +159,7 @@ axiosClient.interceptors.response.use(
       timeout: isTimeout || isBokunTimeout,
       network: isNetwork || isBokunUpstreamUnavailable,
       message: isBokunTimeout
-        ? "Live availability from Bokun is taking longer than expected. Please try again."
+        ? "Live availability is taking longer than expected. Please try again."
         : isBokunUpstreamUnavailable
           ? "Live supplier service is temporarily unreachable. Please retry in a moment."
         : isTimeout
@@ -167,6 +176,7 @@ axiosClient.interceptors.response.use(
       details: responseDetails || null
     };
 
+    normalizedError.message = customerFacingMessage(normalizedError.message);
     return Promise.reject(normalizedError);
   }
 );

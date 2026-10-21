@@ -9,7 +9,7 @@ const FeaturedToursSection = ({ tours = [], loading = false }) => (
     <Container>
       <div className="z-home-section-head">
         <h2>Featured tours</h2>
-        <p>Handpicked tours and excursions with live pricing and availability from Bokun.</p>
+        <p>Handpicked tours and excursions with live pricing and availability.</p>
       </div>
 
       {loading ? <Loader message="Loading featured tours..." variant="cards" /> : <Row className="g-3 g-lg-4">
@@ -23,7 +23,7 @@ const FeaturedToursSection = ({ tours = [], loading = false }) => (
               <article className="z-home-tour-card">
                 <div className="z-home-tour-image-wrap">
                   <img src={tour.image} alt={tour.title} className="z-home-tour-image" loading="lazy" />
-                  <span className="z-home-tour-badge">Bokun powered</span>
+                  <span className="z-home-tour-badge">Live availability</span>
                 </div>
 
                 <div className="z-home-tour-body">

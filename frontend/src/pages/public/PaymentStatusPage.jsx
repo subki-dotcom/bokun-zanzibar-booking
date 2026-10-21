@@ -159,8 +159,8 @@ const PaymentStatusPage = () => {
                 />
                 <StatusStep
                   icon={<BsShieldCheck />}
-                  title="Bokun Confirmation"
-                  copy={state.isConfirmed ? "Booking has been created and confirmed in Bokun." : state.isManualReview ? "Our team is reviewing the supplier confirmation." : "Booking will be sent to Bokun only after payment is confirmed."}
+                  title="Tour Confirmation"
+                  copy={state.isConfirmed ? "Your booking is confirmed with the tour operator." : state.isManualReview ? "Our team is reviewing the supplier confirmation." : "Your booking is sent to the tour operator once payment is confirmed."}
                   state={getStepState({ done: state.isConfirmed, active: state.isPaid && !state.isConfirmed && !state.isManualReview, failed: state.isFailed || state.isReversed })}
                 />
                 <StatusStep

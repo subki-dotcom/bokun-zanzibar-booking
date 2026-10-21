@@ -21,7 +21,7 @@ const AgentTermsPage = () => {
         <p>Before creating bookings, please confirm you understand these rules.</p>
         <ul className="agent-terms-list">
           <li>Bookings must be created with accurate customer information.</li>
-          <li>Payment must be confirmed before Bokun confirmation is treated as final.</li>
+          <li>Payment must be confirmed before the supplier confirmation is treated as final.</li>
           <li>Commission is paid only for eligible paid bookings.</li>
           <li>Voucher and customer details must not be shared with unauthorized people.</li>
           <li>Cancellation requests are reviewed by Riser admin.</li>

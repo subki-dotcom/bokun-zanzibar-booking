@@ -20,7 +20,7 @@ const AboutTourSection = ({ description = "" }) => {
           {paragraphs.length > 2 ? <button type="button" className="product-summary-toggle" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? "Read less" : "Read more"}</button> : null}
         </div>
       ) : (
-        <p className="single-tour-muted mb-0">Detailed description is not yet available from Bokun.</p>
+        <p className="single-tour-muted mb-0">Contact us for full details of this tour.</p>
       )}
     </section>
   );

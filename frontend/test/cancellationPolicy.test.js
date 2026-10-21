@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  cancellationDisplayText,
   formatCancellationDeadlineParts,
   splitCancellationTimeRemaining
 } from "../src/utils/cancellationPolicy.js";
@@ -45,4 +46,12 @@ test("never displays a negative cancellation countdown", () => {
   assert.equal(result.totalSeconds, 0);
   assert.equal(result.days, 0);
   assert.equal(result.seconds, 0);
+});
+
+test("supplier policy labels are not shown to guests", () => {
+  assert.equal(
+    cancellationDisplayText("Standard Viator policy. Free cancellation is available until 24 hours before departure."),
+    "Free cancellation is available until 24 hours before departure."
+  );
+  assert.equal(cancellationDisplayText("Follows Viator's terms"), "Follows the booking provider's terms");
 });

@@ -273,7 +273,7 @@ const CustomerStep = ({
             <Form.Label>Pickup hotel</Form.Label>
             {hasPickupPlaces ? (
               <Form.Select value={customer.hotelName || ""} onChange={(e) => updatePickupHotel(e.target.value)}>
-                <option value="">Select pickup hotel from Bokun</option>
+                <option value="">Select your hotel for pickup</option>
                 {pickupPlaces.map((place) => {
                   const pickupLabel = formatPickupPlaceLabel(place);
                   return (

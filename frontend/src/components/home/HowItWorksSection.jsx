@@ -9,7 +9,7 @@ const steps = [
   {
     id: "02",
     title: "Check availability",
-    copy: "Select date and travelers to fetch live slots and prices from Bokun."
+    copy: "Choose a date and travelers to see live times and prices."
   },
   {
     id: "03",

@@ -11,7 +11,7 @@ const ConfirmationStep = ({ bookingResult }) => {
     <Card className="surface-card">
       <Card.Body>
         <h4 className="mb-2">Booking Confirmed</h4>
-        <p className="section-subtitle">Your booking has been created in Bokun and saved in your customer dashboard.</p>
+        <p className="section-subtitle">Your booking is confirmed and saved in your account.</p>
 
         <div className="d-grid gap-2 my-3">
           <div>

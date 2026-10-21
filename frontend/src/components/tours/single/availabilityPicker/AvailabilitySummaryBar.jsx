@@ -32,11 +32,13 @@ const AvailabilitySummaryBar = ({
         <BsPeople />
         <span>{summarizePassengers(pax)}</span>
       </div>
-      <div className="availability-summary-item">
-        <BsTranslate />
-        <span>{languageLabel || "Language per option"}</span>
-      </div>
-      {selectedRateLabel ? (
+      {languageLabel ? (
+        <div className="availability-summary-item">
+          <BsTranslate />
+          <span>{languageLabel}</span>
+        </div>
+      ) : null}
+      {selectedRateLabel && !/^default$/i.test(String(selectedRateLabel).trim()) ? (
         <div className="availability-summary-item">
           <BsTag />
           <span>{selectedRateLabel}</span>
