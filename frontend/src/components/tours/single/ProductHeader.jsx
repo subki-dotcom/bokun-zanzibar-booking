@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { BsGeoAlt } from "react-icons/bs";
 import ProductBadgeList from "./ProductBadgeList";
 import { toPlainText } from "../../../utils/formatters";
+import { tourBadges } from "./tourDisplayText";
 
 const ProductHeader = ({ tour = {} }) => {
   const summary = toPlainText(tour.shortDescription || tour.description || "");
@@ -9,7 +10,7 @@ const ProductHeader = ({ tour = {} }) => {
   const summaryPreview = summary.length > 220 && !expanded ? `${summary.slice(0, 220).trim()}...` : summary;
   const typeLabel = String(tour.experienceType || tour.categories?.[0] || "").trim();
   const badges = useMemo(
-    () => Array.from(new Set([...(tour.categories || []), ...(tour.highlights || [])].map((item) => String(item || "").trim()).filter(Boolean))).slice(0, 7),
+    () => tourBadges(tour),
     [tour.categories, tour.highlights]
   );
 

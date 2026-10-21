@@ -24194,3 +24194,9 @@ textarea.form-control {
   flex-shrink: 0;
 }
 
+/* The WhatsApp button sits above the tour page's fixed mobile booking bar instead of covering its button. */
+@media (max-width: 1023.98px) {
+  body:has(.single-product-mobile-booking-bar) .floating-whatsapp-btn {
+    bottom: calc(5.6rem + env(safe-area-inset-bottom));
+  }
+}

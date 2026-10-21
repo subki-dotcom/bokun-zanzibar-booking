@@ -30,16 +30,19 @@ test("rejects a number that is too short for the selected country", () => {
   assert.match(result.message, /valid Tanzania phone number/i);
 });
 
-test("rejects a dial code that does not match the selected country", () => {
+test("accepts a phone from another country than the selected one", () => {
   const result = validatePhoneNumber("+254712345678", "TZ", countries);
 
-  assert.equal(result.isValid, false);
-  assert.match(result.message, /\+255 country code/i);
+  assert.equal(result.isValid, true);
+  assert.equal(result.normalized, "+254712345678");
+  assert.equal(validatePhoneNumber("+2541234", "TZ", countries).isValid, false, "still needs 8 to 15 digits");
 });
 
-test("keeps the national number when the selected country changes", () => {
-  assert.equal(
-    replacePhoneDialCode("+255778775044", "TZ", "KE", countries),
-    "+254778775044"
-  );
+test("changing the country never rewrites a number the guest typed", () => {
+  assert.equal(replacePhoneDialCode("+255778775044", "TZ", "KE", countries), "+255778775044");
+});
+
+test("changing the country swaps the dial code while no number is typed", () => {
+  assert.equal(replacePhoneDialCode("+255", "TZ", "KE", countries), "+254");
+  assert.equal(replacePhoneDialCode("", "TZ", "KE", countries), "+254");
 });

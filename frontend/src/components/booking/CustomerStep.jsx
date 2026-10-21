@@ -190,7 +190,8 @@ const CustomerStep = ({
             <Form.Label>First Name <span>*</span></Form.Label>
             <Form.Control
               value={customer.firstName || ""}
-              placeholder="Subki"
+              placeholder="e.g. John"
+              autoComplete="given-name"
               onChange={(e) => updateCustomer("firstName", e.target.value)}
             />
           </Form.Group>
@@ -199,7 +200,8 @@ const CustomerStep = ({
             <Form.Label>Last Name <span>*</span></Form.Label>
             <Form.Control
               value={customer.lastName || ""}
-              placeholder="Subki"
+              placeholder="e.g. Smith"
+              autoComplete="family-name"
               onChange={(e) => updateCustomer("lastName", e.target.value)}
             />
           </Form.Group>
@@ -209,7 +211,8 @@ const CustomerStep = ({
             <Form.Control
               type="email"
               value={customer.email || ""}
-              placeholder="info@risertoursandsafaris.co.tz"
+              placeholder="you@example.com"
+              autoComplete="email"
               onChange={(e) => updateCustomer("email", e.target.value)}
             />
           </Form.Group>
