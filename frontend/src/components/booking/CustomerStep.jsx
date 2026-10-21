@@ -36,6 +36,7 @@ const CustomerStep = ({
   customer = {},
   setCustomer,
   pickupPlaces = [],
+  pickupArea = "",
   pickupInfo = "",
   countries = [],
   questions = [],
@@ -272,17 +273,23 @@ const CustomerStep = ({
           <Form.Group>
             <Form.Label>Pickup hotel</Form.Label>
             {hasPickupPlaces ? (
-              <Form.Select value={customer.hotelName || ""} onChange={(e) => updatePickupHotel(e.target.value)}>
-                <option value="">Select your hotel for pickup</option>
-                {pickupPlaces.map((place) => {
-                  const pickupLabel = formatPickupPlaceLabel(place);
-                  return (
-                    <option key={`${place.id || place.title}-${pickupLabel}`} value={pickupLabel}>
-                      {pickupLabel}
-                    </option>
-                  );
-                })}
-              </Form.Select>
+              // Searchable: typing part of the hotel name narrows the suggestions.
+              <>
+                <Form.Control
+                  list="checkout-pickup-hotels"
+                  value={customer.hotelName || ""}
+                  placeholder="Type to search your hotel"
+                  autoComplete="off"
+                  aria-describedby="checkout-pickup-help"
+                  onChange={(e) => updatePickupHotel(e.target.value)}
+                />
+                <datalist id="checkout-pickup-hotels">
+                  {pickupPlaces.map((place) => {
+                    const pickupLabel = formatPickupPlaceLabel(place);
+                    return <option key={`${place.id || place.title}-${pickupLabel}`} value={pickupLabel} />;
+                  })}
+                </datalist>
+              </>
             ) : (
               <Form.Control
                 value={customer.hotelName || ""}
@@ -295,7 +302,17 @@ const CustomerStep = ({
                 <BsInfoCircle />
                 <span>Enter your hotel name if pickup is needed.</span>
               </div>
-            ) : null}
+            ) : (
+              <div id="checkout-pickup-help" className="checkout-pickup-note customer-pickup-note">
+                <BsInfoCircle />
+                <span>
+                  {pickupArea ? `This option picks up from ${pickupArea} hotels. ` : ""}
+                  {customer.hotelName && !customer.pickupPlaceId
+                    ? "Not in the list? Keep the name you typed and we will confirm your pickup point."
+                    : "Choose your hotel from the suggestions."}
+                </span>
+              </div>
+            )}
           </Form.Group>
 
           <Form.Group className="customer-step-wide">

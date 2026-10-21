@@ -30,6 +30,7 @@ import { isCustomerSummaryValid } from "../../components/booking/CustomerSummary
 import { getMissingRequiredQuestionLabels } from "../../utils/bookingQuestions";
 import { getPaymentMethodLabel } from "../../utils/paymentMethods";
 import { validatePhoneNumber } from "../../utils/phoneCodes";
+import { pickupAreaFromOption, pickupPlacesForOption } from "../../utils/pickupPlaces";
 import { buildPesapalProcessingPath } from "../../utils/pesapalProcessing";
 import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 import {
@@ -329,8 +330,9 @@ const BookingFlowInner = ({ portal = "public" }) => {
     const statePlaces = Array.isArray(state.pickupPlaces) ? state.pickupPlaces : [];
     const tourPlaces = Array.isArray(tour?.pickupPlaces) ? tour.pickupPlaces : [];
 
-    return statePlaces.length ? statePlaces : tourPlaces;
-  }, [state.pickupPlaces, tour?.pickupPlaces]);
+    return pickupPlacesForOption(statePlaces.length ? statePlaces : tourPlaces, state.option?.name);
+  }, [state.pickupPlaces, tour?.pickupPlaces, state.option?.name]);
+  const pickupArea = pickupAreaFromOption(state.option?.name);
 
   const markStepCompleted = useCallback((stepId) => {
     setCompletedStepIds((prev) => Array.from(new Set([...prev, stepId])));
@@ -1036,6 +1038,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
             updateFlow({ customer: value });
           }}
           pickupPlaces={checkoutPickupPlaces}
+          pickupArea={pickupArea}
           pickupInfo={tour?.pickupInfo || ""}
           countries={countries}
           questions={state.questions}
@@ -1057,6 +1060,7 @@ const BookingFlowInner = ({ portal = "public" }) => {
           flowState={state}
           submitting={submitLoading}
           pickupPlaces={checkoutPickupPlaces}
+          pickupArea={pickupArea}
           pickupInfo={tour?.pickupInfo || ""}
           countries={countries}
           onBack={handleGoPrevious}

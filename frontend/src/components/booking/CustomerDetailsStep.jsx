@@ -4,6 +4,7 @@ const CustomerDetailsStep = ({
   customer,
   setCustomer,
   pickupPlaces = [],
+  pickupArea = "",
   pickupInfo = "",
   countries = [],
   questions = [],
@@ -18,6 +19,7 @@ const CustomerDetailsStep = ({
       customer={customer}
       setCustomer={setCustomer}
       pickupPlaces={pickupPlaces}
+      pickupArea={pickupArea}
       pickupInfo={pickupInfo}
       countries={countries}
       questions={questions}
