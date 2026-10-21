@@ -275,6 +275,69 @@ const enrichProductWithLiveOptions = async (product, requestId) => {
 // 10 minutes). Missing descriptive content never makes a visitor wait: it is refreshed in the background at most every
 // 6 hours. Some gaps never close (Bókun itself repeats parts of pickup addresses), which used to send every tour page
 // and availability request to Bókun.
+// Tour pages and availability never read the raw Bókun product: it is most of each document, and reading it from the
+// database took seconds per request in production.
+const PUBLIC_TOUR_FIELDS = "-rawBokunProduct";
+
+// Tours are kept in memory, because reading one tour from the production database takes seconds. A cached tour is
+// served at once; one older than 5 minutes is reloaded in the background, one older than an hour is reloaded first.
+// Every write to a tour in this service forgets it, and all tours are loaded in the background on the first request.
+const TOUR_CACHE_FRESH_MS = 5 * 60 * 1000;
+const TOUR_CACHE_MAX_AGE_MS = 60 * 60 * 1000;
+const tourCache = new Map();
+const tourCacheReloads = new Map();
+let tourCacheWarmed = false;
+
+const rememberTour = (tour) => {
+  if (tour?.slug) tourCache.set(tour.slug, { tour, at: Date.now() });
+  return tour;
+};
+
+const forgetTour = (productId) => {
+  const id = String(productId || "");
+  for (const [slug, entry] of tourCache) {
+    if (String(entry.tour?.bokunProductId || "") === id) tourCache.delete(slug);
+  }
+};
+
+const reloadTour = (slug) => {
+  if (!tourCacheReloads.has(slug)) {
+    tourCacheReloads.set(slug, ProductSnapshot.findOne({ slug }).select(PUBLIC_TOUR_FIELDS).lean()
+      .then((tour) => {
+        if (tour) rememberTour(tour);
+        else tourCache.delete(slug);
+        return tour;
+      })
+      .finally(() => tourCacheReloads.delete(slug)));
+  }
+  return tourCacheReloads.get(slug);
+};
+
+const warmTourCache = () => {
+  if (tourCacheWarmed) return;
+  tourCacheWarmed = true;
+  ProductSnapshot.find({ status: "active" }).select(PUBLIC_TOUR_FIELDS).lean()
+    .then((tours) => tours.forEach((tour) => {
+      if (!tourCache.has(tour.slug)) rememberTour(tour);
+    }))
+    .catch((error) => {
+      tourCacheWarmed = false;
+      logger.warn("Tour cache warm-up skipped", { error: error.message });
+    });
+};
+
+const readTourBySlug = async (slug) => {
+  warmTourCache();
+  const cached = tourCache.get(slug);
+  const age = cached ? Date.now() - cached.at : Infinity;
+  if (cached && age < TOUR_CACHE_FRESH_MS) return cached.tour;
+  if (cached && age < TOUR_CACHE_MAX_AGE_MS) {
+    reloadTour(slug).catch(() => null);
+    return cached.tour;
+  }
+  return reloadTour(slug);
+};
+
 const BOOKING_DATA_RETRY_MS = 10 * 60 * 1000;
 const CONTENT_REFRESH_MS = 6 * 60 * 60 * 1000;
 const hydrationAttemptedAt = new Map();
@@ -320,8 +383,9 @@ const hydrateTourFromBokun = async (tour, requestId) => {
     { bokunProductId: tour.bokunProductId },
     { $set: pickLiveSyncFields(liveProduct) }
   );
+  forgetTour(tour.bokunProductId);
 
-  return ProductSnapshot.findOne({ bokunProductId: tour.bokunProductId }).lean();
+  return rememberTour(await ProductSnapshot.findOne({ bokunProductId: tour.bokunProductId }).select(PUBLIC_TOUR_FIELDS).lean());
 };
 
 const hasSameItinerary = (left = [], right = []) => {
@@ -381,6 +445,7 @@ const refreshTourItineraryFromBokun = async (tour, requestId) => {
         { bokunProductId: tour.bokunProductId },
         { $set: presentationFields }
       );
+      forgetTour(tour.bokunProductId);
     }
 
     return {
@@ -540,6 +605,7 @@ const hydrateMissingListingSignals = async (items = [], requestId = "") => {
           { bokunProductId: tour.bokunProductId },
           { $set: patch }
         );
+        forgetTour(tour.bokunProductId);
         refreshedByProductId.set(String(tour.bokunProductId), {
           ...tour,
           ...patch
@@ -719,11 +785,11 @@ const schedulePresentationRefresh = (tour, requestId) => {
 };
 
 const getTourBySlug = async (slug, requestId) => {
-  let tour = await ProductSnapshot.findOne({ slug }).lean();
+  let tour = await readTourBySlug(slug);
 
   if (!tour) {
     await ensurePublicSnapshotCache(requestId);
-    tour = await ProductSnapshot.findOne({ slug }).lean();
+    tour = await reloadTour(slug);
   }
 
   if (!tour) {
@@ -793,6 +859,7 @@ const syncProducts = async (requestId, actor = {}) => {
 
     if (operations.length > 0) {
       await ProductSnapshot.bulkWrite(operations);
+      tourCache.clear();
     }
 
     syncLog.status = "success";
@@ -842,11 +909,12 @@ const setProductVisibility = async (productId, hidden, actor = "") => {
     .select("bokunProductId title slug hiddenFromPublic hiddenAt hiddenBy")
     .lean();
   if (!updated) throw new AppError("Product not found", 404, "PRODUCT_NOT_FOUND");
+  forgetTour(updated.bokunProductId);
   return updated;
 };
 
 const getAvailableDates = async (slug, { from = "", days = 60 } = {}, requestId) => {
-  const tour = await ProductSnapshot.findOne({ slug }).select("bokunProductId").lean();
+  const tour = await readTourBySlug(slug);
   if (!tour) throw new AppError("Tour not found", 404, "TOUR_NOT_FOUND");
   return bokunService.fetchAvailableDates({ productId: tour.bokunProductId, startDate: from, days }, requestId);
 };
@@ -884,7 +952,7 @@ const checkOptionsAvailability = async (slug, payload = {}, requestId) => {
 };
 
 const loadOptionsAvailability = async (slug, payload = {}, requestId) => {
-  const tour = await ProductSnapshot.findOne({ slug }).lean();
+  const tour = await readTourBySlug(slug);
 
   if (!tour) {
     throw new AppError("Tour not found", 404, "TOUR_NOT_FOUND");
