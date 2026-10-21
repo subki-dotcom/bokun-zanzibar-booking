@@ -1,9 +1,10 @@
 import { BsCheckCircleFill, BsXCircleFill } from "react-icons/bs";
 import { toTextList } from "./singleTour.helpers";
+import { humanizeListItem } from "./tourDisplayText";
 
 const IncludedExcludedSection = ({ included = [], excluded = [] }) => {
-  const includedLines = toTextList(included);
-  const excludedLines = toTextList(excluded);
+  const includedLines = toTextList(included).map(humanizeListItem);
+  const excludedLines = toTextList(excluded).map(humanizeListItem);
 
   return (
     <section className="single-tour-section">

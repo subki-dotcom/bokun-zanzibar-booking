@@ -55,7 +55,7 @@ const PaymentMethodSelector = ({
               }}
             />
             <span className="payment-method-logo-wrap">
-              <img className="payment-method-logo" src={method.logo} alt={method.title} loading="lazy" />
+              <img className="payment-method-logo" src={method.logo} alt={method.title} />
             </span>
             {isSelected ? <span className="payment-method-selected-dot" aria-hidden="true" /> : null}
           </label>
