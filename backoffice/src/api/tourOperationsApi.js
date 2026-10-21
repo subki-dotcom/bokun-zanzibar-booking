@@ -4,7 +4,7 @@ import axiosClient from "../../../shared/src/api/axiosClient";
 // tour_requests.read or tour_requests.process; hiding screens in the Back Office is only a convenience.
 
 // Only parameters the server accepts are sent: it rejects unknown ones.
-const BOOKING_FILTERS = ["page", "limit", "origin", "bookingStatus", "paymentStatus", "supplierStatus", "travelDateFrom", "travelDateTo", "search"];
+const BOOKING_FILTERS = ["page", "limit", "origin", "bookingStatus", "paymentStatus", "supplierStatus", "travelDateFrom", "travelDateTo", "search", "productTitle", "attention"];
 const REQUEST_FILTERS = ["page", "limit", "type", "customerStatus", "state", "category", "bookingReference"];
 
 const queryString = (params = {}, allowed = []) => {
@@ -19,6 +19,12 @@ const queryString = (params = {}, allowed = []) => {
 
 export const fetchTourBookings = async (params = {}) => {
   const response = await axiosClient.get(`/tour-operations/bookings${queryString(params, BOOKING_FILTERS)}`);
+  return response.data.data;
+};
+
+// The tours that appear in Tour Admin bookings, for the Tour Product filter.
+export const fetchTourBookingProducts = async () => {
+  const response = await axiosClient.get("/tour-operations/bookings/products");
   return response.data.data;
 };
 

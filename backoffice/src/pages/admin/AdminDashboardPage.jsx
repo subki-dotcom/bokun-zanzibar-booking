@@ -1,6 +1,7 @@
 import { PaymentTruthBadge } from '../../components/invoice/BookingPaymentState';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { WEBSITE_ADMIN_URL } from "../../config/site";
 import {
   BsArrowRepeat,
   BsBell,
@@ -604,7 +605,7 @@ const AdminDashboardPage = () => {
             <CardHeader
               title="Operational Alerts"
               detail={`${numberFormatter.format(unreadAlerts)} open`}
-              action={<Link className="admin-dashboard-link" to="/admin/operations/recovery">View all</Link>}
+              action={WEBSITE_ADMIN_URL ? <a className="admin-dashboard-link" href={`${WEBSITE_ADMIN_URL}/admin/operations/recovery`} target="_blank" rel="noopener noreferrer" aria-label="View all alerts in the Recovery Center (Website Tour Admin, opens in a new tab)">View all</a> : null}
             />
             <OperationalAlertsWidget
               alerts={operationalAlerts}

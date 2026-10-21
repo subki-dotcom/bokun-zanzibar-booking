@@ -47,20 +47,27 @@ const findById = (items, id) => {
 };
 const allIds = (items) => items.flatMap((item) => [item.id, ...(item.children ? allIds(item.children) : [])]);
 
-test("Tour Admin navigation: tour_admin sees only Tour Admin; staff and agents never see it", () => {
-  const tourNav = filterAdminNavigation(undefined, USERS.tour_admin);
+test("Tour Admin navigation: tour_admin sees only Tour Admin; staff and agents never see it; never in the Back Office", () => {
+  // Tour Admin is part of the Website Tour Admin; the Back Office menu has none of it, for any role.
+  for (const user of Object.values(USERS)) assert.equal(findById(filterAdminNavigation(undefined, user), "tour-admin"), null, user.role);
+  const website = (user) => filterAdminNavigation(undefined, user, { websiteAdmin: true });
+  const tourNav = website(USERS.tour_admin);
   assert.deepEqual(allIds(tourNav), ["tour-admin", "tour-admin-dashboard", "tour-admin-bookings", "tour-admin-requests"]);
-  const readerNav = filterAdminNavigation(undefined, USERS.tour_reader);
+  const readerNav = website(USERS.tour_reader);
   assert.ok(findById(readerNav, "tour-admin-requests"));
-  const operationsOnly = filterAdminNavigation(undefined, { role: "tour_admin", permissions: [TOUR_PERMISSIONS.OPERATIONS_READ] });
+  const operationsOnly = website({ role: "tour_admin", permissions: [TOUR_PERMISSIONS.OPERATIONS_READ] });
   assert.deepEqual(allIds(operationsOnly), ["tour-admin", "tour-admin-dashboard", "tour-admin-bookings"]);
 
-  const staffNav = filterAdminNavigation(undefined, USERS.staff);
+  const staffNav = website(USERS.staff);
   assert.equal(findById(staffNav, "tour-admin"), null, "staff does not hold Tour Operations permissions");
-  for (const id of ["operations-bookings", "operations-requests", "booking-accounting-invoices"]) assert.ok(findById(staffNav, id), id);
+  assert.ok(findById(staffNav, "operations-requests"), "staff work booking requests on the website");
+  const staffBackOffice = filterAdminNavigation(undefined, USERS.staff);
+  for (const id of ["operations-bookings", "booking-accounting-invoices"]) assert.ok(findById(staffBackOffice, id), id);
 
-  const adminNav = filterAdminNavigation(undefined, USERS.admin);
-  for (const id of ["tour-admin-dashboard", "tour-admin-bookings", "tour-admin-requests", "booking-accounting-invoices", "gl-general-ledger"]) assert.ok(findById(adminNav, id), id);
+  const adminNav = website(USERS.admin);
+  for (const id of ["tour-admin-dashboard", "tour-admin-bookings", "tour-admin-requests"]) assert.ok(findById(adminNav, id), id);
+  const adminBackOffice = filterAdminNavigation(undefined, USERS.admin);
+  for (const id of ["booking-accounting-invoices", "gl-general-ledger"]) assert.ok(findById(adminBackOffice, id), id);
 
   assert.deepEqual(filterAdminNavigation(undefined, USERS.agent), []);
   assert.equal(getAdminRouteMeta("/admin/tour-admin/requests").label, "Customer Requests");
@@ -147,7 +154,8 @@ const defaultRoutes = () => ({
   "POST /tour-operations/requests/r1/category": ({ body }) => requestDetail({ operations: operations({ category: body.category, version: 1 }) })
 });
 
-const h = createRenderHarness({ defaultRoutes });
+// Tour Admin lives in the Website Tour Admin, so its pages render as the website mounts the admin.
+const h = createRenderHarness({ websiteAdmin: true, defaultRoutes });
 const { mount, text, waitFor, buttons, button, click, setValue, submit, apiPaths } = h;
 const FINANCIAL = /\$|USD|TZS|amount|price|revenue|profit|commission|invoice|ledger|cost|settlement/i;
 const rendered = (name, body) => test(name, body);
@@ -171,12 +179,12 @@ rendered("tour_admin lands on the Tour Dashboard and never reaches staff screens
 
 rendered("staff and agents cannot open Tour Admin; admins can", async () => {
   await mount("/admin/tour-admin/bookings", USERS.staff);
-  await waitFor(() => h.locationNow === "/admin", "staff redirected to their own landing page");
+  await waitFor(() => h.locationNow === "/admin/operations/booking-requests", "staff redirected to their own website admin home");
   assert.ok(!apiPaths().some((call) => call.includes("/tour-operations/")), "no Tour Operations call for staff");
   await h.unmount();
 
   await mount("/admin/tour-admin/requests", USERS.agent);
-  await waitFor(() => /No Back Office access/.test(text()), "agent refused");
+  await waitFor(() => h.locationNow === "/", "agent sent back to the website");
   assert.ok(!apiPaths().some((call) => call.includes("/tour-operations/")));
   await h.unmount();
 
@@ -201,22 +209,27 @@ rendered("dashboard shows server totals only, marks failed figures Unavailable a
   assert.deepEqual(bookingQueries, ["bookingStatus=cancelled&limit=1", "bookingStatus=confirmed&limit=1", "bookingStatus=failed&limit=1", "limit=1&origin=AGENT_PORTAL", "limit=1&origin=WEBSITE", "limit=1&supplierStatus=supplier_pending"].sort());
 });
 
-rendered("booking list: separate payment, Bókun and supplier columns, filters and pagination", async () => {
+rendered("booking list: payment, Bókun and supplier shown separately, filters and pagination", async () => {
   await mount("/admin/tour-admin/bookings", USERS.tour_admin);
   await waitFor(() => document.querySelectorAll(".tour-admin-bookings-table tbody tr").length === 3, "rows");
   const rows = [...document.querySelectorAll(".tour-admin-bookings-table tbody tr")].map((row) => row.textContent);
-  assert.match(rows[0], /Payment verified/);
+  assert.match(rows[0], /Paid/);
   assert.match(rows[0], /Awaiting supplier/);
   assert.match(rows[0], /Not in Bókun/);
   assert.match(rows[0], /Paid, awaiting supplier confirmation/);
+  assert.match(rows[0], /Not assigned/, "assignment is not tracked, so no staff name is shown");
   assert.doesNotMatch(rows[0], /Supplier confirmed/, "a paid booking is not shown as supplier confirmed");
   assert.match(rows[1], /Agent Portal/);
   assert.match(rows[1], /Supplier confirmed/);
   assert.match(rows[2], /from booking history/);
   assert.match(rows[2], /Failed/);
   assert.doesNotMatch(document.querySelector(".tour-admin-bookings-table").textContent, FINANCIAL);
-  assert.match(text(), /60 bookings · page 1 of 3/);
+  assert.match(text(), /Showing 1–10 of 60 bookings/);
+  assert.match(text(), /60 bookings · page 1 of 6/);
+  assert.equal(h.calls.find((call) => call.pathname === "/tour-operations/bookings" && call.query.get("page") === "1")?.query.get("limit"), "10", "10 per page by default");
 
+  // Origin and supplier filters are under Advanced Filters.
+  await click(button("Advanced Filters"));
   await setValue(document.getElementById("tour-bookings-origin"), "AGENT_PORTAL");
   await setValue(document.getElementById("tour-bookings-supplier"), "supplier_pending");
   await submit(document.querySelector(".tour-admin-filters"));
@@ -229,17 +242,21 @@ rendered("booking list: separate payment, Bókun and supplier columns, filters a
   await waitFor(() => h.calls.at(-1).query.get("page") === "2", "page 2 requested");
   assert.equal(h.calls.at(-1).query.get("origin"), "AGENT_PORTAL", "filters kept while paging");
 
+  await setValue(document.getElementById("tour-bookings-limit"), "25");
+  await waitFor(() => h.calls.at(-1).query.get("limit") === "25" && h.calls.at(-1).query.get("page") === "1", "page size 25 from page 1");
+  assert.equal(h.calls.at(-1).query.get("origin"), "AGENT_PORTAL", "filters kept when the page size changes");
+
   await setValue(document.getElementById("tour-bookings-search"), "ab");
   await submit(document.querySelector(".tour-admin-filters"));
-  assert.match(text(), /Search needs a full booking reference or email address/);
+  assert.match(text(), /Enter at least 3 characters/);
 });
 
 rendered("loading, empty, error and access-denied states", async () => {
-  let release;
-  h.routes["GET /tour-operations/bookings"] = () => new Promise((resolve) => { release = () => resolve({ items: [], page: 1, limit: 25, total: 0, hasMore: false }); });
+  const releases = [];
+  h.routes["GET /tour-operations/bookings"] = () => new Promise((resolve) => { releases.push(() => resolve({ items: [], page: 1, limit: 10, total: 0, hasMore: false })); });
   await mount("/admin/tour-admin/bookings", USERS.tour_admin);
   await waitFor(() => /Loading tour bookings/.test(text()), "loading state");
-  await act(async () => { release(); await sleep(10); });
+  await act(async () => { releases.forEach((release) => release()); await sleep(10); });
   await waitFor(() => /No tour bookings match these filters/.test(text()), "empty state");
   await h.unmount();
 

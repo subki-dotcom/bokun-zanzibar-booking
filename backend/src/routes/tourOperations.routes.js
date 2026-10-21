@@ -21,6 +21,9 @@ const canProcessRequests = authorizePermission(PERMISSIONS.TOUR_REQUESTS_PROCESS
 router.get("/bookings", canReadBookings, validateRequest(schemas.listBookingsSchema), asyncHandler(async (req, res) =>
   successResponse(res, { message: "Tour bookings fetched", data: await tourOperations.listBookings({ filters: req.validated.query || {} }) })));
 
+router.get("/bookings/products", canReadBookings, asyncHandler(async (_req, res) =>
+  successResponse(res, { message: "Tour products fetched", data: await tourOperations.listBookingProducts() })));
+
 router.get("/requests", canReadRequests, validateRequest(schemas.listRequestsSchema), asyncHandler(async (req, res) =>
   successResponse(res, { message: "Tour booking requests fetched", data: await tourOperations.listRequests({ filters: req.validated.query || {} }) })));
 

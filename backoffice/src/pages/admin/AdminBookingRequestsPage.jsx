@@ -53,7 +53,7 @@ const AdminBookingRequestsPage = () => {
       <div className="admin-recovery-head">
         <div>
           <h2>Booking Requests</h2>
-          <p className="section-subtitle">Review customer reschedules, traveler changes, cancellations, refunds and supplier synchronization.</p>
+          <p className="section-subtitle">Review customer reschedules, traveler changes, cancellations and supplier synchronization. Refunds are processed by Finance in the Back Office.</p>
         </div>
         <Button className="premium-btn text-white" onClick={() => load()} disabled={loading}><BsArrowClockwise /> Refresh</Button>
       </div>

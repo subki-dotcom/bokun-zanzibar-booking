@@ -3,9 +3,12 @@ import { Navigate, Outlet, Route, useParams } from "react-router-dom";
 import ProtectedRoute from "../../../shared/src/components/common/ProtectedRoute";
 import AdminLayout from "../layouts/admin/AdminLayout";
 import AdminUnavailablePage from "../components/admin/AdminUnavailablePage";
-import { ADMIN_PERMISSIONS, isBackOfficeOnlyPath } from "../config/adminNavigation";
+import { ADMIN_PERMISSIONS, WEBSITE_ADMIN_HOME, WEBSITE_ONLY_EXACT_PATHS, WEBSITE_ONLY_PATH_PREFIXES, isBackOfficeOnlyPath, isWebsiteOnlyPath } from "../config/adminNavigation";
 import BackOfficeOnlyPage from "../components/admin/BackOfficeOnlyPage";
-import { BACK_OFFICE_LAYOUT_ROLES, BACK_OFFICE_ROLES } from "./backOfficeAccess";
+import WebsiteOnlyPage from "../components/admin/WebsiteOnlyPage";
+import { BACK_OFFICE_LAYOUT_ROLES, BACK_OFFICE_ROLES, TOUR_ADMIN_ROLE } from "./backOfficeAccess";
+import useAuth from "../../../shared/src/hooks/useAuth";
+import { TOUR_ADMIN_HOME } from "../config/tourOperations";
 
 // Static import paths let Vite split each admin page into its own chunk; a variable path cannot be resolved
 // at build time and would 404 in production.
@@ -73,7 +76,9 @@ const backOfficeScreenRoutes = () => (
     <Route path="/admin/operations/dashboard" element={<AdminUnavailablePage module="Operations" title="Operations Dashboard" />} />
     <Route path="/admin/operations/bookings" element={<AdminBookingsPage />} />
     <Route path="/admin/operations/booking-requests" element={<AdminBookingRequestsPage />} />
-    <Route path="/admin/operations/booking-requests/:requestId" element={<AdminBookingRequestDetailsPage />} />
+    <Route path="/admin/operations/booking-requests/:requestId" element={<AdminBookingRequestDetailsPage mode="operations" />} />
+    {/* Finance's part of a booking request (refunds and additional payments), in the Back Office. */}
+    <Route path="/admin/finance/booking-requests/:requestId" element={<AdminBookingRequestDetailsPage mode="finance" />} />
     <Route path="/admin/operations/tour-operations" element={<AdminOperationsPage />} />
     <Route path="/admin/operations/recovery" element={<AdminRecoveryPage />} />
     <Route path="/admin/operations/agents" element={<AdminAgentsPage />} />
@@ -398,7 +403,8 @@ const backOfficeScreenRoutes = () => (
 // integrations, control and system) are not mounted there; their URLs say where to find them instead.
 const screenRoutes = ({ websiteAdmin }) => {
   const routes = Children.toArray(backOfficeScreenRoutes().props.children);
-  if (!websiteAdmin) return routes;
+  // The Back Office does not mount the Website Tour Admin's tour booking and operations pages.
+  if (!websiteAdmin) return routes.filter((route) => !isWebsiteOnlyPath(route.props.path || ""));
   return [
     ...routes.filter((route) => !isBackOfficeOnlyPath(route.props.path || "")),
     <Route key="back-office-only" path="/admin/*" element={<BackOfficeOnlyPage />} />
@@ -416,19 +422,47 @@ const adminRoutes = ({ websiteAdmin = false } = {}) => (
       </ProtectedRoute>
     }
   >
-    {/* Existing Back Office screens: super_admin, admin and staff only, as before. */}
-    <Route element={<ProtectedRoute roles={BACK_OFFICE_ROLES}><Outlet /></ProtectedRoute>}>
+    {/* Existing Back Office screens: super_admin, admin and staff only, as before. On the website a refused
+        user goes to their own admin home (/admin), not to the public home page. */}
+    <Route element={<ProtectedRoute roles={BACK_OFFICE_ROLES} {...websiteRedirect(websiteAdmin)}><Outlet /></ProtectedRoute>}>
       {screenRoutes({ websiteAdmin })}
     </Route>
-    {/* Tour Admin screens: by Tour Operations permission (tour_admin, admin, super_admin). */}
-    <Route element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ, ADMIN_PERMISSIONS.TOUR_REQUESTS_READ]}><Outlet /></ProtectedRoute>}>
-      <Route path="/admin/tour-admin" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ]}><TourAdminDashboardPage /></ProtectedRoute>} />
-      <Route path="/admin/tour-admin/bookings" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ]}><TourAdminBookingsPage /></ProtectedRoute>} />
-      <Route path="/admin/tour-admin/bookings/:bookingReference" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ]}><TourAdminBookingDetailsPage /></ProtectedRoute>} />
-      <Route path="/admin/tour-admin/requests" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_REQUESTS_READ]}><TourAdminRequestsPage /></ProtectedRoute>} />
-      <Route path="/admin/tour-admin/requests/:requestId" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_REQUESTS_READ]}><TourAdminRequestDetailsPage /></ProtectedRoute>} />
-    </Route>
+    {/* The main Dashboard is in the Back Office: the website's /admin opens each role's first page instead. */}
+    {websiteAdmin ? <Route path="/admin" element={<WebsiteAdminHome />} /> : null}
+    {websiteAdmin ? tourAdminRoutes() : websiteOnlyRoutes()}
   </Route>
+);
+
+const websiteRedirect = (websiteAdmin) => (websiteAdmin ? { redirectTo: "/admin" } : {});
+
+// tour_admin users open the Tour Dashboard (or Customer Requests when they may only read requests); super_admin,
+// admin and staff open Booking Requests. A tour_admin with neither permission goes to the public home page, so a
+// refusal can never send anyone back here in a loop.
+const WebsiteAdminHome = () => {
+  const { user } = useAuth();
+  const permissions = Array.isArray(user?.permissions) ? user.permissions : [];
+  if (user?.role !== TOUR_ADMIN_ROLE) return <Navigate to={WEBSITE_ADMIN_HOME} replace />;
+  if (permissions.includes(ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ)) return <Navigate to={TOUR_ADMIN_HOME} replace />;
+  if (permissions.includes(ADMIN_PERMISSIONS.TOUR_REQUESTS_READ)) return <Navigate to={`${TOUR_ADMIN_HOME}/requests`} replace />;
+  return <Navigate to="/" replace />;
+};
+
+// In the Back Office, every Website Tour Admin address explains where the page is, for every role that may open
+// the admin layout (tour_admin users included, so their landing page never loops).
+const websiteOnlyRoutes = () => [
+  ...WEBSITE_ONLY_PATH_PREFIXES.map((prefix) => <Route key={prefix} path={`${prefix}/*`} element={<WebsiteOnlyPage />} />),
+  ...WEBSITE_ONLY_EXACT_PATHS.map((path) => <Route key={path} path={path} element={<WebsiteOnlyPage />} />)
+];
+
+// Tour Admin screens (Website Tour Admin only): by Tour Operations permission (tour_admin, admin, super_admin).
+const tourAdminRoutes = () => (
+    <Route element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ, ADMIN_PERMISSIONS.TOUR_REQUESTS_READ]} redirectTo="/admin"><Outlet /></ProtectedRoute>}>
+      <Route path="/admin/tour-admin" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ]} redirectTo="/admin"><TourAdminDashboardPage /></ProtectedRoute>} />
+      <Route path="/admin/tour-admin/bookings" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ]} redirectTo="/admin"><TourAdminBookingsPage /></ProtectedRoute>} />
+      <Route path="/admin/tour-admin/bookings/:bookingReference" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ]} redirectTo="/admin"><TourAdminBookingDetailsPage /></ProtectedRoute>} />
+      <Route path="/admin/tour-admin/requests" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_REQUESTS_READ]} redirectTo="/admin"><TourAdminRequestsPage /></ProtectedRoute>} />
+      <Route path="/admin/tour-admin/requests/:requestId" element={<ProtectedRoute permissions={[ADMIN_PERMISSIONS.TOUR_REQUESTS_READ]} redirectTo="/admin"><TourAdminRequestDetailsPage /></ProtectedRoute>} />
+    </Route>
 );
 
 export default adminRoutes;

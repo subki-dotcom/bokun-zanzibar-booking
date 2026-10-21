@@ -1259,6 +1259,8 @@ const normalizeRefund = (refund = {}, { bookingsById = new Map(), paymentsById =
   return {
     id: getId(refund),
     refundReference: refund.refundReference || "",
+    // The booking request the refund belongs to, where Finance processes it.
+    bookingRequestId: normalizeToken(refund.bookingRequestId),
     bookingReference: booking?.bookingReference || invoice?.bookingReference || payment?.bookingReference || "",
     paymentId: normalizeToken(refund.paymentId),
     invoiceId: normalizeToken(refund.invoiceId),

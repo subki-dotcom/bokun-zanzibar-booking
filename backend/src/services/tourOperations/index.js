@@ -191,10 +191,52 @@ const prefixFilter = (filter, prefix) => {
 
 const operationalBookingFilter = (origin = "") => originFilter(origin ? [origin] : OPERATIONAL_ORIGINS);
 
+// Tour bookings carry the platform's own references (ZNZ-…, made by website and Agent Portal checkouts). Channel
+// references (GetYourGuide, Viator and other OTAs via Bókun) never appear in Tour Admin's booking list, its totals
+// or its exports, whatever their recorded origin.
+const TOUR_REFERENCE_PREFIX = "ZNZ-";
+const tourReferenceFilter = () => ({ bookingReference: { $regex: `^${escapeRegex(TOUR_REFERENCE_PREFIX)}` } });
+
+// Today in Zanzibar (UTC+3, no daylight saving), as the YYYY-MM-DD travel dates are stored.
+const zanzibarToday = (now = new Date()) => new Date(now.getTime() + 3 * 3600000).toISOString().slice(0, 10);
+
+// Bookings an operator should look at: travelling today or later, not cancelled or failed, and still pending,
+// waiting for a requested change, paid but not confirmed by the supplier, or failed at the supplier.
+const needsAttentionFilter = (today = zanzibarToday()) => ({
+  $and: [
+    { travelDate: { $gte: today } },
+    { bookingStatus: { $nin: ["cancelled", "failed"] } },
+    {
+      $or: [
+        { bookingStatus: { $in: ["pending", "edit_requested"] } },
+        { supplierStatus: "supplier_failed" },
+        { "pendingCheckout.finalization.status": "failed" },
+        { paymentStatus: "paid", supplierStatus: { $ne: "confirmed" } }
+      ]
+    }
+  ]
+});
+
+// Search: an email matches exactly; a ZNZ- reference matches from its start; anything else matches every word
+// against the customer's name or the tour, case-insensitively (each word is escaped, never a pattern).
+const searchFilter = (search) => {
+  if (search.includes("@")) return { "customer.email": { $regex: `^${escapeRegex(search)}$`, $options: "i" } };
+  if (search.toUpperCase().startsWith(TOUR_REFERENCE_PREFIX)) return { bookingReference: { $regex: `^${escapeRegex(search.toUpperCase())}` } };
+  const words = search.split(/\s+/).filter(Boolean).slice(0, 6);
+  return {
+    $and: words.map((word) => {
+      const pattern = { $regex: escapeRegex(word), $options: "i" };
+      return { $or: [{ "customer.firstName": pattern }, { "customer.lastName": pattern }, { productTitle: pattern }, { optionTitle: pattern }] };
+    })
+  };
+};
+
 const listBookings = async ({ filters = {} } = {}) => {
   const page = clampInt(filters.page, 1, 1, 1000);
   const limit = clampInt(filters.limit, 25, 1, 100);
-  const and = [operationalBookingFilter(filters.origin)];
+  const and = [operationalBookingFilter(filters.origin), tourReferenceFilter()];
+  if (filters.attention === "true") and.push(needsAttentionFilter());
+  if (filters.productTitle) and.push({ productTitle: filters.productTitle });
   if (filters.bookingStatus) and.push({ bookingStatus: filters.bookingStatus });
   if (filters.paymentStatus) and.push({ paymentStatus: filters.paymentStatus });
   if (filters.supplierStatus) and.push({ supplierStatus: filters.supplierStatus });
@@ -207,19 +249,19 @@ const listBookings = async ({ filters = {} } = {}) => {
     });
   }
   const search = String(filters.search || "").trim();
-  if (search) {
-    and.push(
-      search.includes("@")
-        ? { "customer.email": { $regex: `^${escapeRegex(search)}$`, $options: "i" } }
-        : { bookingReference: search.toUpperCase() }
-    );
-  }
+  if (search) and.push(searchFilter(search));
   const query = { $and: and };
   const [items, total] = await Promise.all([
     Booking.find(query).select(BOOKING_FIELDS).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * limit).limit(limit).lean(),
     Booking.countDocuments(query)
   ]);
   return { items: items.map(toTourBooking), page, limit, total, hasMore: page * limit < total };
+};
+
+// The tours that appear in Tour Admin's bookings, for the Tour Product filter.
+const listBookingProducts = async () => {
+  const titles = await Booking.distinct("productTitle", { $and: [operationalBookingFilter(), tourReferenceFilter()] });
+  return titles.filter(Boolean).sort((left, right) => left.localeCompare(right));
 };
 
 const operationsStateFilter = (state) =>
@@ -419,6 +461,7 @@ module.exports = {
   TRANSITIONS,
   OPERATIONS_NOTICE,
   listBookings,
+  listBookingProducts,
   listRequests,
   getRequest,
   addNote,

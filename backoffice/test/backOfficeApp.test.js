@@ -54,22 +54,25 @@ test("every admin route sits behind the Back Office role guard and keeps its pag
   const { ADMIN_PERMISSIONS } = await server.ssrLoadModule("/src/config/adminNavigation.js");
   const [layout] = adminRouteTable();
   assert.deepEqual(layout.element.props.roles, BACK_OFFICE_LAYOUT_ROLES);
-  const [existingScreens, tourAdminScreens] = layout.children;
-  assert.equal(layout.children.length, 2);
+  const [existingScreens, ...websiteOnlyNotices] = layout.children;
   // Every existing screen is still behind exactly the original Back Office roles.
   assert.deepEqual(existingScreens.element.props.roles, BACK_OFFICE_ROLES);
-  // 78 declared routes (including the two Finance escalation screens); the CRM customer list declares
-  // three paths through one .map.
-  assert.equal(existingScreens.children.length, 80);
+  // 81 declared routes (including the two Finance escalation screens and the finance view of a booking request),
+  // less the ten Website Tour Admin routes the Back Office no longer mounts; the CRM customer list declares three
+  // paths through one .map.
+  assert.equal(existingScreens.children.length, 71);
   const financeGuard = matchRoutes(adminRouteTable(), "/admin/finance/escalations/abc").at(-1).route.element.props;
   assert.deepEqual(financeGuard.permissions, [ADMIN_PERMISSIONS.BOOKING_ACCOUNTING_READ]);
   assert.deepEqual(matchRoutes(adminRouteTable(), "/admin/finance/escalations")[1].route.element.props.roles, BACK_OFFICE_ROLES);
-  assert.deepEqual(tourAdminScreens.element.props.permissions, [ADMIN_PERMISSIONS.TOUR_OPERATIONS_READ, ADMIN_PERMISSIONS.TOUR_REQUESTS_READ]);
-  assert.equal(tourAdminScreens.element.props.roles, undefined);
-  assert.deepEqual(tourAdminScreens.children.map((route) => route.path), [
-    "/admin/tour-admin", "/admin/tour-admin/bookings", "/admin/tour-admin/bookings/:bookingReference",
-    "/admin/tour-admin/requests", "/admin/tour-admin/requests/:requestId"
+  assert.deepEqual(matchRoutes(adminRouteTable(), "/admin/finance/booking-requests/r1")[1].route.element.props.roles, BACK_OFFICE_ROLES);
+  // Tour Admin, Booking Requests, Tour Operations, Assignments and Recovery Center are in the Website Tour Admin:
+  // the Back Office answers their addresses with a notice only, for every layout role (tour_admin included).
+  assert.deepEqual(websiteOnlyNotices.map((route) => route.path), [
+    "/admin/tour-admin/*", "/admin/operations/booking-requests/*", "/admin/operations/tour-operations/*",
+    "/admin/operations/agents/*", "/admin/operations/recovery/*", "/admin/booking-requests/*", "/admin/agents/*",
+    "/admin/recovery/*", "/admin/operations"
   ]);
+  assert.ok(websiteOnlyNotices.every((route) => route.element.type.name === "WebsiteOnlyPage" && !route.children));
 
   const guardFor = (pathname) => matchRoutes(adminRouteTable(), pathname).at(-1).route.element.props;
   assert.deepEqual(guardFor("/admin/settings/create-admin").roles, ["super_admin"]);

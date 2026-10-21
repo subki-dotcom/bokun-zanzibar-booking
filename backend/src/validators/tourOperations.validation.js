@@ -19,7 +19,10 @@ const listBookingsSchema = z.object({
     supplierStatus: z.string().regex(/^[a-z_]{2,40}$/).optional(),
     travelDateFrom: isoDate.optional(),
     travelDateTo: isoDate.optional(),
-    search: z.string().trim().min(3).max(254).optional()
+    search: z.string().trim().min(3).max(254).optional(),
+    productTitle: z.string().trim().min(1).max(200).optional(),
+    // Only "true": bookings that need an operator's attention (see services/tourOperations).
+    attention: z.enum(["true"]).optional()
   }).strict()
 });
 

@@ -157,8 +157,9 @@ test("detail shows the request, Tour notes, history and recorded evidence, with 
   const page = document.querySelector(".finance-escalation-details");
   assert.equal(page.querySelectorAll("input, select, textarea, form").length, 0, "nothing to submit");
   const controls = [...page.querySelectorAll("button, a.btn")].map((element) => element.textContent.trim()).sort();
-  assert.deepEqual(controls, ["All escalations", "Open in Booking Requests", "Refresh"]);
-  assert.equal(page.querySelector("a.btn[href='/admin/operations/booking-requests/r1']")?.textContent.trim(), "Open in Booking Requests");
+  assert.deepEqual(controls, ["All escalations", "Refresh", "Refunds and payments"]);
+  // Refunds are processed in the Back Office, on the finance part of the booking request.
+  assert.equal(page.querySelector("a.btn[href='/admin/finance/booking-requests/r1']")?.textContent.trim(), "Refunds and payments");
   for (const label of [/refund now/i, /approve/i, /mark paid/i, /cancel/i, /resolve/i, /escalate/i]) {
     assert.ok(!buttons().some((element) => label.test(element.textContent)), `no ${label} control`);
   }

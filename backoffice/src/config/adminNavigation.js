@@ -727,6 +727,24 @@ export const adminNavigation = [
     ]
   },
   {
+    // Website /admin only: a shortcut to the Back Office app (bookings register, CRM, accounting, reports,
+    // integrations and system), for everyone who may use it. Same account as the website's /admin.
+    id: "back-office",
+    label: "Back Office",
+    roles: ADMIN_ROLES.ALL,
+    websiteOnly: true,
+    children: [
+      {
+        id: "back-office-link",
+        label: "Open Back Office",
+        externalApp: "backOffice",
+        icon: BsBuilding,
+        roles: ADMIN_ROLES.ALL,
+        status: "active"
+      }
+    ]
+  },
+  {
     // Website /admin only: a shortcut to the separate Transfer Admin app, which keeps its own login.
     id: "transfers",
     label: "Transfers",
@@ -781,8 +799,8 @@ const canViewItem = (item, actor) => {
   return item.roles.includes(role);
 };
 
-// The website's /admin is the day-to-day admin: dashboard, Tour Admin, operations and settings. These
-// sections exist only in the Back Office app.
+// The website's /admin is the day-to-day admin: Tour Admin, operations and settings. These sections exist only
+// in the Back Office app.
 export const BACK_OFFICE_ONLY_SECTIONS = Object.freeze([
   "crm",
   "booking-accounting",
@@ -792,8 +810,20 @@ export const BACK_OFFICE_ONLY_SECTIONS = Object.freeze([
   "control-system"
 ]);
 
-// Every admin URL belonging to those sections, including pages that are not in the menu.
+// Single pages of the kept sections that also live only in the Back Office: the full booking register
+// (Operations → Bookings). The rest of Operations stays on the website.
+export const BACK_OFFICE_ONLY_PAGES = Object.freeze(["/admin/operations/bookings"]);
+
+// Pages that live only in the Back Office at exactly this address (not their sub-pages): the main Dashboard.
+export const BACK_OFFICE_ONLY_EXACT_PATHS = Object.freeze(["/admin"]);
+
+// Where the website's /admin opens, now that the main Dashboard is in the Back Office: the first day-to-day page
+// every website admin role may open (tour_admin users are sent on to the Tour Dashboard as before).
+export const WEBSITE_ADMIN_HOME = "/admin/operations/booking-requests";
+
+// Every admin URL belonging to those sections and pages, including pages that are not in the menu.
 export const BACK_OFFICE_ONLY_PATH_PREFIXES = Object.freeze([
+  ...BACK_OFFICE_ONLY_PAGES,
   "/admin/crm",
   "/admin/booking-accounting",
   "/admin/finance",
@@ -808,17 +838,41 @@ export const BACK_OFFICE_ONLY_PATH_PREFIXES = Object.freeze([
   "/admin/production-readiness"
 ]);
 
+// Tour booking and operations pages that live only in the Website Tour Admin (the website's /admin): Tour
+// Dashboard, Tour Bookings, Customer Requests, Booking Requests, Tour Operations, Assignments and Recovery
+// Center, with their old addresses. The Back Office does not mount them; their URLs say where to find them.
+export const WEBSITE_ONLY_PATH_PREFIXES = Object.freeze([
+  "/admin/tour-admin",
+  "/admin/operations/booking-requests",
+  "/admin/operations/tour-operations",
+  "/admin/operations/agents",
+  "/admin/operations/recovery",
+  "/admin/booking-requests",
+  "/admin/agents",
+  "/admin/recovery"
+]);
+
+// Old addresses that only redirected to a website-only page.
+export const WEBSITE_ONLY_EXACT_PATHS = Object.freeze(["/admin/operations"]);
+
+export const isWebsiteOnlyPath = (pathname = "") =>
+  WEBSITE_ONLY_EXACT_PATHS.includes(pathname) ||
+  WEBSITE_ONLY_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+
 export const isBackOfficeOnlyPath = (pathname = "") =>
+  BACK_OFFICE_ONLY_EXACT_PATHS.includes(pathname) ||
   BACK_OFFICE_ONLY_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
 export const filterAdminNavigation = (items = adminNavigation, actor = "", { websiteAdmin = false } = {}) =>
   items
     .filter((item) => !(websiteAdmin && BACK_OFFICE_ONLY_SECTIONS.includes(item.id)))
+    .filter((item) => !(websiteAdmin && item.path && isBackOfficeOnlyPath(item.path)))
+    .filter((item) => !(!websiteAdmin && item.path && isWebsiteOnlyPath(item.path)))
     .filter((item) => websiteAdmin || !item.websiteOnly)
     .filter((item) => canViewItem(item, actor))
     .map((item) => ({
       ...item,
-      children: item.children ? filterAdminNavigation(item.children, actor) : undefined
+      children: item.children ? filterAdminNavigation(item.children, actor, { websiteAdmin }) : undefined
     }))
     .filter((item) => !item.children || item.children.length > 0);
 

@@ -310,6 +310,46 @@ test("isolated Mongo: Tour Operations over HTTP", { skip: !fs.existsSync(binary)
       assert.deepEqual(dated.body.data.items.map((item) => item.bookingReference).sort(), [b.agentA.bookingReference, b.agentB.bookingReference].sort());
     });
 
+    await t.test("Tour Bookings page: ZNZ- references only, name and tour search, tour and attention filters", async () => {
+      // A website booking without a ZNZ- reference never appears, in the list or the totals.
+      const outsider = booking(14, { bookingOrigin: "WEBSITE", bookingReference: "ZAN-20261020-9321" });
+      await Booking.collection.insertOne(outsider);
+      try {
+        const all = await call("GET", "/tour-operations/bookings?limit=100", { bearer: tour });
+        assert.equal(all.body.data.total, operationalKeys.length);
+        assert.ok(all.body.data.items.every((item) => item.bookingReference.startsWith("ZNZ-")));
+        assert.equal((await call("GET", "/tour-operations/bookings?search=ZAN-2026", { bearer: tour })).body.data.total, 0);
+      } finally {
+        await Booking.collection.deleteOne({ _id: outsider._id });
+      }
+
+      const search = async (term) => (await call("GET", `/tour-operations/bookings?limit=100&search=${encodeURIComponent(term)}`, { bearer: tour })).body.data;
+      assert.deepEqual((await search("guest n6")).items.map((item) => item.bookingReference), [b.agentA.bookingReference], "customer name, every word");
+      assert.equal((await search("stone town")).total, operationalKeys.length, "tour name");
+      assert.equal((await search("morning")).total, operationalKeys.length, "option name");
+      assert.equal((await search(b.agentB.bookingReference.slice(0, 12))).items.some((item) => item.bookingReference === b.agentB.bookingReference), true, "reference prefix");
+      assert.equal((await search("(.*)")).total, 0, "patterns are escaped");
+
+      const products = await call("GET", "/tour-operations/bookings/products", { bearer: tour });
+      assert.equal(products.status, 200);
+      assert.deepEqual(products.body.data, ["Stone Town Tour"]);
+      assert.equal((await call("GET", "/tour-operations/bookings?productTitle=Stone%20Town%20Tour", { bearer: tour })).body.data.total, operationalKeys.length);
+      assert.equal((await call("GET", "/tour-operations/bookings?productTitle=Safari%20Blue", { bearer: tour })).body.data.total, 0);
+      assert.equal((await call("GET", "/tour-operations/bookings/products", { bearer: agentJwt(ids.agentA) })).status, 403);
+
+      // Needs attention: travelling today or later, not cancelled or failed, and pending, change requested, paid but
+      // not supplier-confirmed, or failed at the supplier.
+      const today = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+      const expected = operationalKeys.filter((key) => {
+        const row = b[key];
+        if (row.travelDate < today || ["cancelled", "failed"].includes(row.bookingStatus)) return false;
+        return ["pending", "edit_requested"].includes(row.bookingStatus) || row.supplierStatus === "supplier_failed" || (row.paymentStatus === "paid" && row.supplierStatus !== "confirmed");
+      }).map((key) => b[key].bookingReference).sort();
+      const attention = await call("GET", "/tour-operations/bookings?attention=true&limit=100", { bearer: tour });
+      assert.deepEqual(attention.body.data.items.map((item) => item.bookingReference).sort(), expected);
+      assert.equal((await call("GET", "/tour-operations/bookings?attention=yes", { bearer: tour })).status, 422);
+    });
+
     await t.test("access by role on Tour Operations endpoints", async () => {
       const id = String(r.reschedule._id);
       const endpoints = [

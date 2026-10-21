@@ -1,6 +1,7 @@
 import { PaymentTruthBadge, SettlementBadge } from '../../components/invoice/BookingPaymentState';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { WEBSITE_ADMIN_URL } from "../../config/site";
 import {
   BsArrowClockwise,
   BsBell,
@@ -729,10 +730,12 @@ const AdminBookingsPage = () => {
             <BsArrowClockwise aria-hidden="true" />
             Sync bookings
           </PageAction>
-          <PageAction as={Link} to="/admin/operations/recovery">
-            <BsBell aria-hidden="true" />
-            Alerts
-          </PageAction>
+          {WEBSITE_ADMIN_URL ? (
+            <PageAction as="a" href={`${WEBSITE_ADMIN_URL}/admin/operations/recovery`} target="_blank" rel="noopener noreferrer" aria-label="Alerts: Recovery Center in the Website Tour Admin (opens in a new tab)">
+              <BsBell aria-hidden="true" />
+              Alerts
+            </PageAction>
+          ) : null}
           <PageAction as={Link} to="/admin/report-center">
             <BsDownload aria-hidden="true" />
             Export

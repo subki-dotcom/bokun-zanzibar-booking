@@ -95,8 +95,8 @@ const FinanceEscalationDetailsPage = () => {
             {back}
             <Button variant="outline-secondary" onClick={load}><BsArrowClockwise aria-hidden="true" /> Refresh</Button>
             {canOpenRequestScreen ? (
-              <Button as={Link} to={`/admin/operations/booking-requests/${data.id}`} variant="outline-primary">
-                <BsBoxArrowUpRight aria-hidden="true" /> Open in Booking Requests
+              <Button as={Link} to={`/admin/finance/booking-requests/${data.id}`} variant="outline-primary">
+                <BsBoxArrowUpRight aria-hidden="true" /> Refunds and payments
               </Button>
             ) : null}
           </div>

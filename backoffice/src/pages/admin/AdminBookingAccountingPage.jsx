@@ -817,6 +817,7 @@ const RefundsTable = ({ items = [] }) => (
         <th className="text-end">Confirmed</th>
         <th>Provider Evidence</th>
         <th>Last Sync</th>
+        <th><span className="visually-hidden">Actions</span></th>
       </tr>
     </thead>
     <tbody>
@@ -836,8 +837,9 @@ const RefundsTable = ({ items = [] }) => (
             <small className="text-muted">Request {formatReference(item.providerRefundRequestReference || item.originalTransactionReference)}</small>
           </td>
           <td>{formatDateTime(item.lastRefundSyncAt || item.completedAt || item.processingStartedAt)}</td>
+          <td>{item.bookingRequestId ? <Link to={`/admin/finance/booking-requests/${item.bookingRequestId}`} aria-label={`Manage refund ${item.refundReference}`}>Manage</Link> : null}</td>
         </tr>
-      )) : <EmptyRow colSpan={8} message="No refund records found." />}
+      )) : <EmptyRow colSpan={9} message="No refund records found." />}
     </tbody>
   </AccountingTable>
 );

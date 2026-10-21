@@ -12,12 +12,13 @@ import {
   filterAdminNavigation,
   hasActiveAdminChild,
   isAdminNavItemActive,
-  roleLabel
+  roleLabel,
+  WEBSITE_ADMIN_HOME
 } from "../../config/adminNavigation";
-import { TRANSFER_ADMIN_URL } from "../../config/site";
+import { BACK_OFFICE_URL, TRANSFER_ADMIN_URL } from "../../config/site";
 
 // Separate apps linked from the menu. An app without a configured address is left out.
-const EXTERNAL_APP_URLS = { transferAdmin: TRANSFER_ADMIN_URL };
+const EXTERNAL_APP_URLS = { backOffice: BACK_OFFICE_URL, transferAdmin: TRANSFER_ADMIN_URL };
 
 const withoutUnavailableApps = (items) =>
   items
@@ -46,9 +47,10 @@ const getInitials = (user) => {
 
 const PlannedBadge = () => <span className="admin-platform-nav-badge">Soon</span>;
 
-const SidebarBrand = ({ onNavigate, onClose }) => (
+// On the website the main Dashboard is in the Back Office, so the brand opens the website admin home instead.
+const SidebarBrand = ({ onNavigate, onClose, websiteAdmin }) => (
   <div className="admin-platform-brand-wrap">
-    <Link to="/admin" className="admin-platform-brand" onClick={onNavigate} aria-label="Riser admin dashboard">
+    <Link to={websiteAdmin ? WEBSITE_ADMIN_HOME : "/admin"} className="admin-platform-brand" onClick={onNavigate} aria-label={websiteAdmin ? "Riser admin home" : "Riser admin dashboard"}>
       <span className="admin-platform-brand-mark">R</span>
       <span className="admin-platform-brand-copy">
         <strong>Riser</strong>
@@ -260,7 +262,7 @@ const AdminSidebar = ({ user, websiteAdmin = false, collapsed, mobileOpen, onNav
       aria-label="Admin navigation"
       aria-hidden={!mobileOpen ? undefined : false}
     >
-      <SidebarBrand onNavigate={onNavigate} onClose={onClose} />
+      <SidebarBrand onNavigate={onNavigate} onClose={onClose} websiteAdmin={websiteAdmin} />
       <SidebarProfile user={user} collapsed={collapsed} />
 
       <nav className="admin-platform-nav" aria-label="Admin navigation">

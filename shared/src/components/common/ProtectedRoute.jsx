@@ -2,7 +2,9 @@ import { Navigate, useLocation } from "react-router-dom";
 import Loader from "./Loader";
 import useAuth from "../../hooks/useAuth";
 
-const ProtectedRoute = ({ children, roles = [], permissions = [] }) => {
+// redirectTo: where a signed-in user without the role or permission is sent (the website's /admin sends them to
+// their own admin home rather than the public home page).
+const ProtectedRoute = ({ children, roles = [], permissions = [], redirectTo = "/" }) => {
   const { isAuthenticated, user, loading } = useAuth();
   const location = useLocation();
 
@@ -15,13 +17,13 @@ const ProtectedRoute = ({ children, roles = [], permissions = [] }) => {
   }
 
   if (roles.length && !roles.includes(user?.role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={redirectTo} replace />;
   }
 
   if (permissions.length) {
     const userPermissions = Array.isArray(user?.permissions) ? user.permissions : [];
     if (!permissions.some((permission) => userPermissions.includes(permission))) {
-      return <Navigate to="/" replace />;
+      return <Navigate to={redirectTo} replace />;
     }
   }
 

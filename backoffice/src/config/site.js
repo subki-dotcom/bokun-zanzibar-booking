@@ -14,6 +14,10 @@ export const BACK_OFFICE_URL = String(
   import.meta.env.VITE_BACK_OFFICE_URL || (import.meta.env.PROD ? "" : DEV_BACK_OFFICE_URL)
 ).replace(/\/+$/, "");
 
+// The Website Tour Admin (the website's /admin), for links from the Back Office to tour operations pages.
+// Set VITE_WEBSITE_ADMIN_URL for production; without it, production uses VITE_WEBSITE_URL.
+export const WEBSITE_ADMIN_URL = String(import.meta.env.VITE_WEBSITE_ADMIN_URL || WEBSITE_URL).replace(/\/+$/, "");
+
 // The Transfer Admin app (its own login). Shown as a link in the website's /admin menu.
 // Set VITE_TRANSFER_ADMIN_URL for production; without it, the link is hidden there.
 const DEV_TRANSFER_ADMIN_URL = "http://localhost:5175";
