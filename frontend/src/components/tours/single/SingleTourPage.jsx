@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { importantInfoForTour, tourHasPickup } from "./tourDisplayText";
+import { trackSelectOption } from "../../../utils/analytics";
 import { Container } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProductGallery from "./ProductGallery";
@@ -412,6 +413,7 @@ const SingleTourPage = ({
   };
 
   const handleContinueWithOption = (option, startTime = "", startTimeSlot = null) => {
+    trackSelectOption(tour, Number(selectedPax.adults || 0) + Number(selectedPax.children || 0) + Number(selectedPax.infants || 0));
     handleSelectOption(option);
     handleBookOption(option, {
       startTime,

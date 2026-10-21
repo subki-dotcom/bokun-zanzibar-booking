@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Container } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 import { fetchTourBySlug } from "../../api/toursApi";
+import { trackViewItem } from "../../utils/analytics";
 import TourLoadingSkeleton from "../../components/tours/single/TourLoadingSkeleton";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import SingleTourPage from "../../components/tours/single/SingleTourPage";
@@ -54,6 +55,10 @@ const TourDetailsPage = () => {
       active = false;
     };
   }, [slug]);
+  const viewedSlug = tour?.slug || "";
+  useEffect(() => {
+    if (viewedSlug && tour) trackViewItem(tour);
+  }, [viewedSlug]);
 
   if (loading) {
     return <TourLoadingSkeleton />;

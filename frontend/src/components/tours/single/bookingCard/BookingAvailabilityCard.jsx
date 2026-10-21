@@ -8,6 +8,7 @@ import PassengerCategorySelector from "./PassengerCategorySelector";
 import DateAvailabilityPicker from "./DateAvailabilityPicker";
 import StartingPriceBox from "./StartingPriceBox";
 import BookingTrustPanel from "./BookingTrustPanel";
+import { trackCheckAvailability, trackSelectDate } from "../../../../utils/analytics";
 import { pricePresentation } from "../pricePresentation";
 import {
   buildDefaultPassengerState,
@@ -341,6 +342,7 @@ const BookingAvailabilityCard = ({
   };
 
   const handleDateChange = (nextDate) => {
+    if (nextDate) trackSelectDate(tour, totalPassengers);
     quoteRequestSeqRef.current += 1;
     setQuoteLoading(false);
     setTravelDate(nextDate);
@@ -491,7 +493,10 @@ const BookingAvailabilityCard = ({
           <Button
             className="single-booking-availability-btn w-100"
             disabled={!canRequestQuote || quoteLoading || configLoading}
-            onClick={() => requestLiveQuote({ silent: false })}
+            onClick={() => {
+              trackCheckAvailability(tour, totalPassengers);
+              requestLiveQuote({ silent: false });
+            }}
           >
             {quoteLoading ? (
               <>
