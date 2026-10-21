@@ -271,14 +271,45 @@ const enrichProductWithLiveOptions = async (product, requestId) => {
   }
 };
 
-const hydrateTourOptionsIfNeeded = async (tour, requestId) => {
-  const needsHydration =
-    hasOnlyFallbackOptions(tour) || hasMissingPriceCatalogs(tour) || hasLegacyContentGap(tour);
+// A snapshot without options or prices cannot be booked, so that waits for Bókun (at most once per product every
+// 10 minutes). Missing descriptive content never makes a visitor wait: it is refreshed in the background at most every
+// 6 hours. Some gaps never close (Bókun itself repeats parts of pickup addresses), which used to send every tour page
+// and availability request to Bókun.
+const BOOKING_DATA_RETRY_MS = 10 * 60 * 1000;
+const CONTENT_REFRESH_MS = 6 * 60 * 60 * 1000;
+const hydrationAttemptedAt = new Map();
+const contentHydrationInFlight = new Set();
 
-  if (!tour?.bokunProductId || !needsHydration) {
+const hydrateTourOptionsIfNeeded = async (tour, requestId) => {
+  const productId = String(tour?.bokunProductId || "");
+  if (!productId) {
     return tour;
   }
 
+  if (hasOnlyFallbackOptions(tour) || hasMissingPriceCatalogs(tour)) {
+    if (Date.now() - (hydrationAttemptedAt.get(productId) || 0) < BOOKING_DATA_RETRY_MS) {
+      return tour;
+    }
+    hydrationAttemptedAt.set(productId, Date.now());
+    return hydrateTourFromBokun(tour, requestId);
+  }
+
+  if (
+    hasLegacyContentGap(tour) &&
+    !contentHydrationInFlight.has(productId) &&
+    Date.now() - (hydrationAttemptedAt.get(productId) || 0) >= CONTENT_REFRESH_MS
+  ) {
+    hydrationAttemptedAt.set(productId, Date.now());
+    contentHydrationInFlight.add(productId);
+    hydrateTourFromBokun(tour, requestId)
+      .catch((error) => logger.warn("Background tour content refresh skipped", { productId, requestId, error: error.message }))
+      .finally(() => contentHydrationInFlight.delete(productId));
+  }
+
+  return tour;
+};
+
+const hydrateTourFromBokun = async (tour, requestId) => {
   const liveProduct = await enrichProductWithLiveOptions(tour, requestId);
 
   if (hasOnlyFallbackOptions(liveProduct) && hasMissingPriceCatalogs(liveProduct)) {
