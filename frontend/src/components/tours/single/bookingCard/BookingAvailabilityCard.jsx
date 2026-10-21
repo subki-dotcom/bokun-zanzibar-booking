@@ -69,6 +69,7 @@ const BookingAvailabilityCard = ({
   selectedStartTime = "",
   initialSelection = null,
   onLiveAvailabilityChecked,
+  onStartingPrice,
   hideContinueButton = false,
   checkoutPath = "",
   sessionSource = "single_product_page"
@@ -327,6 +328,17 @@ const BookingAvailabilityCard = ({
       fallback: "Check live pricing"
     });
   }, [quoteStatus, quote, startingFromPrice, startingPrice, bookingCurrency]);
+
+  // Tell the page the starting price, so the mobile booking bar can show it before a date is chosen.
+  useEffect(() => {
+    if (typeof onStartingPrice !== "function" || configLoading) return;
+    const display = pricePresentation({ ...startingPrice, amount: startingFromPrice, isTotal: true });
+    onStartingPrice({
+      amount: Number(display.amount) > 0 ? Number(display.amount) : 0,
+      currency: startingPrice?.currency || bookingCurrency,
+      label: pricePresentation({ ...startingPrice, isTotal: true }).label
+    });
+  }, [onStartingPrice, configLoading, startingFromPrice, startingPrice, bookingCurrency]);
 
   const priceMetaLabel =
     quoteStatus === "success" && Number(quote?.totalPrice || 0) > 0

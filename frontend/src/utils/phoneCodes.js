@@ -112,12 +112,9 @@ export const replacePhoneDialCode = (
     return nextDialCode;
   }
 
-  if (previousDialCode && normalizedPhone.startsWith(previousDialCode)) {
-    const nationalNumber = normalizedPhone.slice(previousDialCode.length).replace(/^0+/, "");
-    return `${nextDialCode}${nationalNumber}`;
-  }
-
-  return applyDialCodeToPhone(normalizedPhone, nextCountryCode, countries);
+  // A number the guest has already typed is theirs: travellers often use a phone from another country than the one
+  // they choose, so changing the country never rewrites it.
+  return normalizedPhone;
 };
 
 export const getPhoneFormatExample = (countryCode = "", countries = []) => {
@@ -167,12 +164,10 @@ export const validatePhoneNumber = (phone = "", countryCode = "", countries = []
     };
   }
 
+  // A number with another country's code is accepted (a guest's phone need not match the country they choose);
+  // the country's own length rule applies only to numbers with the selected country's code.
   if (dialCode && !normalized.startsWith(dialCode)) {
-    return {
-      isValid: false,
-      normalized,
-      message: `Use the ${dialCode} country code for ${countryName}, or select the correct country.`
-    };
+    return { isValid: true, normalized, message: "" };
   }
 
   const expectedDigitCount = (country?.format.match(/\./g) || []).length;

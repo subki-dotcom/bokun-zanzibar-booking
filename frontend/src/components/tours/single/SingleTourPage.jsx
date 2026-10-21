@@ -72,6 +72,7 @@ const SingleTourPage = ({
   const [selectedRateLabel, setSelectedRateLabel] = useState("");
   const [showAvailabilityPicker, setShowAvailabilityPicker] = useState(false);
   const [latestQuote, setLatestQuote] = useState(null);
+  const [startingPriceForBar, setStartingPriceForBar] = useState(null);
   const lastAvailabilityCheckKeyRef = useRef("");
   const mobileBookingRef = useRef(null);
 
@@ -393,6 +394,7 @@ const SingleTourPage = ({
       passengers: preferredPassengers
     },
     onLiveAvailabilityChecked: handleLiveAvailabilityChecked,
+    onStartingPrice: setStartingPriceForBar,
     hideContinueButton: true,
     checkoutPath,
     sessionSource
@@ -463,7 +465,14 @@ const SingleTourPage = ({
         </div>
       </Container>
 
-      {!isDesktop ? <MobileBookingBar amount={tour.fromPrice} currency={tour.currency} onOpenBooking={openMobileBooking} /> : null}
+      {!isDesktop ? (
+        <MobileBookingBar
+          amount={Number(startingPriceForBar?.amount) > 0 ? startingPriceForBar.amount : tour.fromPrice}
+          currency={startingPriceForBar?.currency || tour.currency}
+          priceLabel={startingPriceForBar?.label}
+          onOpenBooking={openMobileBooking}
+        />
+      ) : null}
 
       <AvailabilityOptionModal
         show={showAvailabilityPicker}

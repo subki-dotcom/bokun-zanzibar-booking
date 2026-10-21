@@ -11,10 +11,12 @@ import {
   splitCancellationTimeRemaining
 } from "../../utils/cancellationPolicy";
 
+// Free cancellation that is open now comes first: before payment the refundable amount is 0, which would otherwise
+// show an open free-cancellation policy as non-refundable.
 const iconForPolicy = (policy = {}) => {
   if (!policy.policyAvailable || policy.requiresManualReview) return <BsArrowRepeat />;
-  if (policy.refundable === false || policy.freeCancellationExpired) return <BsXCircle />;
   if (policy.isFreeCancellationAvailable) return <BsCheckCircle />;
+  if (policy.refundable === false || policy.freeCancellationExpired) return <BsXCircle />;
   return <BsShieldCheck />;
 };
 
@@ -27,9 +29,9 @@ const countdownSegments = [
 
 const policyStateClass = (policy = {}) => {
   if (!policy.policyAvailable || policy.requiresManualReview) return "is-review";
+  if (policy.isFreeCancellationAvailable) return "is-free";
   if (policy.refundable === false) return "is-non-refundable";
   if (policy.freeCancellationExpired) return "is-expired";
-  if (policy.isFreeCancellationAvailable) return "is-free";
   return "is-standard";
 };
 
