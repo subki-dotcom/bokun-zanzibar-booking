@@ -1,5 +1,6 @@
 import { Button, Card, Col, Row } from "react-bootstrap";
 import { BsEnvelope, BsWhatsapp } from "react-icons/bs";
+import { BRAND } from "../../config/brand";
 
 const AgentSupportPage = () => (
   <>
@@ -9,7 +10,7 @@ const AgentSupportPage = () => (
       <Col lg={5}>
         <Card className="surface-card">
           <Card.Body>
-            <h5>Contact Riser Tours & Safaris</h5>
+            <h5>Contact {BRAND.name}</h5>
             <p className="text-muted">Our operations team can help with booking flow, pickup, customer confirmation, and commission questions.</p>
             <div className="agent-desk-actions">
               <Button as="a" href="https://wa.me/255778775044" target="_blank" rel="noreferrer" className="premium-btn text-white">

@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { fetchAgentBookingVoucher, resendAgentBookingVoucher } from "../../api/agentApi";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
+import { BRAND } from "../../config/brand";
 
 const VoucherLine = ({ label, value }) => (
   <div className="voucher-line">
@@ -87,7 +88,7 @@ const AgentVoucherPage = () => {
           <div className="voucher-brand agent-voucher-hero">
             <div>
               <span className="voucher-kicker">Tour Voucher</span>
-              <h3>Riser Tours & Safaris</h3>
+              <h3>{BRAND.name}</h3>
               <p>Zanzibar Tours, Activities & Transfers</p>
             </div>
             <strong>{voucher?.bookingReference}</strong>

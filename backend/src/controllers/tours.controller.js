@@ -37,8 +37,12 @@ const listCategories = asyncHandler(async (req, res) => {
   });
 });
 
-// The raw Bókun product is internal (about a quarter of the response); the page never reads it.
-const publicTour = ({ rawBokunProduct, ...tour } = {}) => tour;
+// The raw Bókun product is internal (about a quarter of the response); the page never reads it. A rating is shown
+// only with real reviews behind it.
+const publicTour = ({ rawBokunProduct, ...tour } = {}) => {
+  const reviewCount = Math.max(0, Math.round(Number(tour.reviewCount) || 0));
+  return { ...tour, reviewCount, rating: reviewCount > 0 ? Number(tour.rating) || 0 : 0 };
+};
 
 const getTourBySlug = asyncHandler(async (req, res) => {
   const data = publicTour(await toursService.getTourBySlug(req.params.slug, req.requestId));

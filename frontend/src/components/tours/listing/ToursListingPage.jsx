@@ -14,6 +14,7 @@ import {
   buildCategoryFilterOptions,
   mapBokunTourForListing
 } from "./listing.helpers";
+import { BRAND } from "../../../config/brand";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -198,7 +199,7 @@ const ToursListingPage = () => {
 
   return (
     <section className="tours-listing-page py-4 py-lg-5">
-      <SeoHead title="Zanzibar Tours & Activities | Riser Tours & Safaris" description="Compare Zanzibar tours and check live availability by date before booking." />
+      <SeoHead title={`Zanzibar Tours & Activities | ${BRAND.name}`} description="Compare Zanzibar tours and check live availability by date before booking." />
       <Container>
         <ListingHeader
           totalItems={pagination.totalItems || 0}

@@ -23503,3 +23503,12 @@ textarea.form-control {
     bottom: calc(5.6rem + env(safe-area-inset-bottom));
   }
 }
+
+/* Tours without reviews show "New tour" instead of a rating. */
+.product-new-tour {
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--product-green-dark, #166534);
+  font-weight: 700;
+}

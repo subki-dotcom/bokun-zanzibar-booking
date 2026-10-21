@@ -361,7 +361,7 @@ const createOrderWithPaypal = async ({ booking, requestId }) => {
       payment_source: {
         paypal: {
           experience_context: {
-            brand_name: "Riser Tours & Safaris",
+            brand_name: env.BRAND_NAME,
             landing_page: "LOGIN",
             user_action: "PAY_NOW",
             return_url: env.PAYPAL_SUCCESS_URL,
@@ -527,7 +527,7 @@ const refundCapturedPayment = async ({
       currency_code: refundCurrency
     },
     invoice_id: String(invoiceNumber || "").slice(0, 127),
-    note_to_payer: String(note || "Riser Tours & Safaris Zanzibar cancellation refund.").slice(0, 255)
+    note_to_payer: String(note || `${env.BRAND_NAME} cancellation refund.`).slice(0, 255)
   };
   const response = await requestPaypal({
     method: "post",

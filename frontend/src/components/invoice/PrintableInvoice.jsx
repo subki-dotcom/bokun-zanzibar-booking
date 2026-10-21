@@ -1,5 +1,6 @@
 import Table from "react-bootstrap/Table";
 import { formatCurrency, formatDate } from "../../utils/formatters";
+import { BRAND } from "../../config/brand";
 
 const DetailBlock = ({ title, children }) => (
   <div className="invoice-detail-block">
@@ -47,7 +48,7 @@ const PrintableInvoice = ({ invoice }) => {
         <div className="invoice-brand-block">
           <div className="invoice-brand-mark">R</div>
           <div>
-            <h1>Riser Tours & Safaris</h1>
+            <h1>{BRAND.name}</h1>
             <p>Stone Town, Zanzibar</p>
           </div>
         </div>
@@ -117,7 +118,7 @@ const PrintableInvoice = ({ invoice }) => {
       <section className="invoice-bottom-grid">
         <div className="invoice-notes-card">
           <h2>Notes</h2>
-          <p>{invoice.notes || "Thank you for booking with Riser Tours & Safaris."}</p>
+          <p>{invoice.notes || `Thank you for booking with ${BRAND.name}.`}</p>
           <small>
             {String(invoice.paymentStatus || "").toLowerCase() === "paid"
               ? invoice.guestPaymentCollector

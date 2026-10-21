@@ -10,7 +10,7 @@ const socialLinks = [
 
 const FooterBrandSection = () => (
   <section className="premium-footer-brand">
-    <h4>Riser Tours & Safaris Zanzibar</h4>
+    <h4>{BRAND.name}</h4>
     <p>
       Explore Zanzibar with handpicked tours, reliable transfers, and premium local experiences.
       From Stone Town to Mnemba, Jozani, Prison Island, and unforgettable safaris, we help

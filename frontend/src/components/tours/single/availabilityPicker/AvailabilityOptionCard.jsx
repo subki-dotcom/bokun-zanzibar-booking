@@ -133,7 +133,7 @@ const AvailabilityOptionCard = ({
         </div>
         <div>
           <BsCashCoin />
-          <span>{priceAmount > 0 ? `From ${formatCurrency(displayPrice.amount, currency)} ${displayPrice.label}` : "Live price on request"}</span>
+          <span>{priceAmount > 0 ? `From ${formatCurrency(displayPrice.amount, currency)} ${displayPrice.label}` : "Price shown at checkout"}</span>
         </div>
       </div>
 

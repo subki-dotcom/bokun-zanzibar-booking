@@ -1,6 +1,7 @@
 import { Button, Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
+import { BRAND } from "../../config/brand";
 
 const AgentPendingApprovalPage = () => {
   const { user, logout } = useAuth();
@@ -13,7 +14,7 @@ const AgentPendingApprovalPage = () => {
         <h2>{suspended ? "Your agent account is suspended" : "Your agent account is waiting for approval"}</h2>
         <p>
           {suspended
-            ? "Please contact Riser Tours & Safaris support to review your account."
+            ? `Please contact ${BRAND.name} support to review your account.`
             : "Riser admin must approve your account before you can access the booking desk."}
         </p>
         <div className="d-flex flex-wrap gap-2">

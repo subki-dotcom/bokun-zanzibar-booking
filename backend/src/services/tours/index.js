@@ -228,7 +228,7 @@ const pickLiveSyncFields = (liveProduct = {}) => ({
   destination: liveProduct.destination,
   status: liveProduct.status,
   currency: liveProduct.currency,
-  fromPrice: liveProduct.fromPrice,
+  // fromPrice is not copied from Bókun's product: it is the one-adult starting price set by refreshListingFromPrice.
   rating: liveProduct.rating,
   reviewCount: liveProduct.reviewCount,
   options: liveProduct.options,
@@ -410,7 +410,13 @@ const ensurePublicSnapshotCache = async (requestId = "") => {
   return ProductSnapshot.countDocuments({ status: "active" });
 };
 
-const hasMissingListingSignals = (tour = {}) => Number(tour?.fromPrice || 0) <= 0;
+// Listing "From" prices are one-adult starting prices (see fetchOneAdultStartingPreview), checked again every 12 hours.
+const FROM_PRICE_BASIS = "one_adult_v1";
+const FROM_PRICE_REFRESH_MS = 12 * 60 * 60 * 1000;
+const hasMissingListingSignals = (tour = {}) =>
+  Number(tour?.fromPrice || 0) <= 0 ||
+  tour?.fromPriceBasis !== FROM_PRICE_BASIS ||
+  Date.now() - new Date(tour?.fromPriceCheckedAt || 0).getTime() > FROM_PRICE_REFRESH_MS;
 
 const resolveListingOptionIds = (tour = {}) =>
   (Array.isArray(tour?.options) ? tour.options : [])
@@ -425,21 +431,15 @@ const resolveFromPriceUsingStartingPreview = async (tour = {}, requestId = "") =
   }
 
   try {
-    const preview = await bokunService.fetchStartingPricePreview(
+    const preview = await bokunService.fetchOneAdultStartingPreview(
       {
         productId,
-        optionIds: resolveListingOptionIds(tour),
-        comparedAdults: 2
+        optionIds: resolveListingOptionIds(tour)
       },
       requestId
     );
 
-    const amountForTwo = Number(preview?.lowestPriceForTwo?.amount || 0);
-    if (!Number.isFinite(amountForTwo) || amountForTwo <= 0) {
-      return 0;
-    }
-
-    return Number((amountForTwo / 2).toFixed(2));
+    return bokunService.perPersonStartingAmount(preview?.lowestPriceForTwo);
   } catch (error) {
     logger.warn("Listing starting price preview skipped", {
       productId,
@@ -470,29 +470,23 @@ const hydrateMissingListingSignals = async (items = [], requestId = "") => {
         }
 
         const patch = pickLiveSyncFields(liveProduct);
-        let resolvedFromPrice = Number(patch?.fromPrice || 0);
+        let resolvedFromPrice = 0;
+        try {
+          const bookingConfig = await bokunService.fetchProductBookingConfig(
+            liveProduct.bokunProductId,
+            {
+              prefetchedProduct: liveProduct
+            },
+            requestId
+          );
 
-        if (!Number.isFinite(resolvedFromPrice) || resolvedFromPrice <= 0) {
-          try {
-            const bookingConfig = await bokunService.fetchProductBookingConfig(
-              liveProduct.bokunProductId,
-              {
-                prefetchedProduct: liveProduct
-              },
-              requestId
-            );
-
-            const amountForTwoAdults = Number(bookingConfig?.startingFromPrice || 0);
-            if (Number.isFinite(amountForTwoAdults) && amountForTwoAdults > 0) {
-              resolvedFromPrice = Number((amountForTwoAdults / 2).toFixed(2));
-            }
-          } catch (error) {
-            logger.warn("Listing booking-config price fallback skipped", {
-              productId: tour.bokunProductId,
-              requestId,
-              error: error.message
-            });
-          }
+          resolvedFromPrice = bokunService.perPersonStartingAmount(bookingConfig?.startingPrice);
+        } catch (error) {
+          logger.warn("Listing booking-config price fallback skipped", {
+            productId: tour.bokunProductId,
+            requestId,
+            error: error.message
+          });
         }
 
         if (!Number.isFinite(resolvedFromPrice) || resolvedFromPrice <= 0) {
@@ -507,7 +501,9 @@ const hydrateMissingListingSignals = async (items = [], requestId = "") => {
 
         if (Number.isFinite(resolvedFromPrice) && resolvedFromPrice > 0) {
           patch.fromPrice = resolvedFromPrice;
+          patch.fromPriceBasis = FROM_PRICE_BASIS;
         }
+        patch.fromPriceCheckedAt = new Date();
 
         await ProductSnapshot.updateOne(
           { bokunProductId: tour.bokunProductId },
@@ -595,7 +591,8 @@ const normalizeListingSignalValues = (tour = {}) => {
   return {
     ...tour,
     fromPrice: Number.isFinite(fromPrice) && fromPrice > 0 ? fromPrice : 0,
-    rating: Number.isFinite(rating) && rating > 0 ? Number(rating.toFixed(1)) : 0,
+    // A rating is shown only with real reviews behind it.
+    rating: Number.isFinite(rating) && rating > 0 && reviewCount > 0 ? Number(rating.toFixed(1)) : 0,
     reviewCount: Number.isFinite(reviewCount) && reviewCount > 0 ? Math.round(reviewCount) : 0
   };
 };
@@ -608,7 +605,7 @@ const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
   const skip = (safePage - 1) * safeLimit;
 
   const items = await ProductSnapshot.find({ status: "active" })
-    .select("bokunProductId title slug shortDescription duration images fromPrice rating reviewCount currency destination highlights categories lastSyncedAt")
+    .select("bokunProductId title slug shortDescription duration images fromPrice fromPriceBasis fromPriceCheckedAt rating reviewCount currency destination highlights categories lastSyncedAt options.bokunOptionId options.active")
     .sort({ updatedAt: -1 })
     .skip(skip)
     .limit(safeLimit)
@@ -690,6 +687,8 @@ const getTourBySlug = async (slug, requestId) => {
   // Only a snapshot missing its options or prices waits for Bókun; everything else is served from the database.
   const hydratedTour = await hydrateTourOptionsIfNeeded(tour, requestId);
   schedulePresentationRefresh(hydratedTour, requestId);
+  // A missing or outdated "From" price is computed again in the background, as on the listing.
+  scheduleListingSignalHydration([hydratedTour], requestId);
   return hydratedTour;
 };
 
@@ -823,7 +822,7 @@ const loadOptionsAvailability = async (slug, payload = {}, requestId) => {
   const matrixPayload = {
     productId: hydratedTour.bokunProductId,
     pax: payload.pax || { adults: 1, children: 0, infants: 0 },
-    comparedAdults: hasExplicitTravelDate ? requestedAdults : 2,
+    comparedAdults: hasExplicitTravelDate ? requestedAdults : 1,
     priceCatalogId: payload.priceCatalogId || "",
     optionIds: activeOptions.map((option) => String(option.bokunOptionId || "")).filter(Boolean)
   };

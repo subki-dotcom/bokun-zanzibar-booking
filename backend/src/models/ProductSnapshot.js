@@ -99,7 +99,10 @@ const productSnapshotSchema = new mongoose.Schema(
     destination: { type: String, default: "Zanzibar" },
     status: { type: String, default: "active" },
     currency: { type: String, default: "USD" },
+    // One-adult starting price shown as "From"; basis and check time tell when it must be computed again.
     fromPrice: { type: Number, default: 0 },
+    fromPriceBasis: { type: String, default: "" },
+    fromPriceCheckedAt: { type: Date, default: null },
     rating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     options: [optionSnapshotSchema],

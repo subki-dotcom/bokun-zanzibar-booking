@@ -15,8 +15,8 @@ const FeaturedToursSection = ({ tours = [], loading = false }) => (
       {loading ? <Loader message="Loading featured tours..." variant="cards" /> : <Row className="g-3 g-lg-4">
         {(tours || []).map((tour) => {
           const detailPath = tour.slug ? `/tours/${tour.slug}` : "/tours";
-          const hasRating = Number(tour.rating || 0) > 0;
           const hasReviews = Number(tour.reviewCount || 0) > 0;
+          const hasRating = hasReviews && Number(tour.rating || 0) > 0;
 
           return (
             <Col key={tour.id || tour.slug || tour.title} lg={4} md={6}>

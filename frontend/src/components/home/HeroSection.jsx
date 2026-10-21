@@ -2,13 +2,14 @@ import { Button, Container } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { BsArrowRight, BsShieldCheck, BsStarFill, BsWhatsapp } from "react-icons/bs";
 import HeroSearchCard from "./HeroSearchCard";
+import { BRAND } from "../../config/brand";
 
 const HeroSection = ({ onSearch }) => (
   <section className="z-home-hero">
     <Container>
       <div className="z-home-hero-panel">
         <div className="z-home-hero-content">
-          <div className="z-home-hero-kicker">Riser Tours & Safaris Zanzibar</div>
+          <div className="z-home-hero-kicker">{BRAND.name}</div>
           <h1>Book Zanzibar tours with local experts.</h1>
           <p>Curated island tours, transfers, safaris, and activities with live availability and secure checkout.</p>
 

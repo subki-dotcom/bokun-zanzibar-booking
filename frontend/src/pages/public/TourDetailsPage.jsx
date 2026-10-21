@@ -6,6 +6,7 @@ import TourLoadingSkeleton from "../../components/tours/single/TourLoadingSkelet
 import ErrorAlert from "../../components/common/ErrorAlert";
 import SingleTourPage from "../../components/tours/single/SingleTourPage";
 import SeoHead from "../../components/common/SeoHead";
+import { BRAND } from "../../config/brand";
 
 // The build writes each tour into its own page (script#riser-prerender-tour). Use it at once on a direct visit,
 // then refresh from the API in the background.
@@ -61,7 +62,7 @@ const TourDetailsPage = () => {
   if (error) {
     return (
       <Container className="py-4">
-        <SeoHead title="Tour Not Found | Riser Tours & Safaris" description="This tour is unavailable." noIndex />
+        <SeoHead title={`Tour Not Found | ${BRAND.name}`} description="This tour is unavailable." noIndex />
         <ErrorAlert error={error} />
       </Container>
     );
@@ -72,7 +73,7 @@ const TourDetailsPage = () => {
 
   return <>
     <SeoHead
-      title={`${tour?.title || "Zanzibar Tour"} | Riser Tours & Safaris`}
+      title={`${tour?.title || "Zanzibar Tour"} | ${BRAND.name}`}
       description={tour?.shortDescription || tour?.description || "Book this Zanzibar experience with live availability."}
       image={image}
       product={{

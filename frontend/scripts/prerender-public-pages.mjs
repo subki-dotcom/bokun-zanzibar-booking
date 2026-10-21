@@ -4,6 +4,7 @@ import process from "node:process";
 
 const root = process.cwd();
 const dist = path.join(root, "dist");
+const brandName = String(process.env.VITE_BRAND_NAME || "Riser Tours & Safaris").trim();
 const siteUrl = String(process.env.VITE_SITE_URL || "https://zanzibartoursandsafaris.co.tz").replace(/\/$/, "");
 const configuredApi = String(process.env.SEO_API_BASE_URL || process.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 if (!configuredApi) {
@@ -92,8 +93,8 @@ const replaceHead = (html, metadata) => html
 const jsonLd = (entries) => `<script id="riser-prerender-schema" type="application/ld+json">${JSON.stringify(entries).replace(/</g, "\\u003c")}</script>`;
 
 const sharedSchema = () => ([
-  { "@context": "https://schema.org", "@type": "Organization", "@id": `${siteUrl}/#organization`, name: "Riser Tours & Safaris", url: siteUrl },
-  { "@context": "https://schema.org", "@type": "WebSite", "@id": `${siteUrl}/#website`, name: "Riser Tours & Safaris", url: siteUrl, publisher: { "@id": `${siteUrl}/#organization` } }
+  { "@context": "https://schema.org", "@type": "Organization", "@id": `${siteUrl}/#organization`, name: brandName, url: siteUrl },
+  { "@context": "https://schema.org", "@type": "WebSite", "@id": `${siteUrl}/#website`, name: brandName, url: siteUrl, publisher: { "@id": `${siteUrl}/#organization` } }
 ]);
 
 // The tour itself, so the page renders at once instead of waiting for the API (it refreshes in the background).
@@ -144,14 +145,14 @@ const run = async () => {
   const details = await mapInBatches(tours, (tour) => getTour(tour.slug));
   const homeCanonical = `${siteUrl}/`;
   await writePage(template, "/", metadata({
-    title: "Riser Tours & Safaris | Zanzibar Tours & Activities",
+    title: `${brandName} | Zanzibar Tours & Activities`,
     description: "Book Zanzibar tours, activities, transfers, and safaris with live availability and secure checkout.",
     canonical: homeCanonical,
     schemas: sharedSchema(),
     body: '<main><h1>Zanzibar Tours & Activities</h1><p>Discover Zanzibar tours, activities, transfers, and safaris.</p><p><a href="/tours">Browse Zanzibar tours</a></p></main>'
   }));
   await writePage(template, "/tours", metadata({
-    title: "Zanzibar Tours & Activities | Riser Tours & Safaris",
+    title: `Zanzibar Tours & Activities | ${brandName}`,
     description: "Compare Zanzibar tours and check live availability by date before booking.",
     canonical: `${siteUrl}/tours`,
     schemas: sharedSchema(),
@@ -159,7 +160,7 @@ const run = async () => {
   }));
   for (const tour of details) {
     const canonical = `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`;
-    const description = truncate(tour.shortDescription || tour.description || `Explore ${tour.title} with Riser Tours & Safaris.`);
+    const description = truncate(tour.shortDescription || tour.description || `Explore ${tour.title} with ${brandName}.`);
     const image = String((tour.images || [])[0] || "");
     const schemas = [...sharedSchema(), {
       "@context": "https://schema.org",
@@ -179,7 +180,7 @@ const run = async () => {
       ]
     }];
     await writePage(template, `/tours/${tour.slug}`, metadata({
-      title: `${tour.title} | Riser Tours & Safaris`, description, canonical, image, schemas, body: buildTourMarkup(tour), data: pageData(tour)
+      title: `${tour.title} | ${brandName}`, description, canonical, image, schemas, body: buildTourMarkup(tour), data: pageData(tour)
     }));
   }
   const urls = [homeCanonical, `${siteUrl}/tours`, ...details.map((tour) => `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`)];

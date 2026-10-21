@@ -13,7 +13,7 @@ const setMeta = (selector, attribute, value) => {
 
 const SeoHead = ({ title, description, image = "", product = null, noIndex = false }) => {
   useEffect(() => {
-    const pageTitle = title || "Riser Tours & Safaris | Zanzibar Tours";
+    const pageTitle = title || `${BRAND.name} | Zanzibar Tours`;
     const pageDescription = description || "Book Zanzibar tours, activities, and transfers with live availability and secure payment.";
     const canonicalUrl = `${BRAND.website}${window.location.pathname}`;
 

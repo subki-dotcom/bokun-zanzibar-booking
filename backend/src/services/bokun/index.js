@@ -734,6 +734,35 @@ const deriveTwoAdultStartingPrice = (mappedProduct = {}, selectedRateOption = nu
   return { amount: 0 };
 };
 
+// The "From" price shown everywhere: the lowest price for one adult across the bookable options in the coming weeks,
+// which is what a single traveller pays at checkout. Tours that do not take a single traveller fall back to the
+// per-person price for two.
+const fetchOneAdultStartingPreview = async ({ productId, optionIds = [], priceCatalogId = "", daysWindow = 30 }, requestId) => {
+  const preview = (adults) => fetchStartingPricePreview(
+    {
+      productId,
+      optionIds,
+      comparedAdults: adults,
+      pax: { adults, children: 0, infants: 0 },
+      priceCatalogId,
+      daysWindow
+    },
+    requestId
+  );
+  const single = await preview(1);
+  if (Number(single?.lowestPriceForTwo?.amount || 0) > 0) return single;
+  return preview(2);
+};
+
+// Per-person amount of a starting price (the total for its compared adults, or a whole-group price).
+const perPersonStartingAmount = (startingPrice = {}) => {
+  const amount = Number(startingPrice?.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  if (String(startingPrice?.pricingType || "") === "per_group") return Number(amount.toFixed(2));
+  const adults = Math.max(1, Number(startingPrice?.comparedAdults || 1));
+  return Number((amount / adults).toFixed(2));
+};
+
 const fetchProductBookingConfig = async (productId, options = {}, requestId) => {
   const safeProductId = String(productId || "").trim();
   const requestedRateId = String(options?.rateId || "").trim();
@@ -773,12 +802,10 @@ const fetchProductBookingConfig = async (productId, options = {}, requestId) => 
     ),
     includeStartingPreview
       ? withTimeout(
-          fetchStartingPricePreview(
+          fetchOneAdultStartingPreview(
             {
               productId: mappedProduct.bokunProductId,
               optionIds,
-              comparedAdults: 2,
-              pax: { adults: 2, children: 0, infants: 0 },
               priceCatalogId: selectedRateId || "",
               daysWindow: STARTING_PREVIEW_DAYS_WINDOW
             },
@@ -2107,7 +2134,7 @@ const buildDirectBookingRequest = (payload = {}) => {
     mainContactDetails: buildMainContactDetails(customer),
     activityBookings: [activityBooking],
     externalBookingReference: String(payload.externalBookingReference || payload.bookingReference || "").trim() || undefined,
-    externalBookingEntityName: "Riser Tours & Safaris",
+    externalBookingEntityName: env.BRAND_NAME,
     promoCode: payload.promoCode || undefined
   };
 };
@@ -2341,7 +2368,7 @@ const buildCheckoutPayload = (payload = {}) => {
       mainContactDetails: buildMainContactDetails(customer),
       activityBookings: [activityBooking],
       externalBookingReference: externalReference || undefined,
-      externalBookingEntityName: "Riser Tours & Safaris",
+      externalBookingEntityName: env.BRAND_NAME,
       labels: ["website", "external-payment"],
       promoCode: payload.promoCode || undefined
     },
@@ -2378,7 +2405,7 @@ const createBooking = async (payload, requestId) => {
     payload: {
       externalBookingReference:
         checkoutPayload.directBooking.externalBookingReference || reservedBooking.externalBookingReference || "",
-      externalBookingEntityName: "Riser Tours & Safaris",
+      externalBookingEntityName: env.BRAND_NAME,
       showPricesInNotification: true,
       sendNotificationToMainContact: true,
       amount: checkoutPayload.amount,
@@ -2577,6 +2604,8 @@ module.exports = {
   fetchAvailability,
   fetchOptionAvailabilityMatrix,
   fetchStartingPricePreview,
+  fetchOneAdultStartingPreview,
+  perPersonStartingAmount,
   fetchBookingQuestions,
   resolveBookingQuestions,
   buildCheckoutPayload,

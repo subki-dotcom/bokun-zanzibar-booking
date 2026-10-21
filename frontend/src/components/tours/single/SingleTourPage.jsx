@@ -433,7 +433,7 @@ const SingleTourPage = ({
   const hasIncluded = Boolean((tour.included || []).length || (tour.excluded || []).length);
   const hasMeeting = Boolean(tour.meetingInfo || tour.pickupInfo);
   const hasImportantInformation = Boolean((tour.importantInformation || []).length);
-  const hasReviews = Number(tour.rating || 0) > 0 || Number(tour.reviewCount || 0) > 0;
+  const hasReviews = Number(tour.reviewCount || 0) > 0 && Number(tour.rating || 0) > 0;
 
   return (
     <main className={`single-tour-page product-detail-page ${portal === "agent" ? "agent-tour-booking-page" : ""}`}>

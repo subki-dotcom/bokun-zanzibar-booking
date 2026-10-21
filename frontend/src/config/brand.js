@@ -6,7 +6,8 @@ const phone = envValue("VITE_SUPPORT_PHONE", "+255 778 775 044");
 const whatsappNumber = normalizePhone(envValue("VITE_WHATSAPP_NUMBER", phone));
 
 export const BRAND = {
-  name: "Riser Tours & Safaris",
+  // The one brand name used everywhere on the website (header, titles, checkout, invoices, structured data).
+  name: envValue("VITE_BRAND_NAME", "Riser Tours & Safaris"),
   website: envValue("VITE_SITE_URL", "https://zanzibartoursandsafaris.co.tz").replace(/\/$/, ""),
   location: "Zanzibar, Tanzania",
   phone,

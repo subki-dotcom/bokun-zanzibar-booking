@@ -262,7 +262,7 @@ const resendAgentVoucher = async (agentId, referenceOrId, requestId = "") => {
   const voucher = await getAgentVoucher(agentId, referenceOrId);
   const booking = await ensureOwnBooking(agentId, referenceOrId);
   const voucherUrl = `/agent/bookings/${booking.bookingReference}/voucher`;
-  const message = `Riser Tours & Safaris voucher ${booking.bookingReference}: ${booking.productTitle} on ${booking.travelDate}. Voucher: ${voucherUrl}`;
+  const message = `${env.BRAND_NAME} voucher ${booking.bookingReference}: ${booking.productTitle} on ${booking.travelDate}. Voucher: ${voucherUrl}`;
 
   await AuditLog.create({
     actorId: String(agentId),

@@ -3,6 +3,7 @@ import { Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { registerAgent } from "../../api/authApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
+import { BRAND } from "../../config/brand";
 
 const AgentRegisterPage = () => {
   const [form, setForm] = useState({
@@ -45,7 +46,7 @@ const AgentRegisterPage = () => {
           <Card className="surface-card">
             <Card.Body>
               <h3 className="mb-2">Agent Application</h3>
-              <p className="section-subtitle">Apply to sell Riser Tours & Safaris products as a partner agent.</p>
+              <p className="section-subtitle">Apply to sell {BRAND.name} products as a partner agent.</p>
               <ErrorAlert error={error} />
               {success ? <div className="alert alert-success">{success}</div> : null}
               <Form onSubmit={handleSubmit}>
