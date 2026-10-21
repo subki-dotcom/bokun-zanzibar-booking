@@ -17,7 +17,11 @@ import MobileBookingBar from "./MobileBookingBar";
 import AvailabilityOptionModal from "./availabilityPicker/AvailabilityOptionModal";
 import RelatedToursSection from "./RelatedToursSection";
 import { buildItinerary } from "./singleTour.helpers";
-import { checkTourOptionsAvailability } from "../../../api/toursApi";
+import {
+  availabilityRequestPayload,
+  checkTourOptionsAvailability,
+  prefetchTourOptionsAvailability
+} from "../../../api/toursApi";
 import { saveBookingSession } from "../../../utils/bookingSession";
 
 const SingleTourPage = ({
@@ -278,11 +282,10 @@ const SingleTourPage = ({
     setAvailabilityError("");
 
     try {
-      const result = await checkTourOptionsAvailability(tour.slug, {
-        travelDate: nextTravelDate,
-        pax: normalizedPax,
-        priceCatalogId: String(rateId || "")
-      });
+      const result = await checkTourOptionsAvailability(
+        tour.slug,
+        availabilityRequestPayload({ travelDate: nextTravelDate, pax: normalizedPax, rateId })
+      );
 
       setAvailabilityResult(result);
       lastAvailabilityCheckKeyRef.current = availabilityRequestKey;
@@ -394,6 +397,8 @@ const SingleTourPage = ({
       passengers: preferredPassengers
     },
     onLiveAvailabilityChecked: handleLiveAvailabilityChecked,
+    onPrefetchAvailability: ({ travelDate: date, pax, rateId }) =>
+      prefetchTourOptionsAvailability(tour.slug, availabilityRequestPayload({ travelDate: date, pax, rateId })),
     onStartingPrice: setStartingPriceForBar,
     hideContinueButton: true,
     checkoutPath,

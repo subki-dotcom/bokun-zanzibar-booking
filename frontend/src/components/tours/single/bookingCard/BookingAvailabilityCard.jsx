@@ -70,6 +70,7 @@ const BookingAvailabilityCard = ({
   initialSelection = null,
   onLiveAvailabilityChecked,
   onStartingPrice,
+  onPrefetchAvailability,
   hideContinueButton = false,
   checkoutPath = "",
   sessionSource = "single_product_page"
@@ -328,6 +329,18 @@ const BookingAvailabilityCard = ({
       fallback: "Check live pricing"
     });
   }, [quoteStatus, quote, startingFromPrice, startingPrice, bookingCurrency]);
+
+  // As soon as a date and party are chosen, start the availability lookup in the background, so the options are
+  // ready (or nearly) when the guest presses "Check availability".
+  const onPrefetchAvailabilityRef = useRef(onPrefetchAvailability);
+  onPrefetchAvailabilityRef.current = onPrefetchAvailability;
+  useEffect(() => {
+    if (!travelDate || totalPassengers <= 0 || configLoading) return undefined;
+    const timer = setTimeout(() => {
+      onPrefetchAvailabilityRef.current?.({ travelDate, pax: paxSummary, rateId: selectedRateId });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [travelDate, totalPassengers, paxSummary, selectedRateId, configLoading]);
 
   // Tell the page the starting price, so the mobile booking bar can show it before a date is chosen.
   useEffect(() => {

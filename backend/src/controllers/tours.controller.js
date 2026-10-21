@@ -37,8 +37,11 @@ const listCategories = asyncHandler(async (req, res) => {
   });
 });
 
+// The raw Bókun product is internal (about a quarter of the response); the page never reads it.
+const publicTour = ({ rawBokunProduct, ...tour } = {}) => tour;
+
 const getTourBySlug = asyncHandler(async (req, res) => {
-  const data = await toursService.getTourBySlug(req.params.slug, req.requestId);
+  const data = publicTour(await toursService.getTourBySlug(req.params.slug, req.requestId));
 
   setPublicCache(res, { maxAge: 60, staleWhileRevalidate: 300 });
   return successResponse(res, {

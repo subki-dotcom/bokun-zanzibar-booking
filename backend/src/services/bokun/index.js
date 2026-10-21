@@ -12,6 +12,10 @@ const { extractTotalCount } = require("../../integrations/bokun/confirmedBooking
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
 const BOKUN_CACHE_TTL_MS = 2 * 60 * 1000;
+// Product details and booking configuration (options, rates, passenger categories, pickup places) change rarely;
+// prices and availability are always checked live in the quote and at checkout.
+const PRODUCT_DETAILS_CACHE_TTL_MS = 15 * 60 * 1000;
+const BOOKING_CONFIG_CACHE_TTL_MS = 10 * 60 * 1000;
 const STARTING_PREVIEW_TIMEOUT_MS = 8000;
 const STARTING_PREVIEW_DAYS_WINDOW = 14;
 const BOKUN_BOOKING_SEARCH_STATUS_ALIASES = Object.freeze({
@@ -379,7 +383,7 @@ const fetchProductDetails = async (productId, requestId, options = {}) => {
 
   const mapped = response ? mapper.mapProduct(response, { pickupPlaces }) : null;
   if (mapped?.bokunProductId) {
-    setCacheEntry(productDetailsCache, cacheKey, mapped);
+    setCacheEntry(productDetailsCache, cacheKey, mapped, PRODUCT_DETAILS_CACHE_TTL_MS);
   }
 
   return mapped;
@@ -828,7 +832,7 @@ const fetchProductBookingConfig = async (productId, options = {}, requestId) => 
     })
   };
 
-  return setCacheEntry(bookingConfigCache, cacheKey, response);
+  return setCacheEntry(bookingConfigCache, cacheKey, response, BOOKING_CONFIG_CACHE_TTL_MS);
 };
 
 const fetchProductLiveQuote = async (productId, payload = {}, requestId) => {

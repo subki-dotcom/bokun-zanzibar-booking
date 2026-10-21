@@ -30,12 +30,37 @@ const truncate = (value = "", length = 160) => {
   return text.length <= length ? text : `${text.slice(0, length - 1).trim()}...`;
 };
 
-const requestJson = async (url) => {
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!response.ok) throw new Error(`SEO data request failed (${response.status}): ${url}`);
-  const payload = await response.json();
-  if (!payload?.success) throw new Error(`SEO data request returned an invalid payload: ${url}`);
-  return payload;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// A busy or waking API (502/503/504, network errors) is retried a few times before the build gives up.
+const requestJson = async (url, attempts = 4) => {
+  for (let attempt = 1; ; attempt += 1) {
+    let retryable = true;
+    try {
+      const response = await fetch(url, { headers: { Accept: "application/json" } });
+      retryable = response.status >= 500;
+      if (!response.ok) throw new Error(`SEO data request failed (${response.status}): ${url}`);
+      const payload = await response.json();
+      if (!payload?.success) {
+        retryable = false;
+        throw new Error(`SEO data request returned an invalid payload: ${url}`);
+      }
+      return payload;
+    } catch (error) {
+      if (!retryable || attempt >= attempts) throw error;
+      console.warn(`${error.message}; retrying (${attempt}/${attempts - 1})`);
+      await sleep(2000 * attempt);
+    }
+  }
+};
+
+// Two tours at a time, so the build does not flood the API.
+const mapInBatches = async (items, fn, size = 2) => {
+  const results = [];
+  for (let index = 0; index < items.length; index += size) {
+    results.push(...(await Promise.all(items.slice(index, index + size).map(fn))));
+  }
+  return results;
 };
 
 const fetchActiveTours = async () => {
@@ -57,11 +82,12 @@ const fetchActiveTours = async () => {
 
 const getTour = async (slug) => (await requestJson(`${apiUrl}/tours/${encodeURIComponent(slug)}`)).data;
 
+// Replacements are functions, so "$&" or "$1" in tour text is inserted as written.
 const replaceHead = (html, metadata) => html
-  .replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(metadata.title)}</title>`)
-  .replace(/<meta name="description" content="[^"]*" \/>/i, `<meta name="description" content="${escapeHtml(metadata.description)}" />`)
-  .replace("</head>", `${metadata.head}\n  </head>`)
-  .replace('<div id="root"></div>', `<div id="root">${metadata.body}</div>`);
+  .replace(/<title>[^<]*<\/title>/i, () => `<title>${escapeHtml(metadata.title)}</title>`)
+  .replace(/<meta name="description" content="[^"]*" \/>/i, () => `<meta name="description" content="${escapeHtml(metadata.description)}" />`)
+  .replace("</head>", () => `${metadata.head}\n  </head>`)
+  .replace('<div id="root"></div>', () => `<div id="root">${metadata.body}</div>`);
 
 const jsonLd = (entries) => `<script id="riser-prerender-schema" type="application/ld+json">${JSON.stringify(entries).replace(/</g, "\\u003c")}</script>`;
 
@@ -70,7 +96,14 @@ const sharedSchema = () => ([
   { "@context": "https://schema.org", "@type": "WebSite", "@id": `${siteUrl}/#website`, name: "Riser Tours & Safaris", url: siteUrl, publisher: { "@id": `${siteUrl}/#organization` } }
 ]);
 
-const metadata = ({ title, description, canonical, image = "", schemas, body }) => ({
+// The tour itself, so the page renders at once instead of waiting for the API (it refreshes in the background).
+// Internal and bulky fields are left out.
+const pageData = (tour) => {
+  const { rawBokunProduct, pickupPlaces, ...visible } = tour || {};
+  return `<script id="riser-prerender-tour" type="application/json">${JSON.stringify(visible).replace(/</g, "\\u003c")}</script>`;
+};
+
+const metadata = ({ title, description, canonical, image = "", schemas, body, data = "" }) => ({
   title,
   description,
   body,
@@ -86,7 +119,8 @@ const metadata = ({ title, description, canonical, image = "", schemas, body }) 
     `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
     `<meta name="twitter:description" content="${escapeHtml(description)}" />`,
     image ? `<meta name="twitter:image" content="${escapeHtml(image)}" />` : "",
-    jsonLd(schemas)
+    jsonLd(schemas),
+    data
   ].filter(Boolean).join("\n    ")
 });
 
@@ -107,7 +141,7 @@ const buildTourMarkup = (tour) => {
 const run = async () => {
   const template = await fs.readFile(path.join(dist, "index.html"), "utf8");
   const tours = await fetchActiveTours();
-  const details = await Promise.all(tours.map((tour) => getTour(tour.slug)));
+  const details = await mapInBatches(tours, (tour) => getTour(tour.slug));
   const homeCanonical = `${siteUrl}/`;
   await writePage(template, "/", metadata({
     title: "Riser Tours & Safaris | Zanzibar Tours & Activities",
@@ -145,7 +179,7 @@ const run = async () => {
       ]
     }];
     await writePage(template, `/tours/${tour.slug}`, metadata({
-      title: `${tour.title} | Riser Tours & Safaris`, description, canonical, image, schemas, body: buildTourMarkup(tour)
+      title: `${tour.title} | Riser Tours & Safaris`, description, canonical, image, schemas, body: buildTourMarkup(tour), data: pageData(tour)
     }));
   }
   const urls = [homeCanonical, `${siteUrl}/tours`, ...details.map((tour) => `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`)];

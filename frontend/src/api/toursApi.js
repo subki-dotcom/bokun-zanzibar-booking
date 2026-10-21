@@ -133,9 +133,42 @@ export const fetchTourOptions = async (id) => {
   return response.data.data;
 };
 
-export const checkTourOptionsAvailability = async (slug, payload) => {
-  const response = await axiosClient.post(`/tours/${slug}/options-availability`, payload);
-  return response.data.data;
+// Availability for a tour, date and party, built the same way wherever it is asked for, so a background prefetch
+// (when the guest picks a date) and the "Check availability" click share one request.
+export const availabilityRequestPayload = ({ travelDate = "", pax = {}, rateId = "" } = {}) => ({
+  travelDate: String(travelDate || ""),
+  pax: {
+    adults: Math.max(0, Number(pax?.adults || 0)),
+    children: Math.max(0, Number(pax?.children || 0)),
+    infants: Math.max(0, Number(pax?.infants || 0))
+  },
+  priceCatalogId: String(rateId || "")
+});
+
+const AVAILABILITY_CACHE_TTL_MS = 3 * 60 * 1000;
+const availabilityRequests = new Map();
+
+export const checkTourOptionsAvailability = (slug, payload) => {
+  const key = JSON.stringify([slug, payload]);
+  const reused = availabilityRequests.get(key);
+  if (reused && Date.now() - reused.at < AVAILABILITY_CACHE_TTL_MS) {
+    return reused.promise;
+  }
+
+  const promise = axiosClient
+    .post(`/tours/${slug}/options-availability`, payload)
+    .then((response) => response.data.data)
+    .catch((error) => {
+      availabilityRequests.delete(key);
+      throw error;
+    });
+  availabilityRequests.set(key, { at: Date.now(), promise });
+  return promise;
+};
+
+export const prefetchTourOptionsAvailability = (slug, payload) => {
+  if (!slug || !payload?.travelDate) return;
+  checkTourOptionsAvailability(slug, payload).catch(() => {});
 };
 
 export const searchToursByAvailability = async ({ travelDate, pax, slugs } = {}) => {

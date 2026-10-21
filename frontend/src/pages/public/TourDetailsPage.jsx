@@ -7,25 +7,51 @@ import ErrorAlert from "../../components/common/ErrorAlert";
 import SingleTourPage from "../../components/tours/single/SingleTourPage";
 import SeoHead from "../../components/common/SeoHead";
 
+// The build writes each tour into its own page (script#riser-prerender-tour). Use it at once on a direct visit,
+// then refresh from the API in the background.
+const readPrerenderedTour = (slug) => {
+  if (typeof document === "undefined") return null;
+  try {
+    const node = document.getElementById("riser-prerender-tour");
+    const tour = node ? JSON.parse(node.textContent || "null") : null;
+    return tour && tour.slug === slug ? tour : null;
+  } catch {
+    return null;
+  }
+};
+
 const TourDetailsPage = () => {
   const { slug } = useParams();
-  const [tour, setTour] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [tour, setTour] = useState(() => readPrerenderedTour(slug));
+  const [loading, setLoading] = useState(() => !readPrerenderedTour(slug));
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const result = await fetchTourBySlug(slug);
-        setTour(result);
-      } catch (err) {
-        setError(err.message || "Failed to load tour details");
-      } finally {
-        setLoading(false);
-      }
-    };
+    let active = true;
+    const prerendered = readPrerenderedTour(slug);
+    if (prerendered) {
+      setTour(prerendered);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+    setError("");
 
-    load();
+    fetchTourBySlug(slug)
+      .then((result) => {
+        if (active) setTour(result);
+      })
+      .catch((err) => {
+        // With the prerendered tour on screen, a failed refresh is not shown as an error.
+        if (active && !prerendered) setError(err.message || "Failed to load tour details");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [slug]);
 
   if (loading) {

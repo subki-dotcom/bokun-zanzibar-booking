@@ -14,6 +14,19 @@ let lastPublicSnapshotAutoSyncAt = 0;
 const listingSignalHydrationInFlight = new Set();
 const listingSignalHydrationAttemptedAt = new Map();
 
+// Tour details are served from the snapshot in the database. Bókun is asked again for title, images and itinerary
+// in the background, at most once per product every few hours, so a visitor never waits for Bókun.
+const PRESENTATION_REFRESH_MS = 3 * 60 * 60 * 1000;
+const presentationRefreshedAt = new Map();
+const presentationRefreshInFlight = new Map();
+
+// Availability for one tour, date and party is reused for a few minutes; the live quote and checkout stay live.
+const AVAILABILITY_CACHE_TTL_MS = 5 * 60 * 1000;
+const STARTING_PRICE_CACHE_TTL_MS = 10 * 60 * 1000;
+const AVAILABILITY_CACHE_MAX_ENTRIES = 500;
+const availabilityCache = new Map();
+const availabilityInFlight = new Map();
+
 const isFallbackOption = (option = {}, productId = "") => {
   const optionId = String(option.bokunOptionId || "");
   const optionName = String(option.name || "").trim().toLowerCase();
@@ -650,6 +663,18 @@ const listTourCategories = async (requestId = "") => {
     .sort((a, b) => a.name.localeCompare(b.name));
 };
 
+const schedulePresentationRefresh = (tour, requestId) => {
+  const productId = String(tour?.bokunProductId || "");
+  if (!productId || presentationRefreshInFlight.has(productId)) return;
+  if (Date.now() - (presentationRefreshedAt.get(productId) || 0) < PRESENTATION_REFRESH_MS) return;
+
+  presentationRefreshedAt.set(productId, Date.now());
+  const refresh = refreshTourItineraryFromBokun(tour, requestId)
+    .catch(() => null)
+    .finally(() => presentationRefreshInFlight.delete(productId));
+  presentationRefreshInFlight.set(productId, refresh);
+};
+
 const getTourBySlug = async (slug, requestId) => {
   let tour = await ProductSnapshot.findOne({ slug }).lean();
 
@@ -662,8 +687,10 @@ const getTourBySlug = async (slug, requestId) => {
     throw new AppError("Tour not found", 404, "TOUR_NOT_FOUND");
   }
 
+  // Only a snapshot missing its options or prices waits for Bókun; everything else is served from the database.
   const hydratedTour = await hydrateTourOptionsIfNeeded(tour, requestId);
-  return refreshTourItineraryFromBokun(hydratedTour, requestId);
+  schedulePresentationRefresh(hydratedTour, requestId);
+  return hydratedTour;
 };
 
 const getTourOptions = async (id, requestId) => {
@@ -745,7 +772,39 @@ const syncProducts = async (requestId, actor = {}) => {
   }
 };
 
+const availabilityCacheKey = (slug, payload = {}) => JSON.stringify([
+  slug,
+  payload.travelDate || "",
+  payload.startDate || "",
+  payload.endDate || "",
+  payload.daysWindow || "",
+  payload.priceCatalogId || "",
+  Number(payload?.pax?.adults || 0),
+  Number(payload?.pax?.children || 0),
+  Number(payload?.pax?.infants || 0)
+]);
+
 const checkOptionsAvailability = async (slug, payload = {}, requestId) => {
+  const key = availabilityCacheKey(slug, payload);
+  const cached = availabilityCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (availabilityInFlight.has(key)) return availabilityInFlight.get(key);
+
+  const lookup = loadOptionsAvailability(slug, payload, requestId)
+    .then((value) => {
+      if (availabilityCache.size >= AVAILABILITY_CACHE_MAX_ENTRIES) {
+        availabilityCache.delete(availabilityCache.keys().next().value);
+      }
+      const ttl = payload?.travelDate ? AVAILABILITY_CACHE_TTL_MS : STARTING_PRICE_CACHE_TTL_MS;
+      availabilityCache.set(key, { value, expiresAt: Date.now() + ttl });
+      return value;
+    })
+    .finally(() => availabilityInFlight.delete(key));
+  availabilityInFlight.set(key, lookup);
+  return lookup;
+};
+
+const loadOptionsAvailability = async (slug, payload = {}, requestId) => {
   const tour = await ProductSnapshot.findOne({ slug }).lean();
 
   if (!tour) {
