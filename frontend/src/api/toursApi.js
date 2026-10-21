@@ -166,6 +166,18 @@ export const checkTourOptionsAvailability = (slug, payload) => {
   return promise;
 };
 
+// Staff: products and their website visibility.
+export const fetchAdminWebsiteProducts = async () => {
+  const response = await axiosClient.get("/tours/admin/products");
+  return response.data.data || [];
+};
+
+export const updateAdminWebsiteProductVisibility = async (productId, hidden) => {
+  const response = await axiosClient.patch(`/tours/admin/products/${encodeURIComponent(productId)}/visibility`, { hidden });
+  clearToursCache();
+  return response.data.data;
+};
+
 // Dates with a bookable start time, for the tour calendar.
 const availableDatesRequests = new Map();
 export const fetchTourAvailableDates = (slug, { from = "", days = 90 } = {}) => {

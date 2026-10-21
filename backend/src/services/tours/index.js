@@ -597,20 +597,35 @@ const normalizeListingSignalValues = (tour = {}) => {
   };
 };
 
+// Products shown on the public site: active and not hidden by staff.
+const PUBLIC_LISTING_FILTER = Object.freeze({ status: "active", hiddenFromPublic: { $ne: true } });
+
+// Listing cards show the short description, or the start of the full description when there is none.
+const listingSummary = (tour = {}) => {
+  const short = String(tour.shortDescription || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  if (short) return short;
+  const full = String(tour.description || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return full.length > 180 ? `${full.slice(0, 177).trim()}...` : full;
+};
+
 const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
-  const totalItems = await ensurePublicSnapshotCache(requestId);
+  await ensurePublicSnapshotCache(requestId);
+  const totalItems = await ProductSnapshot.countDocuments(PUBLIC_LISTING_FILTER);
 
   const safePage = Math.max(1, Number(page || 1));
   const safeLimit = Math.min(60, Math.max(1, Number(limit || 9)));
   const skip = (safePage - 1) * safeLimit;
 
-  const items = await ProductSnapshot.find({ status: "active" })
-    .select("bokunProductId title slug shortDescription duration images fromPrice fromPriceBasis fromPriceCheckedAt rating reviewCount currency destination highlights categories lastSyncedAt options.bokunOptionId options.active")
+  const items = await ProductSnapshot.find(PUBLIC_LISTING_FILTER)
+    .select("bokunProductId title slug shortDescription description duration images fromPrice fromPriceBasis fromPriceCheckedAt rating reviewCount currency destination highlights categories lastSyncedAt options.bokunOptionId options.active")
     .sort({ updatedAt: -1 })
     .skip(skip)
     .limit(safeLimit)
     .lean();
-  const normalizedItems = items.map((tour) => normalizeListingSignalValues(tour));
+  const normalizedItems = items.map(({ description, ...tour }) => ({
+    ...normalizeListingSignalValues(tour),
+    shortDescription: listingSummary({ ...tour, description })
+  }));
   scheduleListingSignalHydration(items, requestId);
 
   const totalPages = Math.max(1, Math.ceil(totalItems / safeLimit));
@@ -631,7 +646,7 @@ const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
 const listTourCategories = async (requestId = "") => {
   await ensurePublicSnapshotCache(requestId);
 
-  const rows = await ProductSnapshot.find({ status: "active" })
+  const rows = await ProductSnapshot.find(PUBLIC_LISTING_FILTER)
     .select("categories")
     .lean();
 
@@ -773,6 +788,32 @@ const syncProducts = async (requestId, actor = {}) => {
 
 // Bookable dates for the tour calendar (no date is excluded when Bókun cannot be reached; the page then lets the
 // guest pick any future date and checks it as before).
+// Staff view of every active product with its public visibility.
+const listProductsForAdmin = async () => {
+  const rows = await ProductSnapshot.find({ status: "active" })
+    .select("bokunProductId title slug fromPrice currency shortDescription description hiddenFromPublic hiddenAt hiddenBy updatedAt")
+    .sort({ title: 1 })
+    .lean();
+  return rows.map(({ description, shortDescription, ...row }) => ({
+    ...row,
+    hiddenFromPublic: Boolean(row.hiddenFromPublic),
+    hasShortDescription: Boolean(String(shortDescription || "").trim()),
+    hasDescription: Boolean(String(description || "").replace(/<[^>]*>/g, "").trim())
+  }));
+};
+
+const setProductVisibility = async (productId, hidden, actor = "") => {
+  const updated = await ProductSnapshot.findOneAndUpdate(
+    { bokunProductId: String(productId || "") },
+    { $set: { hiddenFromPublic: Boolean(hidden), hiddenAt: hidden ? new Date() : null, hiddenBy: hidden ? String(actor || "") : "" } },
+    { new: true }
+  )
+    .select("bokunProductId title slug hiddenFromPublic hiddenAt hiddenBy")
+    .lean();
+  if (!updated) throw new AppError("Product not found", 404, "PRODUCT_NOT_FOUND");
+  return updated;
+};
+
 const getAvailableDates = async (slug, { from = "", days = 60 } = {}, requestId) => {
   const tour = await ProductSnapshot.findOne({ slug }).select("bokunProductId").lean();
   if (!tour) throw new AppError("Tour not found", 404, "TOUR_NOT_FOUND");
@@ -949,6 +990,8 @@ module.exports = {
   listTourCategories,
   getTourBySlug,
   getAvailableDates,
+  listProductsForAdmin,
+  setProductVisibility,
   getTourOptions,
   checkOptionsAvailability,
   searchToursByAvailability,
