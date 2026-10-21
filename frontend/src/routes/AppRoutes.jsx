@@ -23,6 +23,7 @@ import LoginPage from "../pages/public/LoginPage";
 import AgentRegisterPage from "../pages/public/AgentRegisterPage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminBookingsPage from "../pages/admin/AdminBookingsPage";
+import AdminWebsiteToursPage from "../pages/admin/AdminWebsiteToursPage";
 import AdminAgentsPage from "../pages/admin/AdminAgentsPage";
 import AdminPaymentsPage from "../pages/admin/AdminPaymentsPage";
 import AdminRecoveryPage from "../pages/admin/AdminRecoveryPage";
@@ -125,6 +126,7 @@ const AppRoutes = () => {
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/admin/operations/dashboard" element={<AdminUnavailablePage module="Operations" title="Operations Dashboard" />} />
         <Route path="/admin/operations/bookings" element={<AdminBookingsPage />} />
+        <Route path="/admin/operations/website-tours" element={<ProtectedRoute roles={["super_admin", "admin"]}><AdminWebsiteToursPage /></ProtectedRoute>} />
         <Route path="/admin/operations/booking-requests" element={<AdminBookingRequestsPage />} />
         <Route path="/admin/operations/booking-requests/:requestId" element={<AdminBookingRequestDetailsPage />} />
         <Route path="/admin/operations/tour-operations" element={<AdminOperationsPage />} />

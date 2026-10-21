@@ -18,6 +18,7 @@ import {
   pickBestSellerTours,
   pickFeaturedTours
 } from "../../components/home/home.helpers";
+import { BRAND } from "../../config/brand";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -77,7 +78,7 @@ const HomePage = () => {
 
   return (
     <>
-      <SeoHead title="Riser Tours & Safaris | Zanzibar Tours & Activities" description="Book Zanzibar tours, activities, transfers, and safaris with live availability and secure checkout." />
+      <SeoHead title={`${BRAND.name} | Zanzibar Tours & Activities`} description="Book Zanzibar tours, activities, transfers, and safaris with live availability and secure checkout." />
       <HeroSection onSearch={handleHeroSearch} />
       <FeaturedToursSection tours={featuredTours} loading={loading} />
       <WhyBookUsSection />

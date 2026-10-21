@@ -12,6 +12,11 @@ export const trackPageView = analytics.page;
 export const trackPurchase = analytics.purchase;
 export const trackViewItem = (tour) => analytics.event('view_item', tourData(tour), `view:${globalThis.history?.state?.key}:${globalThis.location?.pathname}`);
 export const trackSelectItem = (tour) => analytics.event('select_item', tourData(tour));
+// Funnel steps on the tour page. Sent only with analytics consent (analytics.event checks it).
+const guests = (count) => (Number.isInteger(count) && count > 0 ? { number_of_guests: count } : {});
+export const trackSelectDate = (tour, guestCount) => analytics.event('select_date', { ...tourData(tour), ...guests(guestCount) });
+export const trackCheckAvailability = (tour, guestCount) => analytics.event('check_availability', { ...tourData(tour), ...guests(guestCount) });
+export const trackSelectOption = (tour, guestCount) => analytics.event('select_option', { ...tourData(tour), ...guests(guestCount) });
 export const trackBookingFormStarted = () => analytics.event('booking_form_started', {}, `form:${globalThis.history?.state?.key}:${globalThis.location?.pathname}`);
 export const tourData = (tour = {}) => {
   const price = tour.fromPrice;

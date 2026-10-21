@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { BsArrowLeft, BsStarFill } from "react-icons/bs";
 
+// A rating is shown only with real reviews; a tour without reviews is labelled "New tour".
 const ProductTopRow = ({ rating = 0, reviewCount = 0 }) => {
-  const hasRating = Number(rating) > 0;
   const hasReviews = Number(reviewCount) > 0;
+  const hasRating = hasReviews && Number(rating) > 0;
 
   return (
     <div className="product-top-row">
@@ -12,7 +13,8 @@ const ProductTopRow = ({ rating = 0, reviewCount = 0 }) => {
         Back to all tours
       </Link>
 
-      {hasRating || hasReviews ? (
+      {!hasReviews ? <span className="product-rating-inline product-new-tour">New tour</span> : null}
+      {hasReviews ? (
         <div className="product-rating-inline" aria-label={`${rating || 0} out of 5 from ${reviewCount || 0} reviews`}>
           <strong>{hasRating && Number(rating) >= 4.5 ? "Excellent" : "Guest rating"}</strong>
           {hasRating ? (

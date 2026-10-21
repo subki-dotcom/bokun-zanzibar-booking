@@ -16,7 +16,7 @@ const deriveLanguageLabel = (options = []) => {
   );
 
   if (!uniqueLanguages.length) {
-    return "Language per option";
+    return "";
   }
 
   if (uniqueLanguages.length === 1) {

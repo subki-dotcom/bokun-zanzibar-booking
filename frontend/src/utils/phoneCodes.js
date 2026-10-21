@@ -28,6 +28,15 @@ export const getDialCodeFromCountries = (countryCode = "", countries = []) => {
   return matchedCountry?.dialCode || getDialCodeForCountry(countryCode);
 };
 
+// The guest's country from the browser's language settings ("en-GB" -> "GB"); empty when it names no region.
+export const browserCountryCode = (languages = typeof navigator !== "undefined" ? navigator.languages || [navigator.language] : []) => {
+  for (const tag of languages || []) {
+    const region = String(tag || "").split(/[-_]/).slice(1).find((part) => /^[A-Za-z]{2}$/.test(part));
+    if (region) return region.toUpperCase();
+  }
+  return "";
+};
+
 export const resolveDefaultCountryCode = (countries = [], preferredCode = "TZ") => {
   const preferred = countries.find(
     (country = {}) => String(country.code || "").toUpperCase() === String(preferredCode || "").toUpperCase()

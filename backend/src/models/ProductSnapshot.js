@@ -99,12 +99,20 @@ const productSnapshotSchema = new mongoose.Schema(
     destination: { type: String, default: "Zanzibar" },
     status: { type: String, default: "active" },
     currency: { type: String, default: "USD" },
+    // One-adult starting price shown as "From"; basis and check time tell when it must be computed again.
     fromPrice: { type: Number, default: 0 },
+    fromPriceBasis: { type: String, default: "" },
+    fromPriceCheckedAt: { type: Date, default: null },
     rating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     options: [optionSnapshotSchema],
     priceCatalogs: [priceCatalogSnapshotSchema],
     lastSyncedAt: { type: Date, default: Date.now },
+    // Staff can hide a product (for example a duplicate) from listings, "You may also like" and the sitemap; its
+    // page stays reachable by link so existing ads and bookings keep working. Bókun sync never changes this.
+    hiddenFromPublic: { type: Boolean, default: false },
+    hiddenAt: { type: Date, default: null },
+    hiddenBy: { type: String, default: "" },
     rawBokunProduct: { type: mongoose.Schema.Types.Mixed }
   },
   { timestamps: true }

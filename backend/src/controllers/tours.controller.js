@@ -37,12 +37,49 @@ const listCategories = asyncHandler(async (req, res) => {
   });
 });
 
+// The raw Bókun product is internal (about a quarter of the response); the page never reads it. A rating is shown
+// only with real reviews behind it.
+const publicTour = (source = {}) => {
+  const tour = { ...source };
+  delete tour.rawBokunProduct;
+  const reviewCount = Math.max(0, Math.round(Number(tour.reviewCount) || 0));
+  return { ...tour, reviewCount, rating: reviewCount > 0 ? Number(tour.rating) || 0 : 0 };
+};
+
 const getTourBySlug = asyncHandler(async (req, res) => {
-  const data = await toursService.getTourBySlug(req.params.slug, req.requestId);
+  const data = publicTour(await toursService.getTourBySlug(req.params.slug, req.requestId));
 
   setPublicCache(res, { maxAge: 60, staleWhileRevalidate: 300 });
   return successResponse(res, {
     message: "Tour details fetched",
+    data
+  });
+});
+
+const listProductsForAdmin = asyncHandler(async (req, res) => {
+  const data = await toursService.listProductsForAdmin();
+  return successResponse(res, { message: "Products fetched", data });
+});
+
+const setProductVisibility = asyncHandler(async (req, res) => {
+  const data = await toursService.setProductVisibility(
+    req.params.productId,
+    req.body?.hidden === true,
+    req.auth?.email || req.auth?.id || req.auth?.role || ""
+  );
+  return successResponse(res, { message: data.hiddenFromPublic ? "Product hidden from the website" : "Product shown on the website", data });
+});
+
+const getAvailableDates = asyncHandler(async (req, res) => {
+  const data = await toursService.getAvailableDates(
+    req.params.slug,
+    { from: String(req.query.from || ""), days: parsePositiveInt(req.query.days, 60) },
+    req.requestId
+  );
+
+  setPublicCache(res, { maxAge: 300, staleWhileRevalidate: 600 });
+  return successResponse(res, {
+    message: "Available dates fetched",
     data
   });
 });
@@ -93,6 +130,9 @@ module.exports = {
   listTours,
   listCategories,
   getTourBySlug,
+  getAvailableDates,
+  listProductsForAdmin,
+  setProductVisibility,
   getTourOptions,
   checkOptionsAvailability,
   searchToursByAvailability,

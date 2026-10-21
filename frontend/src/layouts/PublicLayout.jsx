@@ -23,11 +23,11 @@ const PublicLayout = () => {
   return (
     <div className={`app-shell ${isCheckoutRoute ? "is-checkout-route" : ""}`.trim()}>
       <AnalyticsTracker />
-      {noIndexRoute ? <SeoHead noIndex title="Riser Tours & Safaris" description="Secure booking account and payment page." /> : null}
+      {noIndexRoute ? <SeoHead noIndex title={BRAND.name} description="Secure booking account and payment page." /> : null}
       <Navbar expand="lg" className="public-nav py-3">
         <Container>
           <Navbar.Brand as={Link} to="/" className="brand-mark fs-4">
-            Zanzibar Premium Experiences
+            {BRAND.name}
           </Navbar.Brand>
           <Navbar.Toggle aria-controls="public-nav-collapse" className="public-nav-toggle" />
           <Navbar.Collapse id="public-nav-collapse">

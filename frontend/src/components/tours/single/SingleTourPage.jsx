@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { importantInfoForTour, tourHasPickup } from "./tourDisplayText";
+import { trackSelectOption } from "../../../utils/analytics";
 import { Container } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProductGallery from "./ProductGallery";
@@ -17,7 +19,11 @@ import MobileBookingBar from "./MobileBookingBar";
 import AvailabilityOptionModal from "./availabilityPicker/AvailabilityOptionModal";
 import RelatedToursSection from "./RelatedToursSection";
 import { buildItinerary } from "./singleTour.helpers";
-import { checkTourOptionsAvailability } from "../../../api/toursApi";
+import {
+  availabilityRequestPayload,
+  checkTourOptionsAvailability,
+  prefetchTourOptionsAvailability
+} from "../../../api/toursApi";
 import { saveBookingSession } from "../../../utils/bookingSession";
 
 const SingleTourPage = ({
@@ -233,7 +239,12 @@ const SingleTourPage = ({
     quote = null,
     triggerSource = "manual"
   } = {}) => {
-    if (!nextTravelDate || checkingAvailability) {
+    if (!nextTravelDate) {
+      return;
+    }
+    // A click opens the options even while the background check for the same date is still running.
+    if (checkingAvailability) {
+      if (triggerSource === "manual") setShowAvailabilityPicker(true);
       return;
     }
 
@@ -278,11 +289,10 @@ const SingleTourPage = ({
     setAvailabilityError("");
 
     try {
-      const result = await checkTourOptionsAvailability(tour.slug, {
-        travelDate: nextTravelDate,
-        pax: normalizedPax,
-        priceCatalogId: String(rateId || "")
-      });
+      const result = await checkTourOptionsAvailability(
+        tour.slug,
+        availabilityRequestPayload({ travelDate: nextTravelDate, pax: normalizedPax, rateId })
+      );
 
       setAvailabilityResult(result);
       lastAvailabilityCheckKeyRef.current = availabilityRequestKey;
@@ -394,6 +404,8 @@ const SingleTourPage = ({
       passengers: preferredPassengers
     },
     onLiveAvailabilityChecked: handleLiveAvailabilityChecked,
+    onPrefetchAvailability: ({ travelDate: date, pax, rateId }) =>
+      prefetchTourOptionsAvailability(tour.slug, availabilityRequestPayload({ travelDate: date, pax, rateId })),
     onStartingPrice: setStartingPriceForBar,
     hideContinueButton: true,
     checkoutPath,
@@ -401,6 +413,7 @@ const SingleTourPage = ({
   };
 
   const handleContinueWithOption = (option, startTime = "", startTimeSlot = null) => {
+    trackSelectOption(tour, Number(selectedPax.adults || 0) + Number(selectedPax.children || 0) + Number(selectedPax.infants || 0));
     handleSelectOption(option);
     handleBookOption(option, {
       startTime,
@@ -427,8 +440,9 @@ const SingleTourPage = ({
 
   const hasIncluded = Boolean((tour.included || []).length || (tour.excluded || []).length);
   const hasMeeting = Boolean(tour.meetingInfo || tour.pickupInfo);
-  const hasImportantInformation = Boolean((tour.importantInformation || []).length);
-  const hasReviews = Number(tour.rating || 0) > 0 || Number(tour.reviewCount || 0) > 0;
+  const importantInformation = importantInfoForTour(tour);
+  const hasImportantInformation = Boolean(importantInformation.length);
+  const hasReviews = Number(tour.reviewCount || 0) > 0 && Number(tour.rating || 0) > 0;
 
   return (
     <main className={`single-tour-page product-detail-page ${portal === "agent" ? "agent-tour-booking-page" : ""}`}>
@@ -451,9 +465,9 @@ const SingleTourPage = ({
             />
 
             <ItineraryTimeline itinerary={itinerary} />
-            {hasIncluded ? <div id="included" className="product-detail-section"><IncludedExcludedCards included={tour.included} excluded={tour.excluded} /></div> : null}
+            {hasIncluded ? <div id="included" className="product-detail-section"><IncludedExcludedCards included={tour.included} excluded={tour.excluded} hasPickup={tourHasPickup(tour)} /></div> : null}
             {hasMeeting ? <div id="meeting-pickup" className="product-detail-section"><MeetingPickupCards meetingInfo={tour.meetingInfo} pickupInfo={tour.pickupInfo} /></div> : null}
-            {hasImportantInformation ? <div id="important-info" className="product-detail-section"><ImportantInfoCard importantInformation={tour.importantInformation} /></div> : null}
+            {hasImportantInformation ? <div id="important-info" className="product-detail-section"><ImportantInfoCard importantInformation={importantInformation} /></div> : null}
             {hasReviews ? <section id="reviews" className="single-tour-section product-detail-section product-reviews-summary"><h3>Reviews</h3><p>{Number(tour.rating).toFixed(1)} rating from {Number(tour.reviewCount || 0)} guest reviews.</p></section> : null}
             {portal === "public" ? <RelatedToursSection tour={tour} /> : null}
 

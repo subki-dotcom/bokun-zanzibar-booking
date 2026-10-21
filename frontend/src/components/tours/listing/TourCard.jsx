@@ -20,7 +20,7 @@ const TourCard = ({ tour = {} }) => {
     tour.shortDescription,
     "Discover this Zanzibar experience with details on the next page."
   );
-  const hasRating = Number(tour.rating || 0) > 0;
+  const hasRating = Number(tour.rating || 0) > 0 && Number(tour.reviewCount || 0) > 0;
   const hasReviewCount = Number(tour.reviewCount || 0) > 0;
   const detailPath = resolveSafeText(tour.slug) ? `/tours/${tour.slug}` : "/tours";
   const [imageSrc, setImageSrc] = useState(resolveSafeText(tour.image, FALLBACK_CARD_IMAGE));
@@ -78,7 +78,7 @@ const TourCard = ({ tour = {} }) => {
           ) : (
             <div className="listing-tour-rating is-empty">
               <BsStar />
-              <span className="listing-tour-rating-count">Not rated yet</span>
+              <span className="listing-tour-rating-count">New tour</span>
             </div>
           )}
         </div>
@@ -87,7 +87,7 @@ const TourCard = ({ tour = {} }) => {
           <span className="listing-tour-price-label">Starting price</span>
           <div className="listing-tour-price-value-wrap">
             <span className="listing-tour-price-main">
-              {price.hasPrice ? price.heading : "Price on request"}
+              {price.hasPrice ? price.heading : "See live prices"}
             </span>
             {price.hasPrice && price.subtext ? (
               <span className="listing-tour-price-note">{price.subtext}</span>

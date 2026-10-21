@@ -96,3 +96,17 @@ test('concurrent purchases across tabs use the browser lock and shared durable r
   const results=await Promise.all([s.api.purchase(receipt),tab2.purchase(receipt)]);
   assert.equal(results.filter(Boolean).length,1); assert.equal(sent(s.events,'purchase').length,1);
 });
+
+test('booking funnel events are sent with consent, add_payment_info included', () => {
+  const s = setup(); s.w.location.pathname = '/tours/spice';
+  for (const name of ['select_date', 'check_availability', 'select_option', 'add_shipping_info', 'add_payment_info']) {
+    assert.equal(s.api.event(name, receipt), false, name + ' waits for consent');
+  }
+  s.api.consent(granted);
+  for (const name of ['select_date', 'check_availability', 'select_option', 'add_shipping_info', 'add_payment_info']) {
+    assert.equal(s.api.event(name, { ...receipt, number_of_guests: 2 }), true, name);
+    assert.equal(sent(s.events, name).length, 1, name);
+    assert.equal(sent(s.events, name)[0][2].number_of_guests, 2);
+  }
+  assert.equal(s.api.event('made_up_event', receipt), false, 'unknown events are still dropped');
+});

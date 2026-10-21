@@ -27,7 +27,7 @@ const inferEntranceLabel = (option = {}) => {
     return "Entrance included";
   }
 
-  return "Entrance details in checkout";
+  return "";
 };
 
 const resolveLiveAmount = (option = {}) => {
@@ -46,11 +46,9 @@ const AvailabilityOptionCard = ({
   onChangeTime,
   onContinue
 }) => {
-  const optionLanguage = option?.language || "English";
-  const shortDescription = truncateText(
-    toPlainText(option?.description || "Live option details are confirmed in Bokun during checkout."),
-    130
-  );
+  const optionLanguage = String(option?.language || "").trim();
+  const entranceLabel = inferEntranceLabel(option);
+  const shortDescription = truncateText(toPlainText(option?.description || ""), 130);
   const priceAmount = resolveLiveAmount(option);
   const displayPrice = pricePresentation({
     ...option, ...option.liveAvailability, amount: priceAmount,
@@ -83,19 +81,24 @@ const AvailabilityOptionCard = ({
 
       return slot.time === normalizedSelectedTime;
     }) || null;
-  const selectedSlotKey = selectedSlot?.selectionKey || "";
+  // The first available start time is chosen until the guest picks another one.
+  const effectiveSlot = selectedSlot || slots[0] || null;
+  const selectedSlotKey = effectiveSlot?.selectionKey || "";
+  const liveTotal = Number(option?.liveAvailability?.lowestPriceForTwo || 0);
+  const liveAdults = Math.max(0, Number(option?.liveAvailability?.comparedAdults || 0));
+  const isGroupPrice = String(option?.liveAvailability?.pricingType || option?.pricingType || "") === "per_group";
   const startTimeSelectId = `available-start-time-${String(option?.bokunOptionId || option?.name || "option")
     .replace(/[^a-z0-9_-]/gi, "-")
     .toLowerCase()}`;
 
   const handleContinue = () => {
-    if (!selectedSlot) {
+    if (!effectiveSlot) {
       return;
     }
 
     onSelectOption?.(option);
-    onChangeTime?.(option?.bokunOptionId || "", selectedSlot);
-    onContinue?.(option, selectedSlot.time, selectedSlot);
+    onChangeTime?.(option?.bokunOptionId || "", effectiveSlot);
+    onContinue?.(option, effectiveSlot.time, effectiveSlot);
   };
 
   return (
@@ -116,24 +119,34 @@ const AvailabilityOptionCard = ({
         </div>
       </header>
 
-      <p className="availability-option-copy">{shortDescription}</p>
+      {shortDescription ? <p className="availability-option-copy">{shortDescription}</p> : null}
 
       <div className="availability-option-meta">
-        <div>
-          <BsTranslate />
-          <span>{optionLanguage}</span>
-        </div>
+        {optionLanguage ? (
+          <div>
+            <BsTranslate />
+            <span>{optionLanguage}</span>
+          </div>
+        ) : null}
         <div>
           <BsTruck />
           <span>{option?.pickupSupported ? "Pickup available" : "Meeting point option"}</span>
         </div>
-        <div>
-          <BsGeoAlt />
-          <span>{inferEntranceLabel(option)}</span>
-        </div>
+        {entranceLabel ? (
+          <div>
+            <BsGeoAlt />
+            <span>{entranceLabel}</span>
+          </div>
+        ) : null}
         <div>
           <BsCashCoin />
-          <span>{priceAmount > 0 ? `From ${formatCurrency(displayPrice.amount, currency)} ${displayPrice.label}` : "Live price on request"}</span>
+          <span>
+            {liveTotal > 0 && liveAdults > 0
+              ? `Total ${formatCurrency(liveTotal, currency)} ${isGroupPrice ? "for your group" : `for ${liveAdults} adult${liveAdults > 1 ? "s" : ""}`}`
+              : priceAmount > 0
+                ? `From ${formatCurrency(displayPrice.amount, currency)} ${displayPrice.label}`
+                : "Price shown at checkout"}
+          </span>
         </div>
       </div>
 
@@ -171,15 +184,12 @@ const AvailabilityOptionCard = ({
       </div>
 
       <div className="availability-option-footer">
-        <Button variant="outline-secondary" className="availability-option-select-btn" onClick={() => onSelectOption?.(option)}>
-          Select option
-        </Button>
         <Button
-          className="premium-btn text-white availability-option-continue-btn"
+          className="premium-btn text-white availability-option-continue-btn w-100"
           onClick={handleContinue}
-          disabled={!selectedSlot}
+          disabled={!effectiveSlot}
         >
-          Continue
+          Book this option
           <BsArrowRight className="ms-2" />
         </Button>
       </div>

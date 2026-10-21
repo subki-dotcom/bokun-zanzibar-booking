@@ -12,6 +12,10 @@ const { extractTotalCount } = require("../../integrations/bokun/confirmedBooking
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
 const BOKUN_CACHE_TTL_MS = 2 * 60 * 1000;
+// Product details and booking configuration (options, rates, passenger categories, pickup places) change rarely;
+// prices and availability are always checked live in the quote and at checkout.
+const PRODUCT_DETAILS_CACHE_TTL_MS = 15 * 60 * 1000;
+const BOOKING_CONFIG_CACHE_TTL_MS = 10 * 60 * 1000;
 const STARTING_PREVIEW_TIMEOUT_MS = 8000;
 const STARTING_PREVIEW_DAYS_WINDOW = 14;
 const BOKUN_BOOKING_SEARCH_STATUS_ALIASES = Object.freeze({
@@ -379,7 +383,7 @@ const fetchProductDetails = async (productId, requestId, options = {}) => {
 
   const mapped = response ? mapper.mapProduct(response, { pickupPlaces }) : null;
   if (mapped?.bokunProductId) {
-    setCacheEntry(productDetailsCache, cacheKey, mapped);
+    setCacheEntry(productDetailsCache, cacheKey, mapped, PRODUCT_DETAILS_CACHE_TTL_MS);
   }
 
   return mapped;
@@ -730,6 +734,80 @@ const deriveTwoAdultStartingPrice = (mappedProduct = {}, selectedRateOption = nu
   return { amount: 0 };
 };
 
+// The "From" price shown everywhere: the lowest price for one adult across the bookable options in the coming weeks,
+// which is what a single traveller pays at checkout. Tours that do not take a single traveller fall back to the
+// per-person price for two.
+const fetchOneAdultStartingPreview = async ({ productId, optionIds = [], priceCatalogId = "", daysWindow = 30 }, requestId) => {
+  const preview = (adults) => fetchStartingPricePreview(
+    {
+      productId,
+      optionIds,
+      comparedAdults: adults,
+      pax: { adults, children: 0, infants: 0 },
+      priceCatalogId,
+      daysWindow
+    },
+    requestId
+  );
+  const single = await preview(1);
+  if (Number(single?.lowestPriceForTwo?.amount || 0) > 0) return single;
+  return preview(2);
+};
+
+// Per-person amount of a starting price (the total for its compared adults, or a whole-group price).
+const perPersonStartingAmount = (startingPrice = {}) => {
+  const amount = Number(startingPrice?.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  if (String(startingPrice?.pricingType || "") === "per_group") return Number(amount.toFixed(2));
+  const adults = Math.max(1, Number(startingPrice?.comparedAdults || 1));
+  return Number((amount / adults).toFixed(2));
+};
+
+// Dates with at least one bookable start time, for the tour calendar. Bókun returns at most 100 slots per request,
+// so the range is asked for one week at a time (four weeks in parallel) and kept for ten minutes.
+const AVAILABLE_DATES_CACHE_TTL_MS = 10 * 60 * 1000;
+const AVAILABLE_DATES_CHUNK_DAYS = 7;
+const availableDatesCache = new Map();
+
+const isBookableSlot = (slot = {}) =>
+  !slot.soldOut && !slot.unavailable && (slot.unlimitedAvailability || Number(slot.availabilityCount || 0) > 0);
+
+const fetchAvailableDates = async ({ productId, startDate, days = 60 }, requestId) => {
+  const safeProductId = String(productId || "").trim();
+  if (!safeProductId) throw new AppError("productId is required", 400, "PRODUCT_ID_REQUIRED");
+  const start = /^\d{4}-\d{2}-\d{2}$/.test(String(startDate || "")) ? String(startDate) : formatIsoDate(new Date());
+  const span = Math.max(1, Math.min(90, Number(days) || 60));
+  const end = addDaysIso(start, span - 1);
+  const cacheKey = `dates:${safeProductId}:${start}:${span}`;
+  const cached = getCacheEntry(availableDatesCache, cacheKey);
+  if (cached) return cached;
+
+  const chunks = [];
+  for (let offset = 0; offset < span; offset += AVAILABLE_DATES_CHUNK_DAYS) {
+    chunks.push([addDaysIso(start, offset), addDaysIso(start, Math.min(span - 1, offset + AVAILABLE_DATES_CHUNK_DAYS - 1))]);
+  }
+  const dates = new Set();
+  for (let index = 0; index < chunks.length; index += 4) {
+    const batch = await Promise.all(chunks.slice(index, index + 4).map(([from, to]) => bokunClient.request({
+      method: "get",
+      path: `/activity.json/${encodeURIComponent(safeProductId)}/availabilities?${new URLSearchParams({ start: from, end: to, currency: env.DEFAULT_CURRENCY })}`,
+      requestId
+    })));
+    batch.forEach((slots) => ensureArray(slots).forEach((slot) => {
+      if (!isBookableSlot(slot)) return;
+      const date = formatIsoDate(new Date(slot.date));
+      if (date) dates.add(date);
+    }));
+  }
+
+  return setCacheEntry(availableDatesCache, cacheKey, {
+    productId: safeProductId,
+    startDate: start,
+    endDate: end,
+    availableDates: [...dates].sort()
+  }, AVAILABLE_DATES_CACHE_TTL_MS);
+};
+
 const fetchProductBookingConfig = async (productId, options = {}, requestId) => {
   const safeProductId = String(productId || "").trim();
   const requestedRateId = String(options?.rateId || "").trim();
@@ -769,12 +847,10 @@ const fetchProductBookingConfig = async (productId, options = {}, requestId) => 
     ),
     includeStartingPreview
       ? withTimeout(
-          fetchStartingPricePreview(
+          fetchOneAdultStartingPreview(
             {
               productId: mappedProduct.bokunProductId,
               optionIds,
-              comparedAdults: 2,
-              pax: { adults: 2, children: 0, infants: 0 },
               priceCatalogId: selectedRateId || "",
               daysWindow: STARTING_PREVIEW_DAYS_WINDOW
             },
@@ -828,7 +904,7 @@ const fetchProductBookingConfig = async (productId, options = {}, requestId) => 
     })
   };
 
-  return setCacheEntry(bookingConfigCache, cacheKey, response);
+  return setCacheEntry(bookingConfigCache, cacheKey, response, BOOKING_CONFIG_CACHE_TTL_MS);
 };
 
 const fetchProductLiveQuote = async (productId, payload = {}, requestId) => {
@@ -2103,7 +2179,7 @@ const buildDirectBookingRequest = (payload = {}) => {
     mainContactDetails: buildMainContactDetails(customer),
     activityBookings: [activityBooking],
     externalBookingReference: String(payload.externalBookingReference || payload.bookingReference || "").trim() || undefined,
-    externalBookingEntityName: "Riser Tours & Safaris",
+    externalBookingEntityName: env.BRAND_NAME,
     promoCode: payload.promoCode || undefined
   };
 };
@@ -2337,7 +2413,7 @@ const buildCheckoutPayload = (payload = {}) => {
       mainContactDetails: buildMainContactDetails(customer),
       activityBookings: [activityBooking],
       externalBookingReference: externalReference || undefined,
-      externalBookingEntityName: "Riser Tours & Safaris",
+      externalBookingEntityName: env.BRAND_NAME,
       labels: ["website", "external-payment"],
       promoCode: payload.promoCode || undefined
     },
@@ -2374,7 +2450,7 @@ const createBooking = async (payload, requestId) => {
     payload: {
       externalBookingReference:
         checkoutPayload.directBooking.externalBookingReference || reservedBooking.externalBookingReference || "",
-      externalBookingEntityName: "Riser Tours & Safaris",
+      externalBookingEntityName: env.BRAND_NAME,
       showPricesInNotification: true,
       sendNotificationToMainContact: true,
       amount: checkoutPayload.amount,
@@ -2573,6 +2649,9 @@ module.exports = {
   fetchAvailability,
   fetchOptionAvailabilityMatrix,
   fetchStartingPricePreview,
+  fetchOneAdultStartingPreview,
+  fetchAvailableDates,
+  perPersonStartingAmount,
   fetchBookingQuestions,
   resolveBookingQuestions,
   buildCheckoutPayload,

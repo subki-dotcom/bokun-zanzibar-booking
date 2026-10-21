@@ -1,6 +1,11 @@
 import { Container, Row, Col } from "react-bootstrap";
-import { BsGeoAlt, BsShieldCheck, BsClock, BsSignpostSplit, BsCarFront, BsWater } from "react-icons/bs";
+import { BsGeoAlt, BsShieldCheck, BsClock, BsCarFront } from "react-icons/bs";
 import { toPlainText, truncateText } from "../../utils/formatters";
+import { BRAND } from "../../config/brand";
+import { checkoutTags } from "../tours/single/tourDisplayText";
+
+const TAG_ICONS = { duration: BsClock, pickup: BsCarFront };
+const [brandFirstWord, ...brandRest] = BRAND.name.split(" ");
 
 const fallbackImage = "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1400&q=80";
 
@@ -13,10 +18,10 @@ const resolveTourImage = (tour = {}) => {
 const CheckoutTopBar = ({ stepper = null }) => (
   <div className="checkout-topbar">
     <div className="checkout-brand">
-      <span className="checkout-brand-mark">R</span>
+      <span className="checkout-brand-mark">{brandFirstWord.charAt(0)}</span>
       <span>
-        <strong>Riser</strong>
-        <small>Tours & Safaris</small>
+        <strong>{brandFirstWord}</strong>
+        {brandRest.length ? <small>{brandRest.join(" ")}</small> : null}
       </span>
     </div>
     <div className="checkout-topbar-steps">{stepper}</div>
@@ -35,6 +40,7 @@ const CheckoutHero = ({ tour = null }) => {
 
   const image = resolveTourImage(tour);
   const summary = truncateText(toPlainText(tour.shortDescription || tour.description || ""), 145);
+  const tags = checkoutTags(tour);
 
   return (
     <div className="checkout-tour-hero">
@@ -49,12 +55,14 @@ const CheckoutHero = ({ tour = null }) => {
         </div>
         <h1>{tour.title || "Booking Checkout"}</h1>
         {summary ? <p>{summary}</p> : null}
-        <div className="checkout-tour-tags">
-          <span><BsClock /> Half Day</span>
-          <span><BsWater /> Snorkeling</span>
-          <span><BsSignpostSplit /> Boat Trip</span>
-          <span><BsCarFront /> Shared Tour</span>
-        </div>
+        {tags.length ? (
+          <div className="checkout-tour-tags">
+            {tags.map(({ key, text }) => {
+              const Icon = TAG_ICONS[key];
+              return <span key={key}><Icon /> {text}</span>;
+            })}
+          </div>
+        ) : null}
       </div>
     </div>
   );

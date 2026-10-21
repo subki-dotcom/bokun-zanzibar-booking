@@ -14,6 +14,19 @@ let lastPublicSnapshotAutoSyncAt = 0;
 const listingSignalHydrationInFlight = new Set();
 const listingSignalHydrationAttemptedAt = new Map();
 
+// Tour details are served from the snapshot in the database. Bókun is asked again for title, images and itinerary
+// in the background, at most once per product every few hours, so a visitor never waits for Bókun.
+const PRESENTATION_REFRESH_MS = 3 * 60 * 60 * 1000;
+const presentationRefreshedAt = new Map();
+const presentationRefreshInFlight = new Map();
+
+// Availability for one tour, date and party is reused for a few minutes; the live quote and checkout stay live.
+const AVAILABILITY_CACHE_TTL_MS = 5 * 60 * 1000;
+const STARTING_PRICE_CACHE_TTL_MS = 10 * 60 * 1000;
+const AVAILABILITY_CACHE_MAX_ENTRIES = 500;
+const availabilityCache = new Map();
+const availabilityInFlight = new Map();
+
 const isFallbackOption = (option = {}, productId = "") => {
   const optionId = String(option.bokunOptionId || "");
   const optionName = String(option.name || "").trim().toLowerCase();
@@ -215,7 +228,7 @@ const pickLiveSyncFields = (liveProduct = {}) => ({
   destination: liveProduct.destination,
   status: liveProduct.status,
   currency: liveProduct.currency,
-  fromPrice: liveProduct.fromPrice,
+  // fromPrice is not copied from Bókun's product: it is the one-adult starting price set by refreshListingFromPrice.
   rating: liveProduct.rating,
   reviewCount: liveProduct.reviewCount,
   options: liveProduct.options,
@@ -397,7 +410,13 @@ const ensurePublicSnapshotCache = async (requestId = "") => {
   return ProductSnapshot.countDocuments({ status: "active" });
 };
 
-const hasMissingListingSignals = (tour = {}) => Number(tour?.fromPrice || 0) <= 0;
+// Listing "From" prices are one-adult starting prices (see fetchOneAdultStartingPreview), checked again every 12 hours.
+const FROM_PRICE_BASIS = "one_adult_v1";
+const FROM_PRICE_REFRESH_MS = 12 * 60 * 60 * 1000;
+const hasMissingListingSignals = (tour = {}) =>
+  Number(tour?.fromPrice || 0) <= 0 ||
+  tour?.fromPriceBasis !== FROM_PRICE_BASIS ||
+  Date.now() - new Date(tour?.fromPriceCheckedAt || 0).getTime() > FROM_PRICE_REFRESH_MS;
 
 const resolveListingOptionIds = (tour = {}) =>
   (Array.isArray(tour?.options) ? tour.options : [])
@@ -412,21 +431,15 @@ const resolveFromPriceUsingStartingPreview = async (tour = {}, requestId = "") =
   }
 
   try {
-    const preview = await bokunService.fetchStartingPricePreview(
+    const preview = await bokunService.fetchOneAdultStartingPreview(
       {
         productId,
-        optionIds: resolveListingOptionIds(tour),
-        comparedAdults: 2
+        optionIds: resolveListingOptionIds(tour)
       },
       requestId
     );
 
-    const amountForTwo = Number(preview?.lowestPriceForTwo?.amount || 0);
-    if (!Number.isFinite(amountForTwo) || amountForTwo <= 0) {
-      return 0;
-    }
-
-    return Number((amountForTwo / 2).toFixed(2));
+    return bokunService.perPersonStartingAmount(preview?.lowestPriceForTwo);
   } catch (error) {
     logger.warn("Listing starting price preview skipped", {
       productId,
@@ -457,29 +470,23 @@ const hydrateMissingListingSignals = async (items = [], requestId = "") => {
         }
 
         const patch = pickLiveSyncFields(liveProduct);
-        let resolvedFromPrice = Number(patch?.fromPrice || 0);
+        let resolvedFromPrice = 0;
+        try {
+          const bookingConfig = await bokunService.fetchProductBookingConfig(
+            liveProduct.bokunProductId,
+            {
+              prefetchedProduct: liveProduct
+            },
+            requestId
+          );
 
-        if (!Number.isFinite(resolvedFromPrice) || resolvedFromPrice <= 0) {
-          try {
-            const bookingConfig = await bokunService.fetchProductBookingConfig(
-              liveProduct.bokunProductId,
-              {
-                prefetchedProduct: liveProduct
-              },
-              requestId
-            );
-
-            const amountForTwoAdults = Number(bookingConfig?.startingFromPrice || 0);
-            if (Number.isFinite(amountForTwoAdults) && amountForTwoAdults > 0) {
-              resolvedFromPrice = Number((amountForTwoAdults / 2).toFixed(2));
-            }
-          } catch (error) {
-            logger.warn("Listing booking-config price fallback skipped", {
-              productId: tour.bokunProductId,
-              requestId,
-              error: error.message
-            });
-          }
+          resolvedFromPrice = bokunService.perPersonStartingAmount(bookingConfig?.startingPrice);
+        } catch (error) {
+          logger.warn("Listing booking-config price fallback skipped", {
+            productId: tour.bokunProductId,
+            requestId,
+            error: error.message
+          });
         }
 
         if (!Number.isFinite(resolvedFromPrice) || resolvedFromPrice <= 0) {
@@ -494,7 +501,9 @@ const hydrateMissingListingSignals = async (items = [], requestId = "") => {
 
         if (Number.isFinite(resolvedFromPrice) && resolvedFromPrice > 0) {
           patch.fromPrice = resolvedFromPrice;
+          patch.fromPriceBasis = FROM_PRICE_BASIS;
         }
+        patch.fromPriceCheckedAt = new Date();
 
         await ProductSnapshot.updateOne(
           { bokunProductId: tour.bokunProductId },
@@ -582,25 +591,41 @@ const normalizeListingSignalValues = (tour = {}) => {
   return {
     ...tour,
     fromPrice: Number.isFinite(fromPrice) && fromPrice > 0 ? fromPrice : 0,
-    rating: Number.isFinite(rating) && rating > 0 ? Number(rating.toFixed(1)) : 0,
+    // A rating is shown only with real reviews behind it.
+    rating: Number.isFinite(rating) && rating > 0 && reviewCount > 0 ? Number(rating.toFixed(1)) : 0,
     reviewCount: Number.isFinite(reviewCount) && reviewCount > 0 ? Math.round(reviewCount) : 0
   };
 };
 
+// Products shown on the public site: active and not hidden by staff.
+const PUBLIC_LISTING_FILTER = Object.freeze({ status: "active", hiddenFromPublic: { $ne: true } });
+
+// Listing cards show the short description, or the start of the full description when there is none.
+const listingSummary = (tour = {}) => {
+  const short = String(tour.shortDescription || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  if (short) return short;
+  const full = String(tour.description || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return full.length > 180 ? `${full.slice(0, 177).trim()}...` : full;
+};
+
 const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
-  const totalItems = await ensurePublicSnapshotCache(requestId);
+  await ensurePublicSnapshotCache(requestId);
+  const totalItems = await ProductSnapshot.countDocuments(PUBLIC_LISTING_FILTER);
 
   const safePage = Math.max(1, Number(page || 1));
   const safeLimit = Math.min(60, Math.max(1, Number(limit || 9)));
   const skip = (safePage - 1) * safeLimit;
 
-  const items = await ProductSnapshot.find({ status: "active" })
-    .select("bokunProductId title slug shortDescription duration images fromPrice rating reviewCount currency destination highlights categories lastSyncedAt")
+  const items = await ProductSnapshot.find(PUBLIC_LISTING_FILTER)
+    .select("bokunProductId title slug shortDescription description duration images fromPrice fromPriceBasis fromPriceCheckedAt rating reviewCount currency destination highlights categories lastSyncedAt options.bokunOptionId options.active")
     .sort({ updatedAt: -1 })
     .skip(skip)
     .limit(safeLimit)
     .lean();
-  const normalizedItems = items.map((tour) => normalizeListingSignalValues(tour));
+  const normalizedItems = items.map(({ description, ...tour }) => ({
+    ...normalizeListingSignalValues(tour),
+    shortDescription: listingSummary({ ...tour, description })
+  }));
   scheduleListingSignalHydration(items, requestId);
 
   const totalPages = Math.max(1, Math.ceil(totalItems / safeLimit));
@@ -621,7 +646,7 @@ const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
 const listTourCategories = async (requestId = "") => {
   await ensurePublicSnapshotCache(requestId);
 
-  const rows = await ProductSnapshot.find({ status: "active" })
+  const rows = await ProductSnapshot.find(PUBLIC_LISTING_FILTER)
     .select("categories")
     .lean();
 
@@ -650,6 +675,18 @@ const listTourCategories = async (requestId = "") => {
     .sort((a, b) => a.name.localeCompare(b.name));
 };
 
+const schedulePresentationRefresh = (tour, requestId) => {
+  const productId = String(tour?.bokunProductId || "");
+  if (!productId || presentationRefreshInFlight.has(productId)) return;
+  if (Date.now() - (presentationRefreshedAt.get(productId) || 0) < PRESENTATION_REFRESH_MS) return;
+
+  presentationRefreshedAt.set(productId, Date.now());
+  const refresh = refreshTourItineraryFromBokun(tour, requestId)
+    .catch(() => null)
+    .finally(() => presentationRefreshInFlight.delete(productId));
+  presentationRefreshInFlight.set(productId, refresh);
+};
+
 const getTourBySlug = async (slug, requestId) => {
   let tour = await ProductSnapshot.findOne({ slug }).lean();
 
@@ -662,8 +699,12 @@ const getTourBySlug = async (slug, requestId) => {
     throw new AppError("Tour not found", 404, "TOUR_NOT_FOUND");
   }
 
+  // Only a snapshot missing its options or prices waits for Bókun; everything else is served from the database.
   const hydratedTour = await hydrateTourOptionsIfNeeded(tour, requestId);
-  return refreshTourItineraryFromBokun(hydratedTour, requestId);
+  schedulePresentationRefresh(hydratedTour, requestId);
+  // A missing or outdated "From" price is computed again in the background, as on the listing.
+  scheduleListingSignalHydration([hydratedTour], requestId);
+  return hydratedTour;
 };
 
 const getTourOptions = async (id, requestId) => {
@@ -745,7 +786,73 @@ const syncProducts = async (requestId, actor = {}) => {
   }
 };
 
+// Bookable dates for the tour calendar (no date is excluded when Bókun cannot be reached; the page then lets the
+// guest pick any future date and checks it as before).
+// Staff view of every active product with its public visibility.
+const listProductsForAdmin = async () => {
+  const rows = await ProductSnapshot.find({ status: "active" })
+    .select("bokunProductId title slug fromPrice currency shortDescription description hiddenFromPublic hiddenAt hiddenBy updatedAt")
+    .sort({ title: 1 })
+    .lean();
+  return rows.map(({ description, shortDescription, ...row }) => ({
+    ...row,
+    hiddenFromPublic: Boolean(row.hiddenFromPublic),
+    hasShortDescription: Boolean(String(shortDescription || "").trim()),
+    hasDescription: Boolean(String(description || "").replace(/<[^>]*>/g, "").trim())
+  }));
+};
+
+const setProductVisibility = async (productId, hidden, actor = "") => {
+  const updated = await ProductSnapshot.findOneAndUpdate(
+    { bokunProductId: String(productId || "") },
+    { $set: { hiddenFromPublic: Boolean(hidden), hiddenAt: hidden ? new Date() : null, hiddenBy: hidden ? String(actor || "") : "" } },
+    { new: true }
+  )
+    .select("bokunProductId title slug hiddenFromPublic hiddenAt hiddenBy")
+    .lean();
+  if (!updated) throw new AppError("Product not found", 404, "PRODUCT_NOT_FOUND");
+  return updated;
+};
+
+const getAvailableDates = async (slug, { from = "", days = 60 } = {}, requestId) => {
+  const tour = await ProductSnapshot.findOne({ slug }).select("bokunProductId").lean();
+  if (!tour) throw new AppError("Tour not found", 404, "TOUR_NOT_FOUND");
+  return bokunService.fetchAvailableDates({ productId: tour.bokunProductId, startDate: from, days }, requestId);
+};
+
+const availabilityCacheKey = (slug, payload = {}) => JSON.stringify([
+  slug,
+  payload.travelDate || "",
+  payload.startDate || "",
+  payload.endDate || "",
+  payload.daysWindow || "",
+  payload.priceCatalogId || "",
+  Number(payload?.pax?.adults || 0),
+  Number(payload?.pax?.children || 0),
+  Number(payload?.pax?.infants || 0)
+]);
+
 const checkOptionsAvailability = async (slug, payload = {}, requestId) => {
+  const key = availabilityCacheKey(slug, payload);
+  const cached = availabilityCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (availabilityInFlight.has(key)) return availabilityInFlight.get(key);
+
+  const lookup = loadOptionsAvailability(slug, payload, requestId)
+    .then((value) => {
+      if (availabilityCache.size >= AVAILABILITY_CACHE_MAX_ENTRIES) {
+        availabilityCache.delete(availabilityCache.keys().next().value);
+      }
+      const ttl = payload?.travelDate ? AVAILABILITY_CACHE_TTL_MS : STARTING_PRICE_CACHE_TTL_MS;
+      availabilityCache.set(key, { value, expiresAt: Date.now() + ttl });
+      return value;
+    })
+    .finally(() => availabilityInFlight.delete(key));
+  availabilityInFlight.set(key, lookup);
+  return lookup;
+};
+
+const loadOptionsAvailability = async (slug, payload = {}, requestId) => {
   const tour = await ProductSnapshot.findOne({ slug }).lean();
 
   if (!tour) {
@@ -764,7 +871,7 @@ const checkOptionsAvailability = async (slug, payload = {}, requestId) => {
   const matrixPayload = {
     productId: hydratedTour.bokunProductId,
     pax: payload.pax || { adults: 1, children: 0, infants: 0 },
-    comparedAdults: hasExplicitTravelDate ? requestedAdults : 2,
+    comparedAdults: hasExplicitTravelDate ? requestedAdults : 1,
     priceCatalogId: payload.priceCatalogId || "",
     optionIds: activeOptions.map((option) => String(option.bokunOptionId || "")).filter(Boolean)
   };
@@ -882,6 +989,9 @@ module.exports = {
   listTours,
   listTourCategories,
   getTourBySlug,
+  getAvailableDates,
+  listProductsForAdmin,
+  setProductVisibility,
   getTourOptions,
   checkOptionsAvailability,
   searchToursByAvailability,

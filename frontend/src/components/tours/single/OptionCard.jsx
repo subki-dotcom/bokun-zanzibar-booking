@@ -105,7 +105,7 @@ const OptionCard = ({
 
     return availableSlots[0]?.time || liveStartTime || "";
   })();
-  const displayAvailabilityTime = effectiveSelectedTime || liveStartTime || "Time pending from Bokun";
+  const displayAvailabilityTime = effectiveSelectedTime || liveStartTime || "Select a time";
   const selectedPassengerTotal = (Array.isArray(passengers) ? passengers : []).reduce(
     (sum, row) => sum + Math.max(0, Number(row?.quantity || 0)),
     0
@@ -161,7 +161,7 @@ const OptionCard = ({
         </div>
 
         <p className="single-option-description">
-          {optionDescription || "Option details are managed in Bokun and available during live checkout."}
+          {optionDescription || "Final details are confirmed at checkout."}
         </p>
 
         <PriceDisplay
@@ -226,7 +226,7 @@ const OptionCard = ({
                 })
               ) : (
                 <div className="option-time-empty">
-                  {effectiveSelectedTime || "Time pending from Bokun"}
+                  {effectiveSelectedTime || "Select a time"}
                 </div>
               )}
             </div>

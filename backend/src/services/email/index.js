@@ -24,11 +24,11 @@ const bookingUrl = (booking = {}) =>
 const buildEmailShell = ({ heading, body, ctaLabel = "View booking", ctaUrl = "" }) => `
   <div style="background:#f5f7fa;padding:32px 16px;font-family:Arial,sans-serif;color:#0f172a">
     <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #dde5ee;border-radius:12px;padding:28px">
-      <p style="margin:0 0 8px;color:#079650;font-size:14px;font-weight:700">RISER TOURS &amp; SAFARIS</p>
+      <p style="margin:0 0 8px;color:#079650;font-size:14px;font-weight:700">${escapeHtml(env.BRAND_NAME.toUpperCase())}</p>
       <h1 style="margin:0 0 16px;font-size:24px">${escapeHtml(heading)}</h1>
       <div style="color:#52617a;font-size:15px;line-height:1.6">${body}</div>
       ${ctaUrl ? `<p style="margin:24px 0 0"><a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#079650;color:#ffffff;padding:12px 18px;border-radius:7px;text-decoration:none;font-weight:700">${escapeHtml(ctaLabel)}</a></p>` : ""}
-      <p style="margin:26px 0 0;color:#64748b;font-size:13px">Need help? +255 778 775 044 &middot; info@risertoursandsafaris.co.tz</p>
+      <p style="margin:26px 0 0;color:#64748b;font-size:13px">Need help? ${escapeHtml(env.SUPPORT_PHONE)} &middot; ${escapeHtml(env.EMAIL_REPLY_TO)}</p>
     </div>
   </div>`;
 

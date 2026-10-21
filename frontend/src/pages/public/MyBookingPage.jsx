@@ -25,6 +25,7 @@ import CancellationPolicyPanel from "../../components/cancellation/CancellationP
 import { formatCurrency, statusBadgeVariant } from "../../utils/formatters";
 import { buildCancellationTimeline } from "../../utils/cancellationPolicy";
 import { isSupplierConfirmationPending } from "../../utils/bookingStatus";
+import { BRAND } from "../../config/brand";
 
 const formatDate = (value = "") => {
   if (!value) return "-";
@@ -348,7 +349,7 @@ const MyBookingPage = () => {
       <Container className="my-booking-shell">
         <section className="my-booking-search-band">
           <div>
-            <div className="my-booking-eyebrow">Riser Tours & Safaris</div>
+            <div className="my-booking-eyebrow">{BRAND.name}</div>
             <h1>My Booking</h1>
             <p>Review your trip details, payment status, pickup information, and invoice.</p>
           </div>

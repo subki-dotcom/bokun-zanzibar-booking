@@ -11,7 +11,7 @@ const MeetingPickupSection = ({ meetingInfo = "", pickupInfo = "" }) => {
         <div className="single-tour-section-head">
           <h3>Meeting and pickup</h3>
         </div>
-        <p className="single-tour-muted mb-0">Meeting and pickup details are not specified in Bokun.</p>
+        <p className="single-tour-muted mb-0">Meeting and pickup details are confirmed after booking.</p>
       </section>
     );
   }

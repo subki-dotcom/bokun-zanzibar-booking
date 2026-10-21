@@ -7,6 +7,7 @@ const StickyAvailabilityCard = ({
   initialSelection = null,
   onLiveAvailabilityChecked,
   onStartingPrice,
+  onPrefetchAvailability,
   hideContinueButton = false,
   checkoutPath = "",
   sessionSource = "single_product_page"
@@ -18,6 +19,7 @@ const StickyAvailabilityCard = ({
     initialSelection={initialSelection}
     onLiveAvailabilityChecked={onLiveAvailabilityChecked}
     onStartingPrice={onStartingPrice}
+    onPrefetchAvailability={onPrefetchAvailability}
     hideContinueButton={hideContinueButton}
     checkoutPath={checkoutPath}
     sessionSource={sessionSource}

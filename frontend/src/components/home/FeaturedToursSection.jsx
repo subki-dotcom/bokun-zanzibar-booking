@@ -9,21 +9,21 @@ const FeaturedToursSection = ({ tours = [], loading = false }) => (
     <Container>
       <div className="z-home-section-head">
         <h2>Featured tours</h2>
-        <p>Handpicked tours and excursions with live pricing and availability from Bokun.</p>
+        <p>Handpicked tours and excursions with live pricing and availability.</p>
       </div>
 
       {loading ? <Loader message="Loading featured tours..." variant="cards" /> : <Row className="g-3 g-lg-4">
         {(tours || []).map((tour) => {
           const detailPath = tour.slug ? `/tours/${tour.slug}` : "/tours";
-          const hasRating = Number(tour.rating || 0) > 0;
           const hasReviews = Number(tour.reviewCount || 0) > 0;
+          const hasRating = hasReviews && Number(tour.rating || 0) > 0;
 
           return (
             <Col key={tour.id || tour.slug || tour.title} lg={4} md={6}>
               <article className="z-home-tour-card">
                 <div className="z-home-tour-image-wrap">
                   <img src={tour.image} alt={tour.title} className="z-home-tour-image" loading="lazy" />
-                  <span className="z-home-tour-badge">Bokun powered</span>
+                  <span className="z-home-tour-badge">Live availability</span>
                 </div>
 
                 <div className="z-home-tour-body">

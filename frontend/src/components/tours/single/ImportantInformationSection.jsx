@@ -20,7 +20,7 @@ const ImportantInformationSection = ({ importantInformation = [] }) => {
           ))}
         </div>
       ) : (
-        <p className="single-tour-muted mb-0">No additional important information published in Bokun.</p>
+        <p className="single-tour-muted mb-0">No additional information for this tour.</p>
       )}
     </section>
   );

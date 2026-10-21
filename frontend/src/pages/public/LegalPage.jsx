@@ -6,7 +6,7 @@ import { BRAND } from "../../config/brand";
 const legalContent = {
   privacy: {
     title: "Privacy Policy",
-    intro: "Riser Tours & Safaris uses customer details only to arrange bookings, process payment, provide support, and send marketing updates when you opt in.",
+    intro: `${BRAND.name} uses customer details only to arrange bookings, process payment, provide support, and send marketing updates when you opt in.`,
     sections: [
       ["Information we use", "Booking details, contact details, selected tour information, and payment status are used to deliver and support your booking."],
       ["Your choices", "You can choose whether to receive travel updates and offers. You may ask us to update or remove your marketing contact details."],
@@ -30,7 +30,7 @@ const LegalPage = () => {
 
   return (
     <main className="legal-page py-5">
-      <SeoHead title={`${content.title} | Riser Tours & Safaris`} description={content.intro} />
+      <SeoHead title={`${content.title} | ${BRAND.name}`} description={content.intro} />
       <Container className="legal-page-shell">
         <article className="legal-page-card">
           <h1>{content.title}</h1>

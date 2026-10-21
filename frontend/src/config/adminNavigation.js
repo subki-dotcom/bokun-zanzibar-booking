@@ -113,6 +113,14 @@ export const adminNavigation = [
         status: "active"
       },
       {
+        id: "operations-website-tours",
+        label: "Website Tours",
+        path: "/admin/operations/website-tours",
+        icon: BsGrid3X3Gap,
+        roles: ADMIN_ROLES.MANAGE,
+        status: "active"
+      },
+      {
         id: "operations-requests",
         label: "Booking Requests",
         path: "/admin/operations/booking-requests",

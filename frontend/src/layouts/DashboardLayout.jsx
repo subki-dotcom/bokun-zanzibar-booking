@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BRAND } from "../config/brand";
 import { Container, Nav, Navbar } from "react-bootstrap";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import {
@@ -155,7 +156,7 @@ const DashboardLayout = ({ portal = "admin" }) => {
           <main className="agent-content">
             <Outlet />
             <footer className="agent-footer">
-              <span>(c) 2025 Riser Tours & Safaris. All rights reserved.</span>
+              <span>(c) {new Date().getFullYear()} {BRAND.name}. All rights reserved.</span>
               <span>Agent Portal v1.0.0</span>
             </footer>
           </main>

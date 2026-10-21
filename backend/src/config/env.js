@@ -100,6 +100,9 @@ const env = cleanEnv(process.env, {
   EMAIL_PROVIDER: str({ default: "resend" }),
   RESEND_API_KEY: str({ default: "" }),
   EMAIL_FROM: str({ default: "" }),
+  // The one brand name used in emails, payment pages and vouchers (the website reads VITE_BRAND_NAME).
+  BRAND_NAME: str({ default: "Riser Tours & Safaris" }),
+  SUPPORT_PHONE: str({ default: "+255 778 775 044" }),
   EMAIL_REPLY_TO: str({ default: "info@risertoursandsafaris.co.tz" }),
   GOOGLE_PLACES_API_KEY: str({ default: "" }),
   GOOGLE_PLACE_ID: str({ default: "" }),

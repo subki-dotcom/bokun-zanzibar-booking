@@ -25,7 +25,7 @@ const IncludedExcludedSection = ({ included = [], excluded = [] }) => {
               ))}
             </ul>
           ) : (
-            <p className="single-tour-muted mb-0">Included items are not listed in Bokun for this product.</p>
+            <p className="single-tour-muted mb-0">Ask us what is included in this tour.</p>
           )}
         </div>
 
@@ -41,7 +41,7 @@ const IncludedExcludedSection = ({ included = [], excluded = [] }) => {
               ))}
             </ul>
           ) : (
-            <p className="single-tour-muted mb-0">No exclusions are listed in Bokun for this product.</p>
+            <p className="single-tour-muted mb-0">No exclusions are listed for this tour.</p>
           )}
         </div>
       </div>

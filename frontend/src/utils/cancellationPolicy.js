@@ -16,8 +16,11 @@ export const cancellationDisplayText = (value, depth = 0) => {
   if (typeof value === "string" || typeof value === "number") {
     const text = String(value).trim();
     return /^\[object(?:\s+\w+)?\]$/i.test(text) ? "" : text
+      // "Standard Viator policy." and similar labels say nothing to a guest: drop them, then the name itself.
+      .replace(/\b(?:standard\s+)?viator(?:['’]s)?\s+(?:cancellation\s+)?policy\b[.:]?\s*/gi, "")
       .replace(/\bviator['’]s\b/gi, "the booking provider's")
-      .replace(/\bviator\b/gi, "the booking provider");
+      .replace(/\bviator\b/gi, "the booking provider")
+      .trim();
   }
   if (Array.isArray(value)) {
     return value.map((item) => cancellationDisplayText(item, depth + 1)).filter(Boolean).join(" ");
