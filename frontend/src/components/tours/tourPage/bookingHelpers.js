@@ -48,6 +48,11 @@ export const travellersLabel = (pax = {}) =>
 // Option names as shown to guests: Bókun's "W/" ("with") prefix is dropped.
 export const displayOptionName = (name = "") => String(name || "").replace(/^\s*w\/\s*/i, "").trim() || "Tour option";
 
+// More start times than fit as pills (transfers run every half hour): shown as a list, and the guest picks one
+// (the first would be midnight).
+export const MANY_TIMES = 12;
+export const needsTimeChoice = (slots = []) => slots.length > MANY_TIMES;
+
 export const slotKey = (slot = {}) => `${slot.startTimeId || ""}|${slot.time || ""}`;
 export const bookableSlots = (slots = []) =>
   (slots || []).filter((slot) => slot?.time && slot.status !== "sold_out" && (slot.capacityLeft === undefined || Number(slot.capacityLeft) > 0));

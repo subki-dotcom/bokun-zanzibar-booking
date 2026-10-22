@@ -939,6 +939,12 @@ const fetchOptionQuotes = async (productId, payload = {}, requestId) => {
     requestId
   );
 
+  // Every option is priced from one load of the date's availability and price list (a product with 40 options made
+  // 120 supplier calls before and timed out).
+  const sources = bokunClient.shouldMock
+    ? null
+    : await loadAvailabilitySources({ productId: bookingConfig.productId, travelDate: date, priceCatalogId: rateId }, requestId);
+
   const options = await Promise.all(ensureArray(matrix?.options).map(async (option) => {
     const base = {
       optionId: String(option.optionId || ""),
@@ -953,17 +959,15 @@ const fetchOptionQuotes = async (productId, payload = {}, requestId) => {
     };
     if (!base.available) return base;
     try {
-      const priced = await fetchAvailability(
-        {
-          productId: bookingConfig.productId,
-          optionId: base.optionId,
-          travelDate: date,
-          pax: passengerMix.pax,
-          priceCategoryParticipants: passengerMix.passengers,
-          priceCatalogId: rateId
-        },
-        requestId
-      );
+      const optionPayload = {
+        productId: bookingConfig.productId,
+        optionId: base.optionId,
+        travelDate: date,
+        pax: passengerMix.pax,
+        priceCategoryParticipants: passengerMix.passengers,
+        priceCatalogId: rateId
+      };
+      const priced = sources ? mapAvailabilitySources(optionPayload, sources) : await fetchAvailability(optionPayload, requestId);
       const total = Number(priced?.pricing?.grossAmount || 0);
       return { ...base, total: total > 0 ? total : null, currency: priced?.currency || base.currency };
     } catch (error) {
@@ -1119,6 +1123,13 @@ const fetchAvailability = async (payload, requestId) => {
     throw new AppError("travelDate is required for availability request", 400, "TRAVEL_DATE_REQUIRED");
   }
 
+  const sources = await loadAvailabilitySources({ productId, travelDate, priceCatalogId }, requestId);
+  return mapAvailabilitySources(payload, sources);
+};
+
+// One date's availability, price list and product details from the supplier. Shared by every option of the product,
+// so pricing several options needs these three calls once, not once per option.
+const loadAvailabilitySources = async ({ productId, travelDate, priceCatalogId = "" }, requestId) => {
   const queryParams = new URLSearchParams({
     start: travelDate,
     end: travelDate,
@@ -1177,19 +1188,27 @@ const fetchAvailability = async (payload, requestId) => {
   const productDetailsRoot = productDetails
     ? productDetails.activity || productDetails.product || productDetails
     : null;
-  const mappedDetails = productDetailsRoot ? mapper.mapProduct(productDetailsRoot) : null;
-
-  return mapper.mapActivityAvailability({
-    payload: {
-      ...payload,
-      bookableExtras: productDetailsRoot?.bookableExtras || [],
-      bookablePriceCatalogs: mappedDetails?.priceCatalogs || []
-    },
+  return {
     rawAvailabilities,
     priceList,
+    productDetailsRoot,
+    mappedDetails: productDetailsRoot ? mapper.mapProduct(productDetailsRoot) : null
+  };
+};
+
+// The availability and price of one option (payload.optionId) from loaded sources.
+const mapAvailabilitySources = (payload, sources) =>
+  mapper.mapActivityAvailability({
+    payload: {
+      ...payload,
+      bookableExtras: sources.productDetailsRoot?.bookableExtras || [],
+      bookablePriceCatalogs: sources.mappedDetails?.priceCatalogs || []
+    },
+    rawAvailabilities: sources.rawAvailabilities,
+    priceList: sources.priceList,
     defaultCurrency: env.DEFAULT_CURRENCY
   });
-};
+
 
 const formatIsoDate = (value) => {
   const date = value instanceof Date ? value : new Date(value);
