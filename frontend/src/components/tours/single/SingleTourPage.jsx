@@ -32,7 +32,9 @@ const SingleTourPage = ({
   checkoutPath = "",
   sessionSource = "single_product_page",
   // The public tour page draws its own title and photos above this component.
-  hideIntro = false
+  hideIntro = false,
+  // The public tour page draws its own sections and uses only the booking card, mobile bar and option picker.
+  bookingOnly = false
 }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -445,6 +447,41 @@ const SingleTourPage = ({
   const importantInformation = importantInfoForTour(tour);
   const hasImportantInformation = Boolean(importantInformation.length);
   const hasReviews = Number(tour.reviewCount || 0) > 0 && Number(tour.rating || 0) > 0;
+
+  if (bookingOnly) {
+    return (
+      <div className="single-tour-page product-detail-page tp-legacy-booking">
+        {isDesktop ? <StickyAvailabilityCard {...availabilityCardProps} /> : <div className="single-product-mobile-booking-form" ref={mobileBookingRef}><StickyAvailabilityCard {...availabilityCardProps} /></div>}
+        {availabilityError ? <div className="single-booking-inline-error mt-3">{availabilityError}</div> : null}
+        {!isDesktop ? (
+          <MobileBookingBar
+            amount={Number(startingPriceForBar?.amount) > 0 ? startingPriceForBar.amount : tour.fromPrice}
+            currency={startingPriceForBar?.currency || tour.currency}
+            priceLabel={startingPriceForBar?.label}
+            onOpenBooking={openMobileBooking}
+          />
+        ) : null}
+        <AvailabilityOptionModal
+          show={showAvailabilityPicker}
+          isDesktop={isDesktop}
+          loading={checkingAvailability}
+          error={availabilityError}
+          options={optionsToRender}
+          selectedOptionId={selectedOptionId}
+          travelDate={travelDate}
+          pax={selectedPax}
+          selectedRateLabel={selectedRateLabel}
+          selectedStartTimesByOption={selectedStartTimesByOption}
+          selectedStartTimeSlotsByOption={selectedStartTimeSlotsByOption}
+          onClose={() => setShowAvailabilityPicker(false)}
+          onEditSearch={handleEditSearch}
+          onSelectOption={handleSelectOption}
+          onChangeStartTime={handleOptionStartTimeChange}
+          onContinue={handleContinueWithOption}
+        />
+      </div>
+    );
+  }
 
   return (
     <main className={`single-tour-page product-detail-page ${portal === "agent" ? "agent-tour-booking-page" : ""}`}>
