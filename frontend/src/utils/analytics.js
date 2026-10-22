@@ -14,6 +14,7 @@ export const trackViewItem = (tour) => analytics.event('view_item', tourData(tou
 export const trackSelectItem = (tour) => analytics.event('select_item', tourData(tour));
 // Funnel steps on the tour page. Sent only with analytics consent (analytics.event checks it).
 const guests = (count) => (Number.isInteger(count) && count > 0 ? { number_of_guests: count } : {});
+export const trackSelectTravelers = (tour, guestCount) => analytics.event('select_travelers', { ...tourData(tour), ...guests(guestCount) });
 export const trackSelectDate = (tour, guestCount) => analytics.event('select_date', { ...tourData(tour), ...guests(guestCount) });
 export const trackCheckAvailability = (tour, guestCount) => analytics.event('check_availability', { ...tourData(tour), ...guests(guestCount) });
 export const trackSelectOption = (tour, guestCount) => analytics.event('select_option', { ...tourData(tour), ...guests(guestCount) });

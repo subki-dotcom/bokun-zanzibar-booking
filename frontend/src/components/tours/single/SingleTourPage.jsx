@@ -24,7 +24,7 @@ import {
   checkTourOptionsAvailability,
   prefetchTourOptionsAvailability
 } from "../../../api/toursApi";
-import { saveBookingSession } from "../../../utils/bookingSession";
+import { startTourCheckout } from "./tourCheckout";
 
 const SingleTourPage = ({
   tour = {},
@@ -332,66 +332,21 @@ const SingleTourPage = ({
     );
     const resolvedStartTimeSlot =
       startTimeSlot || selectedStartTimeSlotsByOption[String(optionId || "").trim()] || null;
-    const normalizedPassengers = (selectedPassengers || [])
-      .map((row = {}) => ({
-        pricingCategoryId: String(row.pricingCategoryId || "").trim(),
-        quantity: Math.max(0, Number(row.quantity || 0))
-      }))
-      .filter((row) => row.pricingCategoryId && row.quantity > 0);
 
-    if (!optionId || !resolvedDate || !resolvedRateId || !resolvedStartTime || !normalizedPassengers.length) {
-      return;
-    }
-
-    const selectedCatalog =
-      (tour.priceCatalogs || []).find((catalog = {}) => {
-        const catalogId = String(
-          catalog.activityPriceCatalogId || catalog.catalogId || catalog.id || ""
-        ).trim();
-        return catalogId === resolvedRateId;
-      }) || null;
-
-    saveBookingSession({
-      source: sessionSource,
-      product: {
-        productId: String(tour.bokunProductId || ""),
-        slug: tour.slug,
-        title: tour.title
-      },
-      tripDetails: {
-        optionId,
-        optionTitle: option?.name || "",
-        rateId: resolvedRateId,
-        rateTitle: selectedCatalog?.title || selectedCatalog?.label || "",
-        travelDate: resolvedDate,
-        startTime: resolvedStartTime,
-        startTimeId: String(resolvedStartTimeSlot?.startTimeId || "").trim(),
-        startTimeSlot: resolvedStartTimeSlot,
-        passengers: normalizedPassengers,
-        pax: selectedPax
-      },
-      availabilityQuote: latestQuote || null,
-      currency: latestQuote?.currency || tour.currency || "USD",
-      tripDetailsCompleted: true,
-      availabilityChecked: true
+    startTourCheckout({
+      tour,
+      navigate,
+      option,
+      travelDate: resolvedDate,
+      rateId: resolvedRateId,
+      startTime: resolvedStartTime,
+      startTimeSlot: resolvedStartTimeSlot,
+      passengers: selectedPassengers,
+      pax: selectedPax,
+      quote: latestQuote,
+      checkoutPath,
+      sessionSource
     });
-
-    const query = new URLSearchParams();
-    query.set("option", optionId);
-    query.set("date", resolvedDate);
-    query.set("catalog", resolvedRateId);
-    query.set("passengers", JSON.stringify(normalizedPassengers));
-
-    if (resolvedStartTime) {
-      query.set("time", resolvedStartTime);
-    }
-
-    if (Number(selectedPax?.adults || 0) > 0) {
-      query.set("adults", String(selectedPax.adults));
-    }
-
-    const resolvedCheckoutPath = checkoutPath || `/booking/${tour.slug}`;
-    navigate(`${resolvedCheckoutPath}?${query.toString()}`);
   };
 
   const selectedOptionStartTime =
