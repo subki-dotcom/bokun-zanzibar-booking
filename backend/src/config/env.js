@@ -41,6 +41,12 @@ const env = cleanEnv(process.env, {
   BOOKING_FINALIZATION_RETRY_ENABLED: bool({ default: true }),
   BOOKING_FINALIZATION_RETRY_INTERVAL_SECONDS: num({ default: 30 }),
   BOOKING_FINALIZATION_RETRY_BATCH_SIZE: num({ default: 20 }),
+  // Asks Pesapal about paid orders nobody confirmed (no IPN, guest did not return); see pesapalVerification.job.js.
+  PESAPAL_VERIFICATION_POLLER_ENABLED: bool({ default: true }),
+  PESAPAL_VERIFICATION_POLLER_INTERVAL_SECONDS: num({ default: 120 }),
+  PESAPAL_VERIFICATION_POLLER_BATCH_SIZE: num({ default: 20 }),
+  PESAPAL_VERIFICATION_MIN_AGE_MINUTES: num({ default: 3 }),
+  PESAPAL_VERIFICATION_GIVE_UP_MINUTES: num({ default: 60 }),
   BOOKING_FINALIZATION_MAX_RETRIES: num({ default: 8 }),
   INVOICE_SYNC_ENABLED: bool({ default: true }),
   INVOICE_SYNC_INTERVAL_SECONDS: num({ default: 300 }),
