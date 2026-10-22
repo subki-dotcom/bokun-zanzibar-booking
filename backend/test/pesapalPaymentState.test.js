@@ -150,7 +150,7 @@ test("accounts for the original order currency when Pesapal completes a converte
   assert.equal(result.canAllocate, true);
 });
 
-test("does not infer TZS from a mobile-money method when Pesapal reports USD", () => {
+test("verifies mobile money charged in TZS at Pesapal's rate even when Pesapal reports USD", () => {
   const result = __testables.validatePesapalVerification({
     booking: {
       bookingReference: "ZNZ-TEST-TIGO",
@@ -176,8 +176,54 @@ test("does not infer TZS from a mobile-money method when Pesapal reports USD", (
     }
   });
 
+  assert.equal(result.providerCurrency, "TZS");
+  assert.equal(result.currencyConverted, true);
+  assert.equal(result.verificationStatus, "verified");
+  assert.equal(result.canAllocate, true);
+  assert.equal(Number(result.fxRate), 2643);
+  assert.equal(result.accountingCurrency, "USD");
+});
+
+const pesapalCase = ({ amount, paymentMethod, expected = 0.5, reported = "USD" }) =>
+  __testables.validatePesapalVerification({
+    booking: {
+      bookingReference: "ZNZ-TEST-MM",
+      paymentTransactionId: "tracking-mm",
+      amount: expected,
+      currency: "USD",
+      pendingCheckout: { pesapalMerchantReference: "ZNZ-TEST-MM", pesapalRequestedAmount: expected, pesapalRequestedCurrency: "USD" }
+    },
+    orderTrackingId: "tracking-mm",
+    orderMerchantReference: "ZNZ-TEST-MM",
+    verification: {
+      isPaid: true,
+      providerOrderTrackingId: "tracking-mm",
+      merchantReference: "ZNZ-TEST-MM",
+      confirmationCode: "PESAPAL-CONFIRM-MM",
+      amount,
+      currency: reported,
+      raw: { payment_method: paymentMethod }
+    }
+  });
+
+test("mobile money without a country in its name is Tanzanian shillings (1,223 TZS for 0.50 USD)", () => {
+  const result = pesapalCase({ amount: 1223, paymentMethod: "Airtel Money" });
+  assert.equal(result.providerCurrency, "TZS");
+  assert.equal(result.verificationStatus, "verified");
+  assert.equal(Number(result.fxRate), 2446);
+});
+
+test("a mobile money amount outside a realistic USD to TZS rate is still a mismatch", () => {
+  for (const amount of [50, 9000]) {
+    const result = pesapalCase({ amount, paymentMethod: "MPESA", expected: 1 });
+    assert.equal(result.verificationStatus, "amount_mismatch");
+    assert.equal(result.canAllocate, false);
+  }
+});
+
+test("a card payment with a different amount is never taken for a conversion", () => {
+  const result = pesapalCase({ amount: 1223, paymentMethod: "VISA" });
   assert.equal(result.providerCurrency, "USD");
-  assert.equal(result.currencyConverted, false);
   assert.equal(result.verificationStatus, "amount_mismatch");
   assert.equal(result.canAllocate, false);
 });
