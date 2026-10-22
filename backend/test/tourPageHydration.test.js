@@ -22,8 +22,10 @@ const snapshot = (overrides = {}) => ({
 });
 
 const stubSnapshot = (t, tour) => {
-  t.mock.method(ProductSnapshot, "findOne", () => ({ lean: async () => tour, select: () => ({ lean: async () => tour }) }));
+  const findOne = t.mock.method(ProductSnapshot, "findOne", () => ({ lean: async () => tour, select: () => ({ lean: async () => tour }) }));
+  t.mock.method(ProductSnapshot, "find", () => ({ select: () => ({ lean: async () => [] }) }));
   t.mock.method(ProductSnapshot, "updateOne", async () => ({}));
+  return findOne;
 };
 
 test("a descriptive gap is refreshed in the background, not on the visitor's request", async (t) => {
@@ -51,4 +53,21 @@ test("missing booking data waits for Bókun once, then not again for 10 minutes"
   assert.ok(first >= 1, "the first visit asks Bókun for the missing options");
   await toursService.getTourBySlug("no-options", "test");
   assert.equal(details.mock.callCount(), first, "not again on the next visit");
+});
+
+test("a tour is read from the database once, then served from memory until it changes", async (t) => {
+  const tour = snapshot({ bokunProductId: "990003", slug: "cached-tour", pickupPlaces: [] });
+  const findOne = stubSnapshot(t, tour);
+  t.mock.method(bokunService, "fetchProductDetails", async () => null);
+  t.mock.method(ProductSnapshot, "findOneAndUpdate", () => ({ select: () => ({ lean: async () => ({ ...tour, hiddenFromPublic: true }) }) }));
+
+  await toursService.getTourBySlug("cached-tour", "test");
+  const reads = findOne.mock.callCount();
+  await toursService.getTourBySlug("cached-tour", "test");
+  await toursService.getTourBySlug("cached-tour", "test");
+  assert.equal(findOne.mock.callCount(), reads, "later visits do not read the database");
+
+  await toursService.setProductVisibility("990003", true, "staff");
+  await toursService.getTourBySlug("cached-tour", "test");
+  assert.equal(findOne.mock.callCount(), reads + 1, "a change makes the next visit read the tour again");
 });
