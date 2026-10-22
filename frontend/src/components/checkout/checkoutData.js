@@ -146,12 +146,15 @@ export const filterHotels = (places = [], query = "") => {
   });
 };
 
-export const HOTEL_NOT_LISTED = "Hotel not listed – I'll send it on WhatsApp";
+export const HOTEL_NOT_LISTED = "My hotel isn't listed – I'll send it on WhatsApp";
+// The hotel name sent when the guest will send it on WhatsApp (never the search text: the server matches names loosely).
+export const HOTEL_TO_FOLLOW = "Hotel to be sent on WhatsApp";
 
 // The notes sent with the booking: room, language choice, an unlisted hotel and the guest's own requests.
 export const bookingNotes = (form = {}, { languageChoosable = false } = {}) =>
   [
-    form.hotelNotListed ? `${HOTEL_NOT_LISTED}${String(form.hotelQuery || "").trim() ? ` (typed: ${String(form.hotelQuery).trim()})` : ""}` : "",
+    form.hotelNotListed ? `Hotel not listed – the guest will send it on WhatsApp${String(form.hotelTyped || "").trim() ? ` (typed: ${String(form.hotelTyped).trim()})` : ""}` : "",
+    form.hotelNotListed && form.hotelName ? `Nearest listed hotel, used for the pickup: ${form.hotelName}` : "",
     String(form.roomNumber || "").trim() ? `Room: ${String(form.roomNumber).trim()}` : "",
     languageChoosable && form.language ? `Tour language: ${form.language}` : "",
     String(form.notes || "").trim()
@@ -161,7 +164,7 @@ export const bookingNotes = (form = {}, { languageChoosable = false } = {}) =>
 
 export const activitySummary = ({ hasPickup = true, hotel = "", hotelNotListed = false, meetingPoint = "", language = "" } = {}) =>
   [
-    hasPickup ? `Pickup: ${hotelNotListed ? "Sending hotel on WhatsApp" : hotel || "Not selected"}` : meetingPoint ? `Meeting point: ${meetingPoint}` : "",
+    hasPickup ? `Pickup: ${hotelNotListed ? (hotel ? `near ${hotel} (hotel sent on WhatsApp)` : HOTEL_TO_FOLLOW) : hotel || "Not selected"}` : meetingPoint ? `Meeting point: ${meetingPoint}` : "",
     language
   ]
     .filter(Boolean)

@@ -5,11 +5,12 @@ import "../../components/checkout/checkout.css";
 import useMediaQuery from "../../hooks/useMediaQuery";
 import useCheckout from "../../components/checkout/useCheckout";
 import useCheckoutSteps from "../../components/checkout/useCheckoutSteps";
-import { STEPS, formatMoney, fullName } from "../../components/checkout/checkoutData";
+import { STEPS, activitySummary, formatMoney, fullName } from "../../components/checkout/checkoutData";
 import { formatPhone } from "../../components/checkout/phone";
 import { CheckoutHeader, MobileCheckoutHeader, MobileProgress } from "../../components/checkout/CheckoutHeader";
 import StepCard from "../../components/checkout/StepCard";
 import ContactStep from "../../components/checkout/ContactStep";
+import ActivityStep from "../../components/checkout/ActivityStep";
 import { HelpCard, MobileOrderSummary, OrderSummary, helpWhatsappHref } from "../../components/checkout/OrderSummary";
 import MobileCheckoutBar from "../../components/checkout/MobileCheckoutBar";
 
@@ -35,7 +36,18 @@ const CheckoutPage = () => {
     steps.goNext("contact", { ...checkout.completed, contact: true });
   };
 
-  const barActions = { contact: submitContact };
+  const [busyStep, setBusyStep] = useState("");
+
+  const submitActivity = async () => {
+    if (busyStep) return;
+    if (Object.keys(checkout.errorsFor("activity")).length) return retry("activity");
+    setBusyStep("activity");
+    const ok = await checkout.completeActivity();
+    setBusyStep("");
+    if (ok) steps.goNext("activity", { ...checkout.completed, activity: true });
+  };
+
+  const barActions = { contact: submitContact, activity: submitActivity };
 
   const goBack = () => {
     if (steps.index > 0) steps.go(STEPS[steps.index - 1].id, { replace: true });
@@ -43,13 +55,23 @@ const CheckoutPage = () => {
   };
 
   const summaries = {
-    contact: [fullName(checkout.form), checkout.form.email.trim(), formatPhone(checkout.phone.e164)].filter(Boolean).join(" · ")
+    contact: [fullName(checkout.form), checkout.form.email.trim(), formatPhone(checkout.phone.e164)].filter(Boolean).join(" · "),
+    activity: activitySummary({
+      hasPickup: checkout.hasPickup,
+      hotel: checkout.form.hotelName,
+      hotelNotListed: checkout.form.hotelNotListed,
+      meetingPoint: checkout.meetingPoint,
+      language: checkout.language
+    })
   };
 
   const renderStep = (step, number) => {
     const status = steps.status(step.id);
     let body = null;
     if (status === "open" && step.id === "contact") body = <ContactStep checkout={checkout} attempt={attempts.contact} onNext={submitContact} />;
+    if (status === "open" && step.id === "activity") {
+      body = <ActivityStep checkout={checkout} attempt={attempts.activity} busy={busyStep === "activity"} onNext={submitActivity} />;
+    }
     return (
       <StepCard
         key={step.id}
@@ -138,6 +160,7 @@ const CheckoutPage = () => {
           total={checkout.total ? formatMoney(checkout.total, checkout.currency) : "—"}
           label={STEPS[steps.index].next || `Pay ${checkout.total ? formatMoney(checkout.total, checkout.currency) : ""} & book`}
           onAction={() => barActions[steps.open]?.()}
+          busy={Boolean(busyStep)}
         />
       ) : null}
     </div>

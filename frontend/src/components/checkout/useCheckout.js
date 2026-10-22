@@ -32,11 +32,12 @@ import {
   normalizeQuestionScope
 } from "../../utils/bookingQuestions";
 import { displayOptionName } from "../tours/tourPage/bookingHelpers";
-import { bookingNotes, contactErrors, paymentChoices, pickupLabel } from "./checkoutData";
+import { HOTEL_TO_FOLLOW, bookingNotes, contactErrors, paymentChoices, pickupLabel } from "./checkoutData";
 import { defaultPhoneCountry, validatePhone } from "./phone";
 
 const SOURCE_CHANNEL = "direct_website";
 const SESSION_SOURCE = "single_product_page";
+const NOT_LISTED_PLACE = /not\s+listed|isn.?t\s+listed|send.*whatsapp|other\s+hotel|to\s+be\s+confirmed/i;
 const FORM_KEY = (slug) => `riser_checkout_form_v1:${slug}`;
 
 const emptyForm = () => ({
@@ -50,6 +51,7 @@ const emptyForm = () => ({
   hotelName: "",
   pickupPlaceId: "",
   hotelNotListed: false,
+  hotelTyped: "",
   roomNumber: "",
   language: "",
   notes: ""
@@ -138,6 +140,7 @@ const useCheckout = () => {
   const [method, setMethod] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [payError, setPayError] = useState("");
+  const [activityError, setActivityError] = useState("");
   const [fallbackMethod, setFallbackMethod] = useState("");
   const submittingRef = useRef(false);
   const shownTotal = useRef(seed.total);
@@ -205,7 +208,9 @@ const useCheckout = () => {
         const baseTrip = { option, priceCatalogId: rateId, travelDate: seed.travelDate, startTime: seed.startTime, startTimeId: seed.startTimeId, pax: seed.pax, participants: seed.participants, extras: [] };
         setTrip(baseTrip);
 
-        // Pickup places in the background: the live product's list, or every Zanzibar pickup point when it has none.
+        // Pickup places: the tour's own list at once, then the live product's list (or every Zanzibar pickup point
+        // when the product has none) in the background.
+        if (Array.isArray(tourData.pickupPlaces) && tourData.pickupPlaces.length) setPickupPlaces(markProductPickupPlaces(tourData.pickupPlaces));
         (async () => {
           const live = await fetchBokunProductDetails(tourData.bokunProductId, { forceRefresh: true }).catch(() => null);
           const merged = mergeLivePickupDetails(tourData, live);
@@ -267,12 +272,15 @@ const useCheckout = () => {
           availabilityChecked: true
         });
 
-        try {
-          const result = await fetchBookingQuestions({ ...buildPayload(quotedTrip, tourData.bokunProductId), customer: {} });
-          if (active) setQuestions(result || []);
-        } catch (questionError) {
-          // Payment runs the same supplier-side check, so a failed lookup cannot create an invalid booking.
-          console.warn("Unable to prefetch booking questions", questionError);
+        // With pickup the supplier lists questions only once a pickup place is chosen (asked again after step 2).
+        if (!option.pickupSupported) {
+          try {
+            const result = await fetchBookingQuestions({ ...buildPayload(quotedTrip, tourData.bokunProductId), customer: {} });
+            if (active) setQuestions(result || []);
+          } catch (questionError) {
+            // Payment runs the same supplier-side check, so a failed lookup cannot create an invalid booking.
+            console.warn("Unable to prefetch booking questions", questionError);
+          }
         }
       } catch (error) {
         if (!active) return;
@@ -309,7 +317,15 @@ const useCheckout = () => {
   const optionName = trip.option?.name || seed.optionTitle;
   const pickupArea = pickupAreaFromOption(optionName);
   const hasPickup = trip.option ? trip.option.pickupSupported !== false : true;
-  const hotels = useMemo(() => (pickupPlaces ? pickupPlacesForOption(pickupPlaces, optionName) : null), [pickupPlaces, optionName]);
+  // A pickup place set up in the supplier system for unlisted hotels ("not listed", "send on WhatsApp"), when there is one.
+  const notListedPlace = useMemo(
+    () => (pickupPlaces || []).find((place) => place.productScoped !== false && NOT_LISTED_PLACE.test(String(place.title || ""))) || null,
+    [pickupPlaces]
+  );
+  const hotels = useMemo(
+    () => (pickupPlaces ? pickupPlacesForOption(pickupPlaces, optionName).filter((place) => place !== notListedPlace) : null),
+    [pickupPlaces, optionName, notListedPlace]
+  );
   const meetingPoint = String(tour?.meetingInfo || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   const languages = useMemo(() => {
     const fromOption = String(trip.option?.language || "").trim();
@@ -326,12 +342,14 @@ const useCheckout = () => {
       email: form.email.trim(),
       phone: phone.e164,
       country: phone.country || form.phoneCountry,
-      hotelName: hasPickup ? (form.hotelNotListed ? String(form.hotelQuery || "").trim() || "To be sent on WhatsApp" : form.hotelName) : "",
-      pickupPlaceId: hasPickup && !form.hotelNotListed ? form.pickupPlaceId : "",
+      // Unlisted hotel: the supplier's "not listed" place when it has one, otherwise the nearest hotel the guest chose
+      // (the supplier needs a pickup place); the real hotel follows on WhatsApp and is in the notes.
+      hotelName: !hasPickup ? "" : form.hotelNotListed && notListedPlace ? HOTEL_TO_FOLLOW : form.hotelName,
+      pickupPlaceId: !hasPickup ? "" : form.hotelNotListed && notListedPlace ? String(notListedPlace.id || "") : form.pickupPlaceId,
       notes: bookingNotes({ ...form, language }, { languageChoosable: languages.length > 1 }),
       marketingConsent: Boolean(form.marketingConsent)
     }),
-    [form, phone, hasPickup, language, languages.length]
+    [form, phone, hasPickup, language, languages.length, notListedPlace]
   );
 
   // Extra questions the product asks that the form does not already cover.
@@ -359,7 +377,10 @@ const useCheckout = () => {
       if (step === "contact") return contactErrors(form, phone);
       if (step === "activity") {
         const errors = {};
-        if (hasPickup && !form.hotelNotListed && !String(form.hotelName || "").trim()) errors.hotel = "Choose your hotel, or tell us it isn't listed";
+        if (hasPickup && !String(form.hotelName || "").trim()) {
+          if (!form.hotelNotListed) errors.hotel = "Choose your hotel, or tell us it isn't listed";
+          else if (!notListedPlace) errors.hotel = "Also choose the hotel nearest to you, so we can reserve your pickup";
+        }
         for (const question of extraQuestions) {
           if (!String(answerFor(question) || "").trim()) errors[`q:${question.questionId || question.id}`] = `Please answer: ${question.label || "this question"}`;
         }
@@ -367,7 +388,7 @@ const useCheckout = () => {
       }
       return {};
     },
-    [form, phone, hasPickup, extraQuestions, answerFor]
+    [form, phone, hasPickup, extraQuestions, answerFor, notListedPlace]
   );
 
   const completeContact = useCallback(() => {
@@ -390,13 +411,38 @@ const useCheckout = () => {
   }, [form.phoneNational, form.phoneCountry, phone, setField, quote, customer, tour, trip.option, trip.travelDate]);
 
   // Activity done: re-check the live price (the quote is signed and expires) before payment opens.
+  // The tour's questions are asked again with the chosen pickup (the supplier needs it before it lists them); a new
+  // required question keeps the step open.
   const completeActivity = useCallback(async () => {
-    const next = await refreshQuote();
-    if (!next) return false;
+    setActivityError("");
+    const payload = buildPayload();
+    const [next, latestQuestions] = await Promise.all([
+      refreshQuote(),
+      payload ? fetchBookingQuestions({ ...payload, pickupPlaceId: customer.pickupPlaceId, customer }).catch(() => null) : null
+    ]);
+    if (!next) {
+      setActivityError("We could not check the latest price. Please try again.");
+      return false;
+    }
+    if (Array.isArray(latestQuestions)) {
+      const unanswered = latestQuestions.filter(
+        (question) =>
+          question?.required &&
+          normalizeQuestionScope(question.scope) !== "passenger" &&
+          !isSystemManagedQuestion(question) &&
+          !isCustomerManagedQuestion(question) &&
+          !String(findQuestionAnswer(answers, question)?.answer || "").trim()
+      );
+      setQuestions(latestQuestions);
+      if (unanswered.length) {
+        setActivityError("This tour needs a few more details. Please answer the questions above.");
+        return false;
+      }
+    }
     setCompleted((current) => ({ ...current, activity: true }));
     trackAnalyticsEvent("add_pickup_info", { currency: next?.pricing?.currency || "USD", value: Number(next?.pricing?.finalPayable || 0), items: itemFor(tour) });
     return true;
-  }, [refreshQuote, tour]);
+  }, [buildPayload, refreshQuote, customer, answers, tour]);
 
   const choices = useMemo(() => paymentChoices(availableProviders.map((provider) => provider.id)), [availableProviders]);
   const selectedChoice = choices.find((choice) => choice.id === method) || choices[0] || null;
@@ -524,9 +570,11 @@ const useCheckout = () => {
     completed,
     completeContact,
     completeActivity,
+    activityError,
     hasPickup,
     pickupArea,
     hotels,
+    needsNearestHotel: !notListedPlace,
     pickupLabel,
     pickupFallback: Boolean(pickupPlaces?.length && pickupPlaces[0]?.productScoped === false),
     meetingPoint,

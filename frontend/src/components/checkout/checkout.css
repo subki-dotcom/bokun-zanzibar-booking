@@ -1013,3 +1013,130 @@
     transform: rotate(360deg);
   }
 }
+
+/* Pickup hotels */
+.ck-hotel-list {
+  max-height: 286px;
+  margin: 8px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  list-style: none;
+}
+
+.ck-hotel-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.ck-hotel-list li:last-child {
+  border-bottom: 0;
+}
+
+.ck-hotel-list li span {
+  display: grid;
+  min-width: 0;
+}
+
+.ck-hotel-list li strong {
+  font-weight: 600;
+}
+
+.ck-hotel-list li small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ck-hotel-list li:hover,
+.ck-hotel-list li.is-active {
+  background: var(--page-bg);
+}
+
+.ck-hotel-list li.is-selected {
+  background: var(--brand-selected-bg);
+}
+
+.ck-hotel-list li.is-not-listed {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.ck-hotel-list .ck-hotel-missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ck-hotel-missing svg,
+.ck-hotel-check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--brand);
+}
+
+.ck-hotel-list li.ck-hotel-status {
+  color: var(--muted);
+  cursor: default;
+}
+
+.ck-hotels.has-error .ck-hotel-list {
+  border-color: var(--error);
+}
+
+.ck-hotels .ck-help + .ck-help {
+  margin-top: 2px;
+}
+
+/* Static values (one language, meeting point) */
+.ck-label {
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ck-static {
+  margin: 0;
+  padding: 13px 0;
+  color: var(--text-body);
+  font-size: 16px;
+}
+
+.ck-meeting {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 8px;
+  color: var(--text-body);
+  font-size: 15px;
+}
+
+.ck-meeting svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: var(--brand);
+}
+
+.ck-inline-notice {
+  margin: 16px 0 0;
+}
+
+.ck-hotel-list .ck-hotel-tag {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 600;
+}
