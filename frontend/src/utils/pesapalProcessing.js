@@ -21,7 +21,9 @@ export const notifyPesapalFrameReturn = (outcome = "returned") => {
   return true;
 };
 
+// The payment link's key: the booking's signed access key (works in any browser), or the order id for older links.
 const resolveCheckoutKey = (result = {}) =>
+  asText(result.paymentAccessKey) ||
   asText(result.orderTrackingId) ||
   asText(result.merchantReference || result.orderMerchantReference) ||
   asText(result.bookingReference || result.bookingId) ||

@@ -3,14 +3,16 @@ import { LuChevronLeft, LuLock } from "react-icons/lu";
 import { BRAND } from "../../config/brand";
 import { STEPS } from "./checkoutData";
 
-// Desktop checkout header: logo and "Secure checkout" only (no site navigation while paying).
-export const CheckoutHeader = () => (
+// Desktop checkout header: logo and "Secure checkout" only (no site navigation while paying); the payment page adds
+// its progress in the middle.
+export const CheckoutHeader = ({ children = null }) => (
   <header className="ck-header">
     <div className="ck-header-inner">
       <Link to="/" className="ck-logo" aria-label={`${BRAND.name} home`}>
         <span className="ck-logo-mark" aria-hidden="true">{BRAND.name.charAt(0)}</span>
         <strong>{BRAND.name}</strong>
       </Link>
+      {children}
       <span className="ck-secure">
         <LuLock aria-hidden="true" /> Secure checkout
       </span>

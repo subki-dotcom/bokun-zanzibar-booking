@@ -17,8 +17,8 @@ const PublicLayout = () => {
   );
   // The tour page has its own header (desktop) and mobile header.
   const isTourRoute = /^\/tours\/[^/]+\/?$/.test(location.pathname);
-  // Checkout has its own minimal header and no site navigation, footer or floating WhatsApp button.
-  const isTourCheckout = /^\/booking\/[^/]+\/?$/.test(location.pathname);
+  // Checkout and the payment page have their own minimal header and no site navigation, footer or floating WhatsApp button.
+  const isTourCheckout = /^\/booking\/[^/]+\/?$/.test(location.pathname) || /^\/payment-processing\/?$/.test(location.pathname);
   const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
 
   useEffect(() => {
