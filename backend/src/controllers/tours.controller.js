@@ -70,6 +70,11 @@ const setProductVisibility = asyncHandler(async (req, res) => {
   return successResponse(res, { message: data.hiddenFromPublic ? "Product hidden from the website" : "Product shown on the website", data });
 });
 
+const getOptionQuotes = asyncHandler(async (req, res) => {
+  const data = await toursService.getOptionQuotes(req.params.slug, req.body || {}, req.requestId);
+  return successResponse(res, { message: "Option quotes fetched", data });
+});
+
 const getAvailableDates = asyncHandler(async (req, res) => {
   const data = await toursService.getAvailableDates(
     req.params.slug,
@@ -131,6 +136,7 @@ module.exports = {
   listCategories,
   getTourBySlug,
   getAvailableDates,
+  getOptionQuotes,
   listProductsForAdmin,
   setProductVisibility,
   getTourOptions,
