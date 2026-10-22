@@ -134,6 +134,7 @@ export const MobileOrderSummary = ({ checkout }) => {
         </div>
         <PriceLines checkout={checkout} lines={facts.lines} />
         <FreeCancellation deadline={facts.deadline} year={false} />
+        <Link to={checkout.tourHref} className="ck-link ck-msummary-change">Change date or travelers</Link>
       </div>
     </details>
   );

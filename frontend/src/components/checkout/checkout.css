@@ -1277,3 +1277,8 @@
     display: none;
   }
 }
+
+.ck-msummary-change {
+  justify-self: start;
+  margin-top: 4px;
+}
