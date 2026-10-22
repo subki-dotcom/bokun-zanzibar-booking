@@ -14,7 +14,7 @@ const PROVIDER_LINE = {
 };
 
 // Another payment method for the same booking (never a new booking).
-const MethodPicker = ({ choices, current, busy, onPick, onCancel }) => {
+export const MethodPicker = ({ choices, current, busy, onPick, onCancel }) => {
   const [picked, setPicked] = useState(current || choices[0]?.id || "");
   const choice = choices.find((item) => item.id === picked) || null;
   return (

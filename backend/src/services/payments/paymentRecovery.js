@@ -85,7 +85,12 @@ const publicStatus = async (booking, { requestId = "", checkTrip = false } = {})
   const session = status === "awaiting_payment" ? currentPesapalSession(booking, { ttlMinutes: sessionTtlMinutes() }) : null;
   const method = String(booking.paymentMethod || "").toLowerCase();
   const pax = booking.paxSummary || {};
-  const trip = checkTrip && !["paid", "cancelled"].includes(status) ? await tripAvailability(booking, requestId) : { bookable: true, reason: "" };
+  // The open Pay page only needs the date check (instant); the supplier is asked when the guest must start again.
+  const trip = !checkTrip || ["paid", "cancelled"].includes(status)
+    ? { bookable: true, reason: "" }
+    : status === "awaiting_payment" || status === "processing"
+      ? travelDatePassed(booking) ? { bookable: false, reason: "date_passed" } : { bookable: true, reason: "" }
+      : await tripAvailability(booking, requestId);
   return {
     status,
     bookingReference: booking.bookingReference,

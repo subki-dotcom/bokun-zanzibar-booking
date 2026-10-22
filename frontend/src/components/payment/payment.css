@@ -604,3 +604,139 @@
     margin-left: 0;
   }
 }
+
+/* Payment problem page */
+.pf-main.pf-problem {
+  padding: 36px;
+}
+
+.pf-problem-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 20px;
+  border-radius: 50%;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.pf-problem-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.pf-main .pf-lead {
+  margin: 12px 0 0;
+  color: var(--text-body);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.pf-lead strong {
+  color: var(--ink);
+}
+
+.pf-inline {
+  margin: 18px 0 0;
+}
+
+.pf-secondary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pf-outline {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.pf-outline:hover {
+  border-color: var(--brand);
+}
+
+.pf-outline:disabled {
+  opacity: 0.6;
+}
+
+.pf-main .pf-check-result {
+  min-height: 0;
+  margin: 12px 0 0;
+  color: var(--text-body);
+  font-size: 14px;
+}
+
+.pf-main .pf-check-result:empty {
+  margin: 0;
+}
+
+.pf-why {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--page-bg);
+}
+
+.pf-why strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pf-main .pf-why p {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pf-help-problem {
+  margin-top: 20px;
+}
+
+.pf-help-problem .ck-link {
+  gap: 6px;
+}
+
+.pf-help-mail {
+  color: var(--muted) !important;
+  text-decoration: none;
+}
+
+/* Confirming payment */
+.pf-main h1.pf-processing-title {
+  font-size: 24px;
+}
+
+.pf-main .pf-processing-text {
+  max-width: 420px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  text-align: center;
+}
+
+@media (max-width: 767.98px) {
+  .pf-main.pf-problem {
+    padding: 22px 18px;
+  }
+
+  .pf-problem-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 14px;
+  }
+
+  .pf-secondary {
+    grid-template-columns: 1fr;
+  }
+}

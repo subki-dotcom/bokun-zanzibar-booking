@@ -65,7 +65,7 @@ export const PaySummary = ({ data }) => (
 );
 
 // Aside on the payment problem page: the trip, reference, "Awaiting payment" and the amount due.
-export const ProblemSummary = ({ data }) => (
+export const ProblemSummary = ({ data, statusLabel = "Awaiting payment" }) => (
   <section className="ck-card pf-summary" aria-label="Booking summary">
     <TourHead data={data} line={false} />
     <dl className="pf-rows">
@@ -76,7 +76,7 @@ export const ProblemSummary = ({ data }) => (
     <ReferenceBox reference={data?.bookingReference || ""} />
     <div className="pf-status-row">
       <span>Status</span>
-      <span className="pf-status-pill">Awaiting payment</span>
+      <span className="pf-status-pill">{statusLabel}</span>
     </div>
     <hr />
     <div className="pf-total">

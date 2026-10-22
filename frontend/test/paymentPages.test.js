@@ -13,6 +13,7 @@ test("each payment status opens one screen", () => {
   assert.equal(screenFor({ status: "processing" }), "processing");
   assert.equal(screenFor({ status: "paid" }), "confirmed");
   assert.equal(screenFor({ status: "cancelled" }), "cancelled");
+  assert.equal(screenFor({ status: "awaiting_payment", session, trip: { bookable: false, reason: "date_passed" } }), "problem");
 });
 
 test("the problem screen names the real reason", () => {
