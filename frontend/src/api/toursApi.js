@@ -185,7 +185,8 @@ export const fetchTourOptionQuotes = (slug, { travelDate = "", passengers = [], 
   const reused = optionQuoteRequests.get(key);
   if (reused && Date.now() - reused.at < AVAILABILITY_CACHE_TTL_MS) return reused.promise;
   const promise = axiosClient
-    .post(`/tours/${encodeURIComponent(slug)}/option-quotes`, { travelDate, passengers, rateId })
+    // Products with many options take longer to price than the default 30 seconds on a slow connection.
+    .post(`/tours/${encodeURIComponent(slug)}/option-quotes`, { travelDate, passengers, rateId }, { timeout: 60000 })
     .then((response) => response.data.data)
     .catch((error) => {
       optionQuoteRequests.delete(key);

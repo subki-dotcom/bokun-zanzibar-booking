@@ -5,7 +5,7 @@ import { fetchTourAvailableDates, fetchTourOptionQuotes } from "../../../api/tou
 import { startTourCheckout } from "../single/tourCheckout";
 import { pricePresentation } from "../single/pricePresentation";
 import { trackSelectDate, trackSelectOption, trackSelectTravelers } from "../../../utils/analytics";
-import { bookableSlots, displayOptionName, isAdultCategory, paxFromCounts, slotKey, travellerCategories } from "./bookingHelpers";
+import { bookableSlots, displayOptionName, isAdultCategory, needsTimeChoice, paxFromCounts, slotKey, travellerCategories } from "./bookingHelpers";
 
 export { ageLabel, displayOptionName, paxFromCounts, travellerCategories, travellersLabel } from "./bookingHelpers";
 
@@ -155,7 +155,7 @@ const useTourBooking = (tour = {}) => {
   const selectedSlot = selectedOption
     ? selectedOption.slots.find((slot) => slotKey(slot) === slotByOption[selectedOption.id]) ||
       (selectedOption.id === prefill.optionId && selectedOption.slots.find((slot) => slot.time === prefill.time)) ||
-      selectedOption.slots[0] ||
+      (needsTimeChoice(selectedOption.slots) ? null : selectedOption.slots[0]) ||
       null
     : null;
 

@@ -4,7 +4,7 @@ import { formatCurrency } from "../../../utils/formatters";
 import { BRAND } from "../../../config/brand";
 import { isSelectableDate, monthWeeks, parseIsoDate, toIsoDate } from "../single/bookingCard/availabilityCalendar";
 import { freeCancellationWindow } from "./tourSectionsData";
-import { ageLabel, travellersLabel } from "./bookingHelpers";
+import { ageLabel, needsTimeChoice, travellersLabel } from "./bookingHelpers";
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -124,19 +124,37 @@ export const DateField = ({ value = "", availability = null, onPick }) => {
   );
 };
 
-export const TimePills = ({ slots = [], selectedKey = "", slotKey, onPick, label = "Start time" }) => (
-  <div className="tp-times" role="radiogroup" aria-label={label}>
-    {slots.map((slot) => {
-      const key = slotKey(slot);
-      const selected = key === selectedKey;
-      return (
-        <button key={key} type="button" role="radio" aria-checked={selected} className={selected ? "is-selected" : ""} onClick={() => onPick(slot)}>
-          {slot.time}
-        </button>
-      );
-    })}
-  </div>
-);
+export const TimePills = ({ slots = [], selectedKey = "", slotKey, onPick, label = "Start time" }) =>
+  needsTimeChoice(slots) ? (
+    <label className="tp-time-select">
+      <span>Start time</span>
+      <select
+        aria-label={label}
+        value={selectedKey}
+        onChange={(event) => {
+          const slot = slots.find((item) => slotKey(item) === event.target.value);
+          if (slot) onPick(slot);
+        }}
+      >
+        {selectedKey ? null : <option value="">Choose a time</option>}
+        {slots.map((slot) => (
+          <option key={slotKey(slot)} value={slotKey(slot)}>{slot.time}</option>
+        ))}
+      </select>
+    </label>
+  ) : (
+    <div className="tp-times" role="radiogroup" aria-label={label}>
+      {slots.map((slot) => {
+        const key = slotKey(slot);
+        const selected = key === selectedKey;
+        return (
+          <button key={key} type="button" role="radio" aria-checked={selected} className={selected ? "is-selected" : ""} onClick={() => onPick(slot)}>
+            {slot.time}
+          </button>
+        );
+      })}
+    </div>
+  );
 
 const perPerson = (option, travellerCount) =>
   option.pricingType === "per_group" || !travellerCount ? null : option.total / travellerCount;

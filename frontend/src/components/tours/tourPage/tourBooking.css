@@ -502,3 +502,30 @@ button.tp-option:hover {
     animation: none;
   }
 }
+
+/* Many start times: a list */
+.tp-time-select {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tp-time-select select {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 16px;
+}
+
+.tp-time-select select:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: -1px;
+}
