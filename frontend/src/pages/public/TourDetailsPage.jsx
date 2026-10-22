@@ -5,7 +5,7 @@ import { fetchTourBySlug } from "../../api/toursApi";
 import { trackViewItem } from "../../utils/analytics";
 import TourLoadingSkeleton from "../../components/tours/single/TourLoadingSkeleton";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import SingleTourPage from "../../components/tours/single/SingleTourPage";
+import TourPage from "../../components/tours/tourPage/TourPage";
 import SeoHead from "../../components/common/SeoHead";
 import { BRAND } from "../../config/brand";
 
@@ -89,7 +89,7 @@ const TourDetailsPage = () => {
         currency: tour?.currency
       }}
     />
-    <SingleTourPage tour={tour} />
+    <TourPage tour={tour} />
   </>;
 };
 

@@ -30,7 +30,9 @@ const SingleTourPage = ({
   tour = {},
   portal = "public",
   checkoutPath = "",
-  sessionSource = "single_product_page"
+  sessionSource = "single_product_page",
+  // The public tour page draws its own title and photos above this component.
+  hideIntro = false
 }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -447,12 +449,12 @@ const SingleTourPage = ({
   return (
     <main className={`single-tour-page product-detail-page ${portal === "agent" ? "agent-tour-booking-page" : ""}`}>
       <Container className="product-detail-shell">
-        <ProductTopRow rating={tour.rating} reviewCount={tour.reviewCount} />
+        {hideIntro ? null : <ProductTopRow rating={tour.rating} reviewCount={tour.reviewCount} />}
 
         <div className="product-detail-layout">
           <article className="single-tour-left-column product-detail-main">
-            <ProductGallery images={tour.images} title={tour.title} videoUrl={tour.videoUrl} bestSeller={tour.bestSeller} />
-            <ProductHeader tour={tour} />
+            {hideIntro ? null : <ProductGallery images={tour.images} title={tour.title} videoUrl={tour.videoUrl} bestSeller={tour.bestSeller} />}
+            {hideIntro ? null : <ProductHeader tour={tour} />}
             <QuickFactCards tour={tour} />
 
             {tour.description ? <div id="about" className="product-detail-section"><AboutTourSection description={tour.description} /></div> : null}
