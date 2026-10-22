@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { fetchProductBookingConfig } from "../../../api/bokunApi";
 import { fetchTourAvailableDates, fetchTourOptionQuotes } from "../../../api/toursApi";
 import { startTourCheckout } from "../single/tourCheckout";
@@ -14,18 +14,41 @@ const todayIso = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 };
 
+// The trip a link asks for (checkout's "Back to tour" / "Change date or travelers"): option, date, time, travellers.
+const readPrefill = (searchParams) => {
+  const date = String(searchParams.get("date") || "").trim();
+  let passengers = [];
+  try {
+    passengers = JSON.parse(searchParams.get("passengers") || "[]");
+  } catch {
+    passengers = [];
+  }
+  return {
+    optionId: String(searchParams.get("option") || "").trim(),
+    travelDate: /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= todayIso() ? date : "",
+    time: String(searchParams.get("time") || "").trim(),
+    counts: Object.fromEntries(
+      (Array.isArray(passengers) ? passengers : [])
+        .map((row) => [String(row?.pricingCategoryId || row?.categoryId || ""), Math.max(0, Number(row?.quantity) || 0)])
+        .filter(([id]) => id)
+    )
+  };
+};
+
 // Booking state for the tour page: travellers, date, bookable options with exact totals, start time, checkout.
 const useTourBooking = (tour = {}) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [prefill] = useState(() => readPrefill(searchParams));
   const productId = String(tour.bokunProductId || "");
   const [config, setConfig] = useState(null);
   const [counts, setCounts] = useState({});
-  const [travelDate, setTravelDate] = useState("");
+  const [travelDate, setTravelDate] = useState(prefill.travelDate);
   const [availability, setAvailability] = useState(null);
   const [quotes, setQuotes] = useState(null);
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [quotesError, setQuotesError] = useState("");
-  const [selectedOptionId, setSelectedOptionId] = useState("");
+  const [selectedOptionId, setSelectedOptionId] = useState(prefill.optionId);
   const [slotByOption, setSlotByOption] = useState({});
   const quoteSeq = useRef(0);
 
@@ -40,8 +63,11 @@ const useTourBooking = (tour = {}) => {
         setCounts((current) => {
           if (Object.keys(current).length) return current;
           const next = {};
+          const asked = categories.some((category) => prefill.counts[category.id] > 0);
           categories.forEach((category, index) => {
-            next[category.id] = Math.max(category.min, category.defaultQuantity, index === 0 && isAdultCategory(category) ? 1 : 0);
+            next[category.id] = asked
+              ? Math.min(category.max, Math.max(category.min, prefill.counts[category.id] || 0))
+              : Math.max(category.min, category.defaultQuantity, index === 0 && isAdultCategory(category) ? 1 : 0);
           });
           return next;
         });
@@ -127,7 +153,10 @@ const useTourBooking = (tour = {}) => {
 
   const selectedOption = options.find((option) => option.id === selectedOptionId) || null;
   const selectedSlot = selectedOption
-    ? selectedOption.slots.find((slot) => slotKey(slot) === slotByOption[selectedOption.id]) || selectedOption.slots[0] || null
+    ? selectedOption.slots.find((slot) => slotKey(slot) === slotByOption[selectedOption.id]) ||
+      (selectedOption.id === prefill.optionId && selectedOption.slots.find((slot) => slot.time === prefill.time)) ||
+      selectedOption.slots[0] ||
+      null
     : null;
 
   const startingPrice = useMemo(() => {
@@ -179,7 +208,9 @@ const useTourBooking = (tour = {}) => {
       startTime: selectedSlot.time,
       startTimeSlot: { ...selectedSlot },
       passengers,
-      pax
+      pax,
+      // Checkout shows this total at once while it confirms the live price.
+      quote: { total: selectedOption.total, currency: selectedOption.currency }
     });
   }, [canBook, tour, navigate, selectedOption, travelDate, rateId, selectedSlot, passengers, pax]);
 

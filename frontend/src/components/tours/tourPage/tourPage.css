@@ -1,29 +1,5 @@
 /* Single tour page (mockup "Tour Page"). Everything is scoped to .tp / .tp-header so other pages keep their styles. */
-.tp,
-.tp-header {
-  --brand: #0e6b57;
-  --brand-hover: #0a5242;
-  --brand-soft: #e7f3ef;
-  --brand-selected-bg: #f3faf7;
-  --ink: #14211f;
-  --text-body: #2a3836;
-  --muted: #55625f;
-  --border: #e3e7e5;
-  --border-strong: #c9d1ce;
-  --disabled: #a3adaa;
-  --section-gap-mobile: #f3f5f4;
-  --urgency-bg: #fdf1e3;
-  --urgency-text: #8a4205;
-  --whatsapp: #1e8e4e;
-  --bg: #ffffff;
-  --radius-card: 12px;
-  --radius-large: 16px;
-  --radius-pill: 999px;
-  --shadow-card: 0 6px 24px rgba(20, 33, 31, 0.08);
-  --shadow-bar: 0 -4px 16px rgba(20, 33, 31, 0.08);
-  font-family: "Outfit", system-ui, sans-serif;
-  color: var(--ink);
-}
+@import "../../../styles/riserTokens.css";
 
 .tp {
   background: var(--bg);

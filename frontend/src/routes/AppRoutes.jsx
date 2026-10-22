@@ -10,6 +10,7 @@ import HomePage from "../pages/public/HomePage";
 import ToursPage from "../pages/public/ToursPage";
 import TourDetailsPage from "../pages/public/TourDetailsPage";
 import BookingFlowPage from "../pages/public/BookingFlowPage";
+import CheckoutPage from "../pages/public/CheckoutPage";
 import BookingConfirmationPage from "../pages/public/BookingConfirmationPage";
 import PaymentSuccessPage from "../pages/public/PaymentSuccessPage";
 import PaymentFailurePage from "../pages/public/PaymentFailurePage";
@@ -100,7 +101,7 @@ const AppRoutes = () => {
         <Route index element={<HomePage />} />
         <Route path="/tours" element={<ToursPage />} />
         <Route path="/tours/:slug" element={<TourDetailsPage />} />
-        <Route path="/booking/:slug" element={<BookingFlowPage />} />
+        <Route path="/booking/:slug" element={<CheckoutPage />} />
         <Route path="/booking-confirmation/:reference" element={<BookingConfirmationPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/payment-failure" element={<PaymentFailurePage />} />

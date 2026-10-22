@@ -12,18 +12,7 @@ import { tourHasPickup } from "../single/tourDisplayText";
 import useTourBooking from "./useTourBooking";
 import { BookingCard } from "./TourBooking";
 import { MobileBookingBar, MobileBookingSheet } from "./MobileBooking";
-
-export const useMediaQuery = (query) => {
-  const [matches, setMatches] = useState(() => (typeof window !== "undefined" ? window.matchMedia(query).matches : false));
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    const update = () => setMatches(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, [query]);
-  return matches;
-};
+import useMediaQuery from "../../../hooks/useMediaQuery";
 
 // Public single tour page (mockup "Tour Page", "Mobile" and "MobileSheet"). Data, availability, prices and checkout come
 // from the existing API; this file and its parts only present them.
