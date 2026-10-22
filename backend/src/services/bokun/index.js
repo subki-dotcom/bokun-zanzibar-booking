@@ -769,6 +769,44 @@ const AVAILABLE_DATES_CACHE_TTL_MS = 10 * 60 * 1000;
 const AVAILABLE_DATES_CHUNK_DAYS = 7;
 const availableDatesCache = new Map();
 
+// Some products (transfers) have a start time every 5–30 minutes for dozens of routes: one week of their availability
+// is 17–50 MB of JSON and 50–150 MB of memory, so ranges of weeks ran the server out of memory. One day is weighed
+// first (start times × options); heavy products are then asked for a day or two only.
+const HEAVY_DAY_WEIGHT = 400;
+const DAY_WEIGHT_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+const dayWeightCache = new Map();
+const dayWeightInFlight = new Map();
+
+const availabilityDayWeight = (slots = []) =>
+  ensureArray(slots).reduce((sum, slot) => sum + Math.max(1, ensureArray(slot?.rates).length), 0);
+
+const isHeavyAvailability = async (productId, requestId) => {
+  const safeProductId = String(productId || "").trim();
+  if (!safeProductId || bokunClient.shouldMock) return false;
+  const cached = getCacheEntry(dayWeightCache, safeProductId);
+  if (cached !== null && cached !== undefined) return cached.heavy;
+  if (dayWeightInFlight.has(safeProductId)) return dayWeightInFlight.get(safeProductId);
+  const day = addDaysIso(formatIsoDate(new Date()), 1);
+  const probe = bokunClient
+    .request({
+      method: "get",
+      path: `/activity.json/${encodeURIComponent(safeProductId)}/availabilities?${new URLSearchParams({ start: day, end: day, currency: env.DEFAULT_CURRENCY })}`,
+      requestId
+    })
+    .then((slots) => {
+      const weight = availabilityDayWeight(slots);
+      const heavy = weight > HEAVY_DAY_WEIGHT;
+      if (heavy) logger.info("Heavy availability product: short date ranges only", { productId: safeProductId, weight });
+      setCacheEntry(dayWeightCache, safeProductId, { heavy, weight }, DAY_WEIGHT_CACHE_TTL_MS);
+      return heavy;
+    })
+    // Unknown weight: stay careful with memory rather than risk a restart.
+    .catch(() => true)
+    .finally(() => dayWeightInFlight.delete(safeProductId));
+  dayWeightInFlight.set(safeProductId, probe);
+  return probe;
+};
+
 const isBookableSlot = (slot = {}) =>
   !slot.soldOut && !slot.unavailable && (slot.unlimitedAvailability || Number(slot.availabilityCount || 0) > 0);
 
@@ -781,6 +819,19 @@ const fetchAvailableDates = async ({ productId, startDate, days = 60 }, requestI
   const cacheKey = `dates:${safeProductId}:${start}:${span}`;
   const cached = getCacheEntry(availableDatesCache, cacheKey);
   if (cached) return cached;
+
+  if (await isHeavyAvailability(safeProductId, requestId)) {
+    const everyDay = [];
+    for (let offset = 0; offset < span; offset += 1) everyDay.push(addDaysIso(start, offset));
+    return setCacheEntry(availableDatesCache, cacheKey, {
+      productId: safeProductId,
+      startDate: start,
+      endDate: end,
+      availableDates: everyDay,
+      // Not read from the supplier for every day: the chosen day's departures are checked when it is picked.
+      assumedDaily: true
+    }, AVAILABLE_DATES_CACHE_TTL_MS);
+  }
 
   const chunks = [];
   for (let offset = 0; offset < span; offset += AVAILABLE_DATES_CHUNK_DAYS) {
@@ -1886,9 +1937,13 @@ const fetchStartingPricePreview = async (payload, requestId) => {
   const optionIds = ensureArray(payload?.optionIds).map((id) => String(id)).filter(Boolean);
   const optionIdSet = new Set(optionIds);
   const comparedAdults = Math.max(1, Number(payload?.comparedAdults || 2));
-  const daysWindow = Math.max(1, Math.min(90, Number(payload?.daysWindow || 30)));
+  const requestedWindow = Math.max(1, Math.min(90, Number(payload?.daysWindow || 30)));
+  // Heavy products (transfers) are priced from two days: their prices do not change by the day, their data size does.
+  const daysWindow = productId && (await isHeavyAvailability(productId, requestId)) ? Math.min(2, requestedWindow) : requestedWindow;
   const startDate = String(payload?.startDate || formatIsoDate(new Date()));
-  const endDate = String(payload?.endDate || addDaysIso(startDate, daysWindow - 1));
+  const endDate = String(
+    payload?.endDate && daysWindow === requestedWindow ? payload.endDate : addDaysIso(startDate, daysWindow - 1)
+  );
   const priceCatalogId = String(payload?.priceCatalogId || "");
 
   if (!productId) {
