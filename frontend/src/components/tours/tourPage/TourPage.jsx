@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./tourPage.css";
 import "./tourSections.css";
 import "./tourBooking.css";
-import SingleTourPage from "../single/SingleTourPage";
+import "./mobileBooking.css";
 import { Breadcrumb, MobileTourHeader, TourTitle, useShareTour } from "./TourIntro";
 import { Lightbox, MobileCarousel, PhotoMosaic } from "./TourPhotos";
 import { galleryPhotos } from "./tourPageData";
@@ -11,6 +11,7 @@ import { cancellationText, freeCancellationWindow, includedLists, itineraryStops
 import { tourHasPickup } from "../single/tourDisplayText";
 import useTourBooking from "./useTourBooking";
 import { BookingCard } from "./TourBooking";
+import { MobileBookingBar, MobileBookingSheet } from "./MobileBooking";
 
 export const useMediaQuery = (query) => {
   const [matches, setMatches] = useState(() => (typeof window !== "undefined" ? window.matchMedia(query).matches : false));
@@ -24,10 +25,12 @@ export const useMediaQuery = (query) => {
   return matches;
 };
 
-// Public single tour page (mockup "Tour Page"). On phones the booking still comes from the existing page until the
-// mobile sheet is built.
+// Public single tour page (mockup "Tour Page", "Mobile" and "MobileSheet"). Data, availability, prices and checkout come
+// from the existing API; this file and its parts only present them.
 const TourPage = ({ tour = {} }) => {
   const isMobile = useMediaQuery("(max-width: 767.98px)");
+  // Below 1024px the booking card would sit under all the content, so phones and tablets book from the bar and sheet.
+  const compactBooking = useMediaQuery("(max-width: 1023.98px)");
   const photos = useMemo(() => galleryPhotos(tour), [tour]);
   const [photoIndex, setPhotoIndex] = useState(null);
   const { share, message } = useShareTour(tour.title);
@@ -39,6 +42,7 @@ const TourPage = ({ tour = {} }) => {
   const cancellation = useMemo(() => cancellationText(tour), [tour]);
   const hasPickup = tourHasPickup(tour);
   const booking = useTourBooking(tour);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const sections = useMemo(() => [
     paragraphs.length ? { id: "overview", label: "Overview" } : null,
     lists.included.length || lists.excluded.length ? { id: "included", label: isMobile ? "Included" : "What's included" } : null,
@@ -66,13 +70,17 @@ const TourPage = ({ tour = {} }) => {
             <CancellationPolicy text={cancellation.text} emphasis={cancellation.emphasis} />
             <Reviews rating={tour.rating} reviewCount={tour.reviewCount} freeCancellationWindow={freeCancellationWindow(tour.cancellationPolicy)} />
           </div>
-          <aside className="tp-aside" aria-label="Book this tour">
-            {isMobile ? <SingleTourPage tour={tour} bookingOnly /> : <BookingCard tour={tour} booking={booking} />}
-          </aside>
+          {compactBooking ? null : (
+            <aside className="tp-aside" aria-label="Book this tour">
+              <BookingCard tour={tour} booking={booking} />
+            </aside>
+          )}
         </div>
 
         <RelatedTours tour={tour} />
       </div>
+      {compactBooking ? <MobileBookingBar booking={booking} onOpen={() => setSheetOpen(true)} /> : null}
+      {compactBooking && sheetOpen ? <MobileBookingSheet booking={booking} onClose={() => setSheetOpen(false)} /> : null}
       {photoIndex !== null ? <Lightbox photos={photos} index={photoIndex} onIndexChange={setPhotoIndex} onClose={() => setPhotoIndex(null)} /> : null}
       {message ? <div className="tp-toast" role="status">{message}</div> : null}
     </div>

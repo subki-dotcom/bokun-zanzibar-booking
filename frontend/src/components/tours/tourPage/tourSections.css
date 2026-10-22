@@ -8,7 +8,7 @@
 
 .tp-content {
   display: flex;
-  flex: 999 1 600px;
+  flex: 999 1 560px;
   flex-direction: column;
   gap: 36px;
   min-width: 0;

@@ -198,9 +198,9 @@ export const WhatsAppButton = ({ tourTitle = "", travelDate = "" }) => {
   );
 };
 
-// Options for the chosen date, the Book now button and its summary (used by the card and the mobile sheet).
-export const OptionsAndBook = ({ booking, compactTrust = false }) => {
-  const { options, selectedOption, selectedSlot, travelDate, quotesLoading, quotesError, hasQuotes, travellerCount, pax, lowestOptionId } = booking;
+// The bookable options for the chosen date (card and mobile sheet).
+export const OptionList = ({ booking }) => {
+  const { options, selectedOption, selectedSlot, travelDate, quotesLoading, quotesError, hasQuotes, travellerCount, lowestOptionId } = booking;
   const selectedKey = selectedSlot ? booking.slotKey(selectedSlot) : "";
   return (
     <>
@@ -232,16 +232,30 @@ export const OptionsAndBook = ({ booking, compactTrust = false }) => {
           ))}
         </div>
       ) : null}
-      <button type="button" className="tp-book-btn" disabled={!booking.canBook} onClick={booking.book}>
-        {booking.canBook ? `Book now · ${formatCurrency(selectedOption.total, selectedOption.currency)}` : "Book now"}
-      </button>
-      <p className="tp-book-summary">
-        {booking.canBook ? [formatShortDate(travelDate), selectedSlot.time, travellersLabel(pax)].join(" · ") : travelDate ? "Choose an option and start time" : "Choose your date to continue"}
-      </p>
-      <TrustList cancellationSummary={booking.cancellationSummary} compact={compactTrust} />
     </>
   );
 };
+
+export const bookingSummary = (booking) =>
+  booking.canBook
+    ? [formatShortDate(booking.travelDate), booking.selectedSlot.time, travellersLabel(booking.pax)].join(" · ")
+    : booking.travelDate ? "Choose an option and start time" : "Choose your date to continue";
+
+export const BookButton = ({ booking, withTotal = true }) => (
+  <button type="button" className="tp-book-btn" disabled={!booking.canBook} onClick={booking.book}>
+    {booking.canBook && withTotal ? `Book now · ${formatCurrency(booking.selectedOption.total, booking.selectedOption.currency)}` : "Book now"}
+  </button>
+);
+
+// Options, Book now and its summary, then the trust list (desktop card).
+export const OptionsAndBook = ({ booking, compactTrust = false }) => (
+  <>
+    <OptionList booking={booking} />
+    <BookButton booking={booking} />
+    <p className="tp-book-summary">{bookingSummary(booking)}</p>
+    <TrustList cancellationSummary={booking.cancellationSummary} compact={compactTrust} />
+  </>
+);
 
 // Desktop booking card (sticky aside).
 export const BookingCard = ({ tour = {}, booking }) => (
