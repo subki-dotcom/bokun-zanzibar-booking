@@ -26,3 +26,16 @@ test('missing evidence, amount/currency and mock/sandbox payments cannot become 
   assert.equal(buildPurchaseAnalytics(booking,{BOKUN_MOCK_MODE:true}),null);
   assert.equal(buildPurchaseAnalytics(booking,{PESAPAL_BASE_URL:'https://sandbox.example.com'}),null);
 });
+
+test('an unpaid booking without a provider never reads provider settings (strict settings throw on unknown names)', () => {
+  const strict = new Proxy({ BOKUN_MOCK_MODE: false, PESAPAL_MOCK_MODE: false, PESAPAL_BASE_URL: 'https://pay.pesapal.com/v3/api' }, {
+    get(target, key) {
+      if (typeof key === 'string' && !(key in target)) throw new ReferenceError(`Env var not found: ${key}`);
+      return target[key];
+    }
+  });
+  const unpaid = { ...booking, paymentStatus: 'initiated', pendingCheckout: { pesapalOrderTrackingId: 'x' } };
+  assert.equal(buildPurchaseAnalytics(unpaid, strict), null);
+  assert.equal(buildPurchaseAnalytics({ ...booking, pendingCheckout: undefined }, strict), null);
+  assert.deepEqual(buildPurchaseAnalytics(booking, strict)?.transaction_id, 'RB-123');
+});
