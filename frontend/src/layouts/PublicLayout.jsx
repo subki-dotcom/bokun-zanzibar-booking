@@ -8,12 +8,15 @@ import { persistMarketingAttribution } from "../utils/marketingAttribution";
 import AnalyticsTracker from "../components/common/AnalyticsTracker";
 import CookieConsent from "../components/common/CookieConsent";
 import SeoHead from "../components/common/SeoHead";
+import TourHeader from "../components/tours/tourPage/TourHeader";
 
 const PublicLayout = () => {
   const location = useLocation();
   const isCheckoutRoute = /^(\/booking\/|\/payment\/checkout\/|\/payment-(success|failure|processing)(?:\/|$)|\/payment-status\/)/.test(
     location.pathname
   );
+  // The tour page has its own header (desktop) and mobile header.
+  const isTourRoute = /^\/tours\/[^/]+\/?$/.test(location.pathname);
   const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
 
   useEffect(() => {
@@ -24,7 +27,8 @@ const PublicLayout = () => {
     <div className={`app-shell ${isCheckoutRoute ? "is-checkout-route" : ""}`.trim()}>
       <AnalyticsTracker />
       {noIndexRoute ? <SeoHead noIndex title={BRAND.name} description="Secure booking account and payment page." /> : null}
-      <Navbar expand="lg" className="public-nav py-3">
+      {isTourRoute ? <div className="tp-header-slot"><TourHeader /></div> : null}
+      {isTourRoute ? null : <Navbar expand="lg" className="public-nav py-3">
         <Container>
           <Navbar.Brand as={Link} to="/" className="brand-mark fs-4">
             {BRAND.name}
@@ -44,7 +48,7 @@ const PublicLayout = () => {
             </Nav>
           </Navbar.Collapse>
         </Container>
-      </Navbar>
+      </Navbar>}
 
       <main className="app-main-content">
         <Outlet />

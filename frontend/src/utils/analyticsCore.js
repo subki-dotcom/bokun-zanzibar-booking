@@ -1,7 +1,7 @@
 const DENIED = { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' };
 // Booking funnel: view_item -> select_date -> check_availability -> select_option -> begin_checkout ->
 // add_shipping_info (customer details) -> add_payment_info -> purchase (sent by purchase()).
-const EVENTS = new Set(['view_item', 'select_item', 'select_date', 'check_availability', 'select_option', 'begin_checkout',
+const EVENTS = new Set(['view_item', 'select_item', 'select_travelers', 'select_date', 'check_availability', 'select_option', 'begin_checkout',
   'add_shipping_info', 'add_payment_info', 'booking_form_started', 'booking_form_submitted',
   'booking_processing', 'booking_failed', 'booking_cancelled', 'whatsapp_click', 'phone_click', 'email_click']);
 const text = (v) => typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 150) : '';

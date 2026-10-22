@@ -907,6 +907,83 @@ const fetchProductBookingConfig = async (productId, options = {}, requestId) => 
   return setCacheEntry(bookingConfigCache, cacheKey, response, BOOKING_CONFIG_CACHE_TTL_MS);
 };
 
+// Exact totals for every bookable option on a date, for the chosen travellers (adults, children...), as checkout
+// prices them: one availability matrix for the start times, then one priced availability per available option.
+const fetchOptionQuotes = async (productId, payload = {}, requestId) => {
+  const date = String(payload?.date || "").trim();
+  if (!date) throw new AppError("date is required for option quotes", 400, "DATE_REQUIRED");
+
+  const mappedProduct = await fetchProductDetails(productId, requestId);
+  if (!mappedProduct?.bokunProductId) throw new AppError("Bokun product not found", 404, "BOKUN_PRODUCT_NOT_FOUND");
+  const bookingConfig = await fetchProductBookingConfig(
+    mappedProduct.bokunProductId,
+    { rateId: payload?.rateId || "", includeStartingPreview: false, prefetchedProduct: mappedProduct },
+    requestId
+  );
+  const rateId = bookingConfig.defaultRateId || "";
+  const passengerMix = mapPassengerMixToPax(payload?.passengers, bookingConfig.pricingCategories);
+  const optionIds = ensureArray(mappedProduct.options)
+    .filter((option) => option?.active !== false)
+    .map((option) => String(option?.bokunOptionId || ""))
+    .filter(Boolean);
+
+  const matrix = await fetchOptionAvailabilityMatrix(
+    {
+      productId: bookingConfig.productId,
+      travelDate: date,
+      optionIds,
+      pax: passengerMix.pax,
+      comparedAdults: Math.max(1, Number(passengerMix.pax.adults || 1)),
+      priceCatalogId: rateId
+    },
+    requestId
+  );
+
+  const options = await Promise.all(ensureArray(matrix?.options).map(async (option) => {
+    const base = {
+      optionId: String(option.optionId || ""),
+      available: Boolean(option.available),
+      status: option.status || "sold_out",
+      slots: ensureArray(option.slots),
+      capacityLeft: Number(option.capacityLeft || 0),
+      pricingType: option.pricingType || "",
+      maxPerBooking: option.maxPerBooking || null,
+      currency: option.currency || bookingConfig.currency || env.DEFAULT_CURRENCY,
+      total: null
+    };
+    if (!base.available) return base;
+    try {
+      const priced = await fetchAvailability(
+        {
+          productId: bookingConfig.productId,
+          optionId: base.optionId,
+          travelDate: date,
+          pax: passengerMix.pax,
+          priceCategoryParticipants: passengerMix.passengers,
+          priceCatalogId: rateId
+        },
+        requestId
+      );
+      const total = Number(priced?.pricing?.grossAmount || 0);
+      return { ...base, total: total > 0 ? total : null, currency: priced?.currency || base.currency };
+    } catch (error) {
+      logger.warn("Option quote skipped", { requestId, productId, optionId: base.optionId, error: error.message });
+      return base;
+    }
+  }));
+
+  const priced = options.filter((option) => option.available && Number(option.total) > 0).sort((a, b) => a.total - b.total);
+  return {
+    travelDate: date,
+    rateId,
+    pax: passengerMix.pax,
+    passengers: passengerMix.passengers,
+    currency: priced[0]?.currency || bookingConfig.currency || env.DEFAULT_CURRENCY,
+    lowestOptionId: priced[0]?.optionId || "",
+    options
+  };
+};
+
 const fetchProductLiveQuote = async (productId, payload = {}, requestId) => {
   const date = String(payload?.date || "").trim();
   if (!date) {
@@ -2651,6 +2728,7 @@ module.exports = {
   fetchStartingPricePreview,
   fetchOneAdultStartingPreview,
   fetchAvailableDates,
+  fetchOptionQuotes,
   perPersonStartingAmount,
   fetchBookingQuestions,
   resolveBookingQuestions,

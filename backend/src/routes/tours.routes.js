@@ -16,6 +16,7 @@ router.patch("/admin/products/:productId/visibility", authenticate, authorize("s
 router.get("/:id/options", toursController.getTourOptions);
 router.get("/:slug/available-dates", toursController.getAvailableDates);
 router.post("/:slug/options-availability", toursController.checkOptionsAvailability);
+router.post("/:slug/option-quotes", toursController.getOptionQuotes);
 router.get("/:slug", toursController.getTourBySlug);
 router.post("/sync", authenticate, authorize("super_admin", "admin", "staff"), toursController.syncProducts);
 

@@ -884,6 +884,32 @@ const syncProducts = async (requestId, actor = {}) => {
   }
 };
 
+// Exact option totals for the booking card, reused for five minutes per tour, date and travellers.
+const optionQuotesCache = new Map();
+const getOptionQuotes = async (slug, payload = {}, requestId) => {
+  const passengers = (Array.isArray(payload.passengers) ? payload.passengers : [])
+    .map((row = {}) => ({ pricingCategoryId: String(row.pricingCategoryId || "").trim(), quantity: Math.max(0, Math.min(50, Number(row.quantity) || 0)) }))
+    .filter((row) => row.pricingCategoryId && row.quantity > 0);
+  const travelDate = String(payload.travelDate || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(travelDate)) throw new AppError("travelDate is required", 400, "TRAVEL_DATE_REQUIRED");
+  if (!passengers.length) throw new AppError("At least one traveller is required", 400, "PASSENGERS_REQUIRED");
+
+  const key = JSON.stringify([slug, travelDate, String(payload.rateId || ""), passengers]);
+  const cached = optionQuotesCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+  const tour = await ProductSnapshot.findOne({ slug }).select("bokunProductId").lean();
+  if (!tour) throw new AppError("Tour not found", 404, "TOUR_NOT_FOUND");
+  const value = await bokunService.fetchOptionQuotes(
+    tour.bokunProductId,
+    { date: travelDate, passengers, rateId: String(payload.rateId || "") },
+    requestId
+  );
+  if (optionQuotesCache.size >= 500) optionQuotesCache.delete(optionQuotesCache.keys().next().value);
+  optionQuotesCache.set(key, { value, expiresAt: Date.now() + AVAILABILITY_CACHE_TTL_MS });
+  return value;
+};
+
 // Bookable dates for the tour calendar (no date is excluded when Bókun cannot be reached; the page then lets the
 // guest pick any future date and checks it as before).
 // Staff view of every active product with its public visibility.
@@ -1089,6 +1115,7 @@ module.exports = {
   listTourCategories,
   getTourBySlug,
   getAvailableDates,
+  getOptionQuotes,
   listProductsForAdmin,
   setProductVisibility,
   getTourOptions,

@@ -178,6 +178,23 @@ export const updateAdminWebsiteProductVisibility = async (productId, hidden) => 
   return response.data.data;
 };
 
+// Each bookable option's start times and exact total for a date and the chosen travellers (as checkout prices it).
+const optionQuoteRequests = new Map();
+export const fetchTourOptionQuotes = (slug, { travelDate = "", passengers = [], rateId = "" } = {}) => {
+  const key = JSON.stringify([slug, travelDate, rateId, passengers]);
+  const reused = optionQuoteRequests.get(key);
+  if (reused && Date.now() - reused.at < AVAILABILITY_CACHE_TTL_MS) return reused.promise;
+  const promise = axiosClient
+    .post(`/tours/${encodeURIComponent(slug)}/option-quotes`, { travelDate, passengers, rateId })
+    .then((response) => response.data.data)
+    .catch((error) => {
+      optionQuoteRequests.delete(key);
+      throw error;
+    });
+  optionQuoteRequests.set(key, { at: Date.now(), promise });
+  return promise;
+};
+
 // Dates with a bookable start time, for the tour calendar.
 const availableDatesRequests = new Map();
 export const fetchTourAvailableDates = (slug, { from = "", days = 90 } = {}) => {

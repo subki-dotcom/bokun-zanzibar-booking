@@ -12,10 +12,11 @@ export const parseIsoDate = (iso = "") => {
 };
 
 // Weeks (Monday first) of the month that contains `monthStart`; days outside the month are null.
-export const monthWeeks = (monthStart) => {
+// weekStartsOn: 1 = Monday (default), 0 = Sunday.
+export const monthWeeks = (monthStart, weekStartsOn = 1) => {
   const first = new Date(monthStart.getFullYear(), monthStart.getMonth(), 1);
   const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
-  const lead = (first.getDay() + 6) % 7;
+  const lead = (first.getDay() - weekStartsOn + 7) % 7;
   const cells = [
     ...Array.from({ length: lead }, () => null),
     ...Array.from({ length: daysInMonth }, (_, index) => toIsoDate(new Date(first.getFullYear(), first.getMonth(), index + 1)))
