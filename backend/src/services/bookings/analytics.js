@@ -3,8 +3,10 @@ const buildPurchaseAnalytics = (booking, config = {}) => {
   const paid = booking?.pendingCheckout;
   const provider = paid?.paymentProvider;
   if (booking?.isTest || booking?.testMode) return null;
-  if (config.BOKUN_MOCK_MODE || config[`${String(provider).toUpperCase()}_MOCK_MODE`]) return null;
+  // The provider is checked before any setting is read: an unpaid booking has none, and the settings object throws
+  // on unknown names ("UNDEFINED_MOCK_MODE" made every unpaid booking page fail with a 500).
   if (!['pesapal', 'paypal', 'dpo'].includes(provider)) return null;
+  if (config.BOKUN_MOCK_MODE || config[`${provider.toUpperCase()}_MOCK_MODE`]) return null;
   if (/sandbox|demo|test/i.test(String(config[`${provider.toUpperCase()}_BASE_URL`] || ''))) return null;
   if (booking?.sourceChannel !== 'direct_website' || booking.agentId || booking.createdByRole !== 'customer') return null;
   if (booking.paymentStatus !== 'paid' || booking.bookingStatus === 'cancelled') return null;
