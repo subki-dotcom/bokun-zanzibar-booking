@@ -596,7 +596,9 @@ const inferPesapalMobileMoneyCurrency = (verification = {}) => {
   if (/(?:TZ|TANZANIA)$/.test(paymentMethod)) return "TZS";
   if (/(?:UG|UGANDA)$/.test(paymentMethod)) return "UGX";
   if (/(?:KE|KENYA)$/.test(paymentMethod)) return "KES";
-  return "";
+  // The merchant account is Tanzanian: mobile money without a country in its name is Tanzanian shillings. The
+  // exchange-rate check still has to agree before this is used.
+  return "TZS";
 };
 
 const isPlausibleInferredPesapalConversion = ({
@@ -610,10 +612,12 @@ const isPlausibleInferredPesapalConversion = ({
   const pair = `${normalizeCurrency(expectedCurrency)}:${normalizeCurrency(providerCurrency)}`;
   if (sourceAmount <= 0 || convertedAmount <= 0) return false;
 
+  // The rate is Pesapal's own (charged amount / order amount); it must fall in a realistic band for the pair, so an
+  // ordinary amount mismatch is never taken for a conversion.
   const ratio = convertedAmount / sourceAmount;
-  if (pair === "USD:TZS") return ratio >= 500 && ratio <= 10000;
-  if (pair === "USD:UGX") return ratio >= 500 && ratio <= 15000;
-  if (pair === "USD:KES") return ratio >= 20 && ratio <= 500;
+  if (pair === "USD:TZS") return ratio >= 1500 && ratio <= 4500;
+  if (pair === "USD:UGX") return ratio >= 2500 && ratio <= 5500;
+  if (pair === "USD:KES") return ratio >= 80 && ratio <= 200;
   return false;
 };
 
@@ -668,7 +672,28 @@ const validatePesapalVerification = ({ booking, payment = null, verification, or
   );
   const normalized = normalizePesapalPayment(verification);
   const returnedAmount = normalized.chargedAmount;
-  const providerCurrency = normalized.chargedCurrency;
+  let providerCurrency = normalized.chargedCurrency;
+  // Prices are in USD, but mobile money is charged in shillings at Pesapal's rate, and Pesapal's API 3.0 reports
+  // that amount with the order's currency (for example 1223 "USD" for a 0.50 USD order). A completed mobile money
+  // payment whose amount only makes sense as Pesapal's conversion is verified as a converted payment (the rate is
+  // recorded) instead of an amount mismatch.
+  if (
+    verification?.isPaid &&
+    providerCurrency &&
+    providerCurrency === expectedCurrency &&
+    returnedAmount &&
+    expectedAmount &&
+    !equalsWithin(returnedAmount, expectedAmount)
+  ) {
+    const inferred = inferPesapalMobileMoneyCurrency(verification);
+    if (
+      inferred &&
+      inferred !== expectedCurrency &&
+      isPlausibleInferredPesapalConversion({ expectedAmount, expectedCurrency, providerAmount: returnedAmount, providerCurrency: inferred })
+    ) {
+      providerCurrency = inferred;
+    }
+  }
 
   if (!expectedTrackingId || !returnedTrackingId) {
     throw new AppError("Pesapal tracking ID could not be reconciled", 409, "PESAPAL_TRACKING_MISMATCH");
