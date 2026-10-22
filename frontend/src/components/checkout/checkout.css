@@ -1,0 +1,1015 @@
+/* Checkout (mockups "Checkout" and "CheckoutMobile"). Scoped to .ck / .ck-header; tokens shared with the tour page. */
+@import "../../styles/riserTokens.css";
+
+.ck {
+  min-height: 100vh;
+  background: var(--page-bg);
+  color: var(--ink);
+}
+
+.ck h1,
+.ck h2,
+.ck h3 {
+  font-family: "Outfit", system-ui, sans-serif;
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+.ck button,
+.ck input,
+.ck select,
+.ck textarea {
+  font-family: inherit;
+}
+
+.ck a {
+  color: var(--brand);
+}
+
+.ck :focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.ck-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.ck-muted {
+  color: var(--muted);
+}
+
+/* ---------- Header ---------- */
+.ck-header {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.ck-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1120px;
+  height: 64px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.ck-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink) !important;
+  text-decoration: none;
+}
+
+.ck-logo-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ck-logo strong {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.ck-secure {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--brand);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ck-secure svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Page ---------- */
+.ck-container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+.ck-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ck-back svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ck-container > h1 {
+  margin: 12px 0 24px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ck-layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 32px;
+}
+
+.ck-steps {
+  display: flex;
+  flex: 999 1 560px;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.ck-aside {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex: 1 1 340px;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 300px;
+}
+
+/* ---------- Step cards ---------- */
+.ck-step {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+  scroll-margin-top: 16px;
+}
+
+.ck-step-head,
+.ck-step-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ck-step-num {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ck-step-num svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.5;
+}
+
+.ck-step h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ck-step h2:focus {
+  outline: none;
+}
+
+.ck-step.is-open h2 {
+  font-size: 21px;
+}
+
+.ck-step-intro {
+  margin: 4px 0 0 44px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.ck-step-body {
+  margin-top: 20px;
+}
+
+.ck-step-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ck-step-text p {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ck-step.is-done .ck-step-num {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.ck-step.is-locked .ck-step-num {
+  border: 1.5px solid var(--border-strong);
+  background: #fff;
+  color: var(--muted);
+}
+
+.ck-step.is-locked h2 {
+  color: var(--muted);
+}
+
+.ck-edit {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 4px 0 12px;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ck-edit:hover {
+  text-decoration: underline;
+}
+
+.ck-step-actions {
+  margin-top: 24px;
+}
+
+/* ---------- Fields ---------- */
+.ck-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ck-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ck-field.is-wide {
+  grid-column: 1 / -1;
+}
+
+.ck-field > label {
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ck-field input,
+.ck-field select,
+.ck-field textarea {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.ck-field textarea {
+  resize: vertical;
+}
+
+.ck-field input::placeholder,
+.ck-field textarea::placeholder {
+  color: #8a9592;
+}
+
+.ck-field input:focus,
+.ck-field select:focus,
+.ck-field textarea:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: -1px;
+  border-color: var(--brand);
+}
+
+.ck-field [aria-invalid="true"],
+.ck-phone-row.is-invalid {
+  border-color: var(--error);
+}
+
+.ck-help,
+.ck-error {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ck-help {
+  color: var(--muted);
+}
+
+.ck-error {
+  color: var(--error);
+  font-weight: 500;
+}
+
+.ck-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 18px;
+  color: var(--text-body);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ck-check input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--brand);
+}
+
+/* Phone */
+.ck-phone {
+  position: relative;
+}
+
+.ck-phone-row {
+  display: flex;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.ck-phone-row:focus-within {
+  outline: 2px solid var(--brand);
+  outline-offset: -1px;
+  border-color: var(--brand);
+}
+
+.ck-phone-code {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 0;
+  border-right: 1px solid var(--border-strong);
+  border-radius: 10px 0 0 10px;
+  background: var(--page-bg);
+  color: var(--ink);
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.ck-phone-code svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ck-phone-code:focus-visible {
+  outline-offset: -2px;
+}
+
+.ck .ck-phone-row input {
+  min-width: 0;
+  border: 0;
+  border-radius: 0 10px 10px 0;
+}
+
+.ck .ck-phone-row input:focus {
+  outline: none;
+}
+
+.ck-phone-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  width: min(340px, 100%);
+  min-width: 260px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.ck-phone-pop .ck-search {
+  margin: 10px;
+}
+
+.ck-phone-pop ul {
+  max-height: 260px;
+  margin: 0;
+  padding: 0 0 6px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.ck-phone-pop li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.ck-phone-pop li.is-active,
+.ck-phone-pop li:hover {
+  background: var(--brand-selected-bg);
+}
+
+.ck-phone-pop li[aria-selected="true"] {
+  font-weight: 600;
+}
+
+.ck-empty {
+  cursor: default !important;
+}
+
+/* Search field (country codes, hotels) */
+.ck-search {
+  position: relative;
+}
+
+.ck-search svg {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.ck .ck-search input {
+  width: 100%;
+  padding: 13px 14px 13px 42px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.ck .ck-search input:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: -1px;
+  border-color: var(--brand);
+}
+
+/* ---------- Buttons and links ---------- */
+.ck-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 32px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: #fff !important;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ck-btn:hover {
+  background: var(--brand-hover);
+}
+
+.ck-btn:disabled {
+  background: var(--disabled);
+  cursor: not-allowed;
+}
+
+.ck-btn-small {
+  min-height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+.ck-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ck-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Notices ---------- */
+.ck-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 16px 18px;
+  border: 1px solid #f2d3a8;
+  border-radius: 12px;
+  background: var(--urgency-bg);
+  color: var(--urgency-text);
+  font-size: 14px;
+}
+
+.ck-notice.is-error {
+  border-color: #f5c2bd;
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.ck-notice p {
+  flex: 1 1 260px;
+  margin: 0;
+}
+
+.ck-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+/* ---------- Order summary ---------- */
+.ck-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.ck-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.ck-summary hr {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+  opacity: 1;
+}
+
+.ck-summary-tour {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.ck-summary-tour img,
+.ck-summary-img {
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  border-radius: 12px;
+  background: #2c7d6c;
+  object-fit: cover;
+}
+
+.ck-summary-tour h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ck-summary-tour p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ck-facts {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ck-facts li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: var(--text-body);
+  font-size: 15px;
+}
+
+.ck-facts svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+
+.ck-summary > .ck-link {
+  align-self: flex-start;
+  margin-top: -4px;
+}
+
+.ck-free {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ck-free svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--brand);
+  stroke-width: 2.5;
+}
+
+.ck-free strong {
+  font-weight: 700;
+}
+
+.ck-lines {
+  display: grid;
+  gap: 8px;
+}
+
+.ck-lines > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-body);
+  font-size: 15px;
+}
+
+.ck-lines > div > span:last-child {
+  text-align: right;
+}
+
+.ck-lines .ck-lines-muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.ck-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ck-total > span:first-child {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.ck-total > span:last-child {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.is-refreshing {
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+.ck-note {
+  margin-top: -12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ck-skeleton {
+  display: inline-block;
+  height: 1em;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eef1f0 25%, #e2e7e5 50%, #eef1f0 75%);
+  background-size: 200% 100%;
+  animation: ck-shimmer 1.2s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+@keyframes ck-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Help card */
+.ck-helpcard {
+  padding: 18px 20px;
+}
+
+.ck-helpcard h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ck-helpcard p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ck-helpcard p a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+/* Tablet: the summary sits above the steps. */
+@media (max-width: 1023.98px) {
+  .ck-aside {
+    position: static;
+    order: -1;
+    flex-basis: 100%;
+    min-width: 0;
+  }
+}
+
+/* ---------- Mobile ---------- */
+.ck-mheader {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ck-mheader h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.ck-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+}
+
+.ck-icon-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.ck-mheader-lock {
+  color: var(--brand);
+}
+
+.ck-mheader-lock svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ck-progress {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px 12px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.ck-progress span {
+  flex: 1 1 0;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.ck-progress span.is-active {
+  background: var(--brand);
+}
+
+.ck-msummary {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.ck-msummary summary {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  list-style: none;
+  cursor: pointer;
+}
+
+.ck-msummary summary::-webkit-details-marker {
+  display: none;
+}
+
+.ck-msummary summary img,
+.ck-msummary summary .ck-summary-img {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.ck-msummary-text {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ck-msummary-text strong {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.ck-msummary-text small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ck-msummary-total {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.ck-msummary-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+
+.ck-msummary[open] .ck-msummary-chevron {
+  transform: rotate(180deg);
+}
+
+.ck-msummary-body {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.ck-msummary-body .ck-lines > div {
+  font-size: 14px;
+}
+
+.ck-msummary-body .ck-lines-muted {
+  display: none !important;
+}
+
+.ck-msummary-body .ck-free {
+  margin-top: 6px;
+}
+
+.ck-trust {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.ck-trust p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 767.98px) {
+  .ck-container {
+    padding: 16px 16px calc(112px + env(safe-area-inset-bottom));
+  }
+
+  .ck-steps {
+    gap: 12px;
+  }
+
+  .ck-step {
+    padding: 18px;
+    border-radius: 14px;
+    scroll-margin-top: 72px;
+  }
+
+  .ck-step.is-open h2 {
+    font-size: 20px;
+  }
+
+  .ck-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* The bottom bar carries the step's button on phones. */
+  .ck-step-actions {
+    display: none;
+  }
+}
+
+/* Mobile bottom bar */
+.ck-mbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: #fff;
+  box-shadow: var(--shadow-bar);
+  transition: transform 0.2s ease;
+}
+
+.ck-mbar.is-hidden {
+  transform: translateY(110%);
+}
+
+.ck-mbar-total {
+  display: grid;
+  flex-shrink: 0;
+  line-height: 1.15;
+}
+
+.ck-mbar-total small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ck-mbar-total strong {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.ck-mbar .ck-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 16px;
+}
+
+.ck-spinner {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ck-spin 0.8s linear infinite;
+}
+
+@keyframes ck-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
