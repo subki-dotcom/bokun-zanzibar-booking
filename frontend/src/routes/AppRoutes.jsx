@@ -15,8 +15,9 @@ import BookingConfirmationPage from "../pages/public/BookingConfirmationPage";
 import PaymentSuccessPage from "../pages/public/PaymentSuccessPage";
 import PaymentFailurePage from "../pages/public/PaymentFailurePage";
 import PaymentStatusPage from "../pages/public/PaymentStatusPage";
-import PaymentProcessingPage from "../pages/public/PaymentProcessingPage";
 import PaymentCheckoutPage from "../pages/public/PaymentCheckoutPage";
+import PaymentFlowPage from "../pages/public/PaymentFlowPage";
+import BookingConfirmedPage from "../pages/public/BookingConfirmedPage";
 import MyBookingPage from "../pages/public/MyBookingPage";
 import InvoiceDetailsPage from "../pages/public/InvoiceDetailsPage";
 import AdminInvoicesPage from "../pages/admin/AdminInvoicesPage";
@@ -101,11 +102,12 @@ const AppRoutes = () => {
         <Route index element={<HomePage />} />
         <Route path="/tours" element={<ToursPage />} />
         <Route path="/tours/:slug" element={<TourDetailsPage />} />
+        <Route path="/booking/confirmed/:reference" element={<BookingConfirmedPage />} />
         <Route path="/booking/:slug" element={<CheckoutPage />} />
         <Route path="/booking-confirmation/:reference" element={<BookingConfirmationPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/payment-failure" element={<PaymentFailurePage />} />
-        <Route path="/payment-processing" element={<PaymentProcessingPage />} />
+        <Route path="/payment-processing" element={<PaymentFlowPage />} />
         <Route path="/payment/checkout/:reference" element={<PaymentCheckoutPage />} />
         <Route path="/payment-status/:reference" element={<PaymentStatusPage />} />
         <Route path="/my-booking" element={<MyBookingPage />} />

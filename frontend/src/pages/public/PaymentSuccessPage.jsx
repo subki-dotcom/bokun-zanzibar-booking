@@ -1,7 +1,8 @@
 import useBookingAnalytics from "../../hooks/useBookingAnalytics";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Container } from "react-bootstrap";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { confirmedHref } from "../../components/payment/paymentData";
 import {
   verifyPesapalPayment,
   verifyDpoPayment,
@@ -136,6 +137,18 @@ const PaymentSuccessPage = () => {
     if (!result || (!orderTrackingId && !orderMerchantReference)) return;
     notifyPesapalFrameReturn("success");
   }, [orderMerchantReference, orderTrackingId, result]);
+
+  // A verified payment opens the booking confirmation, keyed by the provider's order id (in the top window only;
+  // inside the payment frame the parent page takes over).
+  const navigate = useNavigate();
+  useEffect(() => {
+    const status = getPaymentResultPresentation(result).publicStatus;
+    const reference = result?.booking?.bookingReference || result?.bookingReference || "";
+    const isAgent = Boolean(result?.booking?.isAgentBooking) || String(result?.booking?.sourceChannel || "").toLowerCase() === "agent_portal";
+    const providerKey = orderTrackingId || transactionToken || paypalOrderId;
+    if (!["PAID", "CONFIRMED"].includes(status) || !reference || !providerKey || isAgent || window.top !== window) return;
+    navigate(confirmedHref({ reference, key: providerKey }), { replace: true });
+  }, [result, orderTrackingId, transactionToken, paypalOrderId, navigate]);
 
   if (loading) {
     return (

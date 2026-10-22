@@ -8,6 +8,7 @@ const bokunService = require("../../bokun");
 const paymentsService = require("..");
 const notificationsService = require("../../notifications");
 const { normalizePesapalPayment } = require("../providerNormalization");
+const { paymentAccessKey } = require("../paymentRecoveryCore");
 const {
   decimalString,
   decimalToApi,
@@ -616,7 +617,40 @@ const isPlausibleInferredPesapalConversion = ({
   return false;
 };
 
+const findReplacedPesapalOrder = (booking = {}, trackingId = "") => {
+  const token = String(trackingId || "").trim();
+  if (!token) return null;
+  const history = Array.isArray(booking?.pendingCheckout?.pesapalOrderHistory) ? booking.pendingCheckout.pesapalOrderHistory : [];
+  return history.find((entry) => String(entry?.orderTrackingId || "") === token) || null;
+};
+
 const validatePesapalVerification = ({ booking, payment = null, verification, orderTrackingId = "", orderMerchantReference = "" }) => {
+  // An order replaced by a newer one is checked against its own recorded tracking id, reference and amount.
+  const replaced = findReplacedPesapalOrder(
+    booking,
+    orderTrackingId || verification?.providerOrderTrackingId || verification?.orderTrackingId
+  );
+  if (replaced) {
+    return validatePesapalVerification({
+      booking: {
+        ...(booking?.toObject ? booking.toObject() : booking),
+        paymentTransactionId: replaced.orderTrackingId,
+        dpoTransactionToken: replaced.orderTrackingId,
+        pendingCheckout: {
+          ...(booking?.pendingCheckout || {}),
+          pesapalOrderHistory: [],
+          pesapalMerchantReference: replaced.merchantReference || booking?.pendingCheckout?.pesapalMerchantReference,
+          pesapalRequestedAmount: replaced.amount || booking?.pendingCheckout?.pesapalRequestedAmount,
+          pesapalRequestedCurrency: replaced.currency || booking?.pendingCheckout?.pesapalRequestedCurrency
+        }
+      },
+      payment: null,
+      verification,
+      orderTrackingId,
+      orderMerchantReference
+    });
+  }
+
   const expectedTrackingId = String(
     payment?.orderTrackingId || payment?.providerTransactionId || booking?.paymentTransactionId || booking?.dpoTransactionToken || ""
   ).trim();
@@ -857,11 +891,13 @@ const verifyOrderWithPesapal = async ({
         ""
     ).trim();
     const confirmationCode = mockConfirmsPayment ? `MOCKPESA-${trackingId.slice(-12)}` : "";
+    // Mock mode only: PESAPAL_MOCK_STATUS (for example INVALID or FAILED) plays an unpaid outcome in local tests.
+    const mockUnpaidStatus = String(process.env.PESAPAL_MOCK_STATUS || "PENDING").trim().toUpperCase();
     return {
       orderTrackingId: trackingId,
       providerOrderTrackingId: trackingId,
       merchantReference,
-      status: mockConfirmsPayment ? "COMPLETED" : "PENDING",
+      status: mockConfirmsPayment ? "COMPLETED" : mockUnpaidStatus,
       statusDescription: mockConfirmsPayment
         ? "Mock payment verified"
         : "Mock Pesapal payment is not treated as a real payment",
@@ -874,7 +910,7 @@ const verifyOrderWithPesapal = async ({
         mock: true,
         canConfirmPayment: mockConfirmsPayment,
         status_code: mockConfirmsPayment ? 1 : 0,
-        payment_status_description: mockConfirmsPayment ? "COMPLETED" : "PENDING",
+        payment_status_description: mockConfirmsPayment ? "COMPLETED" : mockUnpaidStatus,
         order_tracking_id: trackingId,
         merchant_reference: merchantReference,
         amount: mockAmount,
@@ -1217,7 +1253,8 @@ const resolveBookingByIdentifiers = async ({
     const byTracking = await Booking.findOne({
       $or: [
         { paymentTransactionId: trackingToken },
-        { dpoTransactionToken: trackingToken }
+        { dpoTransactionToken: trackingToken },
+        { "pendingCheckout.pesapalOrderHistory.orderTrackingId": trackingToken }
       ]
     });
     if (byTracking) {
@@ -1318,6 +1355,7 @@ const createPayment = async ({ payload, auth, requestId, checkoutOrigin = "" }) 
     return {
       bookingId: booking._id,
       bookingReference: booking.bookingReference,
+      paymentAccessKey: paymentAccessKey(booking, env.JWT_SECRET),
       redirectUrl: "",
       paymentStatus: booking.paymentStatus,
       bookingStatus: booking.bookingStatus,
@@ -1334,7 +1372,8 @@ const createPayment = async ({ payload, auth, requestId, checkoutOrigin = "" }) 
   });
 
   const existingTrackingId = String(booking.paymentTransactionId || booking.dpoTransactionToken || "").trim();
-  const existingRedirectUrl = resolveRedirectUrl(booking.pendingCheckout?.pesapalCreateOrderResult || {});
+  const existingRedirectUrl =
+    String(booking.pendingCheckout?.pesapalRedirectUrl || "").trim() || resolveRedirectUrl(booking.pendingCheckout?.pesapalCreateOrderResult || {});
   if (
     existingTrackingId &&
     ["initiated", "processing", "pending", "verification_error"].includes(String(booking.paymentStatus || "").toLowerCase())
@@ -1343,6 +1382,7 @@ const createPayment = async ({ payload, auth, requestId, checkoutOrigin = "" }) 
       return {
         bookingId: booking._id,
         bookingReference: booking.bookingReference,
+      paymentAccessKey: paymentAccessKey(booking, env.JWT_SECRET),
         orderTrackingId: existingTrackingId,
         merchantReference: booking.pendingCheckout?.pesapalMerchantReference || booking.bookingReference,
         redirectUrl: existingRedirectUrl,
@@ -1365,6 +1405,22 @@ const createPayment = async ({ payload, auth, requestId, checkoutOrigin = "" }) 
     requestId
   });
 
+  // A replaced order can still be paid from an old tab or link: keep it so its payment is matched to this booking.
+  const previousOrder = booking.pendingCheckout?.pesapalOrderTrackingId
+    ? {
+        orderTrackingId: String(booking.pendingCheckout.pesapalOrderTrackingId),
+        merchantReference: String(booking.pendingCheckout.pesapalMerchantReference || ""),
+        amount: String(booking.pendingCheckout.pesapalRequestedAmount || ""),
+        currency: String(booking.pendingCheckout.pesapalRequestedCurrency || ""),
+        createdAt: String(booking.pendingCheckout.pesapalInitializedAt || ""),
+        replacedAt: new Date().toISOString()
+      }
+    : null;
+  const orderHistory = [
+    ...(Array.isArray(booking.pendingCheckout?.pesapalOrderHistory) ? booking.pendingCheckout.pesapalOrderHistory : []),
+    ...(previousOrder && previousOrder.orderTrackingId !== orderResponse.orderTrackingId ? [previousOrder] : [])
+  ].slice(-10);
+
   booking.paymentTransactionId = orderResponse.orderTrackingId;
   booking.dpoTransactionToken = orderResponse.orderTrackingId;
   booking.paymentStatus = "initiated";
@@ -1380,8 +1436,11 @@ const createPayment = async ({ payload, auth, requestId, checkoutOrigin = "" }) 
     pesapalRequestedAmount: decimalString(booking.amount || booking.pricingSnapshot?.finalPayable || 0),
     pesapalRequestedCurrency: normalizeIsoCurrency(booking.currency || booking.pricingSnapshot?.currency || "USD"),
     pesapalCreateOrderResult: orderResponse.raw || {},
+    pesapalRedirectUrl: orderResponse.redirectUrl || "",
+    pesapalOrderHistory: orderHistory,
     paymentInitiatedAt: new Date().toISOString()
   };
+  booking.markModified("pendingCheckout");
   await booking.save();
 
   await updatePaymentLogForCreate({
@@ -1404,6 +1463,7 @@ const createPayment = async ({ payload, auth, requestId, checkoutOrigin = "" }) 
   return {
     bookingId: booking._id,
     bookingReference: booking.bookingReference,
+    paymentAccessKey: paymentAccessKey(booking, env.JWT_SECRET),
     orderTrackingId: orderResponse.orderTrackingId,
     merchantReference: orderResponse.merchantReference,
     redirectUrl: orderResponse.redirectUrl,
@@ -2138,6 +2198,7 @@ module.exports = {
   __testables: {
     toPaymentCallbackBooking,
     validatePesapalVerification,
+    findReplacedPesapalOrder,
     findPesapalCallbackOriginMismatch,
     inferPesapalMobileMoneyCurrency,
     isPlausibleInferredPesapalConversion,

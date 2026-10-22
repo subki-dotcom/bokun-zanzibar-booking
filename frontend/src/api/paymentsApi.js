@@ -5,6 +5,23 @@ export const fetchPaymentProviders = async () => {
   return response.data.data || [];
 };
 
+// The payment state of a booking for the payment pages (any browser, with the payment link's key).
+export const fetchBookingPaymentStatus = async (reference, { key = "", recheck = false } = {}) => {
+  const response = await axiosClient.get(`/bookings/${encodeURIComponent(reference)}/payment-status`, {
+    params: { key, ...(recheck ? { recheck: "1" } : {}) }
+  });
+  return response.data.data;
+};
+
+// A payment session for the same booking: the saved provider page while valid, otherwise a new one.
+export const openBookingPaymentSession = async (reference, { key = "", provider = "" } = {}) => {
+  const response = await axiosClient.post(`/bookings/${encodeURIComponent(reference)}/payment-session`, {
+    key,
+    ...(provider ? { provider } : {})
+  });
+  return response.data.data;
+};
+
 export const createPesapalPayment = async (payload) => {
   const response = await axiosClient.post("/payments/pesapal/create", payload);
   return response.data.data;

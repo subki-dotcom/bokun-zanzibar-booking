@@ -3,7 +3,9 @@ const bookingController = require("../controllers/bookings.controller");
 const validateRequest = require("../middleware/validateRequest");
 const { authenticate } = require("../middleware/auth");
 const { authorize } = require("../middleware/rbac");
-const { bookingRequestWriteLimiter } = require("../middleware/rateLimiter");
+const { bookingRequestWriteLimiter, paymentSessionLimiter } = require("../middleware/rateLimiter");
+const paymentRecoveryController = require("../controllers/paymentRecovery.controller");
+const { paymentStatusSchema, paymentSessionSchema } = require("../validators/paymentRecovery.validation");
 const {
   quoteSchema,
   createBookingSchema,
@@ -64,6 +66,9 @@ router.post(
   validateRequest(retryFinalizationSchema),
   bookingController.retryFinalization
 );
+// Customer payment pages (any browser, with the payment link's key).
+router.get("/:reference/payment-status", validateRequest(paymentStatusSchema), paymentRecoveryController.status);
+router.post("/:reference/payment-session", paymentSessionLimiter, validateRequest(paymentSessionSchema), paymentRecoveryController.session);
 router.get("/:reference", bookingController.getByReference);
 router.post(
   "/:id/cancel",

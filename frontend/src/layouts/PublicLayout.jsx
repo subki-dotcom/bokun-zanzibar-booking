@@ -17,8 +17,10 @@ const PublicLayout = () => {
   );
   // The tour page has its own header (desktop) and mobile header.
   const isTourRoute = /^\/tours\/[^/]+\/?$/.test(location.pathname);
-  // Checkout has its own minimal header and no site navigation, footer or floating WhatsApp button.
-  const isTourCheckout = /^\/booking\/[^/]+\/?$/.test(location.pathname);
+  // Checkout and the payment page have their own minimal header and no site navigation, footer or floating WhatsApp button.
+  const isTourCheckout = /^\/booking\/[^/]+\/?$/.test(location.pathname) || /^\/payment-processing\/?$/.test(location.pathname);
+  // The booking confirmation has its own light header (Tours, My booking).
+  const isConfirmedRoute = /^\/booking\/confirmed\/[^/]+\/?$/.test(location.pathname);
   const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ const PublicLayout = () => {
       <AnalyticsTracker />
       {noIndexRoute ? <SeoHead noIndex title={BRAND.name} description="Secure booking account and payment page." /> : null}
       {isTourRoute ? <div className="tp-header-slot"><TourHeader /></div> : null}
-      {isTourRoute || isTourCheckout ? null : <Navbar expand="lg" className="public-nav py-3">
+      {isTourRoute || isTourCheckout || isConfirmedRoute ? null : <Navbar expand="lg" className="public-nav py-3">
         <Container>
           <Navbar.Brand as={Link} to="/" className="brand-mark fs-4">
             {BRAND.name}
@@ -57,7 +59,7 @@ const PublicLayout = () => {
       </main>
       {isTourCheckout ? null : <Footer />}
       <CookieConsent />
-      {BRAND.whatsappHref && !isTourCheckout ? <FloatingWhatsAppButton href={BRAND.whatsappHref} /> : null}
+      {BRAND.whatsappHref && !isTourCheckout && !isConfirmedRoute ? <FloatingWhatsAppButton href={BRAND.whatsappHref} /> : null}
     </div>
   );
 };

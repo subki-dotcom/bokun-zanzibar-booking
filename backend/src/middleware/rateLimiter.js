@@ -56,7 +56,24 @@ const bookingRequestWriteLimiter = rateLimit({
   }
 });
 
+// Opening a payment session can create a provider order, so it is limited per address.
+const paymentSessionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => resolveClientIp(req),
+  message: {
+    success: false,
+    message: "Too many payment attempts. Please wait a few minutes and try again.",
+    error: { code: "PAYMENT_SESSION_RATE_LIMITED", details: null },
+    data: {},
+    meta: {}
+  }
+});
+
 module.exports = {
   globalRateLimiter,
-  bookingRequestWriteLimiter
+  bookingRequestWriteLimiter,
+  paymentSessionLimiter
 };

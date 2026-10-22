@@ -1,0 +1,742 @@
+/* Payment pages (mockups "Pay", "PayIssue"). Builds on checkout.css (tokens, header, cards, buttons). */
+.pf {
+  --warning-bg: #fdf1e3;
+  --warning-text: #8a4205;
+  display: flex;
+  flex-direction: column;
+}
+
+.pf .ck-header-inner {
+  gap: 16px;
+}
+
+/* Header progress: ✓ Details — ✓ Activity — [3 Payment] */
+.pf-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pf-progress li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pf-progress .is-done {
+  color: var(--brand);
+}
+
+.pf-progress svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.5;
+}
+
+.pf-progress-line {
+  color: var(--border-strong);
+}
+
+.pf-progress .is-current {
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: #fff;
+}
+
+.pf-container {
+  flex: 1 0 auto;
+  width: 100%;
+}
+
+.pf-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  margin-bottom: 12px;
+  color: var(--brand);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pf-back svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pf-layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 28px;
+}
+
+.pf-main-col {
+  flex: 999 1 560px;
+  min-width: 0;
+}
+
+.pf-aside {
+  position: sticky;
+  top: 24px;
+  flex: 1 1 340px;
+  min-width: 320px;
+}
+
+/* Main card */
+.pf-main {
+  padding: 28px;
+}
+
+.pf-main h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pf-main h1:focus {
+  outline: none;
+}
+
+.pf-main > p {
+  margin: 10px 0 0;
+  color: var(--text-body);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.pf-pay-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pf-pay-head p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.pf-amount {
+  display: grid;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.pf-amount small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pf-amount strong {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+/* Embedded provider page */
+.pf-frame {
+  position: relative;
+  min-height: 420px;
+  margin-top: 22px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fafbfa;
+}
+
+.pf-frame iframe {
+  display: block;
+  width: 100%;
+  height: 560px;
+  min-height: 420px;
+  border: 0;
+  background: #fff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.pf-frame iframe.is-loaded {
+  opacity: 1;
+}
+
+.pf-frame-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.pf-frame-loading > svg {
+  width: 28px;
+  height: 28px;
+  color: var(--brand);
+}
+
+.pf-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--brand-soft);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: ck-spin 0.8s linear infinite;
+}
+
+.pf-trust {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+  margin-top: 16px;
+  color: var(--text-body);
+  font-size: 13px;
+}
+
+.pf-trust span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pf-trust svg {
+  width: 15px;
+  height: 15px;
+  color: var(--brand);
+}
+
+.pf-trust-logos {
+  margin-left: auto;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.pf-help {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.pf-help .ck-link {
+  min-height: 32px;
+}
+
+/* Method picker */
+.pf-methods {
+  margin-top: 22px;
+}
+
+.pf-methods-title {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.pf-methods-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 16px;
+}
+
+/* Loading / placeholder */
+.pf-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-height: 300px;
+  justify-content: center;
+}
+
+.pf-main h1.pf-loading-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.pf-primary {
+  width: 100%;
+  min-height: 56px;
+  margin-top: 22px;
+}
+
+/* Summary aside */
+.pf-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.pf-summary hr {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+  opacity: 1;
+}
+
+.pf-tour {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.pf-tour img,
+.pf-tour-img {
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #2c7d6c;
+  object-fit: cover;
+}
+
+.pf-tour > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pf-tour strong {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.pf-tour small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Reference: always one line */
+.pf-reference {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--page-bg);
+}
+
+.pf-reference-text {
+  display: grid;
+  min-width: 0;
+}
+
+.pf-reference-text small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pf-reference-text strong {
+  overflow: hidden;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-pill {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pf-pill:hover {
+  border-color: var(--brand);
+}
+
+/* Pay progress list */
+.pf-steps {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pf-steps li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.pf-steps li > span:last-child {
+  display: grid;
+}
+
+.pf-steps strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pf-steps small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pf-step-dot {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+}
+
+.pf-steps .is-done .pf-step-dot {
+  background: var(--brand);
+  color: #fff;
+}
+
+.pf-steps .is-done .pf-step-dot svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 3;
+}
+
+.pf-steps .is-current .pf-step-dot {
+  border: 2px solid var(--brand);
+  background: var(--brand-soft);
+}
+
+.pf-steps .is-next .pf-step-dot {
+  border: 1.5px solid var(--border-strong);
+}
+
+.pf-steps .is-next strong {
+  color: var(--muted);
+}
+
+.pf-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pf-total span {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.pf-total strong {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.pf-summary .ck-free {
+  margin-top: -4px;
+}
+
+/* Problem aside rows */
+.pf-rows {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.pf-rows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.pf-rows dt {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.pf-rows dd {
+  margin: 0;
+  color: var(--ink);
+  text-align: right;
+}
+
+.pf-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.pf-status-pill {
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Phones: compact summary above the main card */
+.pf-compact {
+  display: grid;
+  gap: 12px;
+  flex-basis: 100%;
+  padding: 14px;
+  border-radius: 14px;
+}
+
+.pf-compact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pf-compact-amount {
+  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* One-line footer */
+.pf-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 10px;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: #fff;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pf-footer a {
+  color: var(--muted);
+}
+
+@media (max-width: 1023.98px) {
+  .pf-aside {
+    position: static;
+    order: -1;
+    flex-basis: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .pf .ck-secure {
+    font-size: 0;
+  }
+
+  .pf .ck-secure svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .pf .ck-logo strong {
+    font-size: 16px;
+  }
+
+  .pf-container {
+    padding: 16px 16px 40px;
+  }
+
+  .pf-layout {
+    gap: 12px;
+  }
+
+  .pf-main {
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .pf-main h1 {
+    font-size: 24px;
+  }
+
+  .pf-pay-head {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pf-amount {
+    text-align: left;
+  }
+
+  .pf-amount strong {
+    font-size: 26px;
+  }
+
+  .pf-frame {
+    margin-right: -6px;
+    margin-left: -6px;
+  }
+
+  .pf-frame iframe {
+    height: 680px;
+  }
+
+  .pf-trust-logos {
+    margin-left: 0;
+  }
+}
+
+/* Payment problem page */
+.pf-main.pf-problem {
+  padding: 36px;
+}
+
+.pf-problem-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 20px;
+  border-radius: 50%;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.pf-problem-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.pf-main .pf-lead {
+  margin: 12px 0 0;
+  color: var(--text-body);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.pf-lead strong {
+  color: var(--ink);
+}
+
+.pf-inline {
+  margin: 18px 0 0;
+}
+
+.pf-secondary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pf-outline {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.pf-outline:hover {
+  border-color: var(--brand);
+}
+
+.pf-outline:disabled {
+  opacity: 0.6;
+}
+
+.pf-main .pf-check-result {
+  min-height: 0;
+  margin: 12px 0 0;
+  color: var(--text-body);
+  font-size: 14px;
+}
+
+.pf-main .pf-check-result:empty {
+  margin: 0;
+}
+
+.pf-why {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--page-bg);
+}
+
+.pf-why strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pf-main .pf-why p {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pf-help-problem {
+  margin-top: 20px;
+}
+
+.pf-help-problem .ck-link {
+  gap: 6px;
+}
+
+.pf-help-mail {
+  color: var(--muted) !important;
+  text-decoration: none;
+}
+
+/* Confirming payment */
+.pf-main h1.pf-processing-title {
+  font-size: 24px;
+}
+
+.pf-main .pf-processing-text {
+  max-width: 420px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  text-align: center;
+}
+
+@media (max-width: 767.98px) {
+  .pf-main.pf-problem {
+    padding: 22px 18px;
+  }
+
+  .pf-problem-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 14px;
+  }
+
+  .pf-secondary {
+    grid-template-columns: 1fr;
+  }
+}
