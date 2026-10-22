@@ -1282,3 +1282,32 @@
   justify-self: start;
   margin-top: 4px;
 }
+
+/* The chosen hotel (list closed) */
+.ck-hotel-picked {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 14px;
+  border: 2px solid var(--brand);
+  border-radius: 12px;
+  background: var(--brand-selected-bg);
+}
+
+.ck-hotel-picked-text {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px 0;
+}
+
+.ck-hotel-picked-text strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ck-hotel-picked-text small {
+  color: var(--muted);
+  font-size: 13px;
+}

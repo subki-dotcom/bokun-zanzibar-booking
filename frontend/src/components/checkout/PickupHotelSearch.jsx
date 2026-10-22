@@ -5,12 +5,18 @@ import { HOTEL_NOT_LISTED, filterHotels } from "./checkoutData";
 const MAX_ROWS = 60;
 
 // Pickup hotel: search the option's pickup places, choose one, or say the hotel isn't listed (sent on WhatsApp).
+// Once chosen, the list closes to the chosen hotel with "Change" to search again.
 const PickupHotelSearch = ({ checkout, error = "", onBlur }) => {
   const { form, setField, hotels, pickupArea, pickupLabel, needsNearestHotel } = checkout;
   const nearestMode = form.hotelNotListed && needsNearestHotel;
   const listId = useId();
   const listRef = useRef(null);
   const [active, setActive] = useState(-1);
+  const [editing, setEditing] = useState(false);
+  const changeRef = useRef(null);
+  const searchRef = useRef(null);
+  const reopened = useRef(false);
+  const chosen = !editing && (Boolean(form.hotelName) || (form.hotelNotListed && !needsNearestHotel));
   const query = form.hotelQuery || "";
   const matches = useMemo(() => filterHotels(hotels || [], form.hotelName && query === form.hotelName ? "" : query), [hotels, query, form.hotelName]);
   const shown = matches.slice(0, MAX_ROWS);
@@ -29,6 +35,13 @@ const PickupHotelSearch = ({ checkout, error = "", onBlur }) => {
     listRef.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
   }, [active]);
 
+  // Focus follows the switch: the search after "Change", the "Change" button after choosing.
+  useEffect(() => {
+    if (!reopened.current) return;
+    if (editing) searchRef.current?.focus();
+    else changeRef.current?.focus();
+  }, [editing, chosen]);
+
   const choose = (row) => {
     if (!row.place) {
       // A second tap takes it back.
@@ -40,6 +53,11 @@ const PickupHotelSearch = ({ checkout, error = "", onBlur }) => {
         setField("pickupPlaceId", "");
         setField("hotelQuery", "");
       }
+      // Without a supplier "not listed" place the guest still picks the nearest hotel, so the list stays open.
+      if (next && !needsNearestHotel) {
+        reopened.current = true;
+        setEditing(false);
+      }
       return;
     }
     const label = pickupLabel(row.place);
@@ -49,6 +67,15 @@ const PickupHotelSearch = ({ checkout, error = "", onBlur }) => {
     setField("hotelQuery", label);
     // Places from the general Zanzibar list are not this product's own, so only the name is sent.
     setField("pickupPlaceId", row.place.productScoped === false ? "" : String(row.place.id || ""));
+    reopened.current = true;
+    setEditing(false);
+    setActive(-1);
+  };
+
+  const change = () => {
+    reopened.current = true;
+    setField("hotelQuery", "");
+    setEditing(true);
   };
 
   const onKeyDown = (event) => {
@@ -71,12 +98,44 @@ const PickupHotelSearch = ({ checkout, error = "", onBlur }) => {
     ? "Only hotels in your option's pickup area are shown. Exact pickup time is confirmed the day before."
     : "Exact pickup time is confirmed the day before.";
 
+  if (chosen) {
+    const place = (hotels || []).find((item) => pickupLabel(item) === form.hotelName);
+    const title = place?.title || form.hotelName.split(",")[0] || "";
+    const address = place ? place.address : form.hotelName.split(",").slice(1).join(",").trim();
+    return (
+      <div className="ck-field is-wide ck-hotels">
+        <span className="ck-label" id="ck-hotel-label">Pickup hotel</span>
+        <div className="ck-hotel-picked" role="group" aria-labelledby="ck-hotel-label">
+          <LuCheck aria-hidden="true" className="ck-hotel-check" />
+          <span className="ck-hotel-picked-text">
+            {form.hotelNotListed ? (
+              <>
+                <strong>{HOTEL_NOT_LISTED}</strong>
+                {form.hotelName ? <small>Nearest hotel for the pickup: {title}</small> : null}
+              </>
+            ) : (
+              <>
+                <strong>{title}</strong>
+                {address ? <small>{address}</small> : null}
+              </>
+            )}
+          </span>
+          <button type="button" ref={changeRef} className="ck-edit" onClick={change} aria-label="Change pickup hotel">
+            Change
+          </button>
+        </div>
+        <small className="ck-help">Exact pickup time is confirmed the day before.</small>
+      </div>
+    );
+  }
+
   return (
     <div className={`ck-field is-wide ck-hotels ${error ? "has-error" : ""}`}>
       <label htmlFor="ck-hotel">Pickup hotel</label>
       <div className="ck-search">
         <LuSearch aria-hidden="true" />
         <input
+          ref={searchRef}
           id="ck-hotel"
           type="search"
           role="combobox"
