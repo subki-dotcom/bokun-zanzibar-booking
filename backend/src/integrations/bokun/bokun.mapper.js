@@ -1360,14 +1360,17 @@ const getSlotStartTimeId = (slot = {}) => {
   return Number.isFinite(number) && number > 0 ? String(number) : "";
 };
 
+// A start time's own "rates" list is authoritative: "pricesByRate" carries every option's price even for start times
+// that option cannot book (the supplier then rejects the booking for that startTimeId). The price list and default rate
+// are used only when a start time has no rates list.
 const slotSupportsOption = (slot = {}, optionRateId) => {
   if (!optionRateId) {
     return true;
   }
 
-  const inRates = ensureArray(slot.rates).some((rate) => Number(rate.id) === optionRateId);
-  if (inRates) {
-    return true;
+  const rates = ensureArray(slot.rates);
+  if (rates.length) {
+    return rates.some((rate) => Number(rate.id) === optionRateId);
   }
 
   const inPricesByRate = ensureArray(slot.pricesByRate).some((item) => Number(item.activityRateId) === optionRateId);
@@ -1717,7 +1720,10 @@ const mapActivityAvailability = ({ payload = {}, rawAvailabilities = [], priceLi
   );
   const slotsSource = ensureArray(rawAvailabilities);
   const matchingSlots = slotsSource.filter((slot) => slotSupportsOption(slot, optionRateId));
-  const scopedSlots = matchingSlots.length ? matchingSlots : slotsSource;
+  // No start time for this option means it is not bookable that day; the old fallback to every start time is kept only
+  // for responses that list no rates at all.
+  const ratesListed = slotsSource.some((slot) => ensureArray(slot.rates).length > 0);
+  const scopedSlots = matchingSlots.length || ratesListed ? matchingSlots : slotsSource;
 
   const participantCount = requestedParticipantCount(payload);
   const internalSlots = scopedSlots.map((slot) => {

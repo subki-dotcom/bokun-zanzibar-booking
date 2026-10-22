@@ -1302,6 +1302,8 @@ const getSlotDate = (slot = {}) => {
   return rawString.split("T")[0];
 };
 
+// The options a start time can book: its own rates list when it has one (pricesByRate lists every option's price, even
+// for options that cannot book this start time), otherwise the price list and default rate.
 const extractOptionRateIds = (slot = {}) => {
   const ids = new Set();
 
@@ -1310,6 +1312,9 @@ const extractOptionRateIds = (slot = {}) => {
       ids.add(String(rate.id));
     }
   });
+  if (ids.size) {
+    return Array.from(ids);
+  }
 
   ensureArray(slot.pricesByRate).forEach((rate) => {
     if (rate?.activityRateId !== undefined && rate?.activityRateId !== null) {
