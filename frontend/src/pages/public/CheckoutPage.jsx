@@ -11,6 +11,7 @@ import { CheckoutHeader, MobileCheckoutHeader, MobileProgress } from "../../comp
 import StepCard from "../../components/checkout/StepCard";
 import ContactStep from "../../components/checkout/ContactStep";
 import ActivityStep from "../../components/checkout/ActivityStep";
+import PaymentStep from "../../components/checkout/PaymentStep";
 import { HelpCard, MobileOrderSummary, OrderSummary, helpWhatsappHref } from "../../components/checkout/OrderSummary";
 import MobileCheckoutBar from "../../components/checkout/MobileCheckoutBar";
 
@@ -47,7 +48,20 @@ const CheckoutPage = () => {
     if (ok) steps.goNext("activity", { ...checkout.completed, activity: true });
   };
 
-  const barActions = { contact: submitContact, activity: submitActivity };
+  // Pay: every step must still be valid (a step reopened with Edit may have changed), then the provider's page.
+  const submitPayment = async () => {
+    for (const id of ["contact", "activity"]) {
+      if (Object.keys(checkout.errorsFor(id)).length) {
+        steps.go(id);
+        retry(id);
+        return;
+      }
+    }
+    const result = await checkout.pay();
+    if (result === "activity") steps.go("activity");
+  };
+
+  const barActions = { contact: submitContact, activity: submitActivity, payment: submitPayment };
 
   const goBack = () => {
     if (steps.index > 0) steps.go(STEPS[steps.index - 1].id, { replace: true });
@@ -72,6 +86,7 @@ const CheckoutPage = () => {
     if (status === "open" && step.id === "activity") {
       body = <ActivityStep checkout={checkout} attempt={attempts.activity} busy={busyStep === "activity"} onNext={submitActivity} />;
     }
+    if (status === "open" && step.id === "payment") body = <PaymentStep checkout={checkout} onPay={submitPayment} />;
     return (
       <StepCard
         key={step.id}
@@ -160,7 +175,8 @@ const CheckoutPage = () => {
           total={checkout.total ? formatMoney(checkout.total, checkout.currency) : "—"}
           label={STEPS[steps.index].next || `Pay ${checkout.total ? formatMoney(checkout.total, checkout.currency) : ""} & book`}
           onAction={() => barActions[steps.open]?.()}
-          busy={Boolean(busyStep)}
+          busy={Boolean(busyStep) || checkout.submitting}
+          disabled={steps.open === "payment" && (checkout.soldOut || !checkout.pricing || !checkout.selectedChoice)}
         />
       ) : null}
     </div>

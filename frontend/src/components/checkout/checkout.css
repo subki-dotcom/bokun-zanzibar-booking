@@ -1140,3 +1140,140 @@
   font-size: 12px;
   font-weight: 600;
 }
+
+/* Payment */
+.ck-methods {
+  display: grid;
+  gap: 10px;
+}
+
+.ck-method {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.ck-method.is-selected {
+  padding: 15px;
+  border: 2px solid var(--brand);
+  background: var(--brand-selected-bg);
+}
+
+.ck-method.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.ck-method input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ck-method:has(input:focus-visible) {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.ck-radio {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  background: #fff;
+}
+
+.ck-method.is-selected .ck-radio {
+  border: 6px solid var(--brand);
+}
+
+.ck-method-text {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ck-method-text strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ck-method-text small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ck-method-badge {
+  flex-shrink: 0;
+  color: var(--text-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.ck-pay-info {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--page-bg);
+  color: var(--text-body);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ck-pay-info svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+  color: var(--brand);
+}
+
+.ck-pay-error {
+  margin-top: 16px;
+}
+
+.ck-link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.ck-pay-actions {
+  margin-top: 16px;
+}
+
+.ck-btn-pay {
+  width: 100%;
+  min-height: 56px;
+}
+
+.ck-terms {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.ck-terms a {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 767.98px) {
+  .ck-method-badge {
+    display: none;
+  }
+}
