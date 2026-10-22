@@ -19,6 +19,8 @@ const {
   travelDatePassed
 } = require("./paymentRecoveryCore");
 
+const { buildPurchaseAnalytics } = require("../bookings/analytics");
+
 const PROVIDERS = { pesapal: pesapalService, dpo: dpoService, paypal: paypalService };
 const PROVIDER_LABELS = { pesapal: "Pesapal", dpo: "DPO", paypal: "PayPal" };
 const sessionTtlMinutes = () => Number(process.env.PESAPAL_SESSION_TTL_MINUTES) || undefined;
@@ -33,10 +35,22 @@ const loadBooking = async (reference = "", key = "") => {
   return booking;
 };
 
+// "What to bring" from the supplier's requirements (an HTML list or lines), short items only.
+const listItems = (html = "") =>
+  String(html || "")
+    .replace(/<\/(li|p)>|<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .split(/\n|•/)
+    .map((item) => item.replace(/\s+/g, " ").replace(/^[-–*\s]+/, "").trim())
+    .filter((item) => item && item.length <= 40)
+    .slice(0, 8);
+
 const tourFor = async (booking) => {
   const product = await ProductSnapshot.findOne(
     { bokunProductId: String(booking.bokunProductId || "") },
-    { title: 1, slug: 1, images: 1, duration: 1, liveTourGuide: 1, languages: 1, options: 1 }
+    { title: 1, slug: 1, images: 1, duration: 1, liveTourGuide: 1, languages: 1, options: 1, "rawBokunProduct.requirements": 1 }
   ).lean().catch(() => null);
   const option = (product?.options || []).find((item) => String(item.bokunOptionId) === String(booking.bokunOptionId));
   const languages = (product?.liveTourGuide?.languages?.length ? product.liveTourGuide.languages : product?.languages) || [];
@@ -47,7 +61,8 @@ const tourFor = async (booking) => {
     option: String(booking.optionTitle || option?.name || "").replace(/^\s*w\/\s*/i, "").trim(),
     duration: product?.duration || "",
     pickup: option ? option.pickupSupported !== false : true,
-    language: String(option?.language || (languages.length === 1 ? languages[0] : "")).trim()
+    language: String(option?.language || (languages.length === 1 ? languages[0] : "")).trim(),
+    whatToBring: listItems(product?.rawBokunProduct?.requirements)
   };
 };
 
@@ -108,6 +123,9 @@ const publicStatus = async (booking, { requestId = "", checkTrip = false } = {})
     maskedEmail: maskEmail(booking.customer?.email),
     pickupHotel: String(booking.customer?.hotelName || "").trim(),
     confirmationCode: status === "paid" ? booking.bokunConfirmationCode || "" : "",
+    amountPaid: status === "paid" ? Number(booking.pendingCheckout?.paidAmount || booking.amount || 0) : 0,
+    // GA4 purchase, only for verified real payments (the same rule as the booking page).
+    analyticsPurchase: status === "paid" ? buildPurchaseAnalytics(booking, env) : null,
     supplierConfirmed: Boolean(booking.bokunBookingId),
     session: session ? { provider: session.provider, redirectUrl: session.redirectUrl, expiresAt: session.expiresAt } : null,
     trip

@@ -13,7 +13,7 @@ import { CheckoutHeader } from "../../components/checkout/CheckoutHeader";
 import PayScreen, { ChangeMethodLink } from "../../components/payment/PayScreen";
 import ProblemScreen, { LinkErrorScreen, ProcessingScreen } from "../../components/payment/ProblemScreen";
 import { CompactSummary, PaySummary, ProblemSummary } from "../../components/payment/PaymentSummary";
-import { problemKind, screenFor } from "../../components/payment/paymentData";
+import { confirmedHref, problemKind, screenFor } from "../../components/payment/paymentData";
 
 const POLL_MS = 3000;
 const POLL_LIMIT_MS = 60000;
@@ -100,8 +100,8 @@ const PaymentFlowPage = () => {
 
   // Paid: the confirmation page.
   useEffect(() => {
-    if (screen === "confirmed" && data) navigate(`/my-booking/${encodeURIComponent(data.bookingReference)}`, { replace: true });
-  }, [screen, data, navigate]);
+    if (screen === "confirmed" && data) navigate(confirmedHref({ reference: data.bookingReference, key: data.key || key }), { replace: true });
+  }, [screen, data, navigate, key]);
 
   // While a payment is being confirmed, ask the provider again every 3 seconds for up to a minute; then the problem
   // page offers "Check payment status" (never a second payment).

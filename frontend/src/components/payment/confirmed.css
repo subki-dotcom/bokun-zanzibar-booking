@@ -1,0 +1,579 @@
+/* Booking confirmed (mockups "Confirmed" and "ConfirmedMobile"). Builds on checkout.css and payment.css. */
+.bc-header-inner {
+  max-width: 1120px;
+}
+
+.bc-nav {
+  display: flex;
+  gap: 24px;
+}
+
+.bc-nav a {
+  color: var(--ink) !important;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.bc-nav a:hover {
+  color: var(--brand) !important;
+}
+
+.bc-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.bc-card {
+  padding: 24px;
+}
+
+.bc .bc-card h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Hero */
+.bc-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 28px;
+  text-align: center;
+}
+
+.bc-check {
+  display: inline-grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+}
+
+.bc-check svg {
+  width: 34px;
+  height: 34px;
+  stroke-width: 2.5;
+}
+
+.bc-check.is-loading {
+  background: var(--brand-soft);
+}
+
+.bc .bc-hero h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.bc .bc-hero h1:focus {
+  outline: none;
+}
+
+.bc-lead {
+  max-width: 520px;
+  margin: 10px 0 0;
+  color: var(--text-body);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.bc-lead strong {
+  color: var(--ink);
+}
+
+.bc-reference {
+  margin-top: 20px;
+  padding: 8px 8px 8px 16px;
+}
+
+.bc-reference .pf-reference-text {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.bc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.bc-primary {
+  min-height: 48px;
+  padding: 0 24px;
+  font-size: 15px;
+}
+
+.bc-primary svg,
+.bc-outline svg {
+  width: 18px;
+  height: 18px;
+}
+
+.bc-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--ink) !important;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bc-outline:hover {
+  border-color: var(--brand);
+}
+
+.bc-calendar {
+  position: relative;
+}
+
+.bc-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 20;
+  display: grid;
+  min-width: 240px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+  transform: translateX(-50%);
+}
+
+.bc-menu a,
+.bc-menu button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink) !important;
+  font-size: 14px;
+  line-height: 44px;
+  text-align: left;
+  text-decoration: none;
+}
+
+.bc-menu a:hover,
+.bc-menu button:hover {
+  background: var(--brand-selected-bg);
+}
+
+/* Trip */
+.bc-trip {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bc-trip-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.bc-trip-head img,
+.bc-trip-img {
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  background: #2c7d6c;
+  object-fit: cover;
+}
+
+.bc-trip-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.bc-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.bc-tiles > div {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--page-bg);
+}
+
+.bc-tiles dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.bc-tiles dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.bc-paid {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.bc-paid strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.bc-free {
+  font-size: 13px;
+}
+
+.bc-free a {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+/* What happens next */
+.bc-next ol {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bc-next li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.bc-next li > span {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bc-next li p {
+  margin: 3px 0 0;
+  color: var(--text-body);
+  font-size: 15px;
+}
+
+.bc-next li strong {
+  color: var(--ink);
+}
+
+.bc-bring {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.bc .bc-bring h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.bc-bring ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bc-bring li {
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+}
+
+/* Help */
+.bc-help {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px;
+}
+
+.bc-help > div {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bc-help strong {
+  font-size: 15px;
+}
+
+.bc-help small,
+.bc-help small a {
+  color: var(--muted) !important;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+/* Phones: one WhatsApp card */
+.bc-help-m {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  color: var(--ink) !important;
+  text-decoration: none;
+}
+
+.bc-help-m > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.bc-help-m strong {
+  font-size: 16px;
+}
+
+.bc-help-m small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.bc-help-icon {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--whatsapp);
+  color: #fff;
+}
+
+.bc-help-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Related tours */
+.bc-related {
+  margin-top: 8px;
+}
+
+.bc .bc-related h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.bc-related-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bc-related-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink) !important;
+  text-decoration: none;
+}
+
+.bc-related-image {
+  display: block;
+  height: 120px;
+  background: #3d8f84;
+}
+
+.bc-related-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bc-related-text {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px 12px;
+}
+
+.bc-related-text strong {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.bc-related-text small {
+  color: var(--text-body);
+  font-size: 13px;
+}
+
+@media (max-width: 767.98px) {
+  .bc-nav {
+    gap: 16px;
+  }
+
+  .bc-nav a {
+    font-size: 14px;
+  }
+
+  .bc .ck-logo strong {
+    font-size: 15px;
+  }
+
+  .bc-container {
+    gap: 12px;
+    padding: 16px 16px 40px;
+  }
+
+  .bc-card {
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .bc-hero {
+    padding: 24px 18px;
+  }
+
+  .bc-check {
+    width: 60px;
+    height: 60px;
+  }
+
+  .bc .bc-hero h1 {
+    font-size: 26px;
+  }
+
+  .bc-reference {
+    align-self: stretch;
+  }
+
+  .bc-reference .pf-reference-text {
+    display: grid;
+    gap: 0;
+    text-align: left;
+  }
+
+  .bc-actions {
+    flex-direction: column;
+    align-self: stretch;
+  }
+
+  .bc-actions > * {
+    width: 100%;
+  }
+
+  .bc-primary,
+  .bc-outline {
+    width: 100%;
+  }
+
+  .bc-trip-head img,
+  .bc-trip-img {
+    width: 64px;
+    height: 64px;
+  }
+
+  /* Compact rows instead of tiles */
+  .bc-tiles {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .bc-tiles > div {
+    display: flex;
+    justify-content: space-between;
+    padding: 0;
+    background: none;
+  }
+
+  .bc-tiles dt {
+    font-size: 14px;
+  }
+
+  .bc-tiles dd {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  .bc-related-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+
+  .bc-related-card {
+    flex: 0 0 70%;
+    scroll-snap-align: start;
+  }
+}
+
+/* "Download ticket (PDF)": the browser's print / Save as PDF keeps the ticket only. */
+@media print {
+  .bc-header,
+  .bc-actions,
+  .bc-help,
+  .bc-help-m,
+  .bc-related,
+  .bc-free a,
+  .pf-pill,
+  .app-shell > footer,
+  .cookie-consent,
+  .floating-whatsapp-btn {
+    display: none !important;
+  }
+
+  .ck.bc {
+    background: #fff;
+  }
+
+  .bc-container {
+    max-width: none;
+    padding: 0;
+  }
+
+  .bc-card {
+    border-color: #ccc;
+    break-inside: avoid;
+  }
+}

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { confirmedHref, paymentPageHref, problemKind, screenFor, tripLine, whatsappReferenceHref } from "../src/components/payment/paymentData.js";
+import { calendarEvent, confirmedHref, durationHours, googleCalendarHref, icsFile, paymentPageHref, problemKind, screenFor, tripLine, whatsappReferenceHref } from "../src/components/payment/paymentData.js";
 
 const session = { provider: "pesapal", redirectUrl: "https://pay.pesapal.com/iframe/x" };
 
@@ -32,4 +32,19 @@ test("links and the trip line", () => {
     decodeURIComponent(whatsappReferenceHref("https://wa.me/255", "ZNZ-1", "Jozani").split("?text=")[1]),
     "Hi, I need help with my booking ZNZ-1 (Jozani)."
   );
+});
+
+test("the trip goes to a calendar in Zanzibar time for its duration", () => {
+  const event = calendarEvent({ date: "2026-11-10", time: "07:00", bookingReference: "ZNZ-1", pickupHotel: "Coco Reef; Beach", tour: { title: "Dolphins, Jozani", duration: "8 hours" } });
+  assert.equal(event.start.toISOString(), "2026-11-10T04:00:00.000Z");
+  assert.equal(event.end.toISOString(), "2026-11-10T12:00:00.000Z");
+  const ics = icsFile(event, "ZNZ-1");
+  assert.match(ics, /DTSTART:20261110T040000Z/);
+  assert.match(ics, /SUMMARY:Dolphins\\, Jozani/);
+  assert.match(ics, /LOCATION:Coco Reef\\; Beach/);
+  assert.match(googleCalendarHref(event), /dates=20261110T040000Z%2F20261110T120000Z/);
+  assert.equal(durationHours("30 minutes"), 0.5);
+  assert.equal(durationHours("2 days"), 48);
+  assert.equal(durationHours(""), 4);
+  assert.equal(calendarEvent({ date: "" }), null);
 });

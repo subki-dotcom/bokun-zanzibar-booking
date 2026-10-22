@@ -90,3 +90,65 @@ export const whatsappReferenceHref = (baseHref = "", reference = "", title = "")
   const text = `Hi, I need help with my booking ${reference}${title ? ` (${title})` : ""}.`;
   return `${baseHref}?text=${encodeURIComponent(text)}`;
 };
+
+// Hours from "8 hours", "30 minutes", "2 days" (4 hours when unknown).
+export const durationHours = (text = "") => {
+  const match = String(text || "").match(/(\d+(?:\.\d+)?)\s*(minute|min|hour|hr|h\b|day)/i);
+  if (!match) return 4;
+  const value = Number(match[1]);
+  const unit = match[2].toLowerCase();
+  return unit.startsWith("min") ? value / 60 : unit.startsWith("day") ? value * 24 : value;
+};
+
+const ZANZIBAR_OFFSET_HOURS = 3;
+const pad = (value) => String(value).padStart(2, "0");
+const utcStamp = (date) =>
+  `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}T${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}00Z`;
+
+// The tour as a calendar event: start in Zanzibar time (UTC+3), end after its duration.
+export const calendarEvent = (data = {}) => {
+  const day = String(data.date || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!day) return null;
+  const [hours, minutes] = (String(data.time || "").match(/^(\d{1,2}):(\d{2})/) || [0, "8", "00"]).slice(1).map(Number);
+  const start = new Date(Date.UTC(Number(day[1]), Number(day[2]) - 1, Number(day[3]), hours - ZANZIBAR_OFFSET_HOURS, minutes));
+  const end = new Date(start.getTime() + durationHours(data.tour?.duration) * 3600 * 1000);
+  return {
+    title: data.tour?.title || "Zanzibar tour",
+    start,
+    end,
+    location: data.pickupHotel || "Zanzibar",
+    details: `Booking reference ${data.bookingReference || ""}${data.tour?.option ? ` · ${data.tour.option}` : ""}`
+  };
+};
+
+const icsText = (value = "") => String(value).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+
+export const icsFile = (event, uid = "") =>
+  event
+    ? [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Riser Tours & Safaris//Booking//EN",
+        "BEGIN:VEVENT",
+        `UID:${uid || utcStamp(event.start)}@zanzibartoursandsafaris.co.tz`,
+        `DTSTAMP:${utcStamp(new Date())}`,
+        `DTSTART:${utcStamp(event.start)}`,
+        `DTEND:${utcStamp(event.end)}`,
+        `SUMMARY:${icsText(event.title)}`,
+        `LOCATION:${icsText(event.location)}`,
+        `DESCRIPTION:${icsText(event.details)}`,
+        "END:VEVENT",
+        "END:VCALENDAR"
+      ].join("\r\n")
+    : "";
+
+export const googleCalendarHref = (event) =>
+  event
+    ? `https://calendar.google.com/calendar/render?${new URLSearchParams({
+        action: "TEMPLATE",
+        text: event.title,
+        dates: `${utcStamp(event.start)}/${utcStamp(event.end)}`,
+        location: event.location,
+        details: event.details
+      }).toString()}`
+    : "";
