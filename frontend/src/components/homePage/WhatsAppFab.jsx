@@ -3,14 +3,14 @@ import { BsWhatsapp } from "react-icons/bs";
 import { BRAND } from "../../config/brand";
 import { whatsappPlanHref } from "./homeData";
 
-// 56px WhatsApp button. It steps aside while the CTA band (which has its own WhatsApp button) or the footer is on
-// screen, so it never sits on top of their buttons.
+// 56px WhatsApp button. It steps aside while the footer (which has its own WhatsApp button) is on screen, so it
+// never sits on top of its buttons.
 const WhatsAppFab = () => {
   const [hidden, setHidden] = useState(false);
   const href = whatsappPlanHref(BRAND.whatsappHref, BRAND.name);
 
   useEffect(() => {
-    const targets = [document.querySelector(".hp-cta"), document.querySelector("footer")].filter(Boolean);
+    const targets = [document.querySelector("footer")].filter(Boolean);
     if (!targets.length || typeof IntersectionObserver === "undefined") return undefined;
     const visible = new Set();
     const observer = new IntersectionObserver((entries) => {

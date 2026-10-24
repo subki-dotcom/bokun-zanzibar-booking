@@ -1,6 +1,6 @@
 import { SiteHeader, UtilityBar } from "./SiteChrome";
 import { Hero, HeroSearchCard } from "./Hero";
-import { BestSellers, CategoryTiles, CtaBand, FeaturedTours, ReviewsSection, SafariBanner, StepsStrip } from "./HomeSections";
+import { BestSellers, CategoryTiles, FeaturedTours, ReviewsSection, SafariBanner, StepsStrip } from "./HomeSections";
 import WhatsAppFab from "./WhatsAppFab";
 import { travelAgencySchema } from "../../config/site";
 
@@ -22,7 +22,6 @@ const HomeView = ({ home = null }) => (
       <BestSellers tours={home?.bestSellers} />
       <StepsStrip />
       <ReviewsSection reviews={home?.reviews} />
-      <CtaBand />
     </div>
     <WhatsAppFab />
   </div>
