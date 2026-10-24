@@ -42,10 +42,12 @@ const clearToursCache = () => {
   categoriesRequest = null;
 };
 
-export const fetchTours = async ({ page = 1, limit = 9, force = false } = {}) => {
+// category: a travel style label ("Sea tours"); the server pages through that style only.
+export const fetchTours = async ({ page = 1, limit = 9, category = "", force = false } = {}) => {
   const safePage = Math.max(1, Number(page || 1));
   const safeLimit = Math.max(1, Number(limit || 9));
-  const cacheKey = `${safePage}:${safeLimit}`;
+  const style = category && category !== "all" ? String(category) : "";
+  const cacheKey = `${safePage}:${safeLimit}:${style}`;
 
   if (!force) {
     const cached = readCache(tourListCache, cacheKey, TOUR_LIST_CACHE_TTL_MS);
@@ -61,7 +63,7 @@ export const fetchTours = async ({ page = 1, limit = 9, force = false } = {}) =>
 
   const request = axiosClient
     .get("/tours", {
-      params: { page: safePage, limit: safeLimit }
+      params: { page: safePage, limit: safeLimit, ...(style ? { category: style } : {}) }
     })
     .then((response) =>
       writeCache(tourListCache, cacheKey, {
@@ -190,6 +192,13 @@ export const fetchAdminWebsiteProducts = async () => {
 export const updateAdminWebsiteProductVisibility = async (productId, hidden) => {
   const response = await axiosClient.patch(`/tours/admin/products/${encodeURIComponent(productId)}/visibility`, { hidden });
   clearToursCache();
+  return response.data.data;
+};
+
+// Staff choose the tours shown in "Handpicked Zanzibar experiences" on the home page.
+export const updateAdminWebsiteProductFeatured = async (productId, featured) => {
+  const response = await axiosClient.patch(`/tours/admin/products/${encodeURIComponent(productId)}/featured`, { featured });
+  homeDataRequest = null;
   return response.data.data;
 };
 

@@ -183,7 +183,10 @@ export const mapBokunTourForListing = (tour = {}) => {
       imageUrl,
       "https://images.unsplash.com/photo-1518544866330-95a67b1b5f39?auto=format&fit=crop&w=1200&q=80"
     ),
-    categories: Array.isArray(tour.categories) ? tour.categories.filter(Boolean) : [],
+    // Travel styles ("Sea tours", "Private tours"…) when the server gives them, the supplier's categories otherwise.
+    categories: Array.isArray(tour.styles) && tour.styles.length
+      ? tour.styles.filter(Boolean)
+      : Array.isArray(tour.categories) ? tour.categories.filter(Boolean) : [],
     rating,
     reviewCount
   };

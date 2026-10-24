@@ -155,11 +155,16 @@ const pickBestSellers = (cards = [], bookings = new Map(), exclude = [], limit =
 };
 
 // The five style tiles with their real count (hidden when empty) and, for transfers, the lowest price.
-const styleTiles = (cards = []) =>
-  STYLES.map((style) => {
+// Each tile gets its own cover: a tour of that style only when possible, the one with most photos, never reused.
+const styleTiles = (cards = []) => {
+  const usedCovers = new Set();
+  return STYLES.map((style) => {
     const members = cards.filter((card) => card.styles.includes(style.key));
-    const cheapest = members.reduce((low, card) => (!low || card.fromPrice < low.fromPrice ? card : low), null);
-    const cover = [...members].sort((a, b) => b.images - a.images)[0];
+    const cheapest = members.filter((card) => card.fromPrice > 0).reduce((low, card) => (!low || card.fromPrice < low.fromPrice ? card : low), null);
+    const cover = members
+      .filter((card) => card.image && !usedCovers.has(card.image))
+      .sort((a, b) => a.styles.length - b.styles.length || b.images - a.images)[0];
+    if (cover) usedCovers.add(cover.image);
     return {
       key: style.key,
       label: style.label,
@@ -170,5 +175,6 @@ const styleTiles = (cards = []) =>
       image: cover?.image || ""
     };
   }).filter((tile) => tile.count > 0);
+};
 
 module.exports = { STYLES, safariFacts, tourStyles, toHomeCard, showable, pickFeatured, pickBestSellers, styleTiles, titleKey };

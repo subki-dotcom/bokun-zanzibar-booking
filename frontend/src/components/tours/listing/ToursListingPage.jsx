@@ -66,7 +66,8 @@ const ToursListingPage = () => {
         setError("");
         const result = await fetchTours({
           page: activePage,
-          limit: ITEMS_PER_PAGE
+          limit: ITEMS_PER_PAGE,
+          category: filters.category
         });
 
         setRawTours(result.items || []);
@@ -83,7 +84,7 @@ const ToursListingPage = () => {
     };
 
     loadTours();
-  }, [activePage]);
+  }, [activePage, filters.category]);
 
   useEffect(() => {
     let mounted = true;

@@ -639,3 +639,390 @@ select.hp-control {
     display: none;
   }
 }
+
+/* Sections */
+.hp-section {
+  margin-top: 80px;
+}
+
+.hp-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.hp .hp-eyebrow {
+  margin: 0 0 6px;
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.hp .hp-section-head h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.hp .hp-section-link {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  color: var(--brand);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.hp-section-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 5. Style tiles */
+.hp-tiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hp .hp-tile {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 260px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #2c7d6c;
+  color: #fff;
+  text-decoration: none;
+}
+
+.hp-tile img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.hp-tile:hover img {
+  transform: scale(1.04);
+}
+
+.hp-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(8, 24, 26, 0) 35%, rgba(8, 24, 26, 0.78) 100%);
+}
+
+.hp-tile-text {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 2px;
+  padding: 18px;
+}
+
+.hp-tile-text strong {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.hp-tile-text small {
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.hp-tile-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hp-tile-count svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 6. Tour cards */
+.hp-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.hp-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #fff;
+  transition: box-shadow 0.2s ease;
+}
+
+.hp-card:hover {
+  box-shadow: var(--shadow-card);
+}
+
+.hp-card-media {
+  position: relative;
+  height: 220px;
+  background: var(--page-alt);
+}
+
+.hp-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hp-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hp-heart {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+}
+
+.hp-heart svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hp-heart.is-saved svg {
+  color: #c2410c;
+  fill: #c2410c;
+}
+
+.hp-card-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 18px 20px 20px;
+}
+
+.hp .hp-card-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hp .hp-card h3 {
+  margin: 6px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.hp .hp-card-link {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* The whole card opens the tour. */
+.hp-card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.hp .hp-card-summary {
+  display: -webkit-box;
+  margin: 8px 0 0;
+  overflow: hidden;
+  color: var(--text-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.hp .hp-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 10px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hp-rating svg {
+  width: 15px;
+  height: 15px;
+  color: var(--brand);
+  fill: var(--brand);
+}
+
+.hp-rating span {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.hp-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* Prices line up across a row; the last text line keeps its gap above the divider. */
+.hp-card-body > :nth-last-child(2) {
+  margin-bottom: 16px;
+}
+
+.hp-price {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.hp-price strong {
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.hp-card-cta {
+  display: inline-flex;
+  align-items: center;
+  color: var(--brand);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hp-card-cta svg {
+  width: 15px;
+  height: 15px;
+}
+
+.hp .hp-btn-outline {
+  border-color: var(--border-strong);
+  background: #fff;
+  color: var(--ink);
+}
+
+.hp-see-all {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .hp-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .hp-section {
+    margin-top: 48px;
+  }
+
+  .hp .hp-section-head h2 {
+    font-size: 26px;
+  }
+
+  .hp-featured .hp-section-link {
+    display: none;
+  }
+
+  .hp-section-head .hp-section-link {
+    font-size: 14px;
+  }
+
+  /* Swipe row */
+  .hp-tiles {
+    display: flex;
+    gap: 12px;
+    margin: 0 -16px;
+    padding: 0 16px 4px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .hp-tiles::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hp-tiles li {
+    flex: 0 0 46%;
+    scroll-snap-align: start;
+  }
+
+  .hp .hp-tile {
+    height: 200px;
+  }
+
+  .hp-tile-text {
+    padding: 14px;
+  }
+
+  .hp-tile-text strong {
+    font-size: 17px;
+  }
+
+  .hp-tile-text small {
+    display: none;
+  }
+
+  .hp-cards {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Phones show three featured tours and "See all". */
+  .hp-cards .hp-card:nth-child(n + 4) {
+    display: none;
+  }
+
+  .hp-see-all {
+    display: flex;
+    margin-top: 16px;
+  }
+
+  .hp-card-media {
+    height: 200px;
+  }
+}

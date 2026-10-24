@@ -3,6 +3,9 @@ const SyncLog = require("../../models/SyncLog");
 const AppError = require("../../utils/AppError");
 const bokunService = require("../../integrations/bokun");
 const homeService = require("./home");
+const { STYLES: TRAVEL_STYLES, tourStyles } = require("./homeCatalog");
+// The travel style labels of a tour ("Sea tours", "Private tours"…), used by the tours page filter.
+const styleLabels = (tour = {}) => tourStyles(tour).map((key) => TRAVEL_STYLES.find((style) => style.key === key)?.label).filter(Boolean);
 const mongoose = require("mongoose");
 const logger = require("../../config/logger");
 
@@ -706,23 +709,43 @@ const listingSummary = (tour = {}) => {
   return full.length > 180 ? `${full.slice(0, 177).trim()}...` : full;
 };
 
-const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
+const LISTING_FIELDS = "bokunProductId title slug shortDescription description duration images fromPrice fromPriceBasis fromPriceCheckedAt rating reviewCount currency destination highlights categories lastSyncedAt options.bokunOptionId options.active";
+
+// "Sea tours" → "sea"; anything else (including "all") means no style filter.
+const styleKeyFor = (label = "") => TRAVEL_STYLES.find((style) => style.label.toLowerCase() === String(label).trim().toLowerCase())?.key || "";
+
+const listTours = async ({ page = 1, limit = 9, style = "", requestId = "" } = {}) => {
   await ensurePublicSnapshotCache(requestId);
-  const totalItems = await ProductSnapshot.countDocuments(PUBLIC_LISTING_FILTER);
 
   const safePage = Math.max(1, Number(page || 1));
   const safeLimit = Math.min(60, Math.max(1, Number(limit || 9)));
   const skip = (safePage - 1) * safeLimit;
+  const styleKey = styleKeyFor(style);
 
-  const items = await ProductSnapshot.find(PUBLIC_LISTING_FILTER)
-    .select("bokunProductId title slug shortDescription description duration images fromPrice fromPriceBasis fromPriceCheckedAt rating reviewCount currency destination highlights categories lastSyncedAt options.bokunOptionId options.active")
-    .sort({ updatedAt: -1 })
-    .skip(skip)
-    .limit(safeLimit)
-    .lean();
+  let totalItems;
+  let items;
+  if (styleKey) {
+    // Styles come from titles, so the page of a style is cut from the matching ids (a few dozen products).
+    const ids = (await ProductSnapshot.find(PUBLIC_LISTING_FILTER).select("title").sort({ updatedAt: -1 }).lean())
+      .filter((row) => tourStyles(row).includes(styleKey))
+      .map((row) => String(row._id));
+    totalItems = ids.length;
+    const pageIds = ids.slice(skip, skip + safeLimit);
+    const rows = await ProductSnapshot.find({ _id: { $in: pageIds } }).select(LISTING_FIELDS).lean();
+    items = pageIds.map((id) => rows.find((row) => String(row._id) === id)).filter(Boolean);
+  } else {
+    totalItems = await ProductSnapshot.countDocuments(PUBLIC_LISTING_FILTER);
+    items = await ProductSnapshot.find(PUBLIC_LISTING_FILTER)
+      .select(LISTING_FIELDS)
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(safeLimit)
+      .lean();
+  }
   const normalizedItems = items.map(({ description, ...tour }) => ({
     ...normalizeListingSignalValues(tour),
-    shortDescription: listingSummary({ ...tour, description })
+    shortDescription: listingSummary({ ...tour, description }),
+    styles: styleLabels(tour)
   }));
   scheduleListingSignalHydration(items, requestId);
 
@@ -744,33 +767,12 @@ const listTours = async ({ page = 1, limit = 9, requestId = "" } = {}) => {
 const listTourCategories = async (requestId = "") => {
   await ensurePublicSnapshotCache(requestId);
 
-  const rows = await ProductSnapshot.find(PUBLIC_LISTING_FILTER)
-    .select("categories")
-    .lean();
-
-  const counter = new Map();
-
-  rows.forEach((row) => {
-    const categories = Array.isArray(row?.categories) ? row.categories : [];
-
-    categories.forEach((item) => {
-      const label =
-        typeof item === "string"
-          ? item
-          : item?.label || item?.name || item?.title || "";
-
-      const normalized = String(label || "").trim();
-      if (!normalized) {
-        return;
-      }
-
-      counter.set(normalized, Number(counter.get(normalized) || 0) + 1);
-    });
-  });
-
-  return Array.from(counter.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  // The supplier's categories say "Activities" for nearly everything; guests browse by travel style instead.
+  const rows = await ProductSnapshot.find(PUBLIC_LISTING_FILTER).select("title").lean();
+  return TRAVEL_STYLES.map((style) => ({
+    name: style.label,
+    count: rows.filter((row) => tourStyles(row).includes(style.key)).length
+  })).filter((row) => row.count > 0);
 };
 
 const schedulePresentationRefresh = (tour, requestId) => {

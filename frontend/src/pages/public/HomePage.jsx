@@ -1,40 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchTourCategories, fetchTours } from "../../api/toursApi";
+import { fetchHomeData, fetchTours } from "../../api/toursApi";
 import { mapBokunTourForListing } from "../../components/tours/listing/listing.helpers";
 import "../../components/homePage/home.css";
 import { SiteHeader, UtilityBar } from "../../components/homePage/SiteChrome";
 import { Hero, HeroSearchCard } from "../../components/homePage/Hero";
-import FeaturedToursSection from "../../components/home/FeaturedToursSection";
+import { CategoryTiles, FeaturedTours } from "../../components/homePage/HomeSections";
 import WhyBookUsSection from "../../components/home/WhyBookUsSection";
-import TourCategoriesSection from "../../components/home/TourCategoriesSection";
 import BestSellersSection from "../../components/home/BestSellersSection";
 import HowItWorksSection from "../../components/home/HowItWorksSection";
 import TestimonialsSection from "../../components/home/TestimonialsSection";
 import InspirationSection from "../../components/home/InspirationSection";
 import FinalCTASection from "../../components/home/FinalCTASection";
 import SeoHead from "../../components/common/SeoHead";
-import {
-  buildCategoryCards,
-  homeFallbackTours,
-  pickBestSellerTours,
-  pickFeaturedTours
-} from "../../components/home/home.helpers";
+import { homeFallbackTours, pickBestSellerTours } from "../../components/home/home.helpers";
 import { BRAND } from "../../config/brand";
 
 const HomePage = () => {
   const [tourRows, setTourRows] = useState([]);
-  const [categoryRows, setCategoryRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [home, setHome] = useState(null);
 
   useEffect(() => {
     let mounted = true;
 
     const loadHomeData = async () => {
       try {
-        setLoading(true);
-        const [toursResponse, categoriesResponse] = await Promise.all([
+        const [toursResponse, homeResponse] = await Promise.all([
           fetchTours({ page: 1, limit: 18 }),
-          fetchTourCategories()
+          fetchHomeData().catch(() => null)
         ]);
 
         if (!mounted) {
@@ -42,18 +34,13 @@ const HomePage = () => {
         }
 
         setTourRows(Array.isArray(toursResponse?.items) ? toursResponse.items : []);
-        setCategoryRows(Array.isArray(categoriesResponse) ? categoriesResponse : []);
+        setHome(homeResponse || null);
       } catch {
         if (!mounted) {
           return;
         }
 
         setTourRows([]);
-        setCategoryRows([]);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
       }
     };
 
@@ -68,9 +55,7 @@ const HomePage = () => {
     return normalized.length > 0 ? normalized : homeFallbackTours;
   }, [tourRows]);
 
-  const featuredTours = useMemo(() => pickFeaturedTours(mappedTours, 6), [mappedTours]);
   const bestSellerTours = useMemo(() => pickBestSellerTours(mappedTours, 10), [mappedTours]);
-  const categories = useMemo(() => buildCategoryCards(categoryRows), [categoryRows]);
 
   return (
     <>
@@ -81,11 +66,11 @@ const HomePage = () => {
         <div className="hp-main">
           <Hero />
           <HeroSearchCard />
+          <CategoryTiles styles={home?.styles} />
+          <FeaturedTours tours={home?.featured} />
         </div>
       </div>
-      <FeaturedToursSection tours={featuredTours} loading={loading} />
       <WhyBookUsSection />
-      <TourCategoriesSection categories={categories} />
       <BestSellersSection tours={bestSellerTours} />
       <HowItWorksSection />
       <TestimonialsSection />

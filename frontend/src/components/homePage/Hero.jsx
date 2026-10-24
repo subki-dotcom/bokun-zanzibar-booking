@@ -20,7 +20,7 @@ export const Hero = () => {
           alt="A traditional dhow sailing at sunset off the coast of Zanzibar"
           width="1264"
           height="836"
-          fetchPriority="high"
+          fetchpriority="high"
           decoding="async"
         />
       </picture>

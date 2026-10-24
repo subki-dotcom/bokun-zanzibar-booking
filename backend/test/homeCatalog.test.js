@@ -75,3 +75,16 @@ test("style tiles count real tours and hide empty styles", () => {
   assert.deepEqual(tiles.map((tile) => [tile.key, tile.count]), [["sea", 1], ["transfers", 1]]);
   assert.equal(tiles.find((tile) => tile.key === "transfers").fromPrice, 15);
 });
+
+test("style tiles never reuse a cover photo and ignore $0 prices", () => {
+  const tiles = styleTiles([
+    tour("1", "Stone Town and Mnemba Island combo", { images: ["shared.jpg"] }),
+    tour("2", "Mnemba Island snorkel", { images: ["sea.jpg"] }),
+    tour("3", "Airport Transfers", { fromPrice: 0 }),
+    tour("4", "Airport Transfers to Paje", { fromPrice: 25 })
+  ].map(toHomeCard));
+  const covers = tiles.map((tile) => tile.image);
+  assert.equal(new Set(covers).size, covers.length);
+  assert.equal(tiles.find((tile) => tile.key === "sea").image, "sea.jpg");
+  assert.equal(tiles.find((tile) => tile.key === "transfers").fromPrice, 25);
+});
