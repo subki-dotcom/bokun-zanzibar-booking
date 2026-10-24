@@ -202,8 +202,29 @@ export const CancellationPolicy = ({ text = "", emphasis = "" }) => {
 
 // Reviews: real score, counts and texts only. Without reviews the section says so instead of showing numbers.
 // source/url: where the rating comes from (e.g. the tour's Tripadvisor page) and where to read the reviews.
-export const Reviews = ({ rating = 0, reviewCount = 0, reviews = [], distribution = null, freeCancellationWindow = "", source = "", url = "" }) => {
+// listing: the tour's own Tripadvisor page; with reviews but no score yet it is shown as "1 review on Tripadvisor".
+export const Reviews = ({ rating = 0, reviewCount = 0, reviews = [], distribution = null, freeCancellationWindow = "", source = "", url = "", listing = null }) => {
   const count = Number(reviewCount) || 0;
+  const unrated = listing?.scope === "product" && listing.url && Number(listing.reviewCount) > 0 ? listing : null;
+  if ((count <= 0 || !(Number(rating) > 0)) && unrated) {
+    const listed = Number(unrated.reviewCount);
+    return (
+      <section id="reviews" className="tp-section">
+        <h2>Reviews</h2>
+        <div className="tp-reviews-empty">
+          <LuStar aria-hidden="true" />
+          <div>
+            <strong>{listed} review{listed === 1 ? "" : "s"} on Tripadvisor</strong>
+            <p>
+              <a className="tp-reviews-source" href={unrated.url} target="_blank" rel="noopener noreferrer">
+                Read {listed === 1 ? "it" : "them"} on Tripadvisor <LuExternalLink aria-hidden="true" />
+              </a>
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
   if (count <= 0 || !(Number(rating) > 0)) {
     return (
       <section id="reviews" className="tp-section">

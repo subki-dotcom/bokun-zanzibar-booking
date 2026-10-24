@@ -45,6 +45,21 @@ test("tour reviews from Tripadvisor say so and link to them", () => {
   assert.match(empty, /No reviews yet/);
 });
 
+test("a tour whose Tripadvisor page has reviews but no score shows the count and a link, without stars", () => {
+  const html = renderToStaticMarkup(React.createElement(sections.Reviews, {
+    rating: 0,
+    reviewCount: 0,
+    listing: { url: "https://www.tripadvisor.com/AttractionProductReview-g1-d2-Mikumi.html", rating: 0, reviewCount: 1, scope: "product" }
+  }));
+  assert.match(html, /1 review on Tripadvisor/);
+  assert.match(html, /Read it on Tripadvisor/);
+  assert.doesNotMatch(html, /No reviews yet|tp-score/);
+  const company = renderToStaticMarkup(React.createElement(sections.Reviews, {
+    listing: { url: "https://www.tripadvisor.com/Attraction_Review-company.html", rating: 4.5, reviewCount: 19, scope: "company" }
+  }));
+  assert.match(company, /No reviews yet/);
+});
+
 test("ratings from another site are not marked up as the agency's own", async () => {
   const site = await server.ssrLoadModule("/src/config/site.js");
   assert.equal(site.travelAgencySchema({ rating: 4.5, count: 19, source: "Tripadvisor" }).aggregateRating, undefined);
