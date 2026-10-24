@@ -475,6 +475,10 @@
 
 /* Mobile: 8px bands between sections, two-column facts, compact lists. */
 @media (max-width: 767.98px) {
+  .tp-step-body p {
+    font-size: 14px;
+  }
+
   .tp-layout {
     gap: 0;
   }
