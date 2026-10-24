@@ -1,8 +1,9 @@
-/* Design tokens shared by the tour page (.tp) and checkout (.ck). Scoped so other pages keep their styles. */
+/* Design tokens shared by the tour page (.tp), checkout (.ck) and home page (.hp). Scoped so other pages keep their styles. */
 .tp,
 .tp-header,
 .ck,
-.ck-header {
+.ck-header,
+.hp {
   --brand: #0e6b57;
   --brand-hover: #0a5242;
   --brand-soft: #e7f3ef;
@@ -14,6 +15,10 @@
   --border-strong: #c9d1ce;
   --disabled: #a3adaa;
   --page-bg: #f6f7f6;
+  --page-alt: #f6f7f6;
+  --brand-tint: #f3faf7;
+  --footer-text: #d5dedb;
+  --accent-on-dark: #7fd1bc;
   --section-gap-mobile: #f3f5f4;
   --urgency-bg: #fdf1e3;
   --urgency-text: #8a4205;

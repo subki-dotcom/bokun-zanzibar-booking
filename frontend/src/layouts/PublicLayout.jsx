@@ -21,6 +21,8 @@ const PublicLayout = () => {
   const isTourCheckout = /^\/booking\/[^/]+\/?$/.test(location.pathname) || /^\/payment-processing\/?$/.test(location.pathname);
   // The booking confirmation has its own light header (Tours, My booking).
   const isConfirmedRoute = /^\/booking\/confirmed\/[^/]+\/?$/.test(location.pathname);
+  // The home page has its own utility bar and header.
+  const isHomeRoute = location.pathname === "/";
   const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
 
   useEffect(() => {
@@ -32,7 +34,7 @@ const PublicLayout = () => {
       <AnalyticsTracker />
       {noIndexRoute ? <SeoHead noIndex title={BRAND.name} description="Secure booking account and payment page." /> : null}
       {isTourRoute ? <div className="tp-header-slot"><TourHeader /></div> : null}
-      {isTourRoute || isTourCheckout || isConfirmedRoute ? null : <Navbar expand="lg" className="public-nav py-3">
+      {isTourRoute || isTourCheckout || isConfirmedRoute || isHomeRoute ? null : <Navbar expand="lg" className="public-nav py-3">
         <Container>
           <Navbar.Brand as={Link} to="/" className="brand-mark fs-4">
             {BRAND.name}

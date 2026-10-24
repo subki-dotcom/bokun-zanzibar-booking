@@ -70,6 +70,17 @@ const setProductVisibility = asyncHandler(async (req, res) => {
   return successResponse(res, { message: data.hiddenFromPublic ? "Product hidden from the website" : "Product shown on the website", data });
 });
 
+const setProductFeatured = asyncHandler(async (req, res) => {
+  const data = await toursService.setProductFeatured(req.params.productId, req.body?.featured === true);
+  return successResponse(res, { message: data.featuredOnHome ? "Product featured on the home page" : "Product removed from the home page", data });
+});
+
+const getHomeData = asyncHandler(async (req, res) => {
+  const data = await toursService.getHomeData();
+  res.set("Cache-Control", "public, max-age=60");
+  return successResponse(res, { message: "Home page data", data });
+});
+
 const getOptionQuotes = asyncHandler(async (req, res) => {
   const data = await toursService.getOptionQuotes(req.params.slug, req.body || {}, req.requestId);
   return successResponse(res, { message: "Option quotes fetched", data });
@@ -139,6 +150,8 @@ module.exports = {
   getOptionQuotes,
   listProductsForAdmin,
   setProductVisibility,
+  setProductFeatured,
+  getHomeData,
   getTourOptions,
   checkOptionsAvailability,
   searchToursByAvailability,

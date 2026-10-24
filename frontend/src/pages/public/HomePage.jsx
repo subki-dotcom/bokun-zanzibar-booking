@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { fetchTourCategories, fetchTours } from "../../api/toursApi";
 import { mapBokunTourForListing } from "../../components/tours/listing/listing.helpers";
-import HeroSection from "../../components/home/HeroSection";
+import "../../components/homePage/home.css";
+import { SiteHeader, UtilityBar } from "../../components/homePage/SiteChrome";
+import { Hero, HeroSearchCard } from "../../components/homePage/Hero";
 import FeaturedToursSection from "../../components/home/FeaturedToursSection";
 import WhyBookUsSection from "../../components/home/WhyBookUsSection";
 import TourCategoriesSection from "../../components/home/TourCategoriesSection";
@@ -21,7 +22,6 @@ import {
 import { BRAND } from "../../config/brand";
 
 const HomePage = () => {
-  const navigate = useNavigate();
   const [tourRows, setTourRows] = useState([]);
   const [categoryRows, setCategoryRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,14 +72,17 @@ const HomePage = () => {
   const bestSellerTours = useMemo(() => pickBestSellerTours(mappedTours, 10), [mappedTours]);
   const categories = useMemo(() => buildCategoryCards(categoryRows), [categoryRows]);
 
-  const handleHeroSearch = (queryString = "") => {
-    navigate(`/tours${queryString ? `?${queryString}` : ""}`);
-  };
-
   return (
     <>
       <SeoHead title={`${BRAND.name} | Zanzibar Tours & Activities`} description="Book Zanzibar tours, activities, transfers, and safaris with live availability and secure checkout." />
-      <HeroSection onSearch={handleHeroSearch} />
+      <div className="hp">
+        <UtilityBar />
+        <SiteHeader />
+        <div className="hp-main">
+          <Hero />
+          <HeroSearchCard />
+        </div>
+      </div>
       <FeaturedToursSection tours={featuredTours} loading={loading} />
       <WhyBookUsSection />
       <TourCategoriesSection categories={categories} />

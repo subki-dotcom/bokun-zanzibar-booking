@@ -2,6 +2,7 @@ const ProductSnapshot = require("../../models/ProductSnapshot");
 const SyncLog = require("../../models/SyncLog");
 const AppError = require("../../utils/AppError");
 const bokunService = require("../../integrations/bokun");
+const homeService = require("./home");
 const mongoose = require("mongoose");
 const logger = require("../../config/logger");
 
@@ -860,6 +861,7 @@ const syncProducts = async (requestId, actor = {}) => {
     if (operations.length > 0) {
       await ProductSnapshot.bulkWrite(operations);
       tourCache.clear();
+      homeService.forgetHomeData();
     }
 
     syncLog.status = "success";
@@ -915,12 +917,13 @@ const getOptionQuotes = async (slug, payload = {}, requestId) => {
 // Staff view of every active product with its public visibility.
 const listProductsForAdmin = async () => {
   const rows = await ProductSnapshot.find({ status: "active" })
-    .select("bokunProductId title slug fromPrice currency shortDescription description hiddenFromPublic hiddenAt hiddenBy updatedAt")
+    .select("bokunProductId title slug fromPrice currency shortDescription description hiddenFromPublic hiddenAt hiddenBy featuredOnHome updatedAt")
     .sort({ title: 1 })
     .lean();
   return rows.map(({ description, shortDescription, ...row }) => ({
     ...row,
     hiddenFromPublic: Boolean(row.hiddenFromPublic),
+    featuredOnHome: Boolean(row.featuredOnHome),
     hasShortDescription: Boolean(String(shortDescription || "").trim()),
     hasDescription: Boolean(String(description || "").replace(/<[^>]*>/g, "").trim())
   }));
@@ -936,8 +939,25 @@ const setProductVisibility = async (productId, hidden, actor = "") => {
     .lean();
   if (!updated) throw new AppError("Product not found", 404, "PRODUCT_NOT_FOUND");
   forgetTour(updated.bokunProductId);
+  homeService.forgetHomeData();
   return updated;
 };
+
+// Staff choose the tours in "Handpicked Zanzibar experiences" on the home page.
+const setProductFeatured = async (productId, featured) => {
+  const updated = await ProductSnapshot.findOneAndUpdate(
+    { bokunProductId: String(productId || "") },
+    { $set: { featuredOnHome: Boolean(featured) } },
+    { new: true }
+  )
+    .select("bokunProductId title slug featuredOnHome")
+    .lean();
+  if (!updated) throw new AppError("Product not found", 404, "PRODUCT_NOT_FOUND");
+  homeService.forgetHomeData();
+  return updated;
+};
+
+const getHomeData = () => homeService.getHomeData();
 
 const getAvailableDates = async (slug, { from = "", days = 60 } = {}, requestId) => {
   const tour = await readTourBySlug(slug);
@@ -1111,6 +1131,8 @@ const searchToursByAvailability = async ({ travelDate, pax, slugs = [], requestI
 };
 
 module.exports = {
+  setProductFeatured,
+  getHomeData,
   listTours,
   listTourCategories,
   getTourBySlug,

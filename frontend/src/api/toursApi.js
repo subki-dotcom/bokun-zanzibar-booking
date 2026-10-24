@@ -77,6 +77,21 @@ export const fetchTours = async ({ page = 1, limit = 9, force = false } = {}) =>
   return request;
 };
 
+// Everything the home page shows (styles with counts, featured, best sellers, safari, reviews), cached by the server.
+let homeDataRequest = null;
+export const fetchHomeData = () => {
+  if (!homeDataRequest) {
+    homeDataRequest = axiosClient
+      .get("/tours/home")
+      .then((response) => response.data.data)
+      .catch((error) => {
+        homeDataRequest = null;
+        throw error;
+      });
+  }
+  return homeDataRequest;
+};
+
 export const fetchTourCategories = async ({ force = false } = {}) => {
   if (!force && categoriesCache && Date.now() - categoriesCache.cachedAt <= TOUR_CATEGORIES_CACHE_TTL_MS) {
     return categoriesCache.value;
