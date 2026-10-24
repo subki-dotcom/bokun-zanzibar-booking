@@ -123,15 +123,6 @@ a {
   color: inherit;
 }
 
-.public-nav {
-  position: sticky;
-  top: 0;
-  z-index: 1030;
-  backdrop-filter: blur(14px);
-  background: rgba(250, 252, 253, 0.86);
-  border-bottom: 1px solid rgba(199, 214, 222, 0.62);
-}
-
 .brand-mark {
   font-family: "Playfair Display", serif;
   font-weight: 700;
@@ -148,32 +139,6 @@ a {
 
 .public-nav-toggle .navbar-toggler-icon {
   filter: saturate(0.7);
-}
-
-.nav-pill-link {
-  border-radius: 999px;
-  padding: 0.46rem 0.94rem !important;
-  font-weight: 600;
-  color: var(--ink-700) !important;
-  border: 1px solid transparent;
-  transition: all 0.25s ease;
-}
-
-.nav-pill-link:hover {
-  border-color: var(--line-300);
-  color: var(--sea-800) !important;
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.nav-pill-link.active {
-  color: #fff !important;
-  border-color: transparent;
-  background: linear-gradient(135deg, var(--sea-700), var(--sea-600));
-  box-shadow: 0 10px 20px rgba(15, 93, 107, 0.3);
-}
-
-.public-nav-links {
-  align-items: center;
 }
 
 .dashboard-nav {
@@ -7679,7 +7644,6 @@ textarea.form-control {
 }
 
 @media (max-width: 991px) {
-  .public-nav .navbar-collapse,
   .dashboard-nav .navbar-collapse {
     margin-top: 0.75rem;
     padding: 0.75rem;
@@ -7694,13 +7658,11 @@ textarea.form-control {
     border-color: rgba(255, 255, 255, 0.22);
   }
 
-  .public-nav-links,
   .dashboard-nav-links {
     width: 100%;
     gap: 0.35rem !important;
   }
 
-  .public-nav-links .nav-pill-link,
   .dashboard-nav-links .portal-nav-link {
     width: 100%;
     text-align: left;
@@ -7815,10 +7777,6 @@ textarea.form-control {
   .hero-band,
   .dashboard-nav {
     border-radius: 0 0 20px 20px;
-  }
-
-  .public-nav {
-    backdrop-filter: blur(8px);
   }
 
   .brand-mark {
@@ -8269,8 +8227,7 @@ textarea.form-control {
     background: #ffffff !important;
   }
 
-  .public-nav,
-.floating-whatsapp-btn,
+  .floating-whatsapp-btn,
 .invoice-toolbar {
     display: none !important;
   }
@@ -10974,7 +10931,6 @@ textarea.form-control {
 }
 
 @media (max-width: 767px) {
-  .app-shell.is-checkout-route > .public-nav,
   .app-shell.is-checkout-route > .floating-whatsapp-btn {
     display: none !important;
   }

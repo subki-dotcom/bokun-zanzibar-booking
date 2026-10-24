@@ -110,3 +110,35 @@ test("tour search: hyphens or spaces, every word must appear; styles by key or l
   assert.equal(styleKeyFor("Cultural tours"), "cultural");
   assert.equal(styleKeyFor("all"), "");
 });
+
+test("header menu: staff pick first, otherwise the most booked non-transfer; searches give counts and lowest price", () => {
+  const { pickMenuTour, pickTopTours, searchSummaries } = require("../src/services/tours/homeCatalog");
+  const cards = [
+    tour("1", "Zanzibar Airport Transfers"),
+    tour("2", "Mnemba Island snorkel"),
+    tour("3", "Stone Town walk")
+  ].map(toHomeCard);
+  const bookings = new Map([["1", 30], ["3", 4]]);
+  assert.deepEqual(pickMenuTour(cards, bookings), { tour: cards[2], source: "bookings" });
+  const chosen = cards.map((card) => (card.id === "2" ? { ...card, inMenu: true } : card));
+  assert.equal(pickMenuTour(chosen, bookings).source, "admin");
+  assert.equal(pickMenuTour(chosen, bookings).tour.id, "2");
+  assert.deepEqual(pickTopTours(cards, bookings, 2).map((card) => card.id), ["1", "3"]);
+  const rows = [
+    { title: "Zanzibar Airport Transfers", fromPrice: 11, currency: "USD" },
+    { title: "Airport / Ferry Transfers - Hotels", fromPrice: 0, currency: "USD" },
+    { title: "Ferry port pickup", fromPrice: 25, currency: "USD" }
+  ];
+  assert.deepEqual(searchSummaries(rows, ["airport", "ferry", "safari-blue"]), {
+    airport: { count: 2, fromPrice: 11, currency: "USD" },
+    ferry: { count: 2, fromPrice: 25, currency: "USD" },
+    "safari-blue": { count: 0, fromPrice: 0, currency: "USD" }
+  });
+});
+
+test("the contact form needs a name, a valid email and a message", () => {
+  const { contactMessageSchema } = require("../src/validators/marketing.validation");
+  const ok = contactMessageSchema.safeParse({ body: { name: "Amina", email: "amina@example.com", message: "Two people, 12 May" } });
+  assert.equal(ok.success, true);
+  assert.equal(contactMessageSchema.safeParse({ body: { name: "", email: "x", message: "" } }).success, false);
+});

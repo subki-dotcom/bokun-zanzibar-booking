@@ -16,4 +16,18 @@ const captureLeadSchema = z.object({
   query: z.object({}).optional()
 });
 
-module.exports = { captureLeadSchema };
+// The contact page form. "website" is a field people never see; robots fill it in.
+const contactMessageSchema = z.object({
+  body: z.object({
+    name: z.string().trim().min(1).max(100),
+    email: z.string().trim().email().max(160),
+    phone: z.string().trim().max(50).optional().default(""),
+    travelDate: z.string().trim().max(40).optional().default(""),
+    message: z.string().trim().min(5).max(2000),
+    website: z.string().max(200).optional().default("")
+  }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
+module.exports = { captureLeadSchema, contactMessageSchema };

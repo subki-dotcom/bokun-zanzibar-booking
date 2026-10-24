@@ -114,17 +114,30 @@ const renderHome = async (home) => {
     console.error = (message, ...rest) => {
       if (!String(message).includes("useLayoutEffect does nothing on the server")) logError(message, ...rest);
     };
+    // The site header as the browser draws it at that address (the tour page hides it on phones).
+    const SiteHeader = (await server.ssrLoadModule("/src/components/common/siteHeader/SiteHeader.jsx")).default;
+    const render = (path, element) => renderToString(React.createElement(MemoryRouter, { initialEntries: [path] }, element));
+    const headerAt = (path, variant = "default", wrapClass = "") => {
+      const element = React.createElement(SiteHeader, { variant });
+      return render(path, wrapClass ? React.createElement("div", { className: wrapClass }, element) : React.createElement("div", null, element));
+    };
+    // The information pages (About, Contact, FAQ…) and their text, from src/config/sitePages.js.
+    const { SITE_PAGES } = await server.ssrLoadModule("/src/config/sitePages.js");
     let html;
+    let headers;
     try {
-      html = renderToString(React.createElement(MemoryRouter, { initialEntries: ["/"] }, React.createElement(view.default, { home })));
+      html = headerAt("/", "transparent") + render("/", React.createElement(view.default, { home }));
+      headers = {
+        tours: headerAt("/tours"),
+        tour: headerAt("/tours/tour", "default", "sh-slot-tour"),
+        pages: Object.fromEntries(Object.values(SITE_PAGES).map((page) => [page.path, headerAt(page.path)]))
+      };
     } finally {
       console.error = logError;
     }
     // The travel agency entry every page carries, from the site's own config (src/config/site.js).
     const site = await server.ssrLoadModule("/src/config/site.js");
-    // The information pages (About, Contact, FAQ…) and their text, from src/config/sitePages.js.
-    const { SITE_PAGES } = await server.ssrLoadModule("/src/config/sitePages.js");
-    return { html, agency: site.travelAgencySchema(null), schemas: view.homeSchemas(home), title: view.HOME_TITLE, description: view.HOME_DESCRIPTION, pages: Object.values(SITE_PAGES) };
+    return { html, headers, agency: site.travelAgencySchema(null), schemas: view.homeSchemas(home), title: view.HOME_TITLE, description: view.HOME_DESCRIPTION, pages: Object.values(SITE_PAGES) };
   } finally {
     await server.close();
   }
@@ -225,7 +238,7 @@ const run = async () => {
     description: "Compare Zanzibar tours and check live availability by date before booking.",
     canonical: `${siteUrl}/tours`,
     schemas: sharedSchema(home.agency),
-    body: `<main><h1>Zanzibar Tours & Activities</h1><p>Explore available Zanzibar experiences.</p><ul>${details.map((tour) => `<li><a href="/tours/${escapeHtml(tour.slug)}">${escapeHtml(tour.title)}</a></li>`).join("")}</ul></main>`
+    body: `${home.headers.tours}<main><h1>Zanzibar Tours & Activities</h1><p>Explore available Zanzibar experiences.</p><ul>${details.map((tour) => `<li><a href="/tours/${escapeHtml(tour.slug)}">${escapeHtml(tour.title)}</a></li>`).join("")}</ul></main>`
   }));
   for (const tour of details) {
     const canonical = `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`;
@@ -249,7 +262,7 @@ const run = async () => {
       ]
     }];
     await writePage(template, `/tours/${tour.slug}`, metadata({
-      title: `${tour.title} | ${brandName}`, description, canonical, image, schemas, body: buildTourMarkup(tour), data: pageData(tour)
+      title: `${tour.title} | ${brandName}`, description, canonical, image, schemas, body: home.headers.tour + buildTourMarkup(tour), data: pageData(tour)
     }));
   }
   for (const page of home.pages) {
@@ -258,7 +271,7 @@ const run = async () => {
       description: truncate(page.description || page.intro),
       canonical: `${siteUrl}${page.path}`,
       schemas: sharedSchema(home.agency),
-      body: buildInfoMarkup(page)
+      body: (home.headers.pages[page.path] || "") + buildInfoMarkup(page)
     }));
   }
   const urls = [

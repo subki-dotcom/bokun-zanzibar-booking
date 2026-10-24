@@ -86,6 +86,25 @@ const AdminWebsiteToursPage = () => {
     }
   };
 
+  // One tour is shown in the header's "Tours & activities" menu; choosing another replaces it.
+  const toggleMenuTour = async (product) => {
+    const featured = !product.featuredInMenu;
+    setSavingId(product.bokunProductId);
+    setError("");
+    try {
+      const updated = await updateAdminWebsiteProductFeatured(product.bokunProductId, featured, "menu");
+      setProducts((current) =>
+        current.map((item) =>
+          item.bokunProductId === updated.bokunProductId ? { ...item, ...updated } : featured ? { ...item, featuredInMenu: false } : item
+        )
+      );
+    } catch (err) {
+      setError(err.message || "Could not update the product");
+    } finally {
+      setSavingId("");
+    }
+  };
+
   if (loading) return <Loader message="Loading website tours..." />;
 
   return (
@@ -96,6 +115,7 @@ const AdminWebsiteToursPage = () => {
           <p className="text-muted mb-0">
             Hide duplicates or products you do not sell online. Hidden products leave listings and the sitemap; their page still opens from a link.
             Choose up to six tours for "Handpicked Zanzibar experiences" on the home page ({featuredCount}/6 chosen; with none, the most booked tours are shown).
+            "Menu" picks the one tour shown in the header's Tours & activities menu (with none, the most booked tour is shown).
           </p>
         </div>
         <Form.Select style={{ maxWidth: 240 }} value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter products">
@@ -118,6 +138,7 @@ const AdminWebsiteToursPage = () => {
                 <th>Notes</th>
                 <th>Website</th>
                 <th>Home page</th>
+                <th>Menu</th>
               </tr>
             </thead>
             <tbody>
@@ -155,9 +176,20 @@ const AdminWebsiteToursPage = () => {
                       {product.featuredOnHome ? "Featured ✓" : "Feature"}
                     </Button>
                   </td>
+                  <td>
+                    <Button
+                      size="sm"
+                      variant={product.featuredInMenu ? "success" : "outline-secondary"}
+                      disabled={savingId === product.bokunProductId || product.hiddenFromPublic}
+                      onClick={() => toggleMenuTour(product)}
+                      aria-pressed={Boolean(product.featuredInMenu)}
+                    >
+                      {product.featuredInMenu ? "In menu ✓" : "Show in menu"}
+                    </Button>
+                  </td>
                 </tr>
               )) : (
-                <tr><td colSpan={6} className="text-center text-muted py-4">No products match this filter.</td></tr>
+                <tr><td colSpan={7} className="text-center text-muted py-4">No products match this filter.</td></tr>
               )}
             </tbody>
           </Table>

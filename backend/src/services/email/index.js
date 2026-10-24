@@ -116,13 +116,13 @@ const buildBookingRequestEmail = (booking = {}, request = {}, templateKey = "req
   };
 };
 
-const sendWithResend = async ({ to, subject, html }) => {
+const sendWithResend = async ({ to, subject, html, replyTo = "" }) => {
   const response = await axios.post(
     "https://api.resend.com/emails",
     {
       from: env.EMAIL_FROM,
       to: [to],
-      reply_to: env.EMAIL_REPLY_TO || undefined,
+      reply_to: replyTo || env.EMAIL_REPLY_TO || undefined,
       subject,
       html
     },
@@ -209,4 +209,32 @@ const sendBookingRequestEmailOnce = ({ booking, request, templateKey, requestId 
     requestId
   });
 
-module.exports = { sendBookingEmailOnce, sendBookingRequestEmailOnce };
+// A message from the contact page, to the team's inbox; replying answers the guest.
+const sendContactMessage = async ({ name, email, phone = "", travelDate = "", message }) => {
+  if (!isEmailConfigured || !env.EMAIL_REPLY_TO) return { sent: false, reason: "email_not_configured" };
+  const rows = [
+    ["Name", name],
+    ["Email", email],
+    ["Phone", phone],
+    ["Travel date", travelDate]
+  ].filter(([, value]) => value);
+  const body = `
+    <table style="border-collapse:collapse;margin:0 0 16px">${rows
+      .map(([label, value]) => `<tr><td style="padding:4px 12px 4px 0;color:#64748b">${escapeHtml(label)}</td><td style="padding:4px 0">${escapeHtml(value)}</td></tr>`)
+      .join("")}</table>
+    <p style="white-space:pre-wrap;margin:0">${escapeHtml(message)}</p>`;
+  try {
+    await sendWithResend({
+      to: env.EMAIL_REPLY_TO,
+      subject: `Website message from ${String(name).slice(0, 60)}`,
+      html: buildEmailShell({ heading: "New message from the contact page", body }),
+      replyTo: email
+    });
+    return { sent: true };
+  } catch (error) {
+    logger.warn("Contact message email failed", toSafeEmailProviderError(error));
+    return { sent: false, reason: "provider_error" };
+  }
+};
+
+module.exports = { sendBookingEmailOnce, sendBookingRequestEmailOnce, sendContactMessage };

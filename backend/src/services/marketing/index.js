@@ -1,6 +1,25 @@
 const MarketingLead = require("../../models/MarketingLead");
+const emailService = require("../email");
 
 const cleanText = (value = "", maxLength = 300) => String(value || "").trim().slice(0, maxLength);
+
+// A message from the contact page: kept with the guest's lead and sent to the team's inbox.
+const sendContactMessage = async ({ name, email, phone = "", travelDate = "", message, website = "" }) => {
+  // Robots fill in the hidden "website" field; they get the same answer and nothing is kept.
+  if (website) return { received: true };
+  const [firstName, ...rest] = String(name).trim().split(/\s+/);
+  await captureLead({
+    email,
+    firstName,
+    lastName: rest.join(" "),
+    phone,
+    stage: "contact_message",
+    source: "contact_page",
+    context: { message: String(message).slice(0, 2000), travelDate }
+  });
+  const delivery = await emailService.sendContactMessage({ name, email, phone, travelDate, message });
+  return { received: true, emailed: delivery.sent };
+};
 
 const captureLead = async (payload = {}) => {
   const email = cleanText(payload.email, 160).toLowerCase();
@@ -47,4 +66,4 @@ const listRecoveryLeads = async ({ limit = 100 } = {}) =>
     .limit(Math.min(Math.max(Number(limit || 100), 1), 200))
     .lean();
 
-module.exports = { captureLead, listRecoveryLeads };
+module.exports = { captureLead, listRecoveryLeads, sendContactMessage };

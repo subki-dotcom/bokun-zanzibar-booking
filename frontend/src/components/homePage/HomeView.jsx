@@ -1,4 +1,3 @@
-import { SiteHeader, UtilityBar } from "./SiteChrome";
 import { Hero, HeroSearchCard } from "./Hero";
 import { BestSellers, CategoryTiles, FeaturedTours, ReviewsSection, SafariBanner, StepsStrip } from "./HomeSections";
 import WhatsAppFab from "./WhatsAppFab";
@@ -8,11 +7,10 @@ export const HOME_TITLE = "Zanzibar Tours, Safaris & Airport Transfers | Riser T
 export const HOME_DESCRIPTION =
   "Book Zanzibar tours, fly-in safaris and airport transfers with a local team: Mnemba snorkeling, Stone Town, spice farms and private trips. Instant confirmation, card, M-Pesa or PayPal.";
 
-// The whole home page. The build renders it to HTML with the same data (scripts/prerender-public-pages.mjs).
+// The whole home page below the site header (the layout draws that header over the hero). The build renders it to
+// HTML with the same data (scripts/prerender-public-pages.mjs).
 const HomeView = ({ home = null }) => (
   <div className="hp">
-    <UtilityBar />
-    <SiteHeader />
     <div className="hp-main">
       <Hero />
       <HeroSearchCard />

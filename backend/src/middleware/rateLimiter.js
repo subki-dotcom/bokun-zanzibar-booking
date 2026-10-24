@@ -72,8 +72,25 @@ const paymentSessionLimiter = rateLimit({
   }
 });
 
+// The contact form sends an email to the team, so it is limited per address.
+const contactMessageLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => resolveClientIp(req),
+  message: {
+    success: false,
+    message: "Too many messages. Please try again later or chat with us on WhatsApp.",
+    error: { code: "CONTACT_RATE_LIMITED", details: null },
+    data: {},
+    meta: {}
+  }
+});
+
 module.exports = {
   globalRateLimiter,
   bookingRequestWriteLimiter,
-  paymentSessionLimiter
+  paymentSessionLimiter,
+  contactMessageLimiter
 };

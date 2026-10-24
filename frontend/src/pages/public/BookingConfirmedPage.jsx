@@ -11,22 +11,11 @@ import { fetchTours } from "../../api/toursApi";
 import { initializeAnalytics, trackPurchase } from "../../utils/analytics";
 import { formatDeadline, formatMoney, formatTripDate, travellersText } from "../../components/checkout/checkoutData";
 import ReferenceBox from "../../components/payment/ReferenceBox";
+import SiteHeader from "../../components/common/siteHeader/SiteHeader";
 import { calendarEvent, googleCalendarHref, icsFile, paymentPageHref, whatsappReferenceHref } from "../../components/payment/paymentData";
 
-const Header = () => (
-  <header className="ck-header bc-header">
-    <div className="ck-header-inner bc-header-inner">
-      <Link to="/" className="ck-logo" aria-label={`${BRAND.name} home`}>
-        <span className="ck-logo-mark" aria-hidden="true">{BRAND.name.charAt(0)}</span>
-        <strong>{BRAND.name}</strong>
-      </Link>
-      <nav className="bc-nav" aria-label="Main">
-        <Link to="/tours">Tours</Link>
-        <Link to="/my-booking">My booking</Link>
-      </nav>
-    </div>
-  </header>
-);
+// The checkout header with every step done.
+const Header = () => <SiteHeader variant="checkout" step={3} />;
 
 // "Add to calendar": an .ics file for any calendar app, or Google Calendar.
 const CalendarButton = ({ data }) => {

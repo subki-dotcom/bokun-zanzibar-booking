@@ -198,10 +198,34 @@ export const updateAdminWebsiteProductVisibility = async (productId, hidden) => 
 };
 
 // Staff choose the tours shown in "Handpicked Zanzibar experiences" on the home page.
-export const updateAdminWebsiteProductFeatured = async (productId, featured) => {
-  const response = await axiosClient.patch(`/tours/admin/products/${encodeURIComponent(productId)}/featured`, { featured });
+// placement "home" (Handpicked Zanzibar experiences) or "menu" (the one tour in the header's Tours & activities menu).
+export const updateAdminWebsiteProductFeatured = async (productId, featured, placement = "home") => {
+  const response = await axiosClient.patch(`/tours/admin/products/${encodeURIComponent(productId)}/featured`, { featured, placement });
   homeDataRequest = null;
+  menuDataRequests.clear();
   return response.data.data;
+};
+
+// The header menu: its tour card, the top tours and, per search, the number of tours and the lowest price.
+// One request per set of searches for the whole visit.
+const menuDataRequests = new Map();
+export const fetchMenuData = (searches = []) => {
+  const key = [...new Set(searches)].sort().join("|");
+  if (!menuDataRequests.has(key)) {
+    const params = new URLSearchParams();
+    key.split("|").filter(Boolean).forEach((query) => params.append("q", query));
+    menuDataRequests.set(
+      key,
+      axiosClient
+        .get(`/tours/menu?${params.toString()}`)
+        .then((response) => response.data.data)
+        .catch((error) => {
+          menuDataRequests.delete(key);
+          throw error;
+        })
+    );
+  }
+  return menuDataRequests.get(key);
 };
 
 // Each bookable option's start times and exact total for a date and the chosen travellers (as checkout prices it).

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { LuCheck } from "react-icons/lu";
 import "../../components/checkout/checkout.css";
 import "../../components/payment/payment.css";
 import useMediaQuery from "../../hooks/useMediaQuery";
@@ -8,7 +7,7 @@ import { fetchBookingPaymentStatus, openBookingPaymentSession } from "../../api/
 import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 import { readPesapalProcessingState } from "../../utils/pesapalProcessing";
 import { paymentChoices } from "../../components/checkout/checkoutData";
-import { CheckoutHeader } from "../../components/checkout/CheckoutHeader";
+import SiteHeader from "../../components/common/siteHeader/SiteHeader";
 import PayScreen, { ChangeMethodLink } from "../../components/payment/PayScreen";
 import ProblemScreen, { LinkErrorScreen, ProcessingScreen } from "../../components/payment/ProblemScreen";
 import { CompactSummary, PaySummary, ProblemSummary } from "../../components/payment/PaymentSummary";
@@ -16,16 +15,6 @@ import { confirmedHref, problemKind, screenFor } from "../../components/payment/
 
 const POLL_MS = 3000;
 const POLL_LIMIT_MS = 60000;
-
-const Progress = () => (
-  <ol className="pf-progress" aria-label="Checkout progress">
-    <li className="is-done"><LuCheck aria-hidden="true" /> Details</li>
-    <li aria-hidden="true" className="pf-progress-line">—</li>
-    <li className="is-done"><LuCheck aria-hidden="true" /> Activity</li>
-    <li aria-hidden="true" className="pf-progress-line">—</li>
-    <li className="is-current" aria-current="step">3 Payment</li>
-  </ol>
-);
 
 // /payment-processing?checkoutKey=…&bookingReference=… : the payment pages (mockups "Pay" and "PayIssue"). The screen
 // comes from the booking's payment status on the server, so the link works in any browser.
@@ -206,7 +195,7 @@ const PaymentFlowPage = () => {
 
   return (
     <div className="ck pf">
-      <CheckoutHeader>{isMobile || screen !== "pay" ? null : <Progress />}</CheckoutHeader>
+      <SiteHeader variant="checkout" step={2} showSteps={screen === "pay"} />
       <main className="ck-container pf-container">
         {screen === "pay" ? <ChangeMethodLink onClick={() => setPicking(true)} /> : null}
         <div className="pf-layout">

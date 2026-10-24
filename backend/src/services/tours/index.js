@@ -3,7 +3,7 @@ const SyncLog = require("../../models/SyncLog");
 const AppError = require("../../utils/AppError");
 const bokunService = require("../../integrations/bokun");
 const homeService = require("./home");
-const { STYLES: TRAVEL_STYLES, tourStyles, matchesSearch, searchWords, styleKeyFor } = require("./homeCatalog");
+const { STYLES: TRAVEL_STYLES, tourStyles, matchesSearch, searchWords, searchSummaries, styleKeyFor } = require("./homeCatalog");
 // The travel style labels of a tour ("Sea tours", "Private tours"…), used by the tours page filter.
 const styleLabels = (tour = {}) => tourStyles(tour).map((key) => TRAVEL_STYLES.find((style) => style.key === key)?.label).filter(Boolean);
 const mongoose = require("mongoose");
@@ -917,13 +917,14 @@ const getOptionQuotes = async (slug, payload = {}, requestId) => {
 // Staff view of every active product with its public visibility.
 const listProductsForAdmin = async () => {
   const rows = await ProductSnapshot.find({ status: "active" })
-    .select("bokunProductId title slug fromPrice currency shortDescription description hiddenFromPublic hiddenAt hiddenBy featuredOnHome updatedAt")
+    .select("bokunProductId title slug fromPrice currency shortDescription description hiddenFromPublic hiddenAt hiddenBy featuredOnHome featuredInMenu updatedAt")
     .sort({ title: 1 })
     .lean();
   return rows.map(({ description, shortDescription, ...row }) => ({
     ...row,
     hiddenFromPublic: Boolean(row.hiddenFromPublic),
     featuredOnHome: Boolean(row.featuredOnHome),
+    featuredInMenu: Boolean(row.featuredInMenu),
     hasShortDescription: Boolean(String(shortDescription || "").trim()),
     hasDescription: Boolean(String(description || "").replace(/<[^>]*>/g, "").trim())
   }));
@@ -943,21 +944,45 @@ const setProductVisibility = async (productId, hidden, actor = "") => {
   return updated;
 };
 
-// Staff choose the tours in "Handpicked Zanzibar experiences" on the home page.
-const setProductFeatured = async (productId, featured) => {
-  const updated = await ProductSnapshot.findOneAndUpdate(
-    { bokunProductId: String(productId || "") },
-    { $set: { featuredOnHome: Boolean(featured) } },
-    { new: true }
-  )
-    .select("bokunProductId title slug featuredOnHome")
+// Staff choose the tours in "Handpicked Zanzibar experiences" on the home page (placement "home"), and the one tour
+// in the header's "Tours & activities" menu (placement "menu"; choosing one clears the previous one).
+const setProductFeatured = async (productId, featured, placement = "home") => {
+  const field = placement === "menu" ? "featuredInMenu" : "featuredOnHome";
+  const id = String(productId || "");
+  const exists = await ProductSnapshot.exists({ bokunProductId: id });
+  if (!exists) throw new AppError("Product not found", 404, "PRODUCT_NOT_FOUND");
+  if (field === "featuredInMenu" && featured) {
+    await ProductSnapshot.updateMany({ featuredInMenu: true, bokunProductId: { $ne: id } }, { $set: { featuredInMenu: false } });
+  }
+  const updated = await ProductSnapshot.findOneAndUpdate({ bokunProductId: id }, { $set: { [field]: Boolean(featured) } }, { new: true })
+    .select("bokunProductId title slug featuredOnHome featuredInMenu")
     .lean();
-  if (!updated) throw new AppError("Product not found", 404, "PRODUCT_NOT_FOUND");
   homeService.forgetHomeData();
+  menuSearchCache.clear();
   return updated;
 };
 
 const getHomeData = () => homeService.getHomeData();
+
+// The header menu: its tour card, the search panel's top tours and, for each menu link's search, how many tours
+// match and from what price (links with no match are hidden). Kept ten minutes per set of searches.
+const MENU_CACHE_TTL_MS = 10 * 60 * 1000;
+const menuSearchCache = new Map();
+const getMenuData = async (queries = [], requestId = "") => {
+  const searches = [...new Set(queries.map((query) => String(query || "").trim().toLowerCase().slice(0, 60)).filter(Boolean))].slice(0, 24).sort();
+  const key = searches.join("|");
+  const cached = menuSearchCache.get(key);
+  let summaries = cached && cached.expiresAt > Date.now() ? cached.value : null;
+  if (!summaries) {
+    await ensurePublicSnapshotCache(requestId);
+    const rows = await ProductSnapshot.find(PUBLIC_LISTING_FILTER).select("title shortDescription fromPrice currency").lean();
+    summaries = searchSummaries(rows, searches);
+    if (menuSearchCache.size > 50) menuSearchCache.clear();
+    menuSearchCache.set(key, { value: summaries, expiresAt: Date.now() + MENU_CACHE_TTL_MS });
+  }
+  const home = await homeService.getHomeData();
+  return { ...(home.menu || { featured: null, top: [] }), searches: summaries };
+};
 
 const getAvailableDates = async (slug, { from = "", days = 60 } = {}, requestId) => {
   const tour = await readTourBySlug(slug);
@@ -1133,6 +1158,7 @@ const searchToursByAvailability = async ({ travelDate, pax, slugs = [], requestI
 module.exports = {
   setProductFeatured,
   getHomeData,
+  getMenuData,
   listTours,
   listTourCategories,
   getTourBySlug,

@@ -73,8 +73,20 @@ const setProductVisibility = asyncHandler(async (req, res) => {
 });
 
 const setProductFeatured = asyncHandler(async (req, res) => {
-  const data = await toursService.setProductFeatured(req.params.productId, req.body?.featured === true);
-  return successResponse(res, { message: data.featuredOnHome ? "Product featured on the home page" : "Product removed from the home page", data });
+  const placement = req.body?.placement === "menu" ? "menu" : "home";
+  const data = await toursService.setProductFeatured(req.params.productId, req.body?.featured === true, placement);
+  const on = placement === "menu" ? data.featuredInMenu : data.featuredOnHome;
+  const where = placement === "menu" ? "the header menu" : "the home page";
+  return successResponse(res, { message: on ? `Product featured in ${where}` : `Product removed from ${where}`, data });
+});
+
+// ?q=mnemba&q=prison-island…: the header menu's data (see toursService.getMenuData).
+const getMenuData = asyncHandler(async (req, res) => {
+  const raw = req.query.q;
+  const queries = (Array.isArray(raw) ? raw : raw ? [raw] : []).filter((value) => typeof value === "string");
+  const data = await toursService.getMenuData(queries, req.requestId);
+  res.set("Cache-Control", "public, max-age=60");
+  return successResponse(res, { message: "Header menu data", data });
 });
 
 const getHomeData = asyncHandler(async (req, res) => {
@@ -154,6 +166,7 @@ module.exports = {
   setProductVisibility,
   setProductFeatured,
   getHomeData,
+  getMenuData,
   getTourOptions,
   checkOptionsAvailability,
   searchToursByAvailability,

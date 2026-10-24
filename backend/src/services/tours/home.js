@@ -3,7 +3,7 @@
 const ProductSnapshot = require("../../models/ProductSnapshot");
 const Booking = require("../../models/Booking");
 const logger = require("../../config/logger");
-const { pickBestSellers, pickFeatured, showable, styleTiles, toHomeCard } = require("./homeCatalog");
+const { pickBestSellers, pickFeatured, pickMenuTour, pickTopTours, showable, styleTiles, toHomeCard } = require("./homeCatalog");
 
 const HOME_CACHE_TTL_MS = 10 * 60 * 1000;
 const PUBLIC_FILTER = { status: "active", hiddenFromPublic: { $ne: true } };
@@ -26,7 +26,7 @@ const bookingCounts = async () => {
 const buildHomeData = async () => {
   const [rows, bookings] = await Promise.all([
     ProductSnapshot.find(PUBLIC_FILTER)
-      .select("bokunProductId title slug shortDescription description duration images fromPrice currency rating reviewCount included pickupInfo featuredOnHome options.active options.pickupSupported options.pricingType")
+      .select("bokunProductId title slug shortDescription description duration images fromPrice currency rating reviewCount included pickupInfo featuredOnHome featuredInMenu options.active options.pickupSupported options.pricingType")
       .lean(),
     bookingCounts()
   ]);
@@ -47,6 +47,11 @@ const buildHomeData = async () => {
     featured: featured.tours,
     featuredSource: featured.source,
     bestSellers,
+    // The header: the "Tours & activities" menu card and the search panel's top tours.
+    menu: {
+      featured: pickMenuTour(visible, bookings),
+      top: pickTopTours(visible, bookings, 3)
+    },
     safari: flagship
       ? {
           tour: flagship,
