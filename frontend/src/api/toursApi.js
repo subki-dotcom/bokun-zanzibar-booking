@@ -43,11 +43,13 @@ const clearToursCache = () => {
 };
 
 // category: a travel style label ("Sea tours"); the server pages through that style only.
-export const fetchTours = async ({ page = 1, limit = 9, category = "", force = false } = {}) => {
+// query: words to search for in titles and summaries ("stone-town", "mnemba").
+export const fetchTours = async ({ page = 1, limit = 9, category = "", query = "", force = false } = {}) => {
   const safePage = Math.max(1, Number(page || 1));
   const safeLimit = Math.max(1, Number(limit || 9));
   const style = category && category !== "all" ? String(category) : "";
-  const cacheKey = `${safePage}:${safeLimit}:${style}`;
+  const search = String(query || "").trim().slice(0, 80);
+  const cacheKey = `${safePage}:${safeLimit}:${style}:${search}`;
 
   if (!force) {
     const cached = readCache(tourListCache, cacheKey, TOUR_LIST_CACHE_TTL_MS);
@@ -63,7 +65,7 @@ export const fetchTours = async ({ page = 1, limit = 9, category = "", force = f
 
   const request = axiosClient
     .get("/tours", {
-      params: { page: safePage, limit: safeLimit, ...(style ? { category: style } : {}) }
+      params: { page: safePage, limit: safeLimit, ...(style ? { category: style } : {}), ...(search ? { q: search } : {}) }
     })
     .then((response) =>
       writeCache(tourListCache, cacheKey, {

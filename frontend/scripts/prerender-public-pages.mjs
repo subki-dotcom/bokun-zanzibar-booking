@@ -9,8 +9,6 @@ import { createServer } from "vite";
 const root = process.cwd();
 const dist = path.join(root, "dist");
 const brandName = String(process.env.VITE_BRAND_NAME || "Riser Tours & Safaris").trim();
-const brandPhone = String(process.env.VITE_SUPPORT_PHONE || "+255 778 775 044").trim();
-const brandEmail = String(process.env.VITE_SUPPORT_EMAIL || "info@risertoursandsafaris.co.tz").trim();
 const siteUrl = String(process.env.VITE_SITE_URL || "https://zanzibartoursandsafaris.co.tz").replace(/\/$/, "");
 const configuredApi = String(process.env.SEO_API_BASE_URL || process.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 if (!configuredApi) {
@@ -122,7 +120,11 @@ const renderHome = async (home) => {
     } finally {
       console.error = logError;
     }
-    return { html, schemas: view.homeSchemas(home, { name: brandName, website: siteUrl, phone: brandPhone, email: brandEmail, social: {} }), title: view.HOME_TITLE, description: view.HOME_DESCRIPTION };
+    // The travel agency entry every page carries, from the site's own config (src/config/site.js).
+    const site = await server.ssrLoadModule("/src/config/site.js");
+    // The information pages (About, Contact, FAQ…) and their text, from src/config/sitePages.js.
+    const { SITE_PAGES } = await server.ssrLoadModule("/src/config/sitePages.js");
+    return { html, agency: site.travelAgencySchema(null), schemas: view.homeSchemas(home), title: view.HOME_TITLE, description: view.HOME_DESCRIPTION, pages: Object.values(SITE_PAGES) };
   } finally {
     await server.close();
   }
@@ -130,6 +132,14 @@ const renderHome = async (home) => {
 
 const heroPreload = () =>
   '<link rel="preload" as="image" type="image/avif" href="/images/home/hero-dhow-1280.avif" imagesrcset="/images/home/hero-dhow-640.avif 640w, /images/home/hero-dhow-960.avif 960w, /images/home/hero-dhow-1280.avif 1280w" imagesizes="100vw" fetchpriority="high" />';
+
+// An information page as plain HTML: title, intro and sections (a section is [heading, body] or { heading, body }).
+const buildInfoMarkup = (page) => {
+  const sections = page.sections.map((section) => (Array.isArray(section) ? { heading: section[0], body: section[1] } : section));
+  return `<main><article><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.intro)}</p>${sections
+    .map((section) => `<section><h2>${escapeHtml(section.heading)}</h2>${section.body ? `<p>${escapeHtml(section.body)}</p>` : ""}</section>`)
+    .join("")}</article></main>`;
+};
 
 const getTour = async (slug) => (await requestJson(`${apiUrl}/tours/${encodeURIComponent(slug)}`)).data;
 
@@ -142,9 +152,11 @@ const replaceHead = (html, metadata) => html
 
 const jsonLd = (entries) => `<script id="riser-prerender-schema" type="application/ld+json">${JSON.stringify(entries).replace(/</g, "\\u003c")}</script>`;
 
-const sharedSchema = () => ([
+// agency: the TravelAgency entry (site-wide); the home page passes its own, which may carry a rating.
+const sharedSchema = (agency = null) => ([
   { "@context": "https://schema.org", "@type": "Organization", "@id": `${siteUrl}/#organization`, name: brandName, url: siteUrl },
-  { "@context": "https://schema.org", "@type": "WebSite", "@id": `${siteUrl}/#website`, name: brandName, url: siteUrl, publisher: { "@id": `${siteUrl}/#organization` } }
+  { "@context": "https://schema.org", "@type": "WebSite", "@id": `${siteUrl}/#website`, name: brandName, url: siteUrl, publisher: { "@id": `${siteUrl}/#organization` } },
+  ...(agency ? [agency] : [])
 ]);
 
 // The tour itself, so the page renders at once instead of waiting for the API (it refreshes in the background).
@@ -212,14 +224,14 @@ const run = async () => {
     title: `Zanzibar Tours & Activities | ${brandName}`,
     description: "Compare Zanzibar tours and check live availability by date before booking.",
     canonical: `${siteUrl}/tours`,
-    schemas: sharedSchema(),
+    schemas: sharedSchema(home.agency),
     body: `<main><h1>Zanzibar Tours & Activities</h1><p>Explore available Zanzibar experiences.</p><ul>${details.map((tour) => `<li><a href="/tours/${escapeHtml(tour.slug)}">${escapeHtml(tour.title)}</a></li>`).join("")}</ul></main>`
   }));
   for (const tour of details) {
     const canonical = `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`;
     const description = truncate(tour.shortDescription || tour.description || `Explore ${tour.title} with ${brandName}.`);
     const image = String((tour.images || [])[0] || "");
-    const schemas = [...sharedSchema(), {
+    const schemas = [...sharedSchema(home.agency), {
       "@context": "https://schema.org",
       "@type": "TouristTrip",
       "@id": `${canonical}#tour`,
@@ -240,7 +252,21 @@ const run = async () => {
       title: `${tour.title} | ${brandName}`, description, canonical, image, schemas, body: buildTourMarkup(tour), data: pageData(tour)
     }));
   }
-  const urls = [homeCanonical, `${siteUrl}/tours`, ...details.map((tour) => `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`)];
+  for (const page of home.pages) {
+    await writePage(template, page.path, metadata({
+      title: `${page.title} | ${brandName}`,
+      description: truncate(page.description || page.intro),
+      canonical: `${siteUrl}${page.path}`,
+      schemas: sharedSchema(home.agency),
+      body: buildInfoMarkup(page)
+    }));
+  }
+  const urls = [
+    homeCanonical,
+    `${siteUrl}/tours`,
+    ...details.map((tour) => `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`),
+    ...home.pages.map((page) => `${siteUrl}${page.path}`)
+  ];
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((url) => `  <url><loc>${escapeHtml(url)}</loc></url>`).join("\n")}\n</urlset>\n`;
   await fs.writeFile(path.join(dist, "sitemap.xml"), sitemap);
   console.log(JSON.stringify({ generatedPages: urls.length, generatedTourPages: details.length, sitemap: "dist/sitemap.xml" }));

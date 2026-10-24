@@ -2,6 +2,7 @@ import { SiteHeader, UtilityBar } from "./SiteChrome";
 import { Hero, HeroSearchCard } from "./Hero";
 import { BestSellers, CategoryTiles, CtaBand, FeaturedTours, ReviewsSection, SafariBanner, StepsStrip } from "./HomeSections";
 import WhatsAppFab from "./WhatsAppFab";
+import { travelAgencySchema } from "../../config/site";
 
 export const HOME_TITLE = "Zanzibar Tours, Safaris & Airport Transfers | Riser Tours & Safaris";
 export const HOME_DESCRIPTION =
@@ -27,28 +28,8 @@ const HomeView = ({ home = null }) => (
   </div>
 );
 
-// The travel agency itself; a rating only when real reviews exist.
-export const homeSchemas = (home, brand) => {
-  const agency = {
-    "@context": "https://schema.org",
-    "@type": "TravelAgency",
-    "@id": `${brand.website}/#travelagency`,
-    name: brand.name,
-    url: `${brand.website}/`,
-    image: `${brand.website}/images/home/hero-dhow-1280.jpg`,
-    telephone: brand.phone,
-    email: brand.email,
-    address: { "@type": "PostalAddress", addressLocality: "Zanzibar", addressCountry: "TZ" },
-    areaServed: ["Zanzibar", "Tanzania"],
-    parentOrganization: { "@id": `${brand.website}/#organization` }
-  };
-  const sameAs = Object.values(brand.social || {}).filter(Boolean);
-  if (sameAs.length) agency.sameAs = sameAs;
-  if (home?.reviews?.count && home.reviews.rating) {
-    agency.aggregateRating = { "@type": "AggregateRating", ratingValue: home.reviews.rating, reviewCount: home.reviews.count, bestRating: 5 };
-  }
-  return [agency];
-};
+// The travel agency itself (as on every page); a rating only when real reviews exist.
+export const homeSchemas = (home) => [travelAgencySchema(home?.reviews)];
 
 // The build writes the home data into the page (script#riser-prerender-home), so a visit shows it at once.
 export const readPrerenderedHome = () => {

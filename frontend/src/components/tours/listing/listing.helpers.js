@@ -230,10 +230,12 @@ export const getDurationBucket = (durationText = "") => {
   return "flexible";
 };
 
+// Every word must appear; "stone-town" reads as "stone town".
 const includesQuery = (tour = {}, query = "") => {
-  if (!query) return true;
+  const words = String(query || "").toLowerCase().replace(/[-_+]/g, " ").split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
   const haystack = `${tour.title} ${tour.shortDescription} ${tour.locationText} ${(tour.categories || []).join(" ")}`.toLowerCase();
-  return haystack.includes(query.toLowerCase());
+  return words.every((word) => haystack.includes(word));
 };
 
 export const applyListingFiltersAndSort = (items = [], filters = {}) => {

@@ -3,7 +3,7 @@ const SyncLog = require("../../models/SyncLog");
 const AppError = require("../../utils/AppError");
 const bokunService = require("../../integrations/bokun");
 const homeService = require("./home");
-const { STYLES: TRAVEL_STYLES, tourStyles } = require("./homeCatalog");
+const { STYLES: TRAVEL_STYLES, tourStyles, matchesSearch, searchWords, styleKeyFor } = require("./homeCatalog");
 // The travel style labels of a tour ("Sea tours", "Private tours"…), used by the tours page filter.
 const styleLabels = (tour = {}) => tourStyles(tour).map((key) => TRAVEL_STYLES.find((style) => style.key === key)?.label).filter(Boolean);
 const mongoose = require("mongoose");
@@ -711,23 +711,21 @@ const listingSummary = (tour = {}) => {
 
 const LISTING_FIELDS = "bokunProductId title slug shortDescription description duration images fromPrice fromPriceBasis fromPriceCheckedAt rating reviewCount currency destination highlights categories lastSyncedAt options.bokunOptionId options.active";
 
-// "Sea tours" → "sea"; anything else (including "all") means no style filter.
-const styleKeyFor = (label = "") => TRAVEL_STYLES.find((style) => style.label.toLowerCase() === String(label).trim().toLowerCase())?.key || "";
-
-const listTours = async ({ page = 1, limit = 9, style = "", requestId = "" } = {}) => {
+const listTours = async ({ page = 1, limit = 9, style = "", query = "", requestId = "" } = {}) => {
   await ensurePublicSnapshotCache(requestId);
 
   const safePage = Math.max(1, Number(page || 1));
   const safeLimit = Math.min(60, Math.max(1, Number(limit || 9)));
   const skip = (safePage - 1) * safeLimit;
   const styleKey = styleKeyFor(style);
+  const searching = searchWords(query).length > 0;
 
   let totalItems;
   let items;
-  if (styleKey) {
-    // Styles come from titles, so the page of a style is cut from the matching ids (a few dozen products).
-    const ids = (await ProductSnapshot.find(PUBLIC_LISTING_FILTER).select("title").sort({ updatedAt: -1 }).lean())
-      .filter((row) => tourStyles(row).includes(styleKey))
+  if (styleKey || searching) {
+    // Styles and searches read titles and summaries, so the page is cut from the matching ids (a few dozen products).
+    const ids = (await ProductSnapshot.find(PUBLIC_LISTING_FILTER).select("title shortDescription").sort({ updatedAt: -1 }).lean())
+      .filter((row) => (!styleKey || tourStyles(row).includes(styleKey)) && matchesSearch(row, query))
       .map((row) => String(row._id));
     totalItems = ids.length;
     const pageIds = ids.slice(skip, skip + safeLimit);

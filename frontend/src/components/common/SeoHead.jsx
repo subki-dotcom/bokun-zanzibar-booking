@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { BRAND } from "../../config/brand";
+import { travelAgencySchema } from "../../config/site";
 
 const setMeta = (selector, attribute, value) => {
   if (!value) return;
@@ -12,7 +13,8 @@ const setMeta = (selector, attribute, value) => {
 };
 
 // schemas: extra JSON-LD entries for this page (memoize them; a new array re-runs the effect).
-const SeoHead = ({ title, description, image = "", product = null, noIndex = false, schemas: extraSchemas = null }) => {
+// reviews: the site's real review summary ({ rating, count }), which adds a rating to the travel agency.
+const SeoHead = ({ title, description, image = "", product = null, noIndex = false, schemas: extraSchemas = null, reviews = null }) => {
   useEffect(() => {
     const pageTitle = title || `${BRAND.name} | Zanzibar Tours`;
     const pageDescription = description || "Book Zanzibar tours, activities, and transfers with live availability and secure payment.";
@@ -74,6 +76,7 @@ const SeoHead = ({ title, description, image = "", product = null, noIndex = fal
         publisher: { "@id": `${BRAND.website}/#organization` }
       }
     ];
+    schemas.push(travelAgencySchema(reviews));
     if (Array.isArray(extraSchemas)) schemas.push(...extraSchemas);
     if (product?.name) {
       schemas.push({
@@ -102,7 +105,7 @@ const SeoHead = ({ title, description, image = "", product = null, noIndex = fal
     document.head.appendChild(schema);
 
     return () => document.getElementById("riser-seo-schema")?.remove();
-  }, [description, extraSchemas, image, noIndex, product, title]);
+  }, [description, extraSchemas, image, noIndex, product, reviews, title]);
 
   return null;
 };

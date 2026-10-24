@@ -1,7 +1,7 @@
 import { Container, Nav, Navbar } from "react-bootstrap";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Suspense, useEffect } from "react";
-import Footer from "../components/common/footer/Footer";
+import SiteFooter from "../components/common/siteFooter/SiteFooter";
 import FloatingWhatsAppButton from "../components/common/footer/FloatingWhatsAppButton";
 import { BRAND } from "../config/brand";
 import { persistMarketingAttribution } from "../utils/marketingAttribution";
@@ -24,6 +24,8 @@ const PublicLayout = () => {
   const isConfirmedRoute = /^\/booking\/confirmed\/[^/]+\/?$/.test(location.pathname);
   // The home page has its own utility bar and header.
   const isHomeRoute = location.pathname === "/";
+  // Checkout, payment and confirmation pages get the one-line footer.
+  const compactFooter = isCheckoutRoute || isTourCheckout || /^\/booking-confirmation\//.test(location.pathname);
   const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
 
   useEffect(() => {
@@ -63,7 +65,7 @@ const PublicLayout = () => {
           <Outlet />
         </Suspense>
       </main>
-      {isTourCheckout ? null : <Footer />}
+      <SiteFooter compact={compactFooter} />
       <CookieConsent />
       {/* The home page has its own WhatsApp button. */}
       {BRAND.whatsappHref && !isTourCheckout && !isConfirmedRoute && !isHomeRoute ? <FloatingWhatsAppButton href={BRAND.whatsappHref} /> : null}

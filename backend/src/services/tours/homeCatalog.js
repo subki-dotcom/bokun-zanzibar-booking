@@ -185,4 +185,26 @@ const styleTiles = (cards = []) => {
   }).filter((tile) => tile.count > 0);
 };
 
-module.exports = { STYLES, safariFacts, tourStyles, toHomeCard, showable, pickFeatured, pickBestSellers, styleTiles, titleKey };
+// "stone-town" or "Stone Town" → ["stone", "town"]; a tour matches when its title or summary has every word.
+const searchWords = (query = "") =>
+  String(query)
+    .toLowerCase()
+    .replace(/[-_+]/g, " ")
+    .split(/\s+/)
+    .map((word) => word.replace(/[^\p{L}\p{N}]/gu, ""))
+    .filter(Boolean)
+    .slice(0, 6);
+const matchesSearch = (tour = {}, query = "") => {
+  const words = searchWords(query);
+  if (!words.length) return true;
+  const text = `${tour.title || ""} ${tour.shortDescription || ""}`.toLowerCase();
+  return words.every((word) => text.includes(word));
+};
+
+// A style given by its key ("cultural") or its label ("Cultural tours").
+const styleKeyFor = (value = "") => {
+  const wanted = String(value).trim().toLowerCase();
+  return STYLES.find((style) => style.key === wanted || style.label.toLowerCase() === wanted)?.key || "";
+};
+
+module.exports = { searchWords, matchesSearch, styleKeyFor, STYLES, safariFacts, tourStyles, toHomeCard, showable, pickFeatured, pickBestSellers, styleTiles, titleKey };

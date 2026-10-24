@@ -119,6 +119,10 @@ const AppRoutes = () => {
         <Route path="/agent-register" element={<AgentRegisterPage />} />
         <Route path="/privacy" element={<LegalPage />} />
         <Route path="/terms" element={<LegalPage />} />
+        <Route path="/about" element={<LegalPage />} />
+        <Route path="/contact" element={<LegalPage />} />
+        <Route path="/faq" element={<LegalPage />} />
+        <Route path="/cancellation-policy" element={<LegalPage />} />
       </Route>
 
       <Route
