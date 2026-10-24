@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { LuCheck, LuChevronRight, LuHeart, LuMessageCircle, LuStar } from "react-icons/lu";
-import { BRAND } from "../../config/brand";
-import { money, photoAt, photoSet, styleHref, whatsappPlanHref } from "./homeData";
+import { LuCheck, LuChevronRight, LuHeart, LuStar } from "react-icons/lu";
+import { money, photoAt, photoSet, styleHref } from "./homeData";
 
 // Eyebrow, H2 and an optional link on the right.
 export const SectionHeader = ({ id, eyebrow, title, linkTo = "", linkText = "" }) => (
@@ -266,30 +265,6 @@ export const ReviewsSection = ({ reviews }) => {
               </figcaption>
             </figure>
           ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-export const CtaBand = () => {
-  const whatsapp = whatsappPlanHref(BRAND.whatsappHref, BRAND.name);
-  return (
-    <section className="hp-section hp-section-last" aria-labelledby="hp-cta-title">
-      <div className="hp-container">
-        <div className="hp-cta">
-          <div>
-            <h2 id="hp-cta-title">Not sure what to book?</h2>
-            <p>Tell us your dates and hotel. Our Zanzibar team will suggest tours that fit, with clear prices.</p>
-          </div>
-          <div className="hp-cta-actions">
-            {whatsapp ? (
-              <a href={whatsapp} className="hp-btn hp-btn-white" target="_blank" rel="noreferrer">
-                <LuMessageCircle aria-hidden="true" /> Chat on WhatsApp
-              </a>
-            ) : null}
-            <Link to="/tours" className="hp-btn hp-btn-outline-light">View all tours</Link>
-          </div>
         </div>
       </div>
     </section>
