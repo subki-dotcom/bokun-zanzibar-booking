@@ -1432,3 +1432,49 @@ select.hp-control {
     width: 100%;
   }
 }
+
+/* WhatsApp button */
+.hp .hp-fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 1035;
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #1fa855;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(20, 33, 31, 0.24);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.hp-fab svg {
+  width: 26px;
+  height: 26px;
+}
+
+.hp-fab:hover {
+  transform: translateY(-2px);
+}
+
+.hp-fab.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
+}
+
+@media (max-width: 767.98px) {
+  .hp .hp-fab {
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-fab,
+  .hp-tile img {
+    transition: none;
+  }
+}

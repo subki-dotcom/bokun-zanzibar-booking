@@ -1,6 +1,6 @@
 import { Container, Nav, Navbar } from "react-bootstrap";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import Footer from "../components/common/footer/Footer";
 import FloatingWhatsAppButton from "../components/common/footer/FloatingWhatsAppButton";
 import { BRAND } from "../config/brand";
@@ -8,6 +8,7 @@ import { persistMarketingAttribution } from "../utils/marketingAttribution";
 import AnalyticsTracker from "../components/common/AnalyticsTracker";
 import CookieConsent from "../components/common/CookieConsent";
 import SeoHead from "../components/common/SeoHead";
+import Loader from "../components/common/Loader";
 import TourHeader from "../components/tours/tourPage/TourHeader";
 
 const PublicLayout = () => {
@@ -57,11 +58,15 @@ const PublicLayout = () => {
       </Navbar>}
 
       <main className="app-main-content">
-        <Outlet />
+        {/* Checkout and payment pages load on first visit; the header and footer stay while they do. */}
+        <Suspense fallback={<Loader message="Loading page..." />}>
+          <Outlet />
+        </Suspense>
       </main>
       {isTourCheckout ? null : <Footer />}
       <CookieConsent />
-      {BRAND.whatsappHref && !isTourCheckout && !isConfirmedRoute ? <FloatingWhatsAppButton href={BRAND.whatsappHref} /> : null}
+      {/* The home page has its own WhatsApp button. */}
+      {BRAND.whatsappHref && !isTourCheckout && !isConfirmedRoute && !isHomeRoute ? <FloatingWhatsAppButton href={BRAND.whatsappHref} /> : null}
     </div>
   );
 };

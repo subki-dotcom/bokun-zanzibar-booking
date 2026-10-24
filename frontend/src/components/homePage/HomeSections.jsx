@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { LuCheck, LuChevronRight, LuHeart, LuMessageCircle, LuStar } from "react-icons/lu";
 import { BRAND } from "../../config/brand";
-import { money, styleHref, whatsappPlanHref } from "./homeData";
+import { money, photoAt, photoSet, styleHref, whatsappPlanHref } from "./homeData";
 
 // Eyebrow, H2 and an optional link on the right.
 export const SectionHeader = ({ id, eyebrow, title, linkTo = "", linkText = "" }) => (
@@ -29,7 +29,7 @@ export const CategoryTiles = ({ styles = [] }) =>
           {styles.map((style) => (
             <li key={style.key}>
               <Link to={styleHref(style.label)} className="hp-tile">
-                {style.image ? <img src={style.image} alt="" loading="lazy" decoding="async" width="400" height="520" /> : null}
+                {style.image ? <img src={photoAt(style.image, 400)} srcSet={photoSet(style.image, [300, 600])} sizes="(max-width: 767px) 46vw, 240px" alt="" loading="lazy" decoding="async" width="400" height="520" /> : null}
                 <span className="hp-tile-text">
                   <strong>{style.label}</strong>
                   <small>{style.subtitle}</small>
@@ -97,7 +97,7 @@ export const Price = ({ tour }) =>
 export const TourCard = ({ tour }) => (
   <article className="hp-card">
     <div className="hp-card-media">
-      <img src={tour.image} alt={tour.title} loading="lazy" decoding="async" width="600" height="380" />
+      <img src={photoAt(tour.image, 800)} srcSet={photoSet(tour.image, [400, 800])} sizes="(max-width: 767px) 100vw, 400px" alt={tour.title} loading="lazy" decoding="async" width="600" height="380" />
       {tour.badge ? <span className="hp-badge">{tour.badge}</span> : null}
       <WishlistButton tour={tour} />
     </div>
@@ -146,7 +146,7 @@ export const SafariBanner = ({ safari }) => {
       <div className="hp-container">
         <div className="hp-safari">
           <div className="hp-safari-media">
-            <img src={tour.image} alt={tour.title} loading="lazy" decoding="async" width="640" height="480" />
+            <img src={photoAt(tour.image, 960)} srcSet={photoSet(tour.image, [480, 960])} sizes="(max-width: 767px) 100vw, 600px" alt={tour.title} loading="lazy" decoding="async" width="640" height="480" />
           </div>
           <div className="hp-safari-body">
             <p className="hp-eyebrow">Safari from Zanzibar</p>
@@ -184,7 +184,7 @@ export const SafariBanner = ({ safari }) => {
 const FavoriteCard = ({ tour }) => (
   <article className="hp-fav">
     <div className="hp-fav-media">
-      <img src={tour.image} alt={tour.title} loading="lazy" decoding="async" width="400" height="260" />
+      <img src={photoAt(tour.image, 600)} srcSet={photoSet(tour.image, [300, 600])} sizes="(max-width: 767px) 72vw, 300px" alt={tour.title} loading="lazy" decoding="async" width="400" height="260" />
       {tour.badge ? <span className="hp-badge">{tour.badge}</span> : null}
     </div>
     <div className="hp-fav-body">

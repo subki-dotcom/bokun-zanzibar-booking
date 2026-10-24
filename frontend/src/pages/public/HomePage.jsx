@@ -1,28 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { fetchHomeData } from "../../api/toursApi";
 import "../../components/homePage/home.css";
-import { SiteHeader, UtilityBar } from "../../components/homePage/SiteChrome";
-import { Hero, HeroSearchCard } from "../../components/homePage/Hero";
-import {
-  BestSellers,
-  CategoryTiles,
-  CtaBand,
-  FeaturedTours,
-  ReviewsSection,
-  SafariBanner,
-  StepsStrip
-} from "../../components/homePage/HomeSections";
+import HomeView, { HOME_DESCRIPTION, HOME_TITLE, homeSchemas, readPrerenderedHome } from "../../components/homePage/HomeView";
 import SeoHead from "../../components/common/SeoHead";
 import { BRAND } from "../../config/brand";
 
 const HomePage = () => {
-  const [home, setHome] = useState(null);
+  const [home, setHome] = useState(readPrerenderedHome);
 
   useEffect(() => {
     let mounted = true;
     fetchHomeData()
       .then((data) => {
-        if (mounted) setHome(data || null);
+        if (mounted && data) setHome(data);
       })
       .catch(() => {
         // The hero, search and booking steps still work without the tour lists.
@@ -32,24 +22,12 @@ const HomePage = () => {
     };
   }, []);
 
+  const schemas = useMemo(() => homeSchemas(home, BRAND), [home]);
+
   return (
     <>
-      <SeoHead title={`${BRAND.name} | Zanzibar Tours & Activities`} description="Book Zanzibar tours, activities, transfers, and safaris with live availability and secure checkout." />
-      <div className="hp">
-        <UtilityBar />
-        <SiteHeader />
-        <div className="hp-main">
-          <Hero />
-          <HeroSearchCard />
-          <CategoryTiles styles={home?.styles} />
-          <FeaturedTours tours={home?.featured} />
-          <SafariBanner safari={home?.safari} />
-          <BestSellers tours={home?.bestSellers} />
-          <StepsStrip />
-          <ReviewsSection reviews={home?.reviews} />
-          <CtaBand />
-        </div>
-      </div>
+      <SeoHead title={HOME_TITLE} description={HOME_DESCRIPTION} image={`${BRAND.website}/images/home/hero-dhow-1280.jpg`} schemas={schemas} />
+      <HomeView home={home} />
     </>
   );
 };

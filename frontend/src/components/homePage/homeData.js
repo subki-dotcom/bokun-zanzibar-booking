@@ -20,6 +20,15 @@ export const searchHref = ({ category = "", date = "", travelers = 2 } = {}) => 
   return `/tours?${query.toString()}`;
 };
 
+// Supplier photos come from their image CDN at the size shown (AVIF or WebP when the browser takes it).
+const SUPPLIER_PHOTO = /^https:\/\/bokun\.s3\.amazonaws\.com\/(.+)$/;
+export const photoAt = (url = "", width = 800) => {
+  const match = String(url).match(SUPPLIER_PHOTO);
+  return match ? `https://imgcdn.bokun.tools/${match[1]}?w=${width}` : url;
+};
+export const photoSet = (url = "", widths = [400, 800]) =>
+  SUPPLIER_PHOTO.test(String(url)) ? widths.map((width) => `${photoAt(url, width)} ${width}w`).join(", ") : undefined;
+
 export const money = (amount = 0, currency = "USD") =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
