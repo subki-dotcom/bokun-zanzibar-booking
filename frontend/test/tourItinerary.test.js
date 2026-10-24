@@ -29,3 +29,24 @@ test("itinerary stops show their description on phones as well as desktop", () =
   assert.match(desktop, /Free time on the beach/);
   assert.match(desktop, /Pickup from your hotel/);
 });
+
+test("tour reviews from Tripadvisor say so and link to them", () => {
+  const html = renderToStaticMarkup(React.createElement(sections.Reviews, {
+    rating: 4.7,
+    reviewCount: 18,
+    source: "Tripadvisor",
+    url: "https://www.tripadvisor.co.uk/AttractionProductReview-g1-d2-Dolphins.html"
+  }));
+  assert.match(html, /4\.7/);
+  assert.match(html, /18 reviews on Tripadvisor/);
+  assert.match(html, /href="https:\/\/www\.tripadvisor\.co\.uk\/AttractionProductReview[^"]*" target="_blank" rel="noopener noreferrer"/);
+  assert.doesNotMatch(html, /verified/);
+  const empty = renderToStaticMarkup(React.createElement(sections.Reviews, { rating: 0, reviewCount: 0 }));
+  assert.match(empty, /No reviews yet/);
+});
+
+test("ratings from another site are not marked up as the agency's own", async () => {
+  const site = await server.ssrLoadModule("/src/config/site.js");
+  assert.equal(site.travelAgencySchema({ rating: 4.5, count: 19, source: "Tripadvisor" }).aggregateRating, undefined);
+  assert.equal(site.travelAgencySchema({ rating: 4.8, count: 20 }).aggregateRating.ratingValue, 4.8);
+});

@@ -239,22 +239,36 @@ export const StepsStrip = () => (
 // Real reviews only: with none the whole section stays hidden.
 export const ReviewsSection = ({ reviews }) => {
   if (!reviews?.count) return null;
-  const stars = Math.round(reviews.rating);
+  // Whole stars, then a half star for .5 and above (4.5 shows four and a half).
+  const whole = Math.floor(reviews.rating);
+  const half = reviews.rating - whole >= 0.5;
   return (
     <section className="hp-section" aria-labelledby="hp-reviews-title">
       <div className="hp-container">
         <SectionHeader id="hp-reviews-title" eyebrow="Guest reviews" title="What travelers say" />
-        <div className="hp-reviews">
+        <div className={`hp-reviews ${reviews.items?.length ? "" : "is-score-only"}`}>
           <div className="hp-score">
             <strong>{reviews.rating.toFixed(1)}</strong>
             <span className="hp-stars" role="img" aria-label={`${reviews.rating.toFixed(1)} out of 5 stars`}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <LuStar key={n} aria-hidden="true" className={n <= stars ? "is-on" : ""} />
-              ))}
+              {[1, 2, 3, 4, 5].map((n) =>
+                half && n === whole + 1 ? (
+                  <span key={n} className="hp-star-half" aria-hidden="true">
+                    <LuStar />
+                    <LuStar className="is-on" />
+                  </span>
+                ) : (
+                  <LuStar key={n} aria-hidden="true" className={n <= whole ? "is-on" : ""} />
+                )
+              )}
             </span>
             <span>
               {reviews.count} review{reviews.count === 1 ? "" : "s"}{reviews.source ? ` on ${reviews.source}` : ""}
             </span>
+            {reviews.url ? (
+              <a className="hp-reviews-source" href={reviews.url} target="_blank" rel="noopener noreferrer">
+                Read our reviews{reviews.source ? ` on ${reviews.source}` : ""} <LuChevronRight aria-hidden="true" />
+              </a>
+            ) : null}
           </div>
           {(reviews.items || []).slice(0, 2).map((item) => (
             <figure className="hp-review" key={`${item.author}-${item.date || item.text.slice(0, 20)}`}>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { LuBus, LuCheck, LuClock, LuMapPin, LuMessageSquare, LuShieldCheck, LuStar, LuUsers, LuX } from "react-icons/lu";
+import { LuBus, LuCheck, LuClock, LuExternalLink, LuMapPin, LuMessageSquare, LuShieldCheck, LuStar, LuUsers, LuX } from "react-icons/lu";
 import { fetchTours } from "../../../api/toursApi";
 import { formatCurrency } from "../../../utils/formatters";
 import { durationTag } from "../single/tourDisplayText";
@@ -201,7 +201,8 @@ export const CancellationPolicy = ({ text = "", emphasis = "" }) => {
 };
 
 // Reviews: real score, counts and texts only. Without reviews the section says so instead of showing numbers.
-export const Reviews = ({ rating = 0, reviewCount = 0, reviews = [], distribution = null, freeCancellationWindow = "" }) => {
+// source/url: where the rating comes from (e.g. the tour's Tripadvisor page) and where to read the reviews.
+export const Reviews = ({ rating = 0, reviewCount = 0, reviews = [], distribution = null, freeCancellationWindow = "", source = "", url = "" }) => {
   const count = Number(reviewCount) || 0;
   if (count <= 0 || !(Number(rating) > 0)) {
     return (
@@ -225,7 +226,12 @@ export const Reviews = ({ rating = 0, reviewCount = 0, reviews = [], distributio
         <div>
           <div className="tp-score">{Number(rating).toFixed(1)}</div>
           <Stars rating={rating} />
-          <small>{count} verified review{count === 1 ? "" : "s"}</small>
+          <small>{count} {source ? `review${count === 1 ? "" : "s"} on ${source}` : `verified review${count === 1 ? "" : "s"}`}</small>
+          {url ? (
+            <a className="tp-reviews-source" href={url} target="_blank" rel="noopener noreferrer">
+              Read the reviews{source ? ` on ${source}` : ""} <LuExternalLink aria-hidden="true" />
+            </a>
+          ) : null}
         </div>
         {bars.length ? (
           <ul className="tp-bars">

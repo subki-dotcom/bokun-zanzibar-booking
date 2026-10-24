@@ -149,7 +149,8 @@ export const FOOTER_LINKS = {
   ]
 };
 
-// The business as a travel agency, for search engines; a rating only when real reviews exist.
+// The business as a travel agency, for search engines. A rating only for reviews collected on this site: ratings
+// from another site (reviews.source, e.g. Tripadvisor) must not be marked up as our own.
 export const travelAgencySchema = (reviews = null) => {
   const sameAs = Object.values(SITE.social).filter(Boolean);
   return {
@@ -165,7 +166,7 @@ export const travelAgencySchema = (reviews = null) => {
     areaServed: ["Zanzibar", "Tanzania"],
     parentOrganization: { "@id": `${SITE.website}/#organization` },
     ...(sameAs.length ? { sameAs } : {}),
-    ...(reviews?.count && reviews.rating
+    ...(reviews?.count && reviews.rating && !reviews.source
       ? { aggregateRating: { "@type": "AggregateRating", ratingValue: reviews.rating, reviewCount: reviews.count, bestRating: 5 } }
       : {})
   };
