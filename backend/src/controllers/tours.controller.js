@@ -17,7 +17,8 @@ const parsePositiveInt = (value, fallback) => {
 const listTours = asyncHandler(async (req, res) => {
   const page = parsePositiveInt(req.query.page, 1);
   const limit = parsePositiveInt(req.query.limit, 9);
-  const result = await toursService.listTours({ page, limit, requestId: req.requestId });
+  const style = typeof req.query.category === "string" ? req.query.category.slice(0, 40) : "";
+  const result = await toursService.listTours({ page, limit, style, requestId: req.requestId });
 
   setPublicCache(res, { maxAge: 60, staleWhileRevalidate: 300 });
   return successResponse(res, {
@@ -68,6 +69,17 @@ const setProductVisibility = asyncHandler(async (req, res) => {
     req.auth?.email || req.auth?.id || req.auth?.role || ""
   );
   return successResponse(res, { message: data.hiddenFromPublic ? "Product hidden from the website" : "Product shown on the website", data });
+});
+
+const setProductFeatured = asyncHandler(async (req, res) => {
+  const data = await toursService.setProductFeatured(req.params.productId, req.body?.featured === true);
+  return successResponse(res, { message: data.featuredOnHome ? "Product featured on the home page" : "Product removed from the home page", data });
+});
+
+const getHomeData = asyncHandler(async (req, res) => {
+  const data = await toursService.getHomeData();
+  res.set("Cache-Control", "public, max-age=60");
+  return successResponse(res, { message: "Home page data", data });
 });
 
 const getOptionQuotes = asyncHandler(async (req, res) => {
@@ -139,6 +151,8 @@ module.exports = {
   getOptionQuotes,
   listProductsForAdmin,
   setProductVisibility,
+  setProductFeatured,
+  getHomeData,
   getTourOptions,
   checkOptionsAvailability,
   searchToursByAvailability,

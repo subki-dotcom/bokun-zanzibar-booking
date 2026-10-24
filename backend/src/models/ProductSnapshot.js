@@ -111,6 +111,8 @@ const productSnapshotSchema = new mongoose.Schema(
     // Staff can hide a product (for example a duplicate) from listings, "You may also like" and the sitemap; its
     // page stays reachable by link so existing ads and bookings keep working. Bókun sync never changes this.
     hiddenFromPublic: { type: Boolean, default: false },
+    // Chosen by staff for "Handpicked Zanzibar experiences" on the home page.
+    featuredOnHome: { type: Boolean, default: false },
     hiddenAt: { type: Date, default: null },
     hiddenBy: { type: String, default: "" },
     rawBokunProduct: { type: mongoose.Schema.Types.Mixed }

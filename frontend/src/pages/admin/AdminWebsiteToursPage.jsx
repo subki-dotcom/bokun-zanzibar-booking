@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Form, Table } from "react-bootstrap";
-import { fetchAdminWebsiteProducts, updateAdminWebsiteProductVisibility } from "../../api/toursApi";
+import { fetchAdminWebsiteProducts, updateAdminWebsiteProductFeatured, updateAdminWebsiteProductVisibility } from "../../api/toursApi";
 import Loader from "../../components/common/Loader";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import { duplicateGroupKey } from "../../utils/productDuplicates";
@@ -46,6 +46,7 @@ const AdminWebsiteToursPage = () => {
       if (filter === "duplicates") return isDuplicate(product);
       if (filter === "hidden") return product.hiddenFromPublic;
       if (filter === "missing-text") return needsText(product);
+      if (filter === "featured") return product.featuredOnHome;
       return true;
     })
     .sort((a, b) => duplicateGroupKey(a.title).localeCompare(duplicateGroupKey(b.title)) || a.title.localeCompare(b.title));
@@ -65,6 +66,26 @@ const AdminWebsiteToursPage = () => {
     }
   };
 
+  // The home page shows six handpicked tours; with none chosen it picks the most booked ones itself.
+  const featuredCount = products.filter((product) => product.featuredOnHome).length;
+  const toggleFeatured = async (product) => {
+    const featured = !product.featuredOnHome;
+    if (featured && featuredCount >= 6) {
+      setError("The home page shows six handpicked tours. Remove one before adding another.");
+      return;
+    }
+    setSavingId(product.bokunProductId);
+    setError("");
+    try {
+      const updated = await updateAdminWebsiteProductFeatured(product.bokunProductId, featured);
+      setProducts((current) => current.map((item) => (item.bokunProductId === updated.bokunProductId ? { ...item, ...updated } : item)));
+    } catch (err) {
+      setError(err.message || "Could not update the product");
+    } finally {
+      setSavingId("");
+    }
+  };
+
   if (loading) return <Loader message="Loading website tours..." />;
 
   return (
@@ -74,6 +95,7 @@ const AdminWebsiteToursPage = () => {
           <h2 className="mb-1">Website Tours</h2>
           <p className="text-muted mb-0">
             Hide duplicates or products you do not sell online. Hidden products leave listings and the sitemap; their page still opens from a link.
+            Choose up to six tours for "Handpicked Zanzibar experiences" on the home page ({featuredCount}/6 chosen; with none, the most booked tours are shown).
           </p>
         </div>
         <Form.Select style={{ maxWidth: 240 }} value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter products">
@@ -81,6 +103,7 @@ const AdminWebsiteToursPage = () => {
           <option value="duplicates">Possible duplicates ({products.filter(isDuplicate).length})</option>
           <option value="missing-text">No short description ({products.filter(needsText).length})</option>
           <option value="hidden">Hidden ({products.filter((product) => product.hiddenFromPublic).length})</option>
+          <option value="featured">Featured on home ({featuredCount}/6)</option>
         </Form.Select>
       </div>
       <ErrorAlert error={error} />
@@ -94,6 +117,7 @@ const AdminWebsiteToursPage = () => {
                 <th className="text-end">From</th>
                 <th>Notes</th>
                 <th>Website</th>
+                <th>Home page</th>
               </tr>
             </thead>
             <tbody>
@@ -120,9 +144,20 @@ const AdminWebsiteToursPage = () => {
                     </Button>
                     {product.hiddenFromPublic ? <small className="d-block text-muted mt-1">Hidden</small> : null}
                   </td>
+                  <td>
+                    <Button
+                      size="sm"
+                      variant={product.featuredOnHome ? "success" : "outline-secondary"}
+                      disabled={savingId === product.bokunProductId || product.hiddenFromPublic}
+                      onClick={() => toggleFeatured(product)}
+                      aria-pressed={Boolean(product.featuredOnHome)}
+                    >
+                      {product.featuredOnHome ? "Featured ✓" : "Feature"}
+                    </Button>
+                  </td>
                 </tr>
               )) : (
-                <tr><td colSpan={5} className="text-center text-muted py-4">No products match this filter.</td></tr>
+                <tr><td colSpan={6} className="text-center text-muted py-4">No products match this filter.</td></tr>
               )}
             </tbody>
           </Table>

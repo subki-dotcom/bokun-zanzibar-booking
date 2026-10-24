@@ -11,7 +11,8 @@ const setMeta = (selector, attribute, value) => {
   node.setAttribute(attribute, value);
 };
 
-const SeoHead = ({ title, description, image = "", product = null, noIndex = false }) => {
+// schemas: extra JSON-LD entries for this page (memoize them; a new array re-runs the effect).
+const SeoHead = ({ title, description, image = "", product = null, noIndex = false, schemas: extraSchemas = null }) => {
   useEffect(() => {
     const pageTitle = title || `${BRAND.name} | Zanzibar Tours`;
     const pageDescription = description || "Book Zanzibar tours, activities, and transfers with live availability and secure payment.";
@@ -52,6 +53,8 @@ const SeoHead = ({ title, description, image = "", product = null, noIndex = fal
 
     const existingSchema = document.getElementById("riser-seo-schema");
     if (existingSchema) existingSchema.remove();
+    // The build's copy of the same entries, so the page does not list them twice.
+    document.getElementById("riser-prerender-schema")?.remove();
     const schemas = [
       {
         "@context": "https://schema.org",
@@ -71,6 +74,7 @@ const SeoHead = ({ title, description, image = "", product = null, noIndex = fal
         publisher: { "@id": `${BRAND.website}/#organization` }
       }
     ];
+    if (Array.isArray(extraSchemas)) schemas.push(...extraSchemas);
     if (product?.name) {
       schemas.push({
         "@context": "https://schema.org",
@@ -98,7 +102,7 @@ const SeoHead = ({ title, description, image = "", product = null, noIndex = fal
     document.head.appendChild(schema);
 
     return () => document.getElementById("riser-seo-schema")?.remove();
-  }, [description, image, noIndex, product, title]);
+  }, [description, extraSchemas, image, noIndex, product, title]);
 
   return null;
 };

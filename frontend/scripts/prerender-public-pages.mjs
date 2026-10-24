@@ -1,10 +1,16 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import React from "react";
+import { renderToString } from "react-dom/server";
+import { MemoryRouter } from "react-router-dom";
+import { createServer } from "vite";
 
 const root = process.cwd();
 const dist = path.join(root, "dist");
 const brandName = String(process.env.VITE_BRAND_NAME || "Riser Tours & Safaris").trim();
+const brandPhone = String(process.env.VITE_SUPPORT_PHONE || "+255 778 775 044").trim();
+const brandEmail = String(process.env.VITE_SUPPORT_EMAIL || "info@risertoursandsafaris.co.tz").trim();
 const siteUrl = String(process.env.VITE_SITE_URL || "https://zanzibartoursandsafaris.co.tz").replace(/\/$/, "");
 const configuredApi = String(process.env.SEO_API_BASE_URL || process.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 if (!configuredApi) {
@@ -81,6 +87,50 @@ const fetchActiveTours = async () => {
   return [...unique.values()];
 };
 
+// The home sections' data (style tiles, featured tours…); without it the page still renders its hero and search.
+const fetchHomeData = async () => {
+  try {
+    return (await requestJson(`${apiUrl}/tours/home`)).data || null;
+  } catch (error) {
+    console.warn(`Home data unavailable, home page prerendered without tour sections: ${error.message}`);
+    return null;
+  }
+};
+
+// The real home page components rendered to HTML, so the page shows at once with the site's own styles.
+const renderHome = async (home) => {
+  const server = await createServer({
+    root,
+    configFile: false,
+    logLevel: "error",
+    esbuild: { jsx: "automatic" },
+    server: { middlewareMode: true, watch: null, hmr: false },
+    optimizeDeps: { noDiscovery: true },
+    appType: "custom"
+  });
+  try {
+    const view = await server.ssrLoadModule("/src/components/homePage/HomeView.jsx");
+    // Router links use layout effects, which React reports as unused on the server; the page is rendered again in
+    // the browser, so that one warning is left out of the build log.
+    const logError = console.error;
+    console.error = (message, ...rest) => {
+      if (!String(message).includes("useLayoutEffect does nothing on the server")) logError(message, ...rest);
+    };
+    let html;
+    try {
+      html = renderToString(React.createElement(MemoryRouter, { initialEntries: ["/"] }, React.createElement(view.default, { home })));
+    } finally {
+      console.error = logError;
+    }
+    return { html, schemas: view.homeSchemas(home, { name: brandName, website: siteUrl, phone: brandPhone, email: brandEmail, social: {} }), title: view.HOME_TITLE, description: view.HOME_DESCRIPTION };
+  } finally {
+    await server.close();
+  }
+};
+
+const heroPreload = () =>
+  '<link rel="preload" as="image" type="image/avif" href="/images/home/hero-dhow-1280.avif" imagesrcset="/images/home/hero-dhow-640.avif 640w, /images/home/hero-dhow-960.avif 960w, /images/home/hero-dhow-1280.avif 1280w" imagesizes="100vw" fetchpriority="high" />';
+
 const getTour = async (slug) => (await requestJson(`${apiUrl}/tours/${encodeURIComponent(slug)}`)).data;
 
 // Replacements are functions, so "$&" or "$1" in tour text is inserted as written.
@@ -144,12 +194,19 @@ const run = async () => {
   const tours = await fetchActiveTours();
   const details = await mapInBatches(tours, (tour) => getTour(tour.slug));
   const homeCanonical = `${siteUrl}/`;
+  const homeData = await fetchHomeData();
+  const home = await renderHome(homeData);
   await writePage(template, "/", metadata({
-    title: `${brandName} | Zanzibar Tours & Activities`,
-    description: "Book Zanzibar tours, activities, transfers, and safaris with live availability and secure checkout.",
+    title: home.title,
+    description: home.description,
     canonical: homeCanonical,
-    schemas: sharedSchema(),
-    body: '<main><h1>Zanzibar Tours & Activities</h1><p>Discover Zanzibar tours, activities, transfers, and safaris.</p><p><a href="/tours">Browse Zanzibar tours</a></p></main>'
+    image: `${siteUrl}/images/home/hero-dhow-1280.jpg`,
+    schemas: [...sharedSchema(), ...home.schemas],
+    body: home.html,
+    data: [
+      heroPreload(),
+      homeData ? `<script id="riser-prerender-home" type="application/json">${JSON.stringify(homeData).replace(/</g, "\\u003c")}</script>` : ""
+    ].filter(Boolean).join("\n    ")
   }));
   await writePage(template, "/tours", metadata({
     title: `Zanzibar Tours & Activities | ${brandName}`,
