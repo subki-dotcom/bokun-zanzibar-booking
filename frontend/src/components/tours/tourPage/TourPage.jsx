@@ -57,7 +57,7 @@ const TourPage = ({ tour = {} }) => {
             <ItineraryTimeline stops={stops} hasPickup={hasPickup} compact={isMobile} />
             {!isMobile ? <PickupInfo areas={pickupAreas} startTimes={booking.startTimes} /> : null}
             <CancellationPolicy text={cancellation.text} emphasis={cancellation.emphasis} />
-            <Reviews rating={tour.rating} reviewCount={tour.reviewCount} source={tour.reviewSource} url={tour.reviewUrl} freeCancellationWindow={freeCancellationWindow(tour.cancellationPolicy)} />
+            <Reviews rating={tour.rating} reviewCount={tour.reviewCount} source={tour.reviewSource} url={tour.reviewUrl} listing={tour.tripadvisor} freeCancellationWindow={freeCancellationWindow(tour.cancellationPolicy)} />
           </div>
           {compactBooking ? null : (
             <aside className="tp-aside" aria-label="Book this tour">

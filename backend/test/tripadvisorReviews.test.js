@@ -34,8 +34,13 @@ test("the company's Tripadvisor page is kept for the home page but is not the to
   });
 });
 
-test("a listing without reviews, or no listing, gives no rating", () => {
-  assert.equal(mapProduct(product({ url: "https://www.tripadvisor.com/AttractionProductReview-x.html", rating: 0, numReviews: 1 })).tripadvisor, null);
+test("a listing with reviews but no score is kept without a rating; no reviews or no listing gives nothing", () => {
+  const unrated = mapProduct(product({ url: "https://www.tripadvisor.com/AttractionProductReview-g1-d2-Mikumi.html", rating: 0, numReviews: 1 }));
+  assert.deepEqual(unrated.tripadvisor, { url: "https://www.tripadvisor.com/AttractionProductReview-g1-d2-Mikumi.html", rating: 0, reviewCount: 1, scope: "product" });
+  assert.equal(unrated.rating, 0);
+  assert.equal(unrated.reviewCount, 0);
+  assert.equal(unrated.reviewSource, "");
+  assert.equal(mapProduct(product({ url: "https://www.tripadvisor.com/AttractionProductReview-x.html", rating: 0, numReviews: 0 })).tripadvisor, null);
   const none = mapProduct(product(undefined));
   assert.equal(none.tripadvisor, null);
   assert.equal(none.rating, 0);

@@ -1032,17 +1032,17 @@ const resolveMinimumOptionPrice = (options = []) => {
 };
 
 // The Tripadvisor listing Bókun links to a product: the tour's own page ("AttractionProductReview") or the company's
-// page, which other tours share. Only a rating with reviews counts.
+// page, which other tours share. A listing with reviews is kept even when Tripadvisor gives no score yet (rating 0).
 const mapTripadvisorReview = (root = {}) => {
   const raw = root.tripadvisorReview;
   if (!raw || typeof raw !== "object") return null;
   const url = String(raw.url || "").trim();
   const rating = Number(raw.rating);
   const reviewCount = Number(raw.numReviews);
-  if (!/^https:\/\/(www\.)?tripadvisor\./i.test(url) || !(rating > 0) || !(reviewCount > 0)) return null;
+  if (!/^https:\/\/(www\.)?tripadvisor\./i.test(url) || !(reviewCount > 0)) return null;
   return {
     url,
-    rating: normalizeRatingScale(rating),
+    rating: rating > 0 ? normalizeRatingScale(rating) : 0,
     reviewCount: Math.round(reviewCount),
     scope: /AttractionProductReview/i.test(url) ? "product" : "company"
   };
@@ -1168,7 +1168,8 @@ const mapProduct = (rawProduct = {}, options = {}) => {
   const ownRating = resolveProductRating(ownFields);
   const ownReviewCount = resolveProductReviewCount(ownFields);
   const hasOwnReviews = ownRating > 0 && ownReviewCount > 0;
-  const useTripadvisor = !hasOwnReviews && tripadvisor?.scope === "product";
+  // A score is needed to show stars; a listing without one is shown on the tour page as "1 review on Tripadvisor".
+  const useTripadvisor = !hasOwnReviews && tripadvisor?.scope === "product" && tripadvisor.rating > 0;
   const rating = useTripadvisor ? tripadvisor.rating : hasOwnReviews ? ownRating : 0;
   const reviewCount = useTripadvisor ? tripadvisor.reviewCount : hasOwnReviews ? ownReviewCount : 0;
   const reviewSource = useTripadvisor ? "Tripadvisor" : "";
