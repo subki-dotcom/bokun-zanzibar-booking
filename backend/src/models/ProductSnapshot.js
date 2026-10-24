@@ -113,6 +113,8 @@ const productSnapshotSchema = new mongoose.Schema(
     hiddenFromPublic: { type: Boolean, default: false },
     // Chosen by staff for "Handpicked Zanzibar experiences" on the home page.
     featuredOnHome: { type: Boolean, default: false },
+    // The tour shown in the header's "Tours & activities" menu (one at a time).
+    featuredInMenu: { type: Boolean, default: false },
     hiddenAt: { type: Date, default: null },
     hiddenBy: { type: String, default: "" },
     rawBokunProduct: { type: mongoose.Schema.Types.Mixed }

@@ -7,7 +7,8 @@ import useCheckout from "../../components/checkout/useCheckout";
 import useCheckoutSteps from "../../components/checkout/useCheckoutSteps";
 import { STEPS, activitySummary, formatMoney, fullName } from "../../components/checkout/checkoutData";
 import { formatPhone } from "../../components/checkout/phone";
-import { CheckoutHeader, MobileCheckoutHeader, MobileProgress } from "../../components/checkout/CheckoutHeader";
+import { MobileCheckoutHeader, MobileProgress } from "../../components/checkout/CheckoutHeader";
+import SiteHeader from "../../components/common/siteHeader/SiteHeader";
 import StepCard from "../../components/checkout/StepCard";
 import ContactStep from "../../components/checkout/ContactStep";
 import ActivityStep from "../../components/checkout/ActivityStep";
@@ -113,7 +114,11 @@ const CheckoutPage = () => {
           <MobileOrderSummary checkout={checkout} />
         </>
       ) : (
-        <CheckoutHeader />
+        <SiteHeader
+          variant="checkout"
+          step={steps.index}
+          confirmLeave={Boolean(checkout.form.firstName || checkout.form.email || checkout.form.phoneNational)}
+        />
       )}
 
       <main className="ck-container">

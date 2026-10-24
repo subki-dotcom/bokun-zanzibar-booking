@@ -1,0 +1,292 @@
+/* /contact */
+.cp {
+  --brand: #0e6b57;
+  --brand-hover: #0a5242;
+  --ink: #14211f;
+  --muted: #55625f;
+  --border: #e3e7e5;
+  --border-strong: #c9d1ce;
+  --page-alt: #f6f7f6;
+  --whatsapp: #1e8e4e;
+  padding: 48px 0 80px;
+  background: var(--page-alt);
+  color: var(--ink);
+  font-family: "Outfit", system-ui, sans-serif;
+}
+
+.cp-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.cp h1,
+.cp h2 {
+  font-family: inherit;
+  letter-spacing: normal;
+  color: var(--ink);
+}
+
+.cp-head h1 {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 700;
+}
+
+.cp-head p {
+  max-width: 640px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.cp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.cp-card {
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.cp-card h2 {
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.cp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cp-btn svg {
+  width: 19px;
+  height: 19px;
+}
+
+.cp .cp-btn-whatsapp {
+  width: 100%;
+  background: var(--whatsapp);
+  color: #fff;
+}
+
+.cp .cp-btn-whatsapp:hover {
+  background: #187a42;
+  color: #fff;
+}
+
+.cp-btn-brand {
+  background: var(--brand);
+  color: #fff;
+}
+
+.cp-btn-brand:hover {
+  background: var(--brand-hover);
+}
+
+.cp-btn-brand:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+.cp-list {
+  display: grid;
+  gap: 16px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cp-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cp-list svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  color: var(--brand);
+}
+
+.cp-list span {
+  display: grid;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.cp-list a,
+.cp-list strong {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Map placeholder: opens the location in Google Maps. */
+.cp-map {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 140px;
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 14px;
+  background: var(--page-alt);
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.cp-map svg {
+  width: 28px;
+  height: 28px;
+}
+
+.cp-map span {
+  display: grid;
+  font-weight: 600;
+}
+
+.cp-map strong {
+  color: var(--ink);
+}
+
+.cp-note {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.cp-note a {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.cp-form {
+  display: grid;
+  gap: 16px;
+}
+
+.cp-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.cp-row {
+  display: grid;
+  gap: 6px;
+}
+
+.cp-row label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cp-row label span {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.cp-row input,
+.cp-row textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+
+.cp-row textarea {
+  resize: vertical;
+}
+
+.cp-row input:focus,
+.cp-row textarea:focus {
+  border-color: var(--brand);
+  outline: 2px solid rgba(14, 107, 87, 0.25);
+}
+
+.cp-row [aria-invalid="true"] {
+  border-color: #b42318;
+}
+
+.cp-error {
+  color: #b42318;
+  font-size: 13px;
+}
+
+.cp-trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.cp-status {
+  min-height: 20px;
+  margin: 0;
+  font-size: 15px;
+}
+
+.cp-status.is-success {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.cp-status.is-error {
+  color: #b42318;
+}
+
+.cp :focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767.98px) {
+  .cp {
+    padding: 28px 0 56px;
+  }
+
+  .cp-container {
+    padding: 0 16px;
+  }
+
+  .cp-head h1 {
+    font-size: 30px;
+  }
+
+  .cp-grid,
+  .cp-two {
+    grid-template-columns: 1fr;
+  }
+
+  .cp-card {
+    padding: 20px;
+  }
+}

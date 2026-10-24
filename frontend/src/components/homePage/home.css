@@ -90,209 +90,13 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
-.hp-icon-btn {
-  display: inline-grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: none;
-  color: var(--ink);
-}
-
-.hp-icon-btn svg {
-  width: 24px;
-  height: 24px;
-}
-
-/* 1. Utility bar */
-.hp-utility {
-  background: var(--ink);
-  color: var(--footer-text);
-  font-size: 13px;
-}
-
-.hp-utility-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 36px;
-}
-
-.hp-utility-promise {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.hp-utility-promise svg {
-  width: 14px;
-  height: 14px;
-  color: var(--accent-on-dark);
-}
-
-.hp-utility-links {
-  display: flex;
-  gap: 18px;
-}
-
-.hp .hp-utility-links a {
-  color: var(--footer-text);
-  text-decoration: none;
-}
-
-.hp .hp-utility-links a:hover {
-  color: #fff;
-}
-
-/* 2. Header */
-.hp-header {
-  position: sticky;
-  top: 0;
-  z-index: 1020;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
-}
-
-.hp-header-inner {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  min-height: 76px;
-}
-
-.hp-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-}
-
-.hp-logo-mark {
-  display: inline-grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--brand);
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.hp-logo-text {
-  display: grid;
-  line-height: 1.15;
-}
-
-.hp-logo-text strong {
-  font-size: 19px;
-  font-weight: 700;
-}
-
-.hp-logo-text small {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.hp-nav {
-  display: flex;
-  gap: 28px;
-  margin-left: auto;
-}
-
-.hp .hp-nav a {
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.hp .hp-nav a:hover {
-  color: var(--brand);
-}
-
-.hp-header-cta {
-  margin-left: 12px;
-  min-height: 44px;
-  font-size: 15px;
-}
-
-.hp-menu-btn {
-  display: none;
-  margin-left: auto;
-}
-
-/* Mobile menu */
-.hp-menu-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 1080;
-}
-
-.hp-menu-backdrop {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  background: rgba(20, 33, 31, 0.5);
-}
-
-.hp-menu {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  width: min(320px, 86vw);
-  padding: 12px 20px 24px;
-  background: #fff;
-  box-shadow: var(--shadow-card);
-}
-
-.hp-menu-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 52px;
-}
-
-.hp-menu-head strong {
-  font-size: 18px;
-}
-
-.hp-menu ul {
-  margin: 8px 0 20px;
-  padding: 0;
-  list-style: none;
-}
-
-.hp .hp-menu li a {
-  display: flex;
-  align-items: center;
-  min-height: 48px;
-  border-bottom: 1px solid var(--border);
-  color: var(--ink);
-  font-size: 17px;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.hp-menu-whatsapp {
-  margin-top: auto;
-}
-
 /* 3. Hero */
 .hp-hero {
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 620px;
-  padding: 72px 0 150px;
+  min-height: calc(620px + var(--site-header-h, 112px));
+  padding: calc(72px + var(--site-header-h, 112px)) 0 150px;
   overflow: hidden;
   background: #1c4a4f;
   color: #fff;
@@ -315,7 +119,8 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(8, 24, 26, 0.38);
+  /* Darker at the top, where the site header sits over the photo. */
+  background: linear-gradient(180deg, rgba(8, 24, 26, 0.62) 0, rgba(8, 24, 26, 0.38) 220px);
 }
 
 .hp-hero-inner {
@@ -534,26 +339,7 @@ select.hp-control {
 }
 
 /* Tablet */
-@media (max-width: 1100px) {
-  .hp-nav {
-    gap: 18px;
-  }
-
-  .hp-nav a {
-    font-size: 14px;
-  }
-}
-
 @media (max-width: 991.98px) {
-  .hp-nav,
-  .hp-header-cta {
-    display: none;
-  }
-
-  .hp-menu-btn {
-    display: inline-grid;
-  }
-
   .hp-search-fields {
     grid-template-columns: 1fr 1fr;
   }
@@ -573,36 +359,9 @@ select.hp-control {
     padding: 0 16px;
   }
 
-  .hp-utility-inner {
-    justify-content: center;
-    min-height: 32px;
-    font-size: 12px;
-  }
-
-  .hp-utility-links {
-    display: none;
-  }
-
-  .hp-header-inner {
-    min-height: 60px;
-  }
-
-  .hp-logo-mark {
-    width: 36px;
-    height: 36px;
-  }
-
-  .hp-logo-text strong {
-    font-size: 17px;
-  }
-
-  .hp-logo-text small {
-    display: none;
-  }
-
   .hp-hero {
     min-height: 0;
-    padding: 40px 0 110px;
+    padding: calc(32px + var(--site-header-h, 98px)) 0 110px;
   }
 
   .hp .hp-hero h1 {

@@ -103,6 +103,7 @@ const toHomeCard = (tour = {}) => {
     rating: reviewCount > 0 && Number(tour.rating) > 0 ? Number(Number(tour.rating).toFixed(1)) : 0,
     reviewCount: reviewCount > 0 ? reviewCount : 0,
     featured: Boolean(tour.featuredOnHome),
+    inMenu: Boolean(tour.featuredInMenu),
     facts: styles.includes("safari") ? safariFacts(tour.included) : []
   };
 };
@@ -207,4 +208,29 @@ const styleKeyFor = (value = "") => {
   return STYLES.find((style) => style.key === wanted || style.label.toLowerCase() === wanted)?.key || "";
 };
 
-module.exports = { searchWords, matchesSearch, styleKeyFor, STYLES, safariFacts, tourStyles, toHomeCard, showable, pickFeatured, pickBestSellers, styleTiles, titleKey };
+// The tour in the header menu: the one staff chose, otherwise the most booked (not a transfer).
+const pickMenuTour = (cards = [], bookings = new Map()) => {
+  const chosen = cards.find((card) => card.inMenu);
+  if (chosen) return { tour: chosen, source: "admin" };
+  const ranked = [...cards]
+    .filter((card) => !card.styles.includes("transfers"))
+    .sort((a, b) => (bookings.get(b.id) || 0) - (bookings.get(a.id) || 0) || b.images - a.images);
+  return ranked[0] ? { tour: ranked[0], source: (bookings.get(ranked[0].id) || 0) > 0 ? "bookings" : "auto" } : null;
+};
+
+// The three most booked tours, for the search panel before anything is typed.
+const pickTopTours = (cards = [], bookings = new Map(), limit = 3) =>
+  [...cards].sort((a, b) => (bookings.get(b.id) || 0) - (bookings.get(a.id) || 0) || b.images - a.images).slice(0, limit);
+
+// For each search: how many tours match and the lowest real price among them.
+const searchSummaries = (rows = [], queries = []) =>
+  Object.fromEntries(
+    queries.map((query) => {
+      const matches = rows.filter((row) => matchesSearch(row, query));
+      const priced = matches.filter((row) => Number(row.fromPrice) > 0);
+      const cheapest = priced.reduce((low, row) => (!low || Number(row.fromPrice) < Number(low.fromPrice) ? row : low), null);
+      return [query, { count: matches.length, fromPrice: cheapest ? Number(cheapest.fromPrice) : 0, currency: cheapest?.currency || "USD" }];
+    })
+  );
+
+module.exports = { pickMenuTour, pickTopTours, searchSummaries, searchWords, matchesSearch, styleKeyFor, STYLES, safariFacts, tourStyles, toHomeCard, showable, pickFeatured, pickBestSellers, styleTiles, titleKey };

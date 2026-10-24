@@ -1,0 +1,1317 @@
+/* Site header (mockups HeaderDesktop / HeaderHero / HeaderSticky / HeaderSearch / HeaderCheckout / HeaderMobile*). */
+@import "../../../styles/riserTokens.css";
+
+/* The header's height, for pages that sit under it (the home hero is drawn behind the transparent header). */
+:root {
+  --sh-utility-h: 36px;
+  --sh-bar-h: 76px;
+  --sh-bar-stuck-h: 64px;
+  --site-header-h: 112px;
+}
+
+@media (max-width: 1199.98px) {
+  :root {
+    --sh-utility-h: 34px;
+    --sh-bar-h: 64px;
+    --sh-bar-stuck-h: 56px;
+    --site-header-h: 98px;
+  }
+}
+
+.sh,
+.sh-search-layer,
+.sh-menu-layer,
+.sh-skip {
+  --brand: #0e6b57;
+  --brand-hover: #0a5242;
+  --ink: #14211f;
+  --muted: #55625f;
+  --border: #e3e7e5;
+  --border-strong: #c9d1ce;
+  --footer-text: #d5dedb;
+  --whatsapp: #1e8e4e;
+  --page-alt: #f6f7f6;
+  --brand-soft-text: #e7f3ef;
+  font-family: "Outfit", system-ui, sans-serif;
+}
+
+.sh *,
+.sh-search-layer *,
+.sh-menu-layer * {
+  box-sizing: border-box;
+}
+
+.sh p,
+.sh ul,
+.sh ol,
+.sh-search-layer p,
+.sh-search-layer ul,
+.sh-menu-layer p,
+.sh-menu-layer ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The site-wide paragraph colour does not apply here. */
+.sh p,
+.sh-search-layer p,
+.sh-menu-layer p {
+  color: inherit;
+}
+
+.sh h2,
+.sh-search-layer h2 {
+  font-family: inherit;
+  letter-spacing: normal;
+}
+
+.sh a,
+.sh-search-layer a,
+.sh-menu-layer a {
+  text-decoration: none;
+}
+
+.sh :focus-visible,
+.sh-search-layer :focus-visible,
+.sh-menu-layer :focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.sh-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.sh-container {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Skip link: first thing a keyboard reaches. */
+.sh-skip {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1100;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+  transform: translateY(-200%);
+}
+
+.sh-skip:focus {
+  color: #fff;
+  transform: none;
+}
+
+/* The shell keeps the header's room in the page, so nothing jumps when the bar shrinks. */
+.sh-shell-default {
+  height: var(--site-header-h);
+}
+
+.sh-shell-transparent {
+  height: 0;
+}
+
+.sh {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1030;
+  color: var(--ink);
+}
+
+/* 1. Utility line */
+.sh-utility {
+  height: var(--sh-utility-h);
+  overflow: hidden;
+  border-bottom: 1px solid transparent;
+  background: var(--ink);
+  color: var(--footer-text);
+  font-size: 13px;
+  transition: height 0.2s ease;
+}
+
+.sh-utility-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 100%;
+}
+
+.sh-promises,
+.sh-contacts {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  white-space: nowrap;
+}
+
+.sh-promises span,
+.sh .sh-contacts a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
+}
+
+.sh .sh-contacts a:hover {
+  color: #fff;
+}
+
+.sh-utility svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sh-currency {
+  padding: 2px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+}
+
+/* 2. Main bar */
+.sh-bar {
+  height: var(--sh-bar-h);
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  transition: height 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sh-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 100%;
+}
+
+.sh .sh-logo {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+}
+
+.sh-logo-mark {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  transition: width 0.2s ease, height 0.2s ease;
+}
+
+.sh-logo-text {
+  display: grid;
+  line-height: 1.15;
+}
+
+.sh-logo-text strong {
+  font-size: 19px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sh-logo-text small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sh-nav {
+  height: 100%;
+  margin-left: 12px;
+}
+
+.sh-nav > ul {
+  display: flex;
+  gap: 2px;
+  height: 100%;
+}
+
+.sh-nav > ul > li {
+  display: flex;
+}
+
+.sh .sh-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-top: 3px solid transparent;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sh .sh-nav-link:hover,
+.sh .sh-nav-link.is-active {
+  color: var(--brand);
+}
+
+.sh .sh-nav-link.is-active {
+  border-bottom-color: var(--brand);
+}
+
+.sh-nav-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.sh-caret {
+  width: 15px;
+  height: 15px;
+  transition: transform 0.2s ease;
+}
+
+.sh-nav-link[aria-expanded="true"] .sh-caret {
+  transform: rotate(180deg);
+}
+
+.sh-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.sh .sh-icon-btn {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.sh-icon-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.sh .sh-search-btn {
+  border: 1px solid var(--border-strong);
+}
+
+.sh-search-btn svg {
+  width: 19px;
+  height: 19px;
+}
+
+.sh .sh-pill,
+.sh-search-layer .sh-pill,
+.sh-menu-layer .sh-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sh-pill svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sh .sh-pill-whatsapp,
+.sh-menu-layer .sh-pill-whatsapp {
+  background: var(--whatsapp);
+  color: #fff;
+}
+
+.sh .sh-pill-whatsapp:hover,
+.sh-menu-layer .sh-pill-whatsapp:hover {
+  background: #187a42;
+  color: #fff;
+}
+
+.sh .sh-pill-brand {
+  background: var(--brand);
+  color: #fff;
+}
+
+.sh .sh-pill-brand:hover {
+  background: var(--brand-hover);
+  color: #fff;
+}
+
+.sh-menu-layer .sh-pill-outline {
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  color: var(--ink);
+}
+
+.sh .sh-wa-icon {
+  color: var(--whatsapp);
+}
+
+.sh-inline-search {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  width: 220px;
+  height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: text;
+}
+
+.sh-inline-search svg {
+  width: 17px;
+  height: 17px;
+}
+
+.sh .sh-menu-btn,
+.sh .sh-wa-icon-wrap {
+  display: none;
+}
+
+/* Sticky (after scrolling) */
+.sh.is-stuck .sh-utility {
+  height: 0;
+}
+
+.sh.is-stuck .sh-bar {
+  height: var(--sh-bar-stuck-h);
+  border-bottom-color: transparent;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 6px 20px rgba(20, 33, 31, 0.08);
+}
+
+.sh.is-stuck .sh-logo-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.sh.is-stuck .sh-logo-text strong {
+  font-size: 17px;
+}
+
+.sh.is-stuck .sh-logo-text small {
+  display: none;
+}
+
+@media (min-width: 1360px) {
+  .sh.is-stuck .sh-inline-search {
+    display: inline-flex;
+  }
+
+  .sh.is-stuck .sh-search-btn {
+    display: none;
+  }
+}
+
+/* Transparent, over the home hero */
+.sh.is-transparent .sh-utility {
+  border-bottom-color: rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: #fff;
+}
+
+.sh.is-transparent .sh-bar {
+  border-bottom-color: transparent;
+  background: transparent;
+}
+
+.sh.is-transparent .sh-logo,
+.sh.is-transparent .sh-nav-link,
+.sh.is-transparent .sh-icon-btn {
+  color: #fff;
+}
+
+.sh.is-transparent .sh-logo-text small {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sh.is-transparent .sh-logo-mark {
+  background: #fff;
+  color: var(--brand);
+}
+
+.sh.is-transparent .sh-nav-link:hover {
+  color: #fff;
+  border-bottom-color: rgba(255, 255, 255, 0.5);
+}
+
+.sh.is-transparent .sh-nav-link.is-active {
+  color: #fff;
+  border-bottom-color: transparent;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 10px;
+}
+
+.sh.is-transparent .sh-search-btn {
+  border-color: rgba(255, 255, 255, 0.75);
+}
+
+.sh.is-transparent .sh-pill-whatsapp {
+  background: #fff;
+  color: var(--ink);
+}
+
+.sh.is-transparent .sh-pill-whatsapp svg {
+  color: var(--whatsapp);
+}
+
+.sh.is-transparent .sh-pill-whatsapp:hover {
+  background: var(--brand-soft-text);
+  color: var(--ink);
+}
+
+/* 3. "Tours & activities" menu */
+.sh-mega {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  max-height: calc(100vh - var(--site-header-h));
+  overflow-y: auto;
+  border-top: 1px solid var(--border);
+  background: #fff;
+  box-shadow: 0 24px 48px rgba(20, 33, 31, 0.14);
+}
+
+.sh-mega-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) 290px;
+  gap: 32px;
+  padding: 32px 0 28px;
+}
+
+.sh .sh-mega-title {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.sh-mega-col ul {
+  display: grid;
+  gap: 4px;
+}
+
+.sh .sh-mega-col a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.sh .sh-mega-col a:hover {
+  color: var(--brand);
+}
+
+.sh-mega-price {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.sh .sh-mega-col .sh-mega-all {
+  gap: 2px;
+  margin-top: 4px;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.sh-mega-all svg {
+  width: 15px;
+  height: 15px;
+}
+
+.sh .sh-mega-card {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  color: var(--ink);
+}
+
+.sh-mega-card-media {
+  position: relative;
+  display: block;
+  height: 170px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--page-alt);
+}
+
+.sh-mega-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sh-mega-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sh-mega-card strong {
+  margin-top: 6px;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.sh-mega-card:hover strong {
+  color: var(--brand);
+}
+
+.sh-mega-card-meta {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.sh-mega-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0 20px;
+  border-top: 1px solid var(--border);
+}
+
+.sh-mega-foot p {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.sh .sh-mega-foot a:not(.sh-pill) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.sh-mega-foot svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Backdrops (menu, search) */
+.sh-backdrop {
+  position: fixed;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(20, 33, 31, 0.35);
+}
+
+.sh-mega-backdrop {
+  z-index: 1029;
+}
+
+/* 4. Search */
+.sh-search-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+}
+
+.sh-search {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  width: min(920px, calc(100% - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  border-radius: 20px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 48px rgba(20, 33, 31, 0.2);
+  transform: translateX(-50%);
+}
+
+.sh-search-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 24px 0;
+}
+
+.sh-search-field {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 12px;
+  height: 58px;
+  padding: 0 22px;
+  border: 2px solid var(--brand);
+  border-radius: 999px;
+}
+
+.sh-search-field svg {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  color: var(--brand);
+}
+
+.sh-search-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+}
+
+.sh-search-field input:focus {
+  outline: none;
+}
+
+.sh-search-field input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.sh-search-cancel {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sh-search-cancel svg {
+  width: 24px;
+  height: 24px;
+  color: var(--ink);
+}
+
+.sh-search-body {
+  padding: 20px 24px 24px;
+}
+
+.sh-search-layer .sh-search-label {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.sh-search-layer .sh-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.sh-chips button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.sh-chips button:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.sh-search-layer .sh-search-empty {
+  color: var(--muted);
+}
+
+.sh-search-layer .sh-results {
+  display: grid;
+  gap: 4px;
+}
+
+.sh-search-layer .sh-results a {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px;
+  border-radius: 12px;
+  color: var(--ink);
+}
+
+.sh-search-layer .sh-results a:hover,
+.sh-search-layer .sh-results a.is-active {
+  background: var(--page-alt);
+}
+
+.sh-result-thumb {
+  flex-shrink: 0;
+  width: 80px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--page-alt);
+}
+
+.sh-result-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sh-results strong {
+  display: block;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.sh-results small {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.sh-search-layer .sh-search-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  margin-top: 8px;
+  color: var(--brand);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sh-search-all svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sh-search-layer .sh-search-foot {
+  display: none;
+}
+
+.sh-show-phone {
+  display: none;
+}
+
+/* 5. Phone and tablet menu */
+.sh-menu-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+}
+
+.sh-menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: #fff;
+  color: var(--ink);
+  animation: sh-slide-in 0.22s ease-out;
+}
+
+@keyframes sh-slide-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+.sh-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 0 16px 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sh-menu-head .sh-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+}
+
+.sh-menu-head .sh-logo-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.sh-menu-head .sh-logo-text {
+  display: grid;
+  line-height: 1.15;
+}
+
+.sh-menu-head .sh-logo-text strong {
+  font-size: 16px;
+}
+
+.sh-menu-head .sh-logo-text small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sh-menu-head .sh-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+}
+
+.sh-menu-head .sh-icon-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.sh-menu-nav {
+  padding: 4px 20px 16px;
+}
+
+.sh-menu-layer .sh-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 56px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sh-menu-layer .sh-menu-row[aria-current="page"] {
+  color: var(--brand);
+}
+
+.sh-menu-row svg {
+  width: 20px;
+  height: 20px;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+
+.sh-menu-row svg.is-open {
+  transform: rotate(180deg);
+}
+
+.sh-menu-layer .sh-menu-sub {
+  padding: 6px 0 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sh-menu-layer .sh-menu-sub a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.sh-menu-layer .sh-menu-sub .sh-menu-all {
+  gap: 2px;
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.sh-menu-all svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sh-menu-layer .sh-menu-sub .sh-menu-row,
+.sh-menu-sub li:last-child {
+  border-bottom: 0;
+}
+
+.sh-menu-layer .sh-menu-currency {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.sh-menu-currency span:last-child {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.sh-menu-foot {
+  display: grid;
+  gap: 12px;
+  margin-top: auto;
+  padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+  background: var(--page-alt);
+}
+
+.sh-menu-layer .sh-menu-wa {
+  min-height: 50px;
+}
+
+.sh-menu-contact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sh-menu-layer .sh-menu-promise {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.sh-menu-promise svg {
+  width: 15px;
+  height: 15px;
+  color: var(--brand);
+}
+
+/* 6. Checkout header */
+.shc {
+  position: relative;
+  height: 76px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.shc-inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
+  height: 100%;
+}
+
+.shc .sh-logo-text strong {
+  font-size: 19px;
+}
+
+.shc-steps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.shc-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.shc-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shc-step svg {
+  width: 16px;
+  height: 16px;
+}
+
+.shc-steps li.is-done {
+  color: var(--brand);
+}
+
+.shc-steps li.is-current .shc-step {
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+}
+
+.shc-line {
+  color: var(--border-strong);
+}
+
+.shc-help {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24px;
+  color: var(--muted);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.sh.shc .shc-help a {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.shc-secure {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.shc-secure svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 1099.98px) {
+  .shc-help > span:first-child {
+    display: none;
+  }
+}
+
+/* Phones and tablets: logo, search and menu (WhatsApp joins them once scrolled). */
+@media (max-width: 1199.98px) {
+  .sh-nav,
+  .sh-wa-pill-wrap,
+  .sh .sh-hide-compact {
+    display: none;
+  }
+
+  .sh .sh-menu-btn {
+    display: inline-grid;
+  }
+
+  .sh-utility-inner {
+    justify-content: center;
+  }
+
+  .sh-bar-inner {
+    gap: 8px;
+  }
+
+  .sh-actions {
+    gap: 2px;
+  }
+
+  .sh .sh-search-btn {
+    border: 0;
+  }
+
+  .sh.is-stuck .sh-wa-icon-wrap {
+    display: inline-flex;
+  }
+
+  .sh-wa-icon-wrap .sh-icon-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .sh-logo-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .sh .sh-logo {
+    gap: 10px;
+  }
+
+  .sh-logo-text strong {
+    font-size: 17px;
+  }
+
+  .sh.is-stuck .sh-logo-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    font-size: 15px;
+  }
+
+  .sh.is-stuck .sh-logo-text strong {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .sh-container {
+    padding: 0 16px;
+  }
+
+  .sh-logo-text strong {
+    font-size: 16px;
+  }
+
+  /* Search fills the screen on phones. */
+  .sh-search {
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-height: none;
+    height: 100%;
+    border-radius: 0;
+    transform: none;
+  }
+
+  .sh-search-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sh-search-field {
+    height: 50px;
+    padding: 0 16px;
+  }
+
+  .sh-search-field input {
+    font-size: 16px;
+  }
+
+  .sh-search-body {
+    flex: 1 1 auto;
+    padding: 18px 16px;
+  }
+
+  .sh-show-phone {
+    display: inline;
+  }
+
+  .sh-hide-phone {
+    display: none;
+  }
+
+  .sh-search-layer .sh-search-foot {
+    display: block;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--page-alt);
+    font-size: 15px;
+  }
+
+  .sh-search-foot a {
+    color: var(--brand);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+@media (max-width: 359.98px) {
+  .sh-logo-text small {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sh-utility,
+  .sh-bar,
+  .sh-logo-mark,
+  .sh-caret,
+  .sh-menu,
+  .sh-menu-row svg {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* The tour page has its own back/share bar on phones. */
+@media (max-width: 767.98px) {
+  .sh-slot-tour {
+    display: none;
+  }
+
+  /* Checkout pages without steps: logo and "Secure checkout". */
+  .shc {
+    height: 60px;
+  }
+
+  .shc-inner {
+    grid-template-columns: 1fr auto;
+  }
+
+  .shc-steps,
+  .shc-help > span:first-child {
+    display: none;
+  }
+
+  .shc .sh-logo-text strong {
+    font-size: 16px;
+  }
+}
