@@ -15,6 +15,7 @@ import {
   mapBokunTourForListing
 } from "./listing.helpers";
 import { BRAND } from "../../../config/brand";
+import { styleLabel } from "../../../config/site";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -35,7 +36,8 @@ const ToursListingPage = () => {
   const filters = useMemo(
     () => ({
       query: String(searchParams.get("q") || ""),
-      category: readFilterValue(searchParams.get("category"), "all"),
+      // Links may name a style by its key (?category=cultural).
+      category: styleLabel(readFilterValue(searchParams.get("category"), "all")),
       duration: readFilterValue(searchParams.get("duration"), "all"),
       travelDate: String(searchParams.get("travelDate") || ""),
       travelers: readPositiveInt(searchParams.get("travelers"), 2),
@@ -58,6 +60,13 @@ const ToursListingPage = () => {
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityBySlug, setAvailabilityBySlug] = useState({});
   const [error, setError] = useState("");
+  // The server searches all tours; it is asked once typing pauses.
+  const [serverQuery, setServerQuery] = useState(filters.query);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setServerQuery(filters.query.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [filters.query]);
 
   useEffect(() => {
     const loadTours = async () => {
@@ -67,7 +76,8 @@ const ToursListingPage = () => {
         const result = await fetchTours({
           page: activePage,
           limit: ITEMS_PER_PAGE,
-          category: filters.category
+          category: filters.category,
+          query: serverQuery
         });
 
         setRawTours(result.items || []);
@@ -84,7 +94,7 @@ const ToursListingPage = () => {
     };
 
     loadTours();
-  }, [activePage, filters.category]);
+  }, [activePage, filters.category, serverQuery]);
 
   useEffect(() => {
     let mounted = true;

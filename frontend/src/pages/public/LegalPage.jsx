@@ -1,44 +1,41 @@
 import { Container } from "react-bootstrap";
-import { useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import SeoHead from "../../components/common/SeoHead";
 import { BRAND } from "../../config/brand";
+import { sitePageFor } from "../../config/sitePages";
 
-const legalContent = {
-  privacy: {
-    title: "Privacy Policy",
-    intro: `${BRAND.name} uses customer details only to arrange bookings, process payment, provide support, and send marketing updates when you opt in.`,
-    sections: [
-      ["Information we use", "Booking details, contact details, selected tour information, and payment status are used to deliver and support your booking."],
-      ["Your choices", "You can choose whether to receive travel updates and offers. You may ask us to update or remove your marketing contact details."],
-      ["Contact", `For privacy questions, email ${BRAND.email}.`]
-    ]
-  },
-  terms: {
-    title: "Booking Terms",
-    intro: "Bookings are subject to live supplier availability, the selected product terms, and confirmed payment.",
-    sections: [
-      ["Live availability and pricing", "Availability and price are confirmed with the supplier before payment. If either changes, you will be asked to review the updated details."],
-      ["Payment and confirmation", "A booking is confirmed only after payment is verified and the supplier confirms the reservation."],
-      ["Support", `For changes or booking support, contact ${BRAND.phone} or ${BRAND.email}.`]
-    ]
-  }
-};
+// A section is [heading, body] or { heading, body, links }.
+const readSection = (section) => (Array.isArray(section) ? { heading: section[0], body: section[1], links: [] } : { links: [], ...section });
 
+// The simple information pages: About, Contact, FAQ, Cancellation policy, Privacy, Terms (text in config/sitePages.js).
 const LegalPage = () => {
-  const type = useLocation().pathname.includes("privacy") ? "privacy" : "terms";
-  const content = legalContent[type];
+  const content = sitePageFor(useLocation().pathname);
+  if (!content) return <Navigate to="/" replace />;
 
   return (
     <main className="legal-page py-5">
-      <SeoHead title={`${content.title} | ${BRAND.name}`} description={content.intro} />
+      <SeoHead title={`${content.title} | ${BRAND.name}`} description={content.description || content.intro} />
       <Container className="legal-page-shell">
         <article className="legal-page-card">
           <h1>{content.title}</h1>
           <p className="legal-page-intro">{content.intro}</p>
-          {content.sections.map(([heading, body]) => (
+          {content.sections.map(readSection).map(({ heading, body, links }) => (
             <section key={heading}>
               <h2>{heading}</h2>
-              <p>{body}</p>
+              {body ? <p>{body}</p> : null}
+              {links.length ? (
+                <ul className="legal-page-links">
+                  {links.filter((link) => link.href || link.to).map((link) => (
+                    <li key={link.label}>
+                      {link.to ? (
+                        <Link to={link.to}>{link.label}</Link>
+                      ) : (
+                        <a href={link.href} {...(link.external ? { target: "_blank", rel: "noreferrer" } : {})}>{link.label}</a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </section>
           ))}
         </article>

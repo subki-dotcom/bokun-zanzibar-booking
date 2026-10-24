@@ -18,7 +18,8 @@ export const BRAND = {
     facebook: envValue("VITE_FACEBOOK_URL"),
     instagram: envValue("VITE_INSTAGRAM_URL"),
     tiktok: envValue("VITE_TIKTOK_URL"),
-    youtube: envValue("VITE_YOUTUBE_URL")
+    youtube: envValue("VITE_YOUTUBE_URL"),
+    tripadvisor: envValue("VITE_TRIPADVISOR_URL")
   }
 };
 

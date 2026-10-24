@@ -1,13 +1,9 @@
 // Pure helpers for the home page (mockup "HomePro"): style links, the search query and price text.
 
+import { TRAVEL_STYLES } from "../../config/site";
+
 // The travel styles in the header, search and tiles; "category" is the value /tours filters by.
-export const HOME_STYLES = [
-  { key: "sea", label: "Sea tours", nav: "Sea tours" },
-  { key: "cultural", label: "Cultural tours", nav: "Cultural tours" },
-  { key: "safari", label: "Safari trips", nav: "Safaris" },
-  { key: "private", label: "Private tours", nav: "Private tours" },
-  { key: "transfers", label: "Transfers", nav: "Transfers" }
-];
+export const HOME_STYLES = TRAVEL_STYLES;
 
 export const styleHref = (label = "") => (label ? `/tours?category=${encodeURIComponent(label)}` : "/tours");
 

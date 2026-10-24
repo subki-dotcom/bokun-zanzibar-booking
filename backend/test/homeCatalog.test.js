@@ -98,3 +98,15 @@ test("best sellers show one transfer at most", () => {
   const best = pickBestSellers(cards, new Map([["1", 9], ["2", 8], ["3", 1]]), [], 4);
   assert.deepEqual(best.map((card) => card.id), ["1", "3"]);
 });
+
+test("tour search: hyphens or spaces, every word must appear; styles by key or label", () => {
+  const { matchesSearch, searchWords, styleKeyFor } = require("../src/services/tours/homeCatalog");
+  assert.deepEqual(searchWords("stone-town"), ["stone", "town"]);
+  assert.equal(matchesSearch({ title: "Zanzibar Walking Stone Town Guided Tour" }, "stone-town"), true);
+  assert.equal(matchesSearch({ title: "Mnemba Island snorkel" }, "prison-island"), false);
+  assert.equal(matchesSearch({ title: "Half day", shortDescription: "Visit Prison Island" }, "prison island"), true);
+  assert.equal(matchesSearch({ title: "Anything" }, ""), true);
+  assert.equal(styleKeyFor("cultural"), "cultural");
+  assert.equal(styleKeyFor("Cultural tours"), "cultural");
+  assert.equal(styleKeyFor("all"), "");
+});

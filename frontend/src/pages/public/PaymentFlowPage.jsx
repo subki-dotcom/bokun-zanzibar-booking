@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { LuCheck } from "react-icons/lu";
 import "../../components/checkout/checkout.css";
 import "../../components/payment/payment.css";
-import { BRAND } from "../../config/brand";
 import useMediaQuery from "../../hooks/useMediaQuery";
 import { fetchBookingPaymentStatus, openBookingPaymentSession } from "../../api/paymentsApi";
 import { usePaymentProviders } from "../../context/PaymentProvidersContext";
@@ -26,18 +25,6 @@ const Progress = () => (
     <li aria-hidden="true" className="pf-progress-line">—</li>
     <li className="is-current" aria-current="step">3 Payment</li>
   </ol>
-);
-
-const PaymentFooter = () => (
-  <footer className="pf-footer">
-    <a href="/terms" target="_blank" rel="noreferrer">Terms</a>
-    <span aria-hidden="true">·</span>
-    <a href="/privacy" target="_blank" rel="noreferrer">Privacy</a>
-    <span aria-hidden="true">·</span>
-    <a href={`mailto:${BRAND.email}`}>{BRAND.email}</a>
-    <span aria-hidden="true">·</span>
-    <a href={BRAND.phoneHref}>{BRAND.phone}</a>
-  </footer>
 );
 
 // /payment-processing?checkoutKey=…&bookingReference=… : the payment pages (mockups "Pay" and "PayIssue"). The screen
@@ -228,7 +215,6 @@ const PaymentFlowPage = () => {
           {isMobile || screen === "link_error" ? null : <aside className="pf-aside">{aside}</aside>}
         </div>
       </main>
-      <PaymentFooter />
     </div>
   );
 };

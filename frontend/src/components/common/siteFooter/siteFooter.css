@@ -1,0 +1,571 @@
+/* Site footer (mockups "Desktop – Footer" and "Mobile – Footer"). */
+@import "../../../styles/riserTokens.css";
+
+/* "footer.sf": the shared tokens file (loaded again by other pages) sets .sf { color: var(--ink) }. */
+footer.sf {
+  background: var(--ink);
+  color: var(--footer-text);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* The site-wide text and heading styles do not apply here. */
+.sf p,
+.sf li,
+.sf span {
+  color: inherit;
+}
+
+.sf h2 {
+  font-family: inherit;
+  letter-spacing: normal;
+}
+
+.sf-container {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.sf a,
+.sf .sf-textbtn {
+  color: var(--footer-text);
+  text-decoration: none;
+}
+
+.sf a:hover,
+.sf .sf-textbtn:hover {
+  color: #fff;
+}
+
+.sf a:focus-visible,
+.sf button:focus-visible,
+.sf input:focus-visible {
+  outline: 2px solid var(--accent-on-dark);
+  outline-offset: 2px;
+}
+
+.sf .sf-textbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.sf-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.sf-show-mobile {
+  display: none;
+}
+
+/* 1. CTA band */
+.sf-cta {
+  padding: 28px 0;
+  background: var(--brand);
+}
+
+.sf-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.sf .sf-cta h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.sf .sf-cta p {
+  margin: 4px 0 0;
+  color: var(--brand-soft-text);
+  font-size: 15px;
+}
+
+.sf-cta-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.sf .sf-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sf .sf-pill svg {
+  width: 19px;
+  height: 19px;
+}
+
+.sf .sf-pill-white {
+  background: #fff;
+  color: var(--ink);
+}
+
+.sf .sf-pill-white:hover {
+  background: var(--brand-soft-text);
+  color: var(--ink);
+}
+
+.sf .sf-pill-outline {
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  color: #fff;
+}
+
+.sf .sf-pill-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 2. Main grid */
+.sf-main {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr 1.3fr;
+  gap: 36px;
+  padding-top: 48px;
+}
+
+.sf-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sf .sf-logo-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.sf .sf-logo-name {
+  color: #fff;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.sf .sf-brand p {
+  margin: 16px 0 0;
+  color: var(--footer-text);
+  line-height: 1.6;
+}
+
+.sf-social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sf .sf-social a {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--footer-input-border);
+  border-radius: 50%;
+}
+
+.sf-social svg {
+  width: 17px;
+  height: 17px;
+}
+
+.sf .sf-col-title {
+  margin: 0 0 4px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.sf-links {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sf-contact {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sf-contact li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.sf-contact svg {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  margin-top: 3px;
+  color: var(--accent-on-dark);
+}
+
+.sf-contact a {
+  overflow-wrap: anywhere;
+}
+
+/* Newsletter */
+.sf-news {
+  margin-top: 18px;
+}
+
+.sf .sf-news-label {
+  margin: 0 0 8px;
+  color: var(--footer-text);
+  font-size: 13px;
+}
+
+.sf-news-pill {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--footer-input-border);
+  border-radius: 999px;
+  background: var(--footer-input-bg);
+}
+
+.sf-news-pill:focus-within {
+  border-color: var(--accent-on-dark);
+}
+
+.sf-news-pill input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+}
+
+.sf-news-pill input::placeholder {
+  color: #8d9b97;
+}
+
+.sf .sf-news-pill input:focus-visible {
+  outline: none;
+}
+
+.sf-news-pill button {
+  flex-shrink: 0;
+  padding: 0 20px;
+  border: 0;
+  background: var(--brand);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sf-news-pill button:hover {
+  background: var(--brand-hover);
+}
+
+.sf-news-pill button:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+.sf .sf-news-msg {
+  min-height: 18px;
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+.sf .sf-news-msg.is-success {
+  color: var(--accent-on-dark);
+}
+
+.sf .sf-news-msg.is-error {
+  color: #ffb4a9;
+}
+
+/* 3. Bottom bar */
+.sf-bottom {
+  margin-top: 40px;
+  border-top: 1px solid var(--footer-border);
+}
+
+.sf-bottom-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding-top: 22px;
+  padding-bottom: 22px;
+  font-size: 13px;
+}
+
+.sf .sf-copy {
+  margin: 0;
+  font-size: 13px;
+}
+
+.sf-secure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.sf-pay {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sf .sf-pay-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Compact (checkout, payment, confirmation) */
+.sf-compact-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding-top: 18px;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  font-size: 13px;
+}
+
+.sf .sf-compact-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px 8px;
+  margin: 0;
+}
+
+/* Tablet: brand on its own row, four columns under it. */
+@media (max-width: 1023.98px) {
+  .sf-main {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 32px 24px;
+  }
+
+  .sf-brand {
+    grid-column: 1 / -1;
+  }
+
+  .sf-cta-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .sf-hide-mobile {
+    display: none;
+  }
+
+  .sf-show-mobile {
+    display: inline;
+  }
+
+  .sf-container {
+    padding: 0 20px;
+  }
+
+  .sf-cta {
+    padding: 28px 0;
+  }
+
+  .sf-cta-row {
+    gap: 18px;
+  }
+
+  .sf .sf-cta h2 {
+    font-size: 20px;
+  }
+
+  .sf .sf-cta p {
+    font-size: 14px;
+  }
+
+  .sf-cta-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .sf .sf-pill-white {
+    width: 100%;
+  }
+
+  .sf .sf-pill-outline {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .sf-main {
+    display: block;
+    padding-top: 32px;
+  }
+
+  .sf-social {
+    gap: 12px;
+  }
+
+  .sf .sf-social a {
+    width: 44px;
+    height: 44px;
+  }
+
+  .sf-brand {
+    padding-bottom: 24px;
+  }
+
+  /* Folding columns */
+  .sf-col {
+    border-top: 1px solid var(--footer-border);
+  }
+
+  .sf .sf-col-title {
+    margin: 0;
+  }
+
+  .sf .sf-fold {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 56px;
+    padding: 16px 0;
+    border: 0;
+    background: none;
+    color: #fff;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .sf-fold svg {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.2s ease;
+  }
+
+  .sf-fold svg.is-open {
+    transform: rotate(180deg);
+  }
+
+  .sf-links {
+    gap: 0;
+    margin: -4px 0 12px;
+  }
+
+  .sf-links a {
+    display: block;
+    padding: 10px 0;
+  }
+
+  .sf-contact-col {
+    padding: 16px 0 0;
+  }
+
+  .sf-contact {
+    gap: 12px;
+  }
+
+  .sf-news {
+    margin-top: 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--footer-border);
+    margin-top: 20px;
+  }
+
+  .sf .sf-news-label {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .sf-news-pill input {
+    height: 50px;
+    font-size: 16px;
+  }
+
+  .sf-bottom {
+    margin-top: 12px;
+    border-top: 0;
+  }
+
+  /* Room under the links for the floating WhatsApp button. */
+  .sf-bottom-row {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 8px;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .sf .sf-copy.sf-show-mobile {
+    display: block;
+  }
+
+  /* The checkout keeps its "Next" bar fixed at the bottom of the screen on phones. */
+  .app-shell:has(.ck-mbar) .sf-compact-row {
+    padding-bottom: calc(110px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-fold svg {
+    transition: none;
+  }
+}

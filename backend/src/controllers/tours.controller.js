@@ -18,7 +18,8 @@ const listTours = asyncHandler(async (req, res) => {
   const page = parsePositiveInt(req.query.page, 1);
   const limit = parsePositiveInt(req.query.limit, 9);
   const style = typeof req.query.category === "string" ? req.query.category.slice(0, 40) : "";
-  const result = await toursService.listTours({ page, limit, style, requestId: req.requestId });
+  const query = typeof req.query.q === "string" ? req.query.q.slice(0, 80) : "";
+  const result = await toursService.listTours({ page, limit, style, query, requestId: req.requestId });
 
   setPublicCache(res, { maxAge: 60, staleWhileRevalidate: 300 });
   return successResponse(res, {
