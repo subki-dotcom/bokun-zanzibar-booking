@@ -88,3 +88,13 @@ test("style tiles never reuse a cover photo and ignore $0 prices", () => {
   assert.equal(tiles.find((tile) => tile.key === "sea").image, "sea.jpg");
   assert.equal(tiles.find((tile) => tile.key === "transfers").fromPrice, 25);
 });
+
+test("best sellers show one transfer at most", () => {
+  const cards = [
+    tour("1", "Zanzibar Airport Transfers"),
+    tour("2", "Zanzibar Airport / Ferry Transfers - Hotels"),
+    tour("3", "Mnemba Island snorkel")
+  ].map(toHomeCard);
+  const best = pickBestSellers(cards, new Map([["1", 9], ["2", 8], ["3", 1]]), [], 4);
+  assert.deepEqual(best.map((card) => card.id), ["1", "3"]);
+});

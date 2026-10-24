@@ -144,9 +144,17 @@ const pickFeatured = (cards = [], bookings = new Map(), limit = 6) => {
 // Best sellers: real bookings first, never a tour already featured.
 const pickBestSellers = (cards = [], bookings = new Map(), exclude = [], limit = 4) => {
   const skip = new Set(exclude.map((card) => card.id));
+  // One transfer at most: the row is for experiences, and the transfer products are near-duplicates.
+  let transferShown = false;
   const ranked = cards
     .filter((card) => !skip.has(card.id) && !card.styles.includes("safari"))
     .sort((a, b) => (bookings.get(b.id) || 0) - (bookings.get(a.id) || 0) || b.images - a.images)
+    .filter((card) => {
+      if (!card.styles.includes("transfers")) return true;
+      if (transferShown) return false;
+      transferShown = true;
+      return true;
+    })
     .slice(0, limit);
   return ranked.map((card, index) => ({
     ...card,

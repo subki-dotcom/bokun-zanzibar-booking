@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { LuChevronRight, LuHeart, LuStar } from "react-icons/lu";
-import { money, styleHref } from "./homeData";
+import { LuCheck, LuChevronRight, LuHeart, LuMessageCircle, LuStar } from "react-icons/lu";
+import { BRAND } from "../../config/brand";
+import { money, styleHref, whatsappPlanHref } from "./homeData";
 
 // Eyebrow, H2 and an optional link on the right.
 export const SectionHeader = ({ id, eyebrow, title, linkTo = "", linkText = "" }) => (
@@ -135,3 +136,162 @@ export const FeaturedTours = ({ tours = [] }) =>
       </div>
     </section>
   ) : null;
+
+// The flagship safari: its photo, the facts its product page lists and its own "From" price.
+export const SafariBanner = ({ safari }) => {
+  if (!safari?.tour) return null;
+  const { tour } = safari;
+  return (
+    <section className="hp-section" aria-labelledby="hp-safari-title">
+      <div className="hp-container">
+        <div className="hp-safari">
+          <div className="hp-safari-media">
+            <img src={tour.image} alt={tour.title} loading="lazy" decoding="async" width="640" height="480" />
+          </div>
+          <div className="hp-safari-body">
+            <p className="hp-eyebrow">Safari from Zanzibar</p>
+            <h2 id="hp-safari-title">Fly from the beach to the Serengeti</h2>
+            <p className="hp-safari-text">
+              A short flight takes you from Zanzibar to Tanzania's best-known parks, and back to the beach after. Our top trip: {tour.title}.
+            </p>
+            {tour.facts?.length ? (
+              <ul className="hp-checks">
+                {tour.facts.map((fact) => (
+                  <li key={fact}>
+                    <LuCheck aria-hidden="true" /> {fact}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <div className="hp-safari-actions">
+              <Link to={styleHref("Safari trips")} className="hp-btn hp-btn-white">
+                See safari trips <LuChevronRight aria-hidden="true" />
+              </Link>
+              {safari.fromPrice ? (
+                <span className="hp-safari-price">
+                  From <strong>{money(safari.fromPrice, safari.currency)}</strong> / {tour.unit}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// Small card for the "Traveler favorites" row.
+const FavoriteCard = ({ tour }) => (
+  <article className="hp-fav">
+    <div className="hp-fav-media">
+      <img src={tour.image} alt={tour.title} loading="lazy" decoding="async" width="400" height="260" />
+      {tour.badge ? <span className="hp-badge">{tour.badge}</span> : null}
+    </div>
+    <div className="hp-fav-body">
+      <p className="hp-card-meta">{tour.meta.slice(0, 2).join(" · ")}</p>
+      <h3>
+        <Link to={`/tours/${tour.slug}`} className="hp-card-link">{tour.title}</Link>
+      </h3>
+      <Price tour={tour} />
+    </div>
+  </article>
+);
+
+export const BestSellers = ({ tours = [] }) =>
+  tours.length ? (
+    <section className="hp-section" aria-labelledby="hp-best-title">
+      <div className="hp-container">
+        <SectionHeader id="hp-best-title" eyebrow="Best sellers" title="Traveler favorites" />
+        <ul className="hp-favs">
+          {tours.map((tour) => (
+            <li key={tour.id}>
+              <FavoriteCard tour={tour} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  ) : null;
+
+const STEPS = [
+  { title: "Choose your experience", text: "Tours, safaris and transfers with clear prices." },
+  { title: "Pick a date & time", text: "See live availability for your group." },
+  { title: "Pay securely", text: "Card, M-Pesa or PayPal, confirmed instantly." },
+  { title: "Enjoy Zanzibar", text: "Meet your local guide, with hotel pickup on most tours." }
+];
+
+export const StepsStrip = () => (
+  <section className="hp-section" aria-labelledby="hp-steps-title">
+    <div className="hp-container">
+      <h2 id="hp-steps-title" className="hp-visually-hidden">How booking works</h2>
+      <ol className="hp-steps">
+        {STEPS.map((step, index) => (
+          <li key={step.title}>
+            <span className="hp-step-num">{String(index + 1).padStart(2, "0")}</span>
+            <strong>{step.title}</strong>
+            <span>{step.text}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+);
+
+// Real reviews only: with none the whole section stays hidden.
+export const ReviewsSection = ({ reviews }) => {
+  if (!reviews?.count) return null;
+  const stars = Math.round(reviews.rating);
+  return (
+    <section className="hp-section" aria-labelledby="hp-reviews-title">
+      <div className="hp-container">
+        <SectionHeader id="hp-reviews-title" eyebrow="Guest reviews" title="What travelers say" />
+        <div className="hp-reviews">
+          <div className="hp-score">
+            <strong>{reviews.rating.toFixed(1)}</strong>
+            <span className="hp-stars" role="img" aria-label={`${reviews.rating.toFixed(1)} out of 5 stars`}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <LuStar key={n} aria-hidden="true" className={n <= stars ? "is-on" : ""} />
+              ))}
+            </span>
+            <span>
+              {reviews.count} review{reviews.count === 1 ? "" : "s"}{reviews.source ? ` on ${reviews.source}` : ""}
+            </span>
+          </div>
+          {(reviews.items || []).slice(0, 2).map((item) => (
+            <figure className="hp-review" key={`${item.author}-${item.date || item.text.slice(0, 20)}`}>
+              <blockquote>{item.text}</blockquote>
+              <figcaption>
+                <strong>{item.author}</strong>
+                {item.tour ? <span>{item.tour}</span> : null}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export const CtaBand = () => {
+  const whatsapp = whatsappPlanHref(BRAND.whatsappHref, BRAND.name);
+  return (
+    <section className="hp-section hp-section-last" aria-labelledby="hp-cta-title">
+      <div className="hp-container">
+        <div className="hp-cta">
+          <div>
+            <h2 id="hp-cta-title">Not sure what to book?</h2>
+            <p>Tell us your dates and hotel. Our Zanzibar team will suggest tours that fit, with clear prices.</p>
+          </div>
+          <div className="hp-cta-actions">
+            {whatsapp ? (
+              <a href={whatsapp} className="hp-btn hp-btn-white" target="_blank" rel="noreferrer">
+                <LuMessageCircle aria-hidden="true" /> Chat on WhatsApp
+              </a>
+            ) : null}
+            <Link to="/tours" className="hp-btn hp-btn-outline-light">View all tours</Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
