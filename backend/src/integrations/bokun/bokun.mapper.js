@@ -1031,6 +1031,23 @@ const resolveMinimumOptionPrice = (options = []) => {
   return amounts.length ? Math.min(...amounts) : 0;
 };
 
+// The Tripadvisor listing Bókun links to a product: the tour's own page ("AttractionProductReview") or the company's
+// page, which other tours share. Only a rating with reviews counts.
+const mapTripadvisorReview = (root = {}) => {
+  const raw = root.tripadvisorReview;
+  if (!raw || typeof raw !== "object") return null;
+  const url = String(raw.url || "").trim();
+  const rating = Number(raw.rating);
+  const reviewCount = Number(raw.numReviews);
+  if (!/^https:\/\/(www\.)?tripadvisor\./i.test(url) || !(rating > 0) || !(reviewCount > 0)) return null;
+  return {
+    url,
+    rating: normalizeRatingScale(rating),
+    reviewCount: Math.round(reviewCount),
+    scope: /AttractionProductReview/i.test(url) ? "product" : "company"
+  };
+};
+
 const resolveProductRating = (root = {}) => {
   let rating = pickNumericPreferPositive(
     root.rating,
@@ -1144,8 +1161,18 @@ const mapProduct = (rawProduct = {}, options = {}) => {
     root.advertisedPrice,
     optionFromPrice
   );
-  const rating = resolveProductRating(root);
-  const reviewCount = resolveProductReviewCount(root);
+  // Bókun's own rating when it has one, otherwise the tour's own Tripadvisor page (never the company's page).
+  // (The Tripadvisor object is left out of that search, so its numbers are never read as Bókun ratings.)
+  const tripadvisor = mapTripadvisorReview(root);
+  const ownFields = { ...root, tripadvisorReview: undefined };
+  const ownRating = resolveProductRating(ownFields);
+  const ownReviewCount = resolveProductReviewCount(ownFields);
+  const hasOwnReviews = ownRating > 0 && ownReviewCount > 0;
+  const useTripadvisor = !hasOwnReviews && tripadvisor?.scope === "product";
+  const rating = useTripadvisor ? tripadvisor.rating : hasOwnReviews ? ownRating : 0;
+  const reviewCount = useTripadvisor ? tripadvisor.reviewCount : hasOwnReviews ? ownReviewCount : 0;
+  const reviewSource = useTripadvisor ? "Tripadvisor" : "";
+  const reviewUrl = useTripadvisor ? tripadvisor.url : "";
 
   const mappedOptions = optionsSource.map(mapOption).filter((option) => option.bokunOptionId);
   const mappedItineraryItems = mapProductItineraryItems(root);
@@ -1210,6 +1237,9 @@ const mapProduct = (rawProduct = {}, options = {}) => {
     fromPrice,
     rating,
     reviewCount,
+    reviewSource,
+    reviewUrl,
+    tripadvisor,
     options: mappedOptions,
     priceCatalogs: mappedPriceCatalogs,
     lastSyncedAt: new Date(),

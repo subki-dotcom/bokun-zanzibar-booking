@@ -553,3 +553,20 @@
     scroll-snap-align: start;
   }
 }
+
+/* "Read the reviews on Tripadvisor" under the score. */
+.tp .tp-reviews-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tp-reviews-source svg {
+  width: 14px;
+  height: 14px;
+}

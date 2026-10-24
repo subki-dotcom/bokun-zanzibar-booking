@@ -1184,3 +1184,37 @@ select.hp-control {
     transition: none;
   }
 }
+
+/* Reviews with a score only (no review texts yet). */
+.hp-reviews.is-score-only {
+  grid-template-columns: 1fr;
+}
+
+.hp .hp-reviews-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  color: var(--brand);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.hp-reviews-source svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Half star: the filled star cut in half over an empty one. */
+.hp-star-half {
+  position: relative;
+  display: inline-flex;
+}
+
+.hp-star-half svg:last-child {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 50% 0 0);
+}

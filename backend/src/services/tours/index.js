@@ -235,6 +235,9 @@ const pickLiveSyncFields = (liveProduct = {}) => ({
   // fromPrice is not copied from Bókun's product: it is the one-adult starting price set by refreshListingFromPrice.
   rating: liveProduct.rating,
   reviewCount: liveProduct.reviewCount,
+  reviewSource: liveProduct.reviewSource,
+  reviewUrl: liveProduct.reviewUrl,
+  tripadvisor: liveProduct.tripadvisor,
   options: liveProduct.options,
   priceCatalogs: liveProduct.priceCatalogs,
   rawBokunProduct: liveProduct.rawBokunProduct,
@@ -709,7 +712,7 @@ const listingSummary = (tour = {}) => {
   return full.length > 180 ? `${full.slice(0, 177).trim()}...` : full;
 };
 
-const LISTING_FIELDS = "bokunProductId title slug shortDescription description duration images fromPrice fromPriceBasis fromPriceCheckedAt rating reviewCount currency destination highlights categories lastSyncedAt options.bokunOptionId options.active";
+const LISTING_FIELDS = "bokunProductId title slug shortDescription description duration images fromPrice fromPriceBasis fromPriceCheckedAt rating reviewCount reviewSource reviewUrl currency destination highlights categories lastSyncedAt options.bokunOptionId options.active";
 
 const listTours = async ({ page = 1, limit = 9, style = "", query = "", requestId = "" } = {}) => {
   await ensurePublicSnapshotCache(requestId);

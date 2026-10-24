@@ -23,10 +23,19 @@ const bookingCounts = async () => {
   return new Map(rows.map((row) => [String(row._id || ""), Number(row.count || 0)]));
 };
 
+// The company's own Tripadvisor rating (the page several tours link to in Bókun), for "Guest reviews" on the home page.
+const companyReviews = (rows = []) => {
+  const company = rows
+    .map((row) => row.tripadvisor)
+    .filter((listing) => listing?.scope === "company" && listing.rating > 0 && listing.reviewCount > 0)
+    .sort((a, b) => b.reviewCount - a.reviewCount)[0];
+  return company ? { rating: company.rating, count: company.reviewCount, source: "Tripadvisor", url: company.url } : null;
+};
+
 const buildHomeData = async () => {
   const [rows, bookings] = await Promise.all([
     ProductSnapshot.find(PUBLIC_FILTER)
-      .select("bokunProductId title slug shortDescription description duration images fromPrice currency rating reviewCount included pickupInfo featuredOnHome featuredInMenu options.active options.pickupSupported options.pricingType")
+      .select("bokunProductId title slug shortDescription description duration images fromPrice currency rating reviewCount reviewSource tripadvisor included pickupInfo featuredOnHome featuredInMenu options.active options.pickupSupported options.pricingType")
       .lean(),
     bookingCounts()
   ]);
@@ -37,8 +46,7 @@ const buildHomeData = async () => {
   // The banner describes the flagship (fly-in, multi-day) safari, with that trip's own "From" price.
   const safaris = visible.filter((card) => card.styles.includes("safari")).sort((a, b) => b.fromPrice - a.fromPrice);
   const flagship = safaris[0] || null;
-  const reviewed = rows.filter((row) => Number(row.reviewCount) > 0 && Number(row.rating) > 0);
-  const reviewTotal = reviewed.reduce((sum, row) => sum + Number(row.reviewCount), 0);
+  const reviews = companyReviews(rows);
 
   return {
     generatedAt: new Date().toISOString(),
@@ -60,13 +68,8 @@ const buildHomeData = async () => {
           count: safaris.length
         }
       : null,
-    // Real reviews only; null hides the section and the rating schema.
-    reviews: reviewTotal
-      ? {
-          rating: Number((reviewed.reduce((sum, row) => sum + Number(row.rating) * Number(row.reviewCount), 0) / reviewTotal).toFixed(1)),
-          count: reviewTotal
-        }
-      : null
+    // Real reviews only; null hides the section.
+    reviews
   };
 };
 

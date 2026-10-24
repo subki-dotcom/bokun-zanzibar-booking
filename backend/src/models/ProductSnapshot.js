@@ -105,6 +105,19 @@ const productSnapshotSchema = new mongoose.Schema(
     fromPriceCheckedAt: { type: Date, default: null },
     rating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
+    // Where the rating comes from ("Tripadvisor") and where to read the reviews; empty for Bókun's own rating.
+    reviewSource: { type: String, default: "" },
+    reviewUrl: { type: String, default: "" },
+    // The Tripadvisor listing Bókun links to this product ("product": its own page, "company": the company page).
+    tripadvisor: {
+      type: {
+        url: { type: String, default: "" },
+        rating: { type: Number, default: 0 },
+        reviewCount: { type: Number, default: 0 },
+        scope: { type: String, default: "" }
+      },
+      default: null
+    },
     options: [optionSnapshotSchema],
     priceCatalogs: [priceCatalogSnapshotSchema],
     lastSyncedAt: { type: Date, default: Date.now },
