@@ -143,7 +143,7 @@ export const ItineraryTimeline = ({ stops = [], hasPickup = false, pickupTimes =
               <div>
                 {stop.title ? <h3>{stop.title}</h3> : null}
                 {stop.meta.length ? <small>{stop.meta.join(" · ")}</small> : null}
-                {stop.description && !compact ? <p>{stop.description}</p> : null}
+                {stop.description ? <p>{stop.description}</p> : null}
               </div>
             </div>
           </li>
