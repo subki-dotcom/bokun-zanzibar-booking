@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { LuCheck, LuChevronRight, LuClock3, LuHeart, LuStar } from "react-icons/lu";
 import { money, photoAt, photoSet } from "../../homePage/homeData";
 import { readWishlist, toggleWishlist } from "../../../utils/wishlist";
+import { trackSelectItem } from "../../../utils/analytics";
 
 const WishlistButton = ({ tour }) => {
   const [saved, setSaved] = useState(() => readWishlist().has(tour.id));
@@ -22,7 +23,7 @@ const WishlistButton = ({ tour }) => {
 // One tour: the whole card opens the tour page (one link); the heart sits beside the link, not inside it.
 const TourCard = ({ tour, priority = false }) => (
   <article className="tl-card">
-    <Link to={`/tours/${tour.slug}`} className="tl-card-link">
+    <Link to={`/tours/${tour.slug}`} onClick={() => trackSelectItem(tour)} className="tl-card-link">
       <span className="tl-card-media">
         {tour.image ? (
           <img

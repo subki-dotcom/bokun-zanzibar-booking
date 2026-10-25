@@ -4,6 +4,7 @@ import Badge from "react-bootstrap/Badge";
 import { FaClock, FaMapMarkerAlt } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { formatCurrency, toPlainText, truncateText } from "../../utils/formatters";
+import { trackSelectItem } from "../../utils/analytics";
 
 const TourCard = ({ tour }) => {
   const image = tour.images?.[0] || "https://images.unsplash.com/photo-1530521954074-e64f6810b32d";
@@ -32,7 +33,7 @@ const TourCard = ({ tour }) => {
           </span>
         </div>
 
-        <Button as={Link} to={`/tours/${tour.slug}`} className="premium-btn text-white w-100">
+        <Button as={Link} to={`/tours/${tour.slug}`} onClick={() => trackSelectItem(tour)} className="premium-btn text-white w-100">
           View Experience
         </Button>
       </Card.Body>

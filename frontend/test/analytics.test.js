@@ -16,6 +16,72 @@ function setup(extra = {}) {
   return { api, w, scripts, events, store, config };
 }
 const sent = (events, name) => events.filter(e => e[0] === 'event' && e[1] === name);
+test('confirmed booking permits a consented purchase without exposing its URL reference', async () => {
+  const s = setup();
+  s.w.location.pathname = '/booking/confirmed/PRIVATE-REFERENCE';
+  s.w.location.search = '?token=PRIVATE-TOKEN';
+  assert.equal(await s.api.purchase(receipt), false);
+  s.api.consent(granted);
+  assert.equal(s.api.page('confirmed'), true);
+  assert.equal(await s.api.purchase(receipt), true);
+  assert.equal(await s.api.purchase(receipt), false);
+  assert.equal(sent(s.events, 'purchase').length, 1);
+  assert.equal(sent(s.events, 'purchase')[0][2].page_path, '/booking/confirmed');
+  assert.doesNotMatch(JSON.stringify(s.events), /PRIVATE-REFERENCE|PRIVATE-TOKEN/);
+});
+test('public informational pages record visits and contact clicks', () => {
+  const s = setup(); s.api.consent(granted);
+  for (const path of ['/about', '/contact', '/faq', '/cancellation-policy']) {
+    s.w.location.pathname = path;
+    assert.equal(s.api.page(path), true);
+    assert.equal(sent(s.events, 'page_view').at(-1)[2].page_path, path);
+  }
+  assert.equal(s.api.event('phone_click', { link_location: 'public_site' }), true);
+  for (const path of ['/admin', '/agent', '/invoice/PRIVATE', '/unknown']) assert.equal(safePath(path), null);
+});
+test('payment types retain supported providers and discard arbitrary input', () => {
+  const s = setup(); s.api.consent(granted);
+  for (const payment_type of ['pesapal', 'paypal', 'dpo']) {
+    s.api.event('add_payment_info', { ...receipt, payment_type });
+    assert.equal(sent(s.events, 'add_payment_info').at(-1)[2].payment_type, payment_type);
+  }
+  s.api.event('add_payment_info', { ...receipt, payment_type: 'private@example.com' });
+  assert.equal(sent(s.events, 'add_payment_info').at(-1)[2].payment_type, undefined);
+  s.api.consent({});
+  assert.equal(s.api.event('add_payment_info', { ...receipt, payment_type: 'paypal' }), false);
+});
+test('public navigation resumes Google collection after tracker cleanup', async () => {
+  const { api, w, config, events, scripts, store } = setup();
+  const disabled = `ga-disable-${config.measurementId}`;
+  api.consent(granted);
+  api.page('home');
+  api.suspend();
+  assert.equal(w[disabled], true);
+  w.location.pathname = '/tours';
+  assert.equal(api.page('tours'), true);
+  assert.equal(w[disabled], false);
+  assert.equal(sent(events, 'page_view').length, 2);
+  assert.equal(scripts.length, 1);
+  assert.equal(await api.purchase(receipt), true);
+  assert.equal(w[disabled], false);
+
+  api.suspend();
+  w.location.pathname = '/admin';
+  assert.equal(api.page('admin'), false);
+  assert.equal(w[disabled], true);
+  w.location.pathname = '/tours';
+  store.set('zanzibar_auth_token', 'internal');
+  assert.equal(api.page('internal'), false);
+  assert.equal(w[disabled], true);
+  store.delete('zanzibar_auth_token');
+  api.consent({});
+  assert.equal(api.page('denied'), false);
+  assert.equal(api.event('begin_checkout'), false);
+  assert.equal(sent(events, 'page_view').length, 2);
+  api.consent(granted);
+  assert.equal(api.page('return'), true);
+  assert.equal(w[disabled], false);
+});
 test('denied consent loads the detectable Google tag but blocks events until grant', async () => {
   const { api, scripts, events } = setup();
   assert.equal(api.page('a'), false);

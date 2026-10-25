@@ -5,6 +5,7 @@ import { fetchMenuData } from "../../../api/toursApi";
 import { MEGA_MENU, SITE, menuLinkHref, whatsappLink } from "../../../config/site";
 import { money, photoAt } from "../../homePage/homeData";
 import { menuLinkPrice, menuSearches, showMenuLink } from "./headerData";
+import { trackSelectItem } from "../../../utils/analytics";
 
 const SEARCHES = menuSearches();
 
@@ -38,7 +39,7 @@ const FeaturedTourCard = ({ pick }) => {
   if (!pick?.tour) return null;
   const { tour, source } = pick;
   return (
-    <Link to={`/tours/${tour.slug}`} className="sh-mega-card">
+    <Link to={`/tours/${tour.slug}`} onClick={() => trackSelectItem(tour)} className="sh-mega-card">
       <span className="sh-mega-card-media">
         <img src={photoAt(tour.image, 600)} alt="" width="320" height="170" loading="lazy" decoding="async" />
         <span className="sh-mega-badge">{source === "admin" ? "Featured" : "Most popular"}</span>

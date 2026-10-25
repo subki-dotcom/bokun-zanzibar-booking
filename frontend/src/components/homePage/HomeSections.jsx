@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { LuCheck, LuChevronRight, LuHeart, LuStar } from "react-icons/lu";
 import { money, photoAt, photoSet, styleHref } from "./homeData";
+import { trackSelectItem } from "../../utils/analytics";
 
 // Eyebrow, H2 and an optional link on the right.
 export const SectionHeader = ({ id, eyebrow, title, linkTo = "", linkText = "" }) => (
@@ -103,7 +104,7 @@ export const TourCard = ({ tour }) => (
     <div className="hp-card-body">
       <p className="hp-card-meta">{tour.meta.join(" · ")}</p>
       <h3>
-        <Link to={`/tours/${tour.slug}`} className="hp-card-link">{tour.title}</Link>
+        <Link to={`/tours/${tour.slug}`} onClick={() => trackSelectItem(tour)} className="hp-card-link">{tour.title}</Link>
       </h3>
       {tour.summary ? <p className="hp-card-summary">{tour.summary}</p> : null}
       {tour.reviewCount ? (
@@ -189,7 +190,7 @@ const FavoriteCard = ({ tour }) => (
     <div className="hp-fav-body">
       <p className="hp-card-meta">{tour.meta.slice(0, 2).join(" · ")}</p>
       <h3>
-        <Link to={`/tours/${tour.slug}`} className="hp-card-link">{tour.title}</Link>
+        <Link to={`/tours/${tour.slug}`} onClick={() => trackSelectItem(tour)} className="hp-card-link">{tour.title}</Link>
       </h3>
       <Price tour={tour} />
     </div>

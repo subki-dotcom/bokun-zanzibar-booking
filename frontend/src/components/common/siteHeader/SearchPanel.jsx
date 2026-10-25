@@ -6,12 +6,14 @@ import { POPULAR_SEARCHES, SITE, whatsappLink } from "../../../config/site";
 import { money, photoAt } from "../../homePage/homeData";
 import { menuSearches } from "./headerData";
 import useDialogFocus from "./useDialogFocus";
+import { trackSelectItem } from "../../../utils/analytics";
 
 // One result row: a listing item (typed search) or a home card (top tours).
 const toResult = (tour = {}) => {
   const image = tour.image || (Array.isArray(tour.images) ? tour.images[0] : "");
   const meta = [tour.fromPrice ? `From ${money(tour.fromPrice, tour.currency)}` : "", tour.duration].filter(Boolean).join(" · ");
-  return { slug: tour.slug, title: tour.title, image, meta };
+  return { slug: tour.slug, title: tour.title, image, meta, id: tour.id, bokunProductId: tour.bokunProductId,
+    fromPrice: tour.fromPrice, currency: tour.currency };
 };
 
 const toursHref = (query) => (query ? `/tours?q=${encodeURIComponent(query)}` : "/tours");
@@ -74,6 +76,7 @@ const SearchPanel = ({ onClose, initialQuery = "" }) => {
   };
   const submit = (event) => {
     event.preventDefault();
+    if (active >= 0 && shown[active]) trackSelectItem(shown[active]);
     go(active >= 0 && shown[active] ? `/tours/${shown[active].slug}` : toursHref(text));
   };
   const whatsapp = whatsappLink(SITE.whatsappHelloMessage);
@@ -125,7 +128,7 @@ const SearchPanel = ({ onClose, initialQuery = "" }) => {
           <ul className="sh-results" id={listId} role="listbox" aria-label={text ? `Tours matching ${text}` : "Top tours"}>
             {shown.map((tour, index) => (
               <li key={tour.slug} id={`${listId}-${index}`} role="option" aria-selected={index === active}>
-                <Link to={`/tours/${tour.slug}`} onClick={onClose} className={index === active ? "is-active" : ""} tabIndex={-1}>
+                <Link to={`/tours/${tour.slug}`} onClick={() => { trackSelectItem(tour); onClose(); }} className={index === active ? "is-active" : ""} tabIndex={-1}>
                   <span className="sh-result-thumb">{tour.image ? <img src={photoAt(tour.image, 160)} alt="" width="80" height="64" loading="lazy" /> : null}</span>
                   <span>
                     <strong>{tour.title}</strong>
