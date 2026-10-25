@@ -65,10 +65,24 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
     return { page_path: path, page_location: url.href, page_referrer: referrer,
       page_title: path.startsWith('/tours/') || path === '/' || path === '/tours' ? text(w.document.title) : 'Zanzibar booking' };
   };
+  const initializeTagManager = guard(() => {
+    const w = browser();
+    if (state.consent.analytics_storage !== 'granted' || !/^GTM-[A-Z0-9]+$/.test(config.gtmId || '') ||
+        w.__riserTagManagerInitialized) return;
+    const script = w.document.createElement('script');
+    script.async = true;
+    script.dataset.riserTagManager = 'true';
+    script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(config.gtmId)}`;
+    // Consent defaults and the visitor's choice are already in this shared dataLayer.
+    w.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+    w.document.head.appendChild(script);
+    w.__riserTagManagerInitialized = true;
+  });
   const initialize = guard(() => {
     const w = browser();
     prepareConsent();
     if (!eligible()) return false;
+    initializeTagManager();
     // Route-effect cleanup suspends collection; resume only on eligible public pages.
     w[`ga-disable-${config.measurementId}`] = false;
     const route = `${w.history?.state?.key}:${w.location.pathname}`;

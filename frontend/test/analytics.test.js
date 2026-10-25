@@ -8,7 +8,7 @@ function setup(extra = {}) {
   const store = new Map(), scripts = [], events = [];
   const w = { location: { hostname: 'zanzibartoursandsafaris.co.tz', origin: 'https://zanzibartoursandsafaris.co.tz', pathname: '/', search: '' },
     localStorage: { getItem: k => store.get(k), setItem: (k,v) => store.set(k,v), removeItem: k => store.delete(k) },
-    document: { title: 'Zanzibar Tours', referrer: 'https://google.com/search?q=private', querySelector: () => scripts[0],
+    document: { title: 'Zanzibar Tours', referrer: 'https://google.com/search?q=private', querySelector: () => scripts.find(script => script.dataset.riserGoogleTag),
       createElement: () => ({ dataset: {} }), head: { appendChild: s => scripts.push(s) } }, dispatchEvent: () => {},
     gtag: (...args) => events.push(args) };
   const config = { production: true, measurementId: 'G-G4HFYGCFLH', ...extra };
@@ -16,6 +16,30 @@ function setup(extra = {}) {
   return { api, w, scripts, events, store, config };
 }
 const sent = (events, name) => events.filter(e => e[0] === 'event' && e[1] === name);
+test('GTM loads once after analytics consent on eligible public pages without extra GA events', () => {
+  const s = setup({ gtmId: 'GTM-PF7LKQ72' });
+  s.api.initialize();
+  assert.equal(s.scripts.filter(script => script.src.includes('/gtm.js')).length, 0);
+  s.api.consent(granted);
+  s.api.initialize();
+  s.w.location.pathname = '/tours';
+  s.api.page('tours');
+  s.api.consent(granted);
+  assert.equal(s.scripts.filter(script => script.src === 'https://www.googletagmanager.com/gtm.js?id=GTM-PF7LKQ72').length, 1);
+  assert.equal(s.w.dataLayer.filter(event => event.event === 'gtm.js').length, 1);
+  assert.equal(s.events.filter(event => event[0] === 'config').length, 1);
+  assert.equal(sent(s.events, 'page_view').length, 1);
+  const returning = setup({ gtmId: 'GTM-PF7LKQ72' });
+  returning.api.consent(granted);
+  assert.equal(returning.scripts.filter(script => script.src.includes('/gtag/js')).length, 1);
+  assert.equal(returning.scripts.filter(script => script.src.includes('/gtm.js')).length, 1);
+  s.api.consent({});
+  assert.equal(s.api.page('denied'), false);
+  for (const mutate of [s => { s.w.location.pathname = '/admin'; }, s => { s.w.location.hostname = 'localhost'; }, s => s.store.set('zanzibar_auth_token', 'internal')]) {
+    const excluded = setup({ gtmId: 'GTM-PF7LKQ72' }); mutate(excluded); excluded.api.consent(granted);
+    assert.equal(excluded.scripts.length, 0);
+  }
+});
 test('confirmed booking permits a consented purchase without exposing its URL reference', async () => {
   const s = setup();
   s.w.location.pathname = '/booking/confirmed/PRIVATE-REFERENCE';
