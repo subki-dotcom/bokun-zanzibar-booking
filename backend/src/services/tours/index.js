@@ -3,6 +3,7 @@ const SyncLog = require("../../models/SyncLog");
 const AppError = require("../../utils/AppError");
 const bokunService = require("../../integrations/bokun");
 const homeService = require("./home");
+const { searchCatalog } = require("./catalog");
 const { STYLES: TRAVEL_STYLES, tourStyles, matchesSearch, searchWords, searchSummaries, styleKeyFor } = require("./homeCatalog");
 // The travel style labels of a tour ("Sea tours", "Private tours"…), used by the tours page filter.
 const styleLabels = (tour = {}) => tourStyles(tour).map((key) => TRAVEL_STYLES.find((style) => style.key === key)?.label).filter(Boolean);
@@ -967,6 +968,13 @@ const setProductFeatured = async (productId, featured, placement = "home") => {
 
 const getHomeData = () => homeService.getHomeData();
 
+// The tours page: filtered, sorted and paged cards with the filter panel's counts (see catalog.searchCatalog).
+const searchTours = async (query = {}, requestId = "") => {
+  await ensurePublicSnapshotCache(requestId);
+  const { cards, bookings } = await homeService.getCatalog();
+  return searchCatalog(cards, query, bookings);
+};
+
 // The header menu: its tour card, the search panel's top tours and, for each menu link's search, how many tours
 // match and from what price (links with no match are hidden). Kept ten minutes per set of searches.
 const MENU_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -1162,6 +1170,7 @@ module.exports = {
   setProductFeatured,
   getHomeData,
   getMenuData,
+  searchTours,
   listTours,
   listTourCategories,
   getTourBySlug,

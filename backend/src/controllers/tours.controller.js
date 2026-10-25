@@ -80,6 +80,16 @@ const setProductFeatured = asyncHandler(async (req, res) => {
   return successResponse(res, { message: on ? `Product featured in ${where}` : `Product removed from ${where}`, data });
 });
 
+// The tours page: ?category=sea&q=mnemba&duration=half-day,full-day&price=20-300&time=morning&good=pickup
+// &sort=price_asc&page=2 (see toursService.searchTours).
+const searchTours = asyncHandler(async (req, res) => {
+  const pick = (key) => (typeof req.query[key] === "string" ? req.query[key].slice(0, 120) : "");
+  const query = Object.fromEntries(["category", "q", "duration", "price", "time", "good", "sort", "page", "limit"].map((key) => [key, pick(key)]));
+  const data = await toursService.searchTours(query, req.requestId);
+  setPublicCache(res, { maxAge: 60, staleWhileRevalidate: 300 });
+  return successResponse(res, { message: "Tours found", data });
+});
+
 // ?q=mnemba&q=prison-island…: the header menu's data (see toursService.getMenuData).
 const getMenuData = asyncHandler(async (req, res) => {
   const raw = req.query.q;
@@ -167,6 +177,7 @@ module.exports = {
   setProductFeatured,
   getHomeData,
   getMenuData,
+  searchTours,
   getTourOptions,
   checkOptionsAvailability,
   searchToursByAvailability,

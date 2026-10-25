@@ -13,7 +13,8 @@ const RULES = {
   transfers: /\btransfers?\b/i,
   safari: /\bsafari\b|serengeti|ngorongoro|tarangire|mikumi|selous|nyerere|manyara/i,
   sea: /mnemba|sandbank|nakupenda|dolphin|snorkel|dhow|lagoon|reef|turtle swim|kayak|boat/i,
-  cultural: /stone town|spice|cooking|village|heritage|cultur|histor/i,
+  // "Culture & nature" in the header menu: Jozani forest belongs here too.
+  cultural: /stone town|spice|cooking|village|heritage|cultur|histor|jozani|forest/i,
   private: /\bprivate\b/i
 };
 

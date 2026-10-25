@@ -11,6 +11,7 @@ router.get("/", toursController.listTours);
 router.get("/categories", toursController.listCategories);
 router.get("/home", toursController.getHomeData);
 router.get("/menu", toursController.getMenuData);
+router.get("/search", toursController.searchTours);
 router.post("/availability-search", validateRequest(availabilitySearchSchema), toursController.searchToursByAvailability);
 // Staff: show or hide products on the public site.
 router.get("/admin/products", authenticate, authorize("super_admin", "admin"), toursController.listProductsForAdmin);

@@ -1,10 +1,11 @@
-/* Design tokens shared by the tour page (.tp), checkout (.ck), home page (.hp) and site footer (.sf). Scoped so other pages keep their styles. */
+/* Design tokens shared by the tour page (.tp), checkout (.ck), home page (.hp), site footer (.sf) and tours page (.tl). Scoped so other pages keep their styles. */
 .tp,
 .tp-header,
 .ck,
 .ck-header,
 .hp,
-.sf {
+.sf,
+.tl {
   --brand: #0e6b57;
   --brand-hover: #0a5242;
   --brand-soft: #e7f3ef;
