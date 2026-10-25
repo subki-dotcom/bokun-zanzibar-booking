@@ -14,7 +14,11 @@ const setMeta = (selector, attribute, value) => {
 
 // schemas: extra JSON-LD entries for this page (memoize them; a new array re-runs the effect).
 // reviews: the site's real review summary ({ rating, count }), which adds a rating to the travel agency.
-const SeoHead = ({ title, description, image = "", product = null, noIndex = false, schemas: extraSchemas = null, reviews = null }) => {
+// Pages without their own photo are shared with the home page's dhow photo.
+const DEFAULT_IMAGE = `${BRAND.website}/images/home/hero-dhow-1280.jpg`;
+
+const SeoHead = ({ title, description, image: pageImage = "", product = null, noIndex = false, schemas: extraSchemas = null, reviews = null }) => {
+  const image = pageImage || DEFAULT_IMAGE;
   useEffect(() => {
     const pageTitle = title || `${BRAND.name} | Zanzibar Tours`;
     const pageDescription = description || "Book Zanzibar tours, activities, and transfers with live availability and secure payment.";
@@ -86,7 +90,19 @@ const SeoHead = ({ title, description, image = "", product = null, noIndex = fal
         url: canonicalUrl,
         name: product.name,
         description: product.description || pageDescription,
-        image: product.image ? [product.image] : undefined
+        image: product.image ? [product.image] : undefined,
+        provider: { "@id": `${BRAND.website}/#organization` },
+        ...(Number(product.price) > 0
+          ? {
+              offers: {
+                "@type": "Offer",
+                price: String(product.price),
+                priceCurrency: product.currency || "USD",
+                availability: "https://schema.org/InStock",
+                url: canonicalUrl
+              }
+            }
+          : {})
       });
       schemas.push({
         "@context": "https://schema.org",

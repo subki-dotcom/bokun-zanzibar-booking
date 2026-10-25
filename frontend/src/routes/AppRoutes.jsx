@@ -10,6 +10,7 @@ import TourDetailsPage from "../pages/public/TourDetailsPage";
 import AdminUnavailablePage from "../components/admin/AdminUnavailablePage";
 import LegalPage from "../pages/public/LegalPage";
 import ContactPage from "../pages/public/ContactPage";
+import NotFoundPage from "../pages/public/NotFoundPage";
 
 // Staff, agent and checkout pages load when opened, so the public pages stay small.
 const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
@@ -485,7 +486,9 @@ const AppRoutes = () => {
         <Route path="/agent/support" element={<AgentSupportPage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route element={<PublicLayout />}>
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
     </Routes></Suspense>
   );
 };
