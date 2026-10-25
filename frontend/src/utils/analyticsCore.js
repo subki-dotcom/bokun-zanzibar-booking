@@ -68,6 +68,8 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
     const w = browser();
     prepareConsent();
     if (!eligible()) return false;
+    // Route-effect cleanup suspends collection; resume only on eligible public pages.
+    w[`ga-disable-${config.measurementId}`] = false;
     const route = `${w.history?.state?.key}:${w.location.pathname}`;
     if (state.route !== route) { state.route = route; state.seen.clear(); }
     if (!state.configured && !w.__riserAnalyticsInitialized) {

@@ -16,6 +16,38 @@ function setup(extra = {}) {
   return { api, w, scripts, events, store, config };
 }
 const sent = (events, name) => events.filter(e => e[0] === 'event' && e[1] === name);
+test('public navigation resumes Google collection after tracker cleanup', async () => {
+  const { api, w, config, events, scripts, store } = setup();
+  const disabled = `ga-disable-${config.measurementId}`;
+  api.consent(granted);
+  api.page('home');
+  api.suspend();
+  assert.equal(w[disabled], true);
+  w.location.pathname = '/tours';
+  assert.equal(api.page('tours'), true);
+  assert.equal(w[disabled], false);
+  assert.equal(sent(events, 'page_view').length, 2);
+  assert.equal(scripts.length, 1);
+  assert.equal(await api.purchase(receipt), true);
+  assert.equal(w[disabled], false);
+
+  api.suspend();
+  w.location.pathname = '/admin';
+  assert.equal(api.page('admin'), false);
+  assert.equal(w[disabled], true);
+  w.location.pathname = '/tours';
+  store.set('zanzibar_auth_token', 'internal');
+  assert.equal(api.page('internal'), false);
+  assert.equal(w[disabled], true);
+  store.delete('zanzibar_auth_token');
+  api.consent({});
+  assert.equal(api.page('denied'), false);
+  assert.equal(api.event('begin_checkout'), false);
+  assert.equal(sent(events, 'page_view').length, 2);
+  api.consent(granted);
+  assert.equal(api.page('return'), true);
+  assert.equal(w[disabled], false);
+});
 test('denied consent loads the detectable Google tag but blocks events until grant', async () => {
   const { api, scripts, events } = setup();
   assert.equal(api.page('a'), false);
