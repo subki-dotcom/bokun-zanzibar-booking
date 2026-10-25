@@ -7,7 +7,7 @@
   --border: #e3e7e5;
   --border-strong: #c9d1ce;
   --page-alt: #f6f7f6;
-  --whatsapp: #1e8e4e;
+  --whatsapp: #177a42;
   padding: 48px 0 80px;
   background: var(--page-alt);
   color: var(--ink);
@@ -88,7 +88,7 @@
 }
 
 .cp .cp-btn-whatsapp:hover {
-  background: #187a42;
+  background: #12643a;
   color: #fff;
 }
 

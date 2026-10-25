@@ -29,7 +29,7 @@
   --border: #e3e7e5;
   --border-strong: #c9d1ce;
   --footer-text: #d5dedb;
-  --whatsapp: #1e8e4e;
+  --whatsapp: #177a42;
   --page-alt: #f6f7f6;
   --brand-soft-text: #e7f3ef;
   font-family: "Outfit", system-ui, sans-serif;
@@ -355,7 +355,7 @@
 
 .sh .sh-pill-whatsapp:hover,
 .sh-menu-layer .sh-pill-whatsapp:hover {
-  background: #187a42;
+  background: #12643a;
   color: #fff;
 }
 

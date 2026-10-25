@@ -3,7 +3,7 @@
 
 .tl {
   --brand-tint-border: #d5e6e0;
-  --whatsapp: #1e8e4e;
+  --whatsapp: #177a42;
   background: #fff;
   color: var(--ink);
   font-family: "Outfit", system-ui, sans-serif;
@@ -958,7 +958,7 @@
 }
 
 .tl .tl-wa-btn:hover {
-  background: #187a42;
+  background: #12643a;
   color: #fff;
 }
 

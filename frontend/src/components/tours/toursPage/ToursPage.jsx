@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import SeoHead from "../../common/SeoHead";
 import ErrorAlert from "../../common/ErrorAlert";
 import { BRAND } from "../../../config/brand";
@@ -9,13 +9,18 @@ import { FiltersSheet, MobileFilterBar, SortSheet } from "./ToursMobile";
 import { EmptyState, LoadMore, SeoContent, SortPills } from "./ToursResults";
 import TourCard, { SkeletonCards } from "./TourCard";
 import { useToursResults, useTourFilters } from "./useTourFilters";
-import { activeFilterCount } from "./toursPageData";
+import { activeFilterCount, itemListSchema, readPrerenderedTours } from "./toursPageData";
 import "./toursPage.css";
 
-// /tours (mockups "Tours", "ToursMobile", "ToursFiltersMobile").
-const ToursPage = () => {
+export const TOURS_TITLE = `Zanzibar Tours & Activities | ${BRAND.name}`;
+export const TOURS_DESCRIPTION =
+  "Compare Zanzibar tours, safaris and transfers with live prices and availability: Mnemba snorkeling, Stone Town, spice farms and sunset cruises, with free cancellation on most tours and hotel pickup.";
+
+// /tours (mockups "Tours", "ToursMobile", "ToursFiltersMobile"). initialData: the first page, from the build.
+const ToursPage = ({ initialData = readPrerenderedTours() }) => {
   const { filters, update, clear } = useTourFilters();
-  const results = useToursResults(filters, update);
+  const results = useToursResults(filters, update, initialData);
+  const schemas = useMemo(() => [itemListSchema(results.items.slice(0, 9), BRAND.website)], [results.items]);
   const top = useRef(null);
   const total = results.facets?.total || 0;
   const shown = results.items.length;
@@ -40,7 +45,7 @@ const ToursPage = () => {
 
   return (
     <div className="tl">
-      <SeoHead title={`Zanzibar Tours & Activities | ${BRAND.name}`} description="Compare Zanzibar tours, safaris and transfers with live prices and availability, free cancellation on most tours and hotel pickup." />
+      <SeoHead title={TOURS_TITLE} description={TOURS_DESCRIPTION} schemas={schemas} />
       <ToursIntro total={total} />
 
       <div className="tl-toolbar" ref={top}>
@@ -77,7 +82,7 @@ const ToursPage = () => {
               ) : (
                 results.items.map((tour, index) => (
                   <Fragment key={tour.id}>
-                    <TourCard tour={tour} priority={index < 3} />
+                    <TourCard tour={tour} priority={index === 0 ? "high" : index < 3} />
                     {/* Phones: the custom-tour box after the second tour. */}
                     {index === 1 ? (
                       <div className="tl-grid-custom">

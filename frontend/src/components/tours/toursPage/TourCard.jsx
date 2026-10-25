@@ -33,6 +33,7 @@ const TourCard = ({ tour, priority = false }) => (
             width="400"
             height="200"
             loading={priority ? "eager" : "lazy"}
+            fetchpriority={priority === "high" ? "high" : undefined}
             decoding="async"
           />
         ) : null}

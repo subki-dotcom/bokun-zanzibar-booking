@@ -88,6 +88,33 @@ export const activeFilterCount = (filters) =>
 // Everything except the page: a change here starts the results again.
 export const resultsKey = (filters) => JSON.stringify({ ...filters, page: undefined });
 
+// The tours shown, as a list for search engines (the address without filters is the canonical one).
+export const itemListSchema = (items = [], website = "") => ({
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "@id": `${website}/tours#list`,
+  name: "Tours & activities in Zanzibar",
+  itemListElement: items.map((tour, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    url: `${website}/tours/${tour.slug}`,
+    name: tour.title
+  }))
+});
+
+// The first page as the build saved it into /tours (script#riser-prerender-tours), for a plain /tours visit.
+export const readPrerenderedTours = () => {
+  if (typeof document === "undefined") return null;
+  try {
+    const node = document.getElementById("riser-prerender-tours");
+    return node ? JSON.parse(node.textContent || "null") : null;
+  } catch {
+    return null;
+  }
+};
+
+export const DEFAULT_RESULTS_KEY = resultsKey(readFilters(new URLSearchParams("")));
+
 export const sortLabel = (key) => SORT_OPTIONS.find((option) => option.key === key)?.label || "Recommended";
 
 // The phone "Sort: …" button has little room.

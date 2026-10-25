@@ -30,7 +30,8 @@
   --urgency-text: #8a4205;
   --error: #b42318;
   --error-bg: #fef3f2;
-  --whatsapp: #1e8e4e;
+  /* WhatsApp green dark enough for white text (5.2:1, AA). */
+  --whatsapp: #177a42;
   --bg: #ffffff;
   --radius-card: 12px;
   --radius-large: 16px;

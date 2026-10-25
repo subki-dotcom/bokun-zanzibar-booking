@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { fetchToursPage, searchToursByAvailability } from "../../../api/toursApi";
-import { PAGE_SIZE, apiQuery, readFilters, resultsKey, writeFilters } from "./toursPageData";
+import { DEFAULT_RESULTS_KEY, PAGE_SIZE, apiQuery, readFilters, resultsKey, writeFilters } from "./toursPageData";
 
 // The filters, read from and written to the address. Changing a filter goes back to the first page.
 export const useTourFilters = () => {
@@ -24,8 +24,13 @@ export const useTourFilters = () => {
 
 // Results for the filters: the pages up to ?page=N at first, then "Show more" adds the next page. With a date, only
 // tours available that day (checked live, twelve at a time) are kept.
-export const useToursResults = (filters, update) => {
-  const [state, setState] = useState({ items: [], total: 0, facets: null, pages: 1, loading: true, error: "" });
+// initial: the first page saved into the page by the build; it shows at once for a plain /tours and is refreshed.
+export const useToursResults = (filters, update, initial = null) => {
+  const [state, setState] = useState(() =>
+    initial && resultsKey(filters) === DEFAULT_RESULTS_KEY && filters.page === 1
+      ? { key: resultsKey(filters), items: initial.items, total: initial.total, facets: initial.facets, pages: Math.max(1, Math.ceil(initial.total / PAGE_SIZE)), loading: false, error: "" }
+      : { items: [], total: 0, facets: null, pages: 1, loading: true, error: "" }
+  );
   const [loadingMore, setLoadingMore] = useState(false);
   const [availability, setAvailability] = useState({});
   const [checking, setChecking] = useState(false);
@@ -34,12 +39,13 @@ export const useToursResults = (filters, update) => {
 
   useEffect(() => {
     let active = true;
-    setState((current) => ({ ...current, loading: true, error: "" }));
+    // Results already on screen stay while fresh ones load (no skeleton flash for the saved first page).
+    setState((current) => ({ ...current, loading: !current.items.length || current.key !== key, error: "" }));
     loadedPages.current = filters.page;
     fetchToursPage(apiQuery(filters, { page: 1, limit: PAGE_SIZE * filters.page }))
       .then((data) => {
         if (!active) return;
-        setState({ items: data.items, total: data.total, facets: data.facets, pages: Math.max(1, Math.ceil(data.total / PAGE_SIZE)), loading: false, error: "" });
+        setState({ key, items: data.items, total: data.total, facets: data.facets, pages: Math.max(1, Math.ceil(data.total / PAGE_SIZE)), loading: false, error: "" });
       })
       .catch((error) => active && setState((current) => ({ ...current, loading: false, error: error.message || "Tours could not be loaded." })));
     return () => {
