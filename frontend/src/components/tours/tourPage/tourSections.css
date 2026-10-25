@@ -570,3 +570,102 @@
   width: 14px;
   height: 14px;
 }
+
+/* Phones: itinerary like a numbered list – black numbers joined by a line, two lines of text with "Read more". */
+.tp-timeline.is-compact {
+  gap: 22px;
+}
+
+/* A line from each number down to the next one (none under the last). */
+.tp-timeline.is-compact::before {
+  display: none;
+}
+
+.tp-timeline.is-compact .tp-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 28px;
+  bottom: -22px;
+  left: 13px;
+  width: 2px;
+  background: var(--ink);
+}
+
+.tp-timeline.is-compact .tp-step {
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.tp-timeline.is-compact .tp-step-marker {
+  width: 28px;
+  height: 28px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  box-shadow: 0 0 0 4px #fff;
+}
+
+.tp-timeline.is-compact .tp-step-body {
+  padding-top: 2px;
+}
+
+.tp-timeline.is-compact h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.tp-stop-text {
+  position: relative;
+  margin-top: 6px;
+}
+
+.tp .tp-stop-text p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.tp .tp-stop-text.is-open p {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+
+.tp .tp-stop-more {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* "… Read more" sits over the end of the second line, on a white fade. */
+.tp .tp-stop-more.is-overlay {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding-left: 28px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0, #fff 24px);
+  line-height: 1.55;
+}
+
+.tp-stop-more.is-overlay span {
+  text-decoration: none;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.tp .tp-stop-meta {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}

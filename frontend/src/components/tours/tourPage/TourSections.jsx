@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LuBus, LuCheck, LuClock, LuExternalLink, LuMapPin, LuMessageSquare, LuShieldCheck, LuStar, LuUsers, LuX } from "react-icons/lu";
 import { fetchTours } from "../../../api/toursApi";
@@ -118,6 +118,41 @@ export const IncludedList = ({ included = [], excluded = [], compact = false }) 
   );
 };
 
+// Phones: two lines of a stop's description with "… Read more"; the button appears only when the text is longer.
+const StopDescription = ({ text }) => {
+  const [open, setOpen] = useState(false);
+  const [long, setLong] = useState(false);
+  const paragraph = useRef(null);
+  useEffect(() => {
+    const node = paragraph.current;
+    if (!node || open) return undefined;
+    const measure = () => setLong(node.scrollHeight > node.clientHeight + 1);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [text, open]);
+  return (
+    <div className={`tp-stop-text ${open ? "is-open" : ""}`}>
+      <p ref={paragraph}>
+        {text}
+        {open ? (
+          <>
+            {" "}
+            <button type="button" className="tp-stop-more" aria-expanded="true" onClick={() => setOpen(false)}>
+              Read less
+            </button>
+          </>
+        ) : null}
+      </p>
+      {!open && long ? (
+        <button type="button" className="tp-stop-more is-overlay" aria-expanded="false" onClick={() => setOpen(true)}>
+          <span aria-hidden="true">… </span>Read more
+        </button>
+      ) : null}
+    </div>
+  );
+};
+
 export const ItineraryTimeline = ({ stops = [], hasPickup = false, pickupTimes = "", compact = false }) => {
   const [all, setAll] = useState(false);
   if (!stops.length) return null;
@@ -125,7 +160,7 @@ export const ItineraryTimeline = ({ stops = [], hasPickup = false, pickupTimes =
   return (
     <section id="itinerary" className="tp-section">
       <h2>What to expect</h2>
-      <ol className="tp-timeline">
+      <ol className={`tp-timeline ${compact ? "is-compact" : ""}`}>
         {hasPickup && !compact ? (
           <li className="tp-step is-endpoint">
             <span className="tp-step-marker is-filled"><LuBus aria-hidden="true" /></span>
@@ -142,8 +177,9 @@ export const ItineraryTimeline = ({ stops = [], hasPickup = false, pickupTimes =
               {stop.image && !compact ? <img className="tp-step-image" src={stop.image} alt={stop.title || `Stop ${index + 1}`} loading="lazy" decoding="async" width="120" height="84" /> : null}
               <div>
                 {stop.title ? <h3>{stop.title}</h3> : null}
-                {stop.meta.length ? <small>{stop.meta.join(" · ")}</small> : null}
-                {stop.description ? <p>{stop.description}</p> : null}
+                {stop.meta.length && !compact ? <small>{stop.meta.join(" · ")}</small> : null}
+                {stop.description ? compact ? <StopDescription text={stop.description} /> : <p>{stop.description}</p> : null}
+                {stop.meta.length && compact ? <small className="tp-stop-meta">{stop.meta.join(" • ")}</small> : null}
               </div>
             </div>
           </li>

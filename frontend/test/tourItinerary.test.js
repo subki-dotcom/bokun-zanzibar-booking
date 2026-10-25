@@ -22,6 +22,8 @@ test("itinerary stops show their description on phones as well as desktop", () =
   const phone = renderToStaticMarkup(React.createElement(sections.ItineraryTimeline, { stops, compact: true }));
   assert.match(phone, /Early-morning boat trip to see dolphins\./);
   assert.match(phone, /Red Colobus monkeys/);
+  assert.match(phone, /class="tp-timeline is-compact"/);
+  assert.match(phone, /class="tp-stop-text "><p>Early-morning boat trip/);
   // Phones show the first three stops until "See full itinerary".
   assert.doesNotMatch(phone, /Free time on the beach/);
   assert.match(phone, /See full itinerary/);
