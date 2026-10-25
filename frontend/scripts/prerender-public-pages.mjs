@@ -208,7 +208,8 @@ const pageData = (tour) => {
   return `<script id="riser-prerender-tour" type="application/json">${JSON.stringify(visible).replace(/</g, "\\u003c")}</script>`;
 };
 
-const metadata = ({ title, description, canonical, image = "", schemas, body, data = "" }) => ({
+const DEFAULT_IMAGE = `${siteUrl}/images/home/hero-dhow-1280.jpg`;
+const metadata = ({ title, description, canonical, image = DEFAULT_IMAGE, schemas, body, data = "" }) => ({
   title,
   description,
   body,
@@ -245,6 +246,9 @@ const buildTourMarkup = (tour) => {
 
 const run = async () => {
   const template = await fs.readFile(path.join(dist, "index.html"), "utf8");
+  // Addresses without a prerendered page (booking, payment, My booking, unknown ones…) get this plain app page
+  // (vercel.json), not the home page: no home content and no home canonical under a wrong address.
+  await fs.writeFile(path.join(dist, "app.html"), template);
   const tours = await fetchActiveTours();
   const details = await mapInBatches(tours, (tour) => getTour(tour.slug));
   const homeCanonical = `${siteUrl}/`;
@@ -289,7 +293,11 @@ const run = async () => {
       name: tour.title,
       description,
       url: canonical,
-      image: image ? [image] : undefined
+      image: image ? [image] : undefined,
+      provider: { "@id": `${siteUrl}/#organization` },
+      ...(Number(tour.fromPrice) > 0
+        ? { offers: { "@type": "Offer", price: String(tour.fromPrice), priceCurrency: tour.currency || "USD", availability: "https://schema.org/InStock", url: canonical } }
+        : {})
     }, {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",

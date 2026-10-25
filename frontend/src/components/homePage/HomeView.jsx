@@ -5,7 +5,7 @@ import { travelAgencySchema } from "../../config/site";
 
 export const HOME_TITLE = "Zanzibar Tours, Safaris & Airport Transfers | Riser Tours & Safaris";
 export const HOME_DESCRIPTION =
-  "Book Zanzibar tours, fly-in safaris and airport transfers with a local team: Mnemba snorkeling, Stone Town, spice farms and private trips. Instant confirmation, card, M-Pesa or PayPal.";
+  "Book Zanzibar tours, safaris and airport transfers with a local team: Mnemba snorkeling, Stone Town, spice farms. Instant confirmation, card or M-Pesa.";
 
 // The whole home page below the site header (the layout draws that header over the hero). The build renders it to
 // HTML with the same data (scripts/prerender-public-pages.mjs).
