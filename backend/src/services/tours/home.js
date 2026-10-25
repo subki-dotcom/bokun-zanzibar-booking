@@ -3,6 +3,7 @@
 const ProductSnapshot = require("../../models/ProductSnapshot");
 const Booking = require("../../models/Booking");
 const logger = require("../../config/logger");
+const { toListingCard, withoutRepeatedTitles } = require("./catalog");
 const { pickBestSellers, pickFeatured, pickMenuTour, pickTopTours, showable, styleTiles, toHomeCard } = require("./homeCatalog");
 
 const HOME_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -87,8 +88,41 @@ const getHomeData = async () => {
   return inFlight;
 };
 
-const forgetHomeData = () => {
-  cached = null;
+// The tours page's catalogue: one card per public product (repeated titles shown once) and the bookings used for
+// "Recommended", kept ten minutes like the home page data.
+const CATALOG_FIELDS = [
+  "bokunProductId title slug shortDescription description duration images fromPrice currency rating reviewCount reviewSource",
+  "cancellationPolicy included updatedAt options.active options.pickupSupported options.pricingType",
+  "rawBokunProduct.startTimes rawBokunProduct.durationType rawBokunProduct.durationWeeks rawBokunProduct.durationDays",
+  "rawBokunProduct.durationHours rawBokunProduct.durationMinutes rawBokunProduct.cancellationPolicy rawBokunProduct.meetingType",
+  "rawBokunProduct.privateActivity"
+].join(" ");
+let catalogCached = null;
+let catalogInFlight = null;
+
+const buildCatalog = async () => {
+  const [rows, bookings] = await Promise.all([ProductSnapshot.find(PUBLIC_FILTER).select(CATALOG_FIELDS).lean(), bookingCounts()]);
+  const cards = withoutRepeatedTitles(rows.map(toListingCard), bookings);
+  return { cards, bookings };
 };
 
-module.exports = { getHomeData, forgetHomeData };
+const getCatalog = async () => {
+  if (catalogCached && catalogCached.expiresAt > Date.now()) return catalogCached.value;
+  if (catalogInFlight) return catalogInFlight;
+  catalogInFlight = buildCatalog()
+    .then((value) => {
+      catalogCached = { value, expiresAt: Date.now() + HOME_CACHE_TTL_MS };
+      return value;
+    })
+    .finally(() => {
+      catalogInFlight = null;
+    });
+  return catalogInFlight;
+};
+
+const forgetHomeData = () => {
+  cached = null;
+  catalogCached = null;
+};
+
+module.exports = { getHomeData, getCatalog, forgetHomeData };

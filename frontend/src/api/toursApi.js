@@ -33,6 +33,26 @@ const writeCache = (cache, key, value) => {
   return value;
 };
 
+// The tours page: one page of filtered results with the filter panel's counts ({ items, total, pages, facets }).
+// Kept a minute per query, so Back and repeated filters do not ask again.
+const toursPageCache = new Map();
+const toursPageRequests = new Map();
+export const fetchToursPage = (query = {}) => {
+  const key = new URLSearchParams(Object.entries(query).sort(([a], [b]) => a.localeCompare(b))).toString();
+  const cached = readCache(toursPageCache, key, TOUR_LIST_CACHE_TTL_MS);
+  if (cached) return Promise.resolve(cached);
+  if (!toursPageRequests.has(key)) {
+    toursPageRequests.set(
+      key,
+      axiosClient
+        .get(`/tours/search?${key}`)
+        .then((response) => writeCache(toursPageCache, key, response.data.data))
+        .finally(() => toursPageRequests.delete(key))
+    );
+  }
+  return toursPageRequests.get(key);
+};
+
 const clearToursCache = () => {
   tourListCache.clear();
   tourListRequests.clear();

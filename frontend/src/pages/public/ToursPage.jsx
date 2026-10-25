@@ -1,5 +1,3 @@
-import ToursListingPage from "../../components/tours/listing/ToursListingPage";
-
-const ToursPage = () => <ToursListingPage />;
+import ToursPage from "../../components/tours/toursPage/ToursPage";
 
 export default ToursPage;

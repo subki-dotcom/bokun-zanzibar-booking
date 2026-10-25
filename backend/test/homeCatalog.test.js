@@ -9,6 +9,7 @@ test("tours are sorted into travel styles from their titles", () => {
   assert.deepEqual(tourStyles({ title: "4 Day Serengeti Ngorongoro and Tarangire Safari from Zanzibar" }), ["safari"]);
   assert.deepEqual(tourStyles({ title: "Zanzibar Airport / Ferry Transfers - Hotels" }), ["transfers"]);
   assert.deepEqual(tourStyles({ title: "Stone Town Private Walking Tour with Local Guide" }), ["cultural", "private"]);
+  assert.deepEqual(tourStyles({ title: "Zanzibar Half Day Trip on Jozani Forest" }), ["cultural"]);
 });
 
 test("safari facts come only from what the product includes", () => {

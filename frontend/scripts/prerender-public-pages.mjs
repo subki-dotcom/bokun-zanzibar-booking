@@ -137,7 +137,36 @@ const renderHome = async (home) => {
     }
     // The travel agency entry every page carries, from the site's own config (src/config/site.js).
     const site = await server.ssrLoadModule("/src/config/site.js");
-    return { html, headers, agency: site.travelAgencySchema(null), schemas: view.homeSchemas(home), title: view.HOME_TITLE, description: view.HOME_DESCRIPTION, pages: Object.values(SITE_PAGES) };
+    // /tours: the real tours page with its first page of results (from the API; without it only the header).
+    const toursView = await server.ssrLoadModule("/src/components/tours/toursPage/ToursPage.jsx");
+    const toursData = await server.ssrLoadModule("/src/components/tours/toursPage/toursPageData.js");
+    let toursFirst = null;
+    try {
+      toursFirst = (await requestJson(`${apiUrl}/tours/search?limit=9`)).data || null;
+    } catch (error) {
+      console.warn(`Tours page data unavailable, /tours prerendered without results: ${error.message}`);
+    }
+    const quietRender = (path, element) => {
+      const restore = console.error;
+      console.error = (message, ...rest) => {
+        if (!String(message).includes("useLayoutEffect does nothing on the server")) restore(message, ...rest);
+      };
+      try {
+        return render(path, element);
+      } finally {
+        console.error = restore;
+      }
+    };
+    const tours = toursFirst
+      ? {
+          html: headers.tours + quietRender("/tours", React.createElement(toursView.default, { initialData: toursFirst })),
+          data: toursFirst,
+          title: toursView.TOURS_TITLE,
+          description: toursView.TOURS_DESCRIPTION,
+          list: toursData.itemListSchema(toursFirst.items, siteUrl)
+        }
+      : null;
+    return { html, headers, tours, agency: site.travelAgencySchema(null), schemas: view.homeSchemas(home), title: view.HOME_TITLE, description: view.HOME_DESCRIPTION, pages: Object.values(SITE_PAGES) };
   } finally {
     await server.close();
   }
@@ -233,13 +262,22 @@ const run = async () => {
       homeData ? `<script id="riser-prerender-home" type="application/json">${JSON.stringify(homeData).replace(/</g, "\\u003c")}</script>` : ""
     ].filter(Boolean).join("\n    ")
   }));
-  await writePage(template, "/tours", metadata({
-    title: `Zanzibar Tours & Activities | ${brandName}`,
-    description: "Compare Zanzibar tours and check live availability by date before booking.",
-    canonical: `${siteUrl}/tours`,
-    schemas: sharedSchema(home.agency),
-    body: `${home.headers.tours}<main><h1>Zanzibar Tours & Activities</h1><p>Explore available Zanzibar experiences.</p><ul>${details.map((tour) => `<li><a href="/tours/${escapeHtml(tour.slug)}">${escapeHtml(tour.title)}</a></li>`).join("")}</ul></main>`
-  }));
+  await writePage(template, "/tours", metadata(home.tours
+    ? {
+        title: home.tours.title,
+        description: home.tours.description,
+        canonical: `${siteUrl}/tours`,
+        schemas: [...sharedSchema(home.agency), home.tours.list],
+        body: home.tours.html,
+        data: `<script id="riser-prerender-tours" type="application/json">${JSON.stringify(home.tours.data).replace(/</g, "\\u003c")}</script>`
+      }
+    : {
+        title: `Zanzibar Tours & Activities | ${brandName}`,
+        description: "Compare Zanzibar tours and check live availability by date before booking.",
+        canonical: `${siteUrl}/tours`,
+        schemas: sharedSchema(home.agency),
+        body: `${home.headers.tours}<main><h1>Zanzibar Tours & Activities</h1><p>Explore available Zanzibar experiences.</p><ul>${details.map((tour) => `<li><a href="/tours/${escapeHtml(tour.slug)}">${escapeHtml(tour.title)}</a></li>`).join("")}</ul></main>`
+      }));
   for (const tour of details) {
     const canonical = `${siteUrl}/tours/${encodeURIComponent(tour.slug)}`;
     const description = truncate(tour.shortDescription || tour.description || `Explore ${tour.title} with ${brandName}.`);
