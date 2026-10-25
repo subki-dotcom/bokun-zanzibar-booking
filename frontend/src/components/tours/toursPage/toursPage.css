@@ -716,6 +716,7 @@
     margin: 0 -16px;
     padding: 0 16px 2px;
     overflow-x: auto;
+    scroll-padding-inline: 16px;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
   }
@@ -1215,5 +1216,353 @@
 
   .tl .tl-seo h2 {
     font-size: 22px;
+  }
+}
+
+/* Phones only: the Filters · Sort · date bar and the custom-tour box among the cards. */
+.tl-mbar,
+.tl-grid-custom,
+.tl-phone-inline {
+  display: none;
+}
+
+/* Bottom sheets (phones) */
+.tl-sheet-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1070;
+  font-family: "Outfit", system-ui, sans-serif;
+}
+
+.tl-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(20, 33, 31, 0.55);
+}
+
+.tl-sheet {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px 20px 0 0;
+  background: #fff;
+  color: var(--ink);
+  animation: tl-sheet-up 0.22s ease-out;
+}
+
+.tl-sheet.is-small {
+  top: auto;
+  max-height: calc(100% - 48px);
+}
+
+@keyframes tl-sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+
+.tl-sheet-grab {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  touch-action: none;
+}
+
+.tl-sheet-grab > span {
+  display: block;
+  width: 40px;
+  height: 5px;
+  margin: 10px auto 0;
+  border-radius: 3px;
+  background: var(--border-strong);
+}
+
+.tl-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px 8px 20px;
+}
+
+.tl-sheet .tl-sheet-head h2 {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+.tl-sheet-close {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.tl-sheet-close svg {
+  width: 22px;
+  height: 22px;
+}
+
+.tl-sheet-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0 20px;
+  overscroll-behavior: contain;
+}
+
+.tl-sheet-section {
+  min-width: 0;
+  margin: 0;
+  padding: 18px 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tl-sheet-section legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.tl-sheet-section:last-child {
+  border-bottom: 0;
+}
+
+.tl-sheet-chips {
+  display: flex;
+  clear: both;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tl-tiles {
+  display: grid;
+  clear: both;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tl-tile {
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tl-tile[aria-pressed="true"] {
+  border: 2px solid var(--brand);
+  background: var(--brand-tint);
+  color: var(--brand);
+  font-weight: 700;
+}
+
+/* The price slider inside the sheet uses the sidebar fieldset; no top line here. */
+.tl-sheet-price .tl-fieldset {
+  padding: 0;
+  border-top: 0;
+}
+
+.tl-sheet-price .tl-fieldset legend {
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.tl-switch {
+  display: flex;
+  clear: both;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.tl-switch input {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 28px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--border-strong);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.tl-switch input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(20, 33, 31, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.tl-switch input:checked {
+  background: var(--brand);
+}
+
+.tl-switch input:checked::after {
+  transform: translateX(18px);
+}
+
+.tl-switch input:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.tl-sheet-foot {
+  flex-shrink: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: #fff;
+}
+
+.tl-sheet-apply {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tl-sheet-apply:disabled {
+  background: var(--border-strong);
+  cursor: not-allowed;
+}
+
+.tl-sort-list {
+  margin: 0;
+  padding: 8px 0 calc(16px + env(safe-area-inset-bottom));
+  list-style: none;
+}
+
+.tl-sort-list button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tl-sort-list button[aria-checked="true"] {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.tl-sort-list svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 767.98px) {
+  .tl-phone-inline {
+    display: inline;
+  }
+
+  .tl-mbar {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .tl-mbar .tl-tool-btn {
+    height: 44px;
+    padding: 0 14px;
+    font-size: 15px;
+  }
+
+  .tl-mbar-filters {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .tl-mbar-sort {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tl-mbar-sort svg {
+    color: var(--ink);
+  }
+
+  .tl-mbar-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--brand);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .tl-grid-custom {
+    display: block;
+  }
+
+  .tl-grid-custom .tl-custom {
+    margin-top: 0;
+  }
+
+  .tl-chips {
+    margin-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-sheet,
+  .tl-switch input,
+  .tl-switch input::after {
+    animation: none;
+    transition: none;
   }
 }

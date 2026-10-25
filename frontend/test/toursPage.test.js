@@ -65,3 +65,16 @@ test("no results: clear filters and WhatsApp", () => {
   assert.match(html, /Clear filters/);
   assert.match(html, /wa\.me/);
 });
+
+test("phones: Filters shows how many are on; Sort says the order in short", async () => {
+  const mobile = await server.ssrLoadModule("/src/components/tours/toursPage/ToursMobile.jsx");
+  const html = render(React.createElement(mobile.MobileFilterBar, {
+    filters: { ...filters, duration: ["half-day"], good: ["lunch"], sort: "price_desc" },
+    onFilters: () => {},
+    onSort: () => {},
+    onDate: () => {}
+  }));
+  assert.match(html, /aria-label="2 on">2</);
+  assert.match(html, /Sort: Highest price/);
+  assert.match(html, /aria-label="Choose a date"/);
+});

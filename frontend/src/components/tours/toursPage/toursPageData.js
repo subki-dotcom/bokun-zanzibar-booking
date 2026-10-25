@@ -89,3 +89,7 @@ export const activeFilterCount = (filters) =>
 export const resultsKey = (filters) => JSON.stringify({ ...filters, page: undefined });
 
 export const sortLabel = (key) => SORT_OPTIONS.find((option) => option.key === key)?.label || "Recommended";
+
+// The phone "Sort: …" button has little room.
+const SHORT_SORTS = { recommended: "Recommended", price_asc: "Lowest price", price_desc: "Highest price", duration_asc: "Shortest", duration_desc: "Longest", title_asc: "A–Z" };
+export const shortSortLabel = (key) => SHORT_SORTS[key] || "Recommended";

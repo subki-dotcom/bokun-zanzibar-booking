@@ -131,16 +131,26 @@ export const ToursToolbar = ({ filters, update }) => {
   );
 };
 
+// Phones use shorter names: "Cultural", "Safaris", "Private".
+const PHONE_LABELS = { "Cultural tours": "Cultural", "Safari trips": "Safaris", "Private tours": "Private" };
+
 // All · Sea tours · Cultural tours…, with their counts (styles without tours are left out).
-export const CategoryChips = ({ facets, active, onChange, short = false }) => {
+export const CategoryChips = ({ facets, active, onChange }) => {
   if (!facets) return <div className="tl-chips tl-chips-loading" aria-hidden="true" />;
   const chips = [{ key: "", label: "All", count: facets.total }, ...facets.categories];
-  const shortLabel = (label) => (short ? label.replace(" tours", "").replace("Safari trips", "Safaris") : label);
   return (
     <div className="tl-chips" role="group" aria-label="Category">
       {chips.map((chip) => (
         <button key={chip.key || "all"} type="button" className="tl-chip" aria-pressed={active === chip.key} onClick={() => onChange(chip.key)}>
-          {shortLabel(chip.label)} <span className="tl-chip-count">{chip.count}</span>
+          {PHONE_LABELS[chip.label] ? (
+            <>
+              <span className="tl-hide-phone">{chip.label}</span>
+              <span className="tl-phone-inline">{PHONE_LABELS[chip.label]}</span>
+            </>
+          ) : (
+            chip.label
+          )}{" "}
+          <span className={chip.key ? "tl-chip-count tl-hide-phone" : "tl-chip-count"}>{chip.count}</span>
         </button>
       ))}
     </div>
