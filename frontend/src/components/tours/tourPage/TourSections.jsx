@@ -5,6 +5,7 @@ import { fetchTours } from "../../../api/toursApi";
 import { formatCurrency } from "../../../utils/formatters";
 import { durationTag } from "../single/tourDisplayText";
 import { Stars } from "./TourIntro";
+import { trackSelectItem } from "../../../utils/analytics";
 
 const FACT_ICONS = { clock: LuClock, check: LuCheck, bus: LuBus, shield: LuShieldCheck, message: LuMessageSquare, users: LuUsers };
 
@@ -342,7 +343,7 @@ export const RelatedTours = ({ tour = {} }) => {
           const image = Array.isArray(row.images) ? (typeof row.images[0] === "string" ? row.images[0] : row.images[0]?.url) : "";
           const tag = durationTag(row.duration, row.experienceType);
           return (
-            <Link key={row.slug} to={`/tours/${row.slug}`} className="tp-related-card">
+            <Link key={row.slug} to={`/tours/${row.slug}`} onClick={() => trackSelectItem(row)} className="tp-related-card">
               <span className="tp-related-image">{image ? <img src={image} alt="" loading="lazy" decoding="async" /> : null}</span>
               <strong>{String(row.title || "").trim()}</strong>
               <small>{[row.duration, tag].filter(Boolean).join(" · ")}</small>

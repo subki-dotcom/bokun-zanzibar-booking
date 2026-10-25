@@ -3,6 +3,7 @@ import { Badge, Button, Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { BsClock, BsGeoAlt, BsStar, BsStarFill } from "react-icons/bs";
 import TourMetaRow from "./TourMetaRow";
+import { trackSelectItem } from "../../../utils/analytics";
 import {
   formatListingDuration,
   formatListingPrice,
@@ -95,7 +96,7 @@ const TourCard = ({ tour = {} }) => {
           </div>
         </div>
 
-        <Button as={Link} to={detailPath} className="listing-tour-cta text-white w-100">
+        <Button as={Link} to={detailPath} onClick={() => trackSelectItem(tour)} className="listing-tour-cta text-white w-100">
           View Details
         </Button>
       </Card.Body>

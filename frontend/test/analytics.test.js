@@ -16,6 +16,40 @@ function setup(extra = {}) {
   return { api, w, scripts, events, store, config };
 }
 const sent = (events, name) => events.filter(e => e[0] === 'event' && e[1] === name);
+test('confirmed booking permits a consented purchase without exposing its URL reference', async () => {
+  const s = setup();
+  s.w.location.pathname = '/booking/confirmed/PRIVATE-REFERENCE';
+  s.w.location.search = '?token=PRIVATE-TOKEN';
+  assert.equal(await s.api.purchase(receipt), false);
+  s.api.consent(granted);
+  assert.equal(s.api.page('confirmed'), true);
+  assert.equal(await s.api.purchase(receipt), true);
+  assert.equal(await s.api.purchase(receipt), false);
+  assert.equal(sent(s.events, 'purchase').length, 1);
+  assert.equal(sent(s.events, 'purchase')[0][2].page_path, '/booking/confirmed');
+  assert.doesNotMatch(JSON.stringify(s.events), /PRIVATE-REFERENCE|PRIVATE-TOKEN/);
+});
+test('public informational pages record visits and contact clicks', () => {
+  const s = setup(); s.api.consent(granted);
+  for (const path of ['/about', '/contact', '/faq', '/cancellation-policy']) {
+    s.w.location.pathname = path;
+    assert.equal(s.api.page(path), true);
+    assert.equal(sent(s.events, 'page_view').at(-1)[2].page_path, path);
+  }
+  assert.equal(s.api.event('phone_click', { link_location: 'public_site' }), true);
+  for (const path of ['/admin', '/agent', '/invoice/PRIVATE', '/unknown']) assert.equal(safePath(path), null);
+});
+test('payment types retain supported providers and discard arbitrary input', () => {
+  const s = setup(); s.api.consent(granted);
+  for (const payment_type of ['pesapal', 'paypal', 'dpo']) {
+    s.api.event('add_payment_info', { ...receipt, payment_type });
+    assert.equal(sent(s.events, 'add_payment_info').at(-1)[2].payment_type, payment_type);
+  }
+  s.api.event('add_payment_info', { ...receipt, payment_type: 'private@example.com' });
+  assert.equal(sent(s.events, 'add_payment_info').at(-1)[2].payment_type, undefined);
+  s.api.consent({});
+  assert.equal(s.api.event('add_payment_info', { ...receipt, payment_type: 'paypal' }), false);
+});
 test('public navigation resumes Google collection after tracker cleanup', async () => {
   const { api, w, config, events, scripts, store } = setup();
   const disabled = `ga-disable-${config.measurementId}`;

@@ -8,7 +8,7 @@ import { BRAND } from "../../config/brand";
 import useMediaQuery from "../../hooks/useMediaQuery";
 import { fetchBookingPaymentStatus } from "../../api/paymentsApi";
 import { fetchTours } from "../../api/toursApi";
-import { initializeAnalytics, trackPurchase } from "../../utils/analytics";
+import { initializeAnalytics, trackPurchase, trackSelectItem } from "../../utils/analytics";
 import { formatDeadline, formatMoney, formatTripDate, travellersText } from "../../components/checkout/checkoutData";
 import ReferenceBox from "../../components/payment/ReferenceBox";
 import SiteHeader from "../../components/common/siteHeader/SiteHeader";
@@ -87,7 +87,7 @@ const RelatedTours = ({ slug }) => {
         {related.map((row) => {
           const image = Array.isArray(row.images) ? (typeof row.images[0] === "string" ? row.images[0] : row.images[0]?.url) : "";
           return (
-            <Link key={row.slug} to={`/tours/${row.slug}`} className="bc-related-card">
+            <Link key={row.slug} to={`/tours/${row.slug}`} onClick={() => trackSelectItem(row)} className="bc-related-card">
               <span className="bc-related-image">{image ? <img src={image} alt="" loading="lazy" /> : null}</span>
               <span className="bc-related-text">
                 <strong>{row.title}</strong>

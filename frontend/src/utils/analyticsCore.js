@@ -8,10 +8,11 @@ const text = (v) => typeof v === 'string' || typeof v === 'number' ? String(v).s
 const money = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 export const safePath = (path = '/') => {
   if (/^\/(admin|agent|login|forgot-password|reset-password|invoice)(\/|$|-)/.test(path)) return null;
+  if (/^\/booking\/confirmed(\/|$)/.test(path)) return '/booking/confirmed';
   if (/^\/(my-booking|booking-confirmation|payment-status)(\/|$)/.test(path)) return `/${path.split('/')[1]}`;
   if (path.startsWith('/payment/checkout/')) return '/payment/checkout';
   if (/^\/payment-(success|failure|processing)$/.test(path)) return path;
-  if (['/', '/tours', '/privacy', '/terms'].includes(path) || /^\/(tours|booking)\/[a-z0-9-]+$/.test(path)) return path;
+  if (['/', '/tours', '/privacy', '/terms', '/about', '/contact', '/faq', '/cancellation-policy'].includes(path) || /^\/(tours|booking)\/[a-z0-9-]+$/.test(path)) return path;
   return null;
 };
 export const cleanEcommerce = (input = {}) => {
@@ -110,6 +111,9 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
     if (!initialize()) return false;
     if (!EVENTS.has(name) || (onceKey && state.seen.has(onceKey))) return false;
     const payload = cleanEcommerce(input);
+    if (name === 'add_payment_info' && ['pesapal', 'paypal', 'dpo'].includes(input.payment_type)) {
+      payload.payment_type = input.payment_type;
+    }
     for (const [key, allowed] of Object.entries({ failure_stage: ['payment_initiation', 'payment_verification', 'supplier_confirmation'],
       provider: ['pesapal', 'paypal', 'dpo'], error_category: ['request_failed', 'payment_failed', 'supplier_failed'], link_location: ['public_site'] })) {
       if (allowed.includes(input[key])) payload[key] = input[key];
