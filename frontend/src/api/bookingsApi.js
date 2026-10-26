@@ -20,8 +20,9 @@ export const createBooking = async (payload) => {
   return response.data.data;
 };
 
-export const fetchBookingByReference = async (reference) => {
-  const response = await axiosClient.get(`/bookings/${reference}`);
+// Needs the payment link key (or a staff login); without it the server answers "not found".
+export const fetchBookingByReference = async (reference, { key = "" } = {}) => {
+  const response = await axiosClient.get(`/bookings/${encodeURIComponent(reference)}`, { params: key ? { key } : {} });
   return response.data.data;
 };
 

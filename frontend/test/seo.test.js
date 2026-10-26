@@ -14,7 +14,9 @@ after(async () => { await server?.close(); });
 
 test("addresses without their own page get the plain app page, not the home page", () => {
   const vercel = JSON.parse(fs.readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
-  assert.deepEqual(vercel.rewrites, [{ source: "/(.*)", destination: "/app.html" }]);
+  // The catch-all comes last; before it only the "My booking" API is forwarded to the backend (first-party cookie).
+  assert.deepEqual(vercel.rewrites.at(-1), { source: "/(.*)", destination: "/app.html" });
+  assert.deepEqual(vercel.rewrites.slice(0, -1).map((rule) => rule.source), ["/api/my-booking/:path*"]);
   const prerender = fs.readFileSync(new URL("../scripts/prerender-public-pages.mjs", import.meta.url), "utf8");
   assert.match(prerender, /writeFile\(path\.join\(dist, "app\.html"\), template\)/);
 });

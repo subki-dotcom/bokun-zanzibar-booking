@@ -37,6 +37,8 @@ const PaymentStatusPage = () => {
   const orderTrackingId = String(
     searchParams.get("OrderTrackingId") || searchParams.get("orderTrackingId") || ""
   ).trim();
+  // The provider order id is accepted as the booking key.
+  const keyParam = orderTrackingId ? `?key=${encodeURIComponent(orderTrackingId)}` : "";
   const orderMerchantReference = String(
     searchParams.get("OrderMerchantReference") || searchParams.get("orderMerchantReference") || ""
   ).trim();
@@ -178,10 +180,10 @@ const PaymentStatusPage = () => {
               ) : null}
 
               <div className="payment-status-actions">
-                <Button as={Link} to={`/my-booking/${booking.bookingReference}`} className="premium-btn text-white">
+                <Button as={Link} to={`/my-booking/${booking.bookingReference}${keyParam}`} className="premium-btn text-white">
                   View Booking
                 </Button>
-                <Button as={Link} to={`/invoice/${booking.bookingReference}`} variant="outline-secondary">
+                <Button as={Link} to={`/invoice/${booking.bookingReference}${keyParam}`} variant="outline-secondary">
                   <BsFileEarmarkText /> Invoice
                 </Button>
                 {!state.isConfirmed ? (
@@ -190,7 +192,7 @@ const PaymentStatusPage = () => {
                   </Button>
                 ) : null}
                 {canRetryPayment ? (
-                  <Button as={Link} to={`/payment/checkout/${booking.bookingReference}`} className="premium-btn text-white">
+                  <Button as={Link} to={`/payment/checkout/${booking.bookingReference}${keyParam}`} className="premium-btn text-white">
                     Retry Payment
                   </Button>
                 ) : null}

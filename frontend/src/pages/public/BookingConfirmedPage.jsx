@@ -228,7 +228,8 @@ const BookingConfirmedPage = () => {
               <LuCheck aria-hidden="true" />
               <span>
                 <strong>Free cancellation</strong> until {formatDeadline(deadline)} ·{" "}
-                <Link to={`/my-booking/${encodeURIComponent(data.bookingReference)}`}>Manage or cancel</Link>
+                {/* The payment key signs the guest in to "My booking" on this device. */}
+                <Link to={`/my-booking/${encodeURIComponent(data.bookingReference)}?key=${encodeURIComponent(data.key || key)}`}>Manage or cancel</Link>
               </span>
             </p>
           ) : null}

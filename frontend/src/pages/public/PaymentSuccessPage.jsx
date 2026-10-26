@@ -168,16 +168,19 @@ const PaymentSuccessPage = () => {
     orderMerchantReference
   });
   const bookingReference = booking?.bookingReference || result?.bookingReference || pesapalState.bookingReference || "";
+  // The provider order id is accepted as the booking key (it also signs the guest in to "My booking").
+  const providerOrderId = orderTrackingId || transactionToken || paypalOrderId;
+  const providerKeyParam = providerOrderId ? `?key=${encodeURIComponent(providerOrderId)}` : "";
   const bookingPath = bookingReference
     ? isAgentBooking
       ? `/agent/bookings/${bookingReference}`
-      : `/my-booking/${bookingReference}`
+      : `/my-booking/${bookingReference}${providerKeyParam}`
     : "";
   const paymentStatusPath =
     bookingReference && paymentStatusQuery
       ? `/payment-status/${bookingReference}?${paymentStatusQuery}`
       : "";
-  const retryPaymentPath = bookingReference ? `/payment/checkout/${bookingReference}` : "";
+  const retryPaymentPath = bookingReference ? `/payment/checkout/${bookingReference}${providerKeyParam}` : "";
   const supportHref = `mailto:${BRAND.email}?subject=${encodeURIComponent(`Payment support ${bookingReference || ""}`)}`;
   const canRetry = presentation.isFailed || presentation.isCancelled;
   const canCheckAgain = presentation.publicStatus === "PENDING" || presentation.publicStatus === "PAID";

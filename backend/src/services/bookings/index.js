@@ -1405,11 +1405,8 @@ const mapPriceCatalogSnapshot = ({ selectedPriceCatalog = null, liveQuote = null
         title: liveQuote?.selectedPriceCatalog?.title || "Default"
       };
 
-const buildBookingReference = () => {
-  const timestamp = Date.now();
-  const nonce = Math.floor(Math.random() * 8999) + 1000;
-  return `ZNZ-${timestamp}-${nonce}`;
-};
+// Random and not guessable ("ZNZ-7F3K9Q2M"); older timestamp references keep working.
+const buildBookingReference = () => require("../myBooking/core").buildBookingReference();
 
 const resolveRequiredBokunAnswers = async ({ payload, liveQuote, requestId }) => {
   const startTimeId = resolveLiveStartTimeId({

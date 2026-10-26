@@ -29,3 +29,7 @@ const resolveApiBaseUrl = () => {
 };
 
 export const API_BASE_URL = resolveApiBaseUrl();
+
+// "My booking" runs on the site's own address (/api, forwarded to the backend by the host) so its session cookie
+// is first-party, httpOnly and SameSite=Lax. Local development forwards /api through the Vite server.
+export const MY_BOOKING_API_BASE_URL = String(import.meta.env.VITE_MY_BOOKING_API_BASE_URL || "/api").replace(/\/+$/, "");

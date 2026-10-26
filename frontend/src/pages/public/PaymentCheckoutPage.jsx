@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Container } from "react-bootstrap";
 import { BsCreditCard, BsLock, BsShieldCheck } from "react-icons/bs";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { fetchBookingByReference } from "../../api/bookingsApi";
 import { createDpoPayment, createPaypalPayment, createPesapalPayment } from "../../api/paymentsApi";
 import PaymentMethodSelector from "../../components/booking/PaymentMethodSelector";
@@ -15,6 +15,7 @@ import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 
 const PaymentCheckoutPage = () => {
   const { reference } = useParams();
+  const key = String(useSearchParams()[0].get("key") || "").trim();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -31,7 +32,7 @@ const PaymentCheckoutPage = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchBookingByReference(reference);
+        const data = await fetchBookingByReference(reference, { key });
         setBooking(data);
       } catch (err) {
         setError(err.message || "Could not load payment checkout");
@@ -41,7 +42,7 @@ const PaymentCheckoutPage = () => {
     };
 
     load();
-  }, [reference]);
+  }, [reference, key]);
 
   useEffect(() => {
     if (

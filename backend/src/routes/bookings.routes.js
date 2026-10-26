@@ -17,6 +17,11 @@ const {
 } = require("../validators/bookings.validation");
 const bookingRequestsController = require("../controllers/bookingRequests.controller");
 const bookingRequestSchemas = require("../validators/bookingRequests.validation");
+const { loadSession, requireSession, requireSessionFor, requireCsrf } = require("../middleware/myBookingSession");
+const { requireBookingAccess } = require("../middleware/bookingAccess");
+
+// Guest change requests: only with a "My booking" session for this same booking (the email alone is not enough).
+const ownBooking = (param) => [loadSession, requireSession, requireSessionFor(param)];
 
 const router = express.Router();
 
@@ -30,9 +35,9 @@ const optionalAuth = (req, res, next) => {
 
 router.post("/quote", optionalAuth, validateRequest(quoteSchema), bookingController.quote);
 router.post("/create", optionalAuth, validateRequest(createBookingSchema), bookingController.create);
-router.post("/:bookingId/requests", bookingRequestWriteLimiter, validateRequest(bookingRequestSchemas.submitBookingRequestSchema), bookingRequestsController.submit);
-router.get("/:bookingId/cancellation-estimate", validateRequest(bookingRequestSchemas.cancellationEstimateSchema), bookingRequestsController.cancellationEstimate);
-router.get("/:id/requests", validateRequest(bookingRequestSchemas.customerRequestQuerySchema), bookingRequestsController.listCustomer);
+router.post("/:bookingId/requests", ownBooking("bookingId"), requireCsrf, bookingRequestWriteLimiter, validateRequest(bookingRequestSchemas.submitBookingRequestSchema), bookingRequestsController.submit);
+router.get("/:bookingId/cancellation-estimate", ownBooking("bookingId"), validateRequest(bookingRequestSchemas.cancellationEstimateSchema), bookingRequestsController.cancellationEstimate);
+router.get("/:id/requests", ownBooking("id"), validateRequest(bookingRequestSchemas.customerRequestQuerySchema), bookingRequestsController.listCustomer);
 router.get(
   "/recent",
   authenticate,
@@ -69,7 +74,7 @@ router.post(
 // Customer payment pages (any browser, with the payment link's key).
 router.get("/:reference/payment-status", validateRequest(paymentStatusSchema), paymentRecoveryController.status);
 router.post("/:reference/payment-session", paymentSessionLimiter, validateRequest(paymentSessionSchema), paymentRecoveryController.session);
-router.get("/:reference", bookingController.getByReference);
+router.get("/:reference", loadSession, requireBookingAccess("reference"), bookingController.getByReference);
 router.post(
   "/:id/cancel",
   authenticate,

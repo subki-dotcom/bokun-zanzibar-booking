@@ -2,6 +2,8 @@ const express = require("express");
 const invoicesController = require("../controllers/invoices.controller");
 const { authenticate } = require("../middleware/auth");
 const { authorize } = require("../middleware/rbac");
+const { loadSession } = require("../middleware/myBookingSession");
+const { requireBookingAccess } = require("../middleware/bookingAccess");
 
 const router = express.Router();
 

@@ -18,8 +18,8 @@ const formatMoney = (amount = 0, currency = "USD") => {
   }
 };
 
-const bookingUrl = (booking = {}) =>
-  `${String(env.FRONTEND_URL || "").replace(/\/$/, "")}/my-booking/${encodeURIComponent(booking.bookingReference || "")}`;
+// Without a fresh sign-in link, emails point to the "Find your booking" form (never to booking data).
+const bookingUrl = (booking = {}) => require("../myBooking/links").lookupUrl(booking.bookingReference || "");
 
 const buildEmailShell = ({ heading, body, ctaLabel = "View booking", ctaUrl = "" }) => `
   <div style="background:#f5f7fa;padding:32px 16px;font-family:Arial,sans-serif;color:#0f172a">
@@ -32,14 +32,13 @@ const buildEmailShell = ({ heading, body, ctaLabel = "View booking", ctaUrl = ""
     </div>
   </div>`;
 
-const buildBookingEmail = (booking = {}, templateKey = "booking_confirmed") => {
+const buildBookingEmail = (booking = {}, templateKey = "booking_confirmed", url = bookingUrl(booking)) => {
   const name = escapeHtml(`${booking.customer?.firstName || ""} ${booking.customer?.lastName || ""}`.trim() || "Traveler");
   const product = escapeHtml(booking.productTitle || "your Zanzibar experience");
   const option = escapeHtml(booking.optionTitle || "");
   const dateTime = [booking.travelDate, booking.startTime].filter(Boolean).map(escapeHtml).join(" at ");
   const reference = escapeHtml(booking.bookingReference || "");
   const amount = formatMoney(booking.amount || booking.pricingSnapshot?.finalPayable || 0, booking.currency || "USD");
-  const url = bookingUrl(booking);
 
   const base = `<p>Hello ${name},</p><p><strong>${product}</strong>${option ? ` &middot; ${option}` : ""}<br>${dateTime || "Travel details are being prepared."}<br>Booking reference: <strong>${reference}</strong></p>`;
   const templates = {
@@ -78,7 +77,7 @@ const buildBookingEmail = (booking = {}, templateKey = "booking_confirmed") => {
   return { subject: template.subject, html: buildEmailShell({ heading: template.heading, body: template.body, ctaLabel: template.ctaLabel, ctaUrl: url }) };
 };
 
-const buildBookingRequestEmail = (booking = {}, request = {}, templateKey = "request_received") => {
+const buildBookingRequestEmail = (booking = {}, request = {}, templateKey = "request_received", url = bookingUrl(booking)) => {
   const name = escapeHtml(`${booking.customer?.firstName || ""} ${booking.customer?.lastName || ""}`.trim() || "Traveler");
   const bookingReference = escapeHtml(booking.bookingReference || "");
   const requestReference = escapeHtml(request.requestReference || "");
@@ -112,7 +111,7 @@ const buildBookingRequestEmail = (booking = {}, request = {}, templateKey = "req
   const template = templates[templateKey] || templates.request_received;
   return {
     subject: template.subject,
-    html: buildEmailShell({ heading: template.heading, body: template.body, ctaLabel: "View booking", ctaUrl: bookingUrl(booking) })
+    html: buildEmailShell({ heading: template.heading, body: template.body, ctaLabel: "View booking", ctaUrl: url })
   };
 };
 
@@ -161,10 +160,10 @@ const sendEmailOnce = async ({ booking, templateKey, message, requestId = "" }) 
     }
   }
 
-  delivery.subject = message.subject;
   delivery.lastAttemptAt = new Date();
 
   if (!isEmailConfigured) {
+    delivery.subject = message(bookingUrl(booking)).subject;
     delivery.status = "skipped";
     delivery.error = "Email delivery is not configured";
     await delivery.save();
@@ -177,7 +176,10 @@ const sendEmailOnce = async ({ booking, templateKey, message, requestId = "" }) 
   await delivery.save();
 
   try {
-    const providerResponse = await sendWithResend({ to: recipient, subject: message.subject, html: message.html });
+    // Each email carries its own fresh sign-in link, so the guest lands signed in to this booking.
+    const built = message(await require("../myBooking/links").emailAccessUrl(booking));
+    delivery.subject = built.subject;
+    const providerResponse = await sendWithResend({ to: recipient, subject: built.subject, html: built.html });
     delivery.status = "sent";
     delivery.providerMessageId = String(providerResponse.id || "");
     delivery.sentAt = new Date();
@@ -199,13 +201,13 @@ const sendEmailOnce = async ({ booking, templateKey, message, requestId = "" }) 
 };
 
 const sendBookingEmailOnce = ({ booking, templateKey, requestId = "" }) =>
-  sendEmailOnce({ booking, templateKey, message: buildBookingEmail(booking, templateKey), requestId });
+  sendEmailOnce({ booking, templateKey, message: (url) => buildBookingEmail(booking, templateKey, url), requestId });
 
 const sendBookingRequestEmailOnce = ({ booking, request, templateKey, requestId = "" }) =>
   sendEmailOnce({
     booking,
     templateKey: `booking_request_${request?.requestReference || request?._id || "unknown"}_${templateKey}`,
-    message: buildBookingRequestEmail(booking, request, templateKey),
+    message: (url) => buildBookingRequestEmail(booking, request, templateKey, url),
     requestId
   });
 
@@ -237,4 +239,40 @@ const sendContactMessage = async ({ name, email, phone = "", travelDate = "", me
   }
 };
 
-module.exports = { sendBookingEmailOnce, sendBookingRequestEmailOnce, sendContactMessage };
+// "My booking" emails that are sent every time they are asked for (no once-per-booking record). Without an email
+// provider outside production the link is written to the server log so the flow can be tested locally.
+const sendMyBookingEmail = async ({ to, subject, heading, body, ctaLabel = "", ctaUrl = "", devLog = "" }) => {
+  if (!isEmailConfigured) {
+    if (env.NODE_ENV !== "production" && devLog) logger.info(`[dev] My booking email not sent (no provider): ${devLog}`);
+    return { sent: false, reason: "email_not_configured" };
+  }
+  try {
+    await sendWithResend({ to, subject, html: buildEmailShell({ heading, body, ctaLabel, ctaUrl }) });
+    return { sent: true };
+  } catch (error) {
+    logger.warn("My booking email failed", toSafeEmailProviderError(error));
+    return { sent: false, reason: "provider_error" };
+  }
+};
+
+const sendMyBookingLinkEmail = ({ booking, url, minutes }) =>
+  sendMyBookingEmail({
+    to: booking.customer.email,
+    subject: `Your secure link to booking ${booking.bookingReference}`,
+    heading: "Open your booking",
+    body: `<p>Hello ${escapeHtml(booking.customer?.firstName || "Traveler")},</p><p>Use the button below to open booking <strong>${escapeHtml(booking.bookingReference)}</strong>. The link works once and expires in ${Number(minutes)} minutes.</p><p>If you did not ask for this link, you can ignore this email – nobody can open your booking without it.</p>`,
+    ctaLabel: "Open my booking",
+    ctaUrl: url,
+    devLog: `${booking.bookingReference} → ${url}`
+  });
+
+const sendMyBookingCodeEmail = ({ booking, code, minutes }) =>
+  sendMyBookingEmail({
+    to: booking.customer.email,
+    subject: `Your code: ${code}`,
+    heading: "Your verification code",
+    body: `<p>Enter this code to see the full traveler details of booking <strong>${escapeHtml(booking.bookingReference)}</strong>:</p><p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:12px 0">${escapeHtml(code)}</p><p>It expires in ${Number(minutes)} minutes. If you did not ask for it, you can ignore this email.</p>`,
+    devLog: `${booking.bookingReference} code ${code}`
+  });
+
+module.exports = { sendBookingEmailOnce, sendBookingRequestEmailOnce, sendContactMessage, sendMyBookingLinkEmail, sendMyBookingCodeEmail };

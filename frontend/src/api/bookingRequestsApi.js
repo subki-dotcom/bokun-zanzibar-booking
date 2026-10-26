@@ -1,37 +1,6 @@
 import axiosClient from "./axiosClient";
 
-const emailQuery = (customerEmail) => `customerEmail=${encodeURIComponent(String(customerEmail || "").trim())}`;
-
-export const submitBookingRequest = async (bookingId, payload) => {
-  const response = await axiosClient.post(`/bookings/${bookingId}/requests`, payload);
-  return response.data.data;
-};
-
-export const fetchCustomerBookingRequests = async (bookingId, customerEmail) => {
-  const response = await axiosClient.get(`/bookings/${bookingId}/requests?${emailQuery(customerEmail)}`);
-  return response.data.data;
-};
-
-export const fetchCancellationEstimate = async (bookingId, customerEmail) => {
-  const response = await axiosClient.get(`/bookings/${bookingId}/cancellation-estimate?${emailQuery(customerEmail)}`);
-  return response.data.data;
-};
-
-export const fetchCustomerBookingRequest = async (requestId, customerEmail) => {
-  const response = await axiosClient.get(`/booking-requests/${requestId}?${emailQuery(customerEmail)}`);
-  return response.data.data;
-};
-
-export const respondToBookingRequest = async (requestId, payload) => {
-  const response = await axiosClient.post(`/booking-requests/${requestId}/customer-response`, payload);
-  return response.data.data;
-};
-
-export const cancelCustomerBookingRequest = async (requestId, customerEmail) => {
-  const response = await axiosClient.post(`/booking-requests/${requestId}/cancel`, { customerEmail });
-  return response.data.data;
-};
-
+// Guest requests go through "My booking" (api/myBookingApi.js); these are the staff actions.
 export const fetchAdminBookingRequests = async (filters = {}) => {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
