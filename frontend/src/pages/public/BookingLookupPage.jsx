@@ -8,10 +8,11 @@ import { whatsappLink } from "../../config/site";
 import "../../components/myBooking/myBooking.css";
 
 const RESEND_SECONDS = 60;
+const CAPTCHA_FAILED = "The security check couldn't load. Please reload the page – if it keeps happening, ask us on WhatsApp.";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // After the form: the same message whether or not the details matched.
-export const MagicLinkSent = ({ email, onResend, onChangeEmail, resending, error }) => {
+export const MagicLinkSent = ({ email, onResend, onChangeEmail, resending, error, check = null }) => {
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
   const heading = useRef(null);
   useEffect(() => heading.current?.focus(), []);
@@ -30,6 +31,8 @@ export const MagicLinkSent = ({ email, onResend, onChangeEmail, resending, error
       <p>
         If the details match, we&apos;ve sent a link to <strong>{email}</strong>. It works once and expires in 30 minutes.
       </p>
+      {/* The bot check again: each link request needs a fresh token. */}
+      {check}
       {error ? <p className="mb-alert" role="alert">{error}</p> : null}
       <div className="mb-sent-actions">
         <button
@@ -63,13 +66,14 @@ const BookingLookupPage = () => {
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaReset, setCaptchaReset] = useState(0);
+  const [captchaError, setCaptchaError] = useState("");
   const expired = params.get("expired") === "1";
   const wanted = String(params.get("ref") || "").toUpperCase();
 
   const send = async () => {
     setFormError("");
     if (turnstileEnabled && !captchaToken) {
-      setFormError("Please complete the security check.");
+      setFormError(captchaError ? CAPTCHA_FAILED : "Please wait a moment for the security check to finish, then try again.");
       return false;
     }
     setSubmitting(true);
@@ -103,6 +107,17 @@ const BookingLookupPage = () => {
     return <Navigate to={`/my-booking/${encodeURIComponent(session.reference)}`} replace />;
   }
 
+  const check = (
+    <Turnstile
+      onToken={setCaptchaToken}
+      onError={(code) => {
+        setCaptchaError(code);
+        if (code) setFormError(CAPTCHA_FAILED);
+      }}
+      resetSignal={captchaReset}
+    />
+  );
+
   const helpHref = whatsappLink("Hi, I've lost my booking reference. My name and travel date are: ");
 
   return (
@@ -124,6 +139,7 @@ const BookingLookupPage = () => {
             <MagicLinkSent
               email={email.trim()}
               resending={submitting}
+              check={check}
               error={formError}
               onResend={send}
               onChangeEmail={() => {
@@ -169,7 +185,7 @@ const BookingLookupPage = () => {
                 />
                 {errors.email ? <p className="mb-field-error" id="mb-email-error">{errors.email}</p> : null}
               </div>
-              <Turnstile onToken={setCaptchaToken} resetSignal={captchaReset} />
+              {check}
               {formError ? <p className="mb-alert" role="alert">{formError}</p> : null}
               <button type="submit" className="mb-btn mb-btn-primary mb-btn-block mb-submit" disabled={submitting}>
                 {submitting ? "Sending…" : "Send me a secure link"}
