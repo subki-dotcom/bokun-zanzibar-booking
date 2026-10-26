@@ -12,19 +12,25 @@ import LegalPage from "../pages/public/LegalPage";
 import ContactPage from "../pages/public/ContactPage";
 import NotFoundPage from "../pages/public/NotFoundPage";
 
+const LegacyConfirmationRedirect = () => {
+  const { reference = "" } = useParams();
+  return <Navigate to={`/my-booking/${encodeURIComponent(reference)}`} replace />;
+};
+
 // Staff, agent and checkout pages load when opened, so the public pages stay small.
 const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
 const AdminLayout = lazy(() => import("../layouts/admin/AdminLayout"));
 const BookingFlowPage = lazy(() => import("../pages/public/BookingFlowPage"));
 const CheckoutPage = lazy(() => import("../pages/public/CheckoutPage"));
-const BookingConfirmationPage = lazy(() => import("../pages/public/BookingConfirmationPage"));
 const PaymentSuccessPage = lazy(() => import("../pages/public/PaymentSuccessPage"));
 const PaymentFailurePage = lazy(() => import("../pages/public/PaymentFailurePage"));
 const PaymentStatusPage = lazy(() => import("../pages/public/PaymentStatusPage"));
 const PaymentCheckoutPage = lazy(() => import("../pages/public/PaymentCheckoutPage"));
 const PaymentFlowPage = lazy(() => import("../pages/public/PaymentFlowPage"));
 const BookingConfirmedPage = lazy(() => import("../pages/public/BookingConfirmedPage"));
-const MyBookingPage = lazy(() => import("../pages/public/MyBookingPage"));
+const BookingLookupPage = lazy(() => import("../pages/public/BookingLookupPage"));
+const MyBookingOpenPage = lazy(() => import("../pages/public/MyBookingOpenPage"));
+const BookingDashboardPage = lazy(() => import("../pages/public/BookingDashboardPage"));
 const InvoiceDetailsPage = lazy(() => import("../pages/public/InvoiceDetailsPage"));
 const AdminInvoicesPage = lazy(() => import("../pages/admin/AdminInvoicesPage"));
 const LoginPage = lazy(() => import("../pages/public/LoginPage"));
@@ -108,14 +114,16 @@ const AppRoutes = () => {
         <Route path="/tours/:slug" element={<TourDetailsPage />} />
         <Route path="/booking/confirmed/:reference" element={<BookingConfirmedPage />} />
         <Route path="/booking/:slug" element={<CheckoutPage />} />
-        <Route path="/booking-confirmation/:reference" element={<BookingConfirmationPage />} />
+        {/* The old confirmation page read an open endpoint; it now goes to the signed-in booking page. */}
+        <Route path="/booking-confirmation/:reference" element={<LegacyConfirmationRedirect />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/payment-failure" element={<PaymentFailurePage />} />
         <Route path="/payment-processing" element={<PaymentFlowPage />} />
         <Route path="/payment/checkout/:reference" element={<PaymentCheckoutPage />} />
         <Route path="/payment-status/:reference" element={<PaymentStatusPage />} />
-        <Route path="/my-booking" element={<MyBookingPage />} />
-        <Route path="/my-booking/:reference" element={<MyBookingPage />} />
+        <Route path="/my-booking" element={<BookingLookupPage />} />
+        <Route path="/my-booking/open" element={<MyBookingOpenPage />} />
+        <Route path="/my-booking/:reference" element={<BookingDashboardPage />} />
         <Route path="/invoice/:bookingReference" element={<InvoiceDetailsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/agent-register" element={<AgentRegisterPage />} />

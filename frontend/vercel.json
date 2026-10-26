@@ -1,5 +1,44 @@
 {
+  "redirects": [
+    {
+      "source": "/my-booking",
+      "has": [{ "type": "host", "value": "bokun-zanzibar-booking.vercel.app" }],
+      "destination": "https://zanzibartoursandsafaris.co.tz/my-booking",
+      "permanent": true
+    },
+    {
+      "source": "/my-booking/:path*",
+      "has": [{ "type": "host", "value": "bokun-zanzibar-booking.vercel.app" }],
+      "destination": "https://zanzibartoursandsafaris.co.tz/my-booking/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/invoice/:path*",
+      "has": [{ "type": "host", "value": "bokun-zanzibar-booking.vercel.app" }],
+      "destination": "https://zanzibartoursandsafaris.co.tz/invoice/:path*",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(my-booking|invoice)(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, private" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Frame-Options", "value": "DENY" }
+      ]
+    },
+    {
+      "source": "/api/my-booking/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-store, private" }]
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/api/my-booking/:path*",
+      "destination": "https://bokun-zanzibar-booking.onrender.com/api/my-booking/:path*"
+    },
     {
       "source": "/(.*)",
       "destination": "/app.html"

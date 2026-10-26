@@ -98,7 +98,8 @@ const PaymentFailurePage = () => {
   const isReversed = status === "reversed" || String(result?.booking?.paymentStatus || "").toLowerCase() === "reversed";
   const isFailed = status === "failed" || String(result?.booking?.paymentStatus || "").toLowerCase() === "failed";
   const bookingReference = result?.booking?.bookingReference || "";
-  const retryPath = bookingReference ? `/payment/checkout/${bookingReference}` : "";
+  // The provider order id is accepted as the booking key.
+  const retryPath = bookingReference ? `/payment/checkout/${bookingReference}${orderTrackingId ? `?key=${encodeURIComponent(orderTrackingId)}` : ""}` : "";
   const supportHref = `mailto:${BRAND.email}?subject=${encodeURIComponent(`Payment support ${bookingReference || ""}`)}`;
 
   return (

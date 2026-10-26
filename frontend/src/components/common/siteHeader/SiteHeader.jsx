@@ -1,11 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LuCalendarDays, LuCheck, LuChevronDown, LuMail, LuMenu, LuMessageCircle, LuPhone, LuSearch } from "react-icons/lu";
 import { fetchMenuData, fetchTours } from "../../../api/toursApi";
 import { MAIN_NAV, SITE, whatsappLink } from "../../../config/site";
 import { activeNavKey, menuSearches } from "./headerData";
 import useStickyHeader from "./useStickyHeader";
 import CheckoutHeader from "./CheckoutHeader";
+import useBookingSession, { signOutBookingSession } from "../../myBooking/useBookingSession";
 import "./siteHeader.css";
 
 // The menu, the search and the phone menu load when first opened.
@@ -45,6 +46,28 @@ const UtilityBar = () => (
   </div>
 );
 
+// On "My booking" pages: who is signed in (masked email) and Sign out, in place of the WhatsApp pill.
+const BookingAccount = ({ email }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="sh-account">
+      <span className="sh-account-avatar" aria-hidden="true">{email.charAt(0).toUpperCase()}</span>
+      <span className="sh-account-text">
+        <span><span className="sh-visually-hidden">Signed in as </span>{email}</span>
+        <button
+          type="button"
+          onClick={async () => {
+            await signOutBookingSession();
+            navigate("/my-booking", { replace: true });
+          }}
+        >
+          Sign out
+        </button>
+      </span>
+    </div>
+  );
+};
+
 const WhatsAppButton = ({ iconOnly = false }) => {
   const href = whatsappLink(SITE.whatsappHelloMessage);
   if (!href) return null;
@@ -68,6 +91,9 @@ const WhatsAppButton = ({ iconOnly = false }) => {
 const SiteHeader = ({ variant = "default", ...checkoutProps }) => {
   const location = useLocation();
   const stuck = useStickyHeader(80);
+  const onMyBooking = location.pathname === "/my-booking" || location.pathname.startsWith("/my-booking/");
+  const bookingSession = useBookingSession({ load: onMyBooking });
+  const signedInEmail = onMyBooking && bookingSession.status === "signed_in" ? bookingSession.email : "";
   const megaId = useId();
   const menuId = useId();
   const [megaOpen, setMegaOpen] = useState(false);
@@ -209,7 +235,7 @@ const SiteHeader = ({ variant = "default", ...checkoutProps }) => {
                 <button type="button" className="sh-icon-btn sh-search-btn" aria-label="Search tours" onClick={(event) => openSearch(event)}>
                   <LuSearch aria-hidden="true" />
                 </button>
-                <span className="sh-wa-pill-wrap"><WhatsAppButton /></span>
+                {signedInEmail ? <span className="sh-wa-pill-wrap"><BookingAccount email={signedInEmail} /></span> : <span className="sh-wa-pill-wrap"><WhatsAppButton /></span>}
                 <span className="sh-wa-icon-wrap"><WhatsAppButton iconOnly /></span>
                 <button
                   type="button"

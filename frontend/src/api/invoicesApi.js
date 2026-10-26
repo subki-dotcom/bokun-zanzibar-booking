@@ -5,7 +5,8 @@ export const fetchInvoiceByNumber = async (invoiceNumber) => {
   return response.data.data;
 };
 
-export const fetchInvoiceByBookingReference = async (bookingReference) => {
-  const response = await axiosClient.get(`/invoices/booking/${bookingReference}`);
+// Needs the payment link key (or a staff login); guests signed in to "My booking" use fetchMyBookingInvoice.
+export const fetchInvoiceByBookingReference = async (bookingReference, { key = "" } = {}) => {
+  const response = await axiosClient.get(`/invoices/booking/${encodeURIComponent(bookingReference)}`, { params: key ? { key } : {} });
   return response.data.data;
 };

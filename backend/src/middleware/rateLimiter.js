@@ -88,7 +88,55 @@ const contactMessageLimiter = rateLimit({
   }
 });
 
+const limited = (code, message) => ({ success: false, message, error: { code, details: null }, data: {}, meta: {} });
+const lookupMessage = "Too many attempts. Please wait a few minutes and try again, or ask us on WhatsApp.";
+const lookupReference = (req) => String(req.body?.reference || "").trim().toUpperCase().replace(/\s+/g, "").slice(0, 40);
+
+// "Find your booking": per address, and per booking reference whatever the address (stops spreading guesses).
+const myBookingLookupIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `lookup-ip:${resolveClientIp(req)}`,
+  message: limited("MY_BOOKING_LOOKUP_RATE_LIMITED", lookupMessage)
+});
+
+const myBookingLookupReferenceLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `lookup-ref:${lookupReference(req) || resolveClientIp(req)}`,
+  message: limited("MY_BOOKING_LOOKUP_RATE_LIMITED", lookupMessage)
+});
+
+// Opening sign-in links and payment-key sign-ins.
+const myBookingSignInLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `signin-ip:${resolveClientIp(req)}`,
+  message: limited("MY_BOOKING_SIGNIN_RATE_LIMITED", "Too many attempts. Please wait a few minutes and try again.")
+});
+
+// The contact-details code: sending and checking.
+const myBookingCodeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 6,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `code:${String(req.bookingSession?._id || resolveClientIp(req))}`,
+  message: limited("MY_BOOKING_CODE_RATE_LIMITED", "Too many attempts. Please wait a few minutes and try again.")
+});
+
 module.exports = {
+  resolveClientIp,
+  myBookingLookupIpLimiter,
+  myBookingLookupReferenceLimiter,
+  myBookingSignInLimiter,
+  myBookingCodeLimiter,
   globalRateLimiter,
   bookingRequestWriteLimiter,
   paymentSessionLimiter,

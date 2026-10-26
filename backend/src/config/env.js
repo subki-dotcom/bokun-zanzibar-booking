@@ -104,6 +104,10 @@ const env = cleanEnv(process.env, {
   BRAND_NAME: str({ default: "Riser Tours & Safaris" }),
   SUPPORT_PHONE: str({ default: "+255 778 775 044" }),
   EMAIL_REPLY_TO: str({ default: "info@risertoursandsafaris.co.tz" }),
+  // The public website address used in "My booking" sign-in links (defaults to the first FRONTEND_URL).
+  PUBLIC_SITE_URL: str({ default: "" }),
+  // Cloudflare Turnstile secret for the "Find your booking" form; without it the form has no bot check.
+  TURNSTILE_SECRET_KEY: str({ default: "" }),
   GOOGLE_PLACES_API_KEY: str({ default: "" }),
   GOOGLE_PLACE_ID: str({ default: "" }),
   GOOGLE_REVIEW_URL: str({ default: "" }),

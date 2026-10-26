@@ -3,7 +3,9 @@ const DENIED = { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data
 // add_shipping_info (customer details) -> add_payment_info -> purchase (sent by purchase()).
 const EVENTS = new Set(['view_item', 'select_item', 'select_travelers', 'select_date', 'check_availability', 'select_option', 'begin_checkout',
   'add_contact_info', 'add_pickup_info', 'add_shipping_info', 'add_payment_info', 'booking_form_started', 'booking_form_submitted',
-  'booking_processing', 'booking_failed', 'booking_cancelled', 'whatsapp_click', 'phone_click', 'email_click']);
+  'booking_processing', 'booking_failed', 'booking_cancelled', 'whatsapp_click', 'phone_click', 'email_click',
+  // My booking: sent without parameters (no reference or personal data).
+  'view_booking', 'download_ticket', 'add_to_calendar', 'change_request', 'cancel_request']);
 const text = (v) => typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 150) : '';
 const money = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 export const safePath = (path = '/') => {
