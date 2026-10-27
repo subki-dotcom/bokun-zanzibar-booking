@@ -108,6 +108,14 @@ const env = cleanEnv(process.env, {
   PUBLIC_SITE_URL: str({ default: "" }),
   // Cloudflare Turnstile secret for the "Find your booking" form; without it the form has no bot check.
   TURNSTILE_SECRET_KEY: str({ default: "" }),
+  // Company details printed on invoices and credit notes (empty ones are left off).
+  COMPANY_LEGAL_NAME: str({ default: "" }),
+  COMPANY_ADDRESS: str({ default: "" }),
+  COMPANY_TIN: str({ default: "" }),
+  COMPANY_LICENCE: str({ default: "" }),
+  // VAT appears on invoices only when the company is VAT registered (rate from TAX_PERCENT).
+  VAT_REGISTERED: bool({ default: false }),
+  TAX_LABEL: str({ default: "VAT" }),
   GOOGLE_PLACES_API_KEY: str({ default: "" }),
   GOOGLE_PLACE_ID: str({ default: "" }),
   GOOGLE_REVIEW_URL: str({ default: "" }),

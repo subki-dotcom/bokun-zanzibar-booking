@@ -52,6 +52,22 @@ const invoice = asyncHandler(async (req, res) =>
   successResponse(res, { message: "Invoice", data: await service.getInvoice({ session: req.bookingSession }) })
 );
 
+const invoicePdfLink = asyncHandler(async (req, res) =>
+  successResponse(res, { message: "Download link", data: await service.invoicePdfLink({ session: req.bookingSession, number: String(req.body?.number || "") }) })
+);
+
+const invoicePdf = asyncHandler(async (req, res) => {
+  const { buffer, filename } = await service.invoicePdf({ session: req.bookingSession, token: String(req.query?.token || "") });
+  res.type("application/pdf");
+  res.set("Content-Disposition", `${req.query?.inline === "1" ? "inline" : "attachment"}; filename="${filename}"`);
+  return res.send(buffer);
+});
+
+const emailInvoice = asyncHandler(async (req, res) => {
+  const data = await service.emailInvoiceCopy({ session: req.bookingSession, ...context(req) });
+  return successResponse(res, { message: data.message, data: { sent: true } });
+});
+
 const ticketQr = asyncHandler(async (req, res) => {
   res.type("image/svg+xml");
   return res.send(await service.ticketQrSvg({ session: req.bookingSession }));
@@ -86,4 +102,4 @@ const revealContact = asyncHandler(async (req, res) =>
   successResponse(res, { message: "Traveler details", data: await service.revealContact({ session: req.bookingSession, code: req.validated.body.code, ...context(req) }) })
 );
 
-module.exports = { lookup, openLink, openWithPaymentKey, current, signOut, dashboard, invoice, ticketQr, ticketPdf, cancellationEstimate, submitRequest, contactCode, revealContact };
+module.exports = { lookup, openLink, openWithPaymentKey, current, signOut, dashboard, invoice, invoicePdfLink, invoicePdf, emailInvoice, ticketQr, ticketPdf, cancellationEstimate, submitRequest, contactCode, revealContact };

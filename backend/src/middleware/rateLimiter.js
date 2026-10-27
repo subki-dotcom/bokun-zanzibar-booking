@@ -131,8 +131,30 @@ const myBookingCodeLimiter = rateLimit({
   message: limited("MY_BOOKING_CODE_RATE_LIMITED", "Too many attempts. Please wait a few minutes and try again.")
 });
 
+// "Email me a copy" of an invoice: per session.
+const myBookingInvoiceEmailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `invoice-email:${String(req.bookingSession?._id || resolveClientIp(req))}`,
+  message: limited("INVOICE_EMAIL_RATE_LIMITED", "You can email the invoice 3 times an hour. Please download the PDF instead.")
+});
+
+// The public invoice check (scan to verify).
+const invoiceVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `verify:${resolveClientIp(req)}`,
+  message: limited("INVOICE_VERIFY_RATE_LIMITED", "Too many checks. Please try again in a few minutes.")
+});
+
 module.exports = {
   resolveClientIp,
+  myBookingInvoiceEmailLimiter,
+  invoiceVerifyLimiter,
   myBookingLookupIpLimiter,
   myBookingLookupReferenceLimiter,
   myBookingSignInLimiter,

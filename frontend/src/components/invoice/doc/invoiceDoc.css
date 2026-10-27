@@ -1,0 +1,984 @@
+/* Invoice page (mockups "Invoice" and "InvoiceMobile"). Scoped to .ivd-desk / .ivd-phone. The sheet uses the same
+   pixel values as the PDF (A4 = 794 px wide at 96 dpi). */
+.ivd-desk,
+.ivd-phone {
+  --brand: #0e6b57;
+  --brand-hover: #0a5242;
+  --brand-soft: #e7f3ef;
+  --ink: #14211f;
+  --muted: #55625f;
+  --border: #e3e7e5;
+  --border-strong: #c9d1ce;
+  --page-alt: #f6f7f6;
+  --desk: #e9edeb;
+  --warning: #8a4205;
+  --warning-soft: #fdf1e3;
+  --danger: #9a3412;
+  font-family: "Outfit", system-ui, sans-serif;
+  color: var(--ink);
+}
+
+.ivd-desk *,
+.ivd-phone * {
+  box-sizing: border-box;
+}
+
+/* Element resets: one element in specificity, loaded after the site styles, so component classes still win. */
+:where(.ivd-desk, .ivd-phone) p,
+:where(.ivd-desk, .ivd-phone) dl,
+:where(.ivd-desk, .ivd-phone) dt,
+:where(.ivd-desk, .ivd-phone) dd,
+:where(.ivd-desk, .ivd-phone) ul,
+:where(.ivd-desk, .ivd-phone) address,
+:where(.ivd-desk, .ivd-phone) table,
+:where(.ivd-desk, .ivd-phone) th,
+:where(.ivd-desk, .ivd-phone) td {
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+  font-style: normal;
+  letter-spacing: 0;
+}
+
+:where(.ivd-desk, .ivd-phone) dt {
+  font-weight: 400;
+}
+
+/* Headings: the site sets its own heading font; here everything is Outfit. */
+.ivd-desk h1,
+.ivd-desk h2,
+.ivd-phone h1,
+.ivd-phone h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Outfit", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+.ivd-desk :focus-visible,
+.ivd-phone :focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.ivd-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.ivd-desk {
+  min-height: 100vh;
+  padding-bottom: 56px;
+  background: var(--desk);
+}
+
+/* Buttons */
+.ivd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: none !important;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ivd-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.ivd-btn:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.ivd-btn-primary {
+  background: var(--brand);
+  color: #fff !important;
+}
+
+.ivd-btn-primary:hover:not(:disabled) {
+  background: var(--brand-hover);
+}
+
+.ivd-btn-outline {
+  background: #fff;
+  border-color: var(--border-strong);
+  color: var(--ink) !important;
+}
+
+.ivd-btn-outline:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+/* Toolbar */
+.ivd-toolbar-wrap {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.ivd-toolbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  max-width: 1000px;
+  min-height: 70px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.ivd-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand) !important;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ivd-toolbar-title {
+  text-align: center;
+  white-space: nowrap;
+  color: var(--text-body, #2a3836);
+  font-size: 15px;
+}
+
+.ivd-toolbar-title strong {
+  color: var(--ink);
+}
+
+.ivd-toolbar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* The A4 sheet */
+.ivd-sheet {
+  position: relative;
+  width: 794px;
+  max-width: calc(100% - 32px);
+  margin: 32px auto 0;
+  padding: 48px 56px 32px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(20, 33, 31, 0.12);
+}
+
+.ivd-sheet::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 8px;
+  background: var(--brand);
+}
+
+.ivd-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.ivd-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ivd-logo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.ivd-brand strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ivd-brand small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.ivd-company {
+  display: grid;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 19.5px;
+}
+
+.ivd-title {
+  text-align: right;
+}
+
+.ivd-title h1 {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.ivd-title p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ivd-stamp {
+  display: inline-block;
+  margin: 22px 4px 0 0 !important;
+  padding: 2px 16px;
+  transform: rotate(-12deg);
+  border: 3px solid var(--brand);
+  border-radius: 8px;
+  color: var(--brand) !important;
+  font-size: 26px !important;
+  font-weight: 700;
+  letter-spacing: 4px !important;
+  line-height: 1.3;
+}
+
+.ivd-stamp.is-warning {
+  border-color: var(--warning);
+  color: var(--warning) !important;
+}
+
+.ivd-stamp.is-danger {
+  border-color: var(--danger);
+  color: var(--danger) !important;
+}
+
+.ivd-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.ivd-meta > div {
+  min-width: 0;
+  padding: 12px 15px 13px;
+}
+
+.ivd-meta > div + div {
+  border-left: 1px solid var(--border);
+}
+
+.ivd-meta dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.ivd-meta dd {
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ivd-meta .is-amount {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.ivd-meta .is-amount dt {
+  color: var(--brand);
+}
+
+.ivd-meta .is-amount.is-due {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.ivd-meta .is-amount.is-due dt {
+  color: var(--warning);
+}
+
+.ivd-desk .ivd-eyebrow,
+.ivd-phone .ivd-eyebrow {
+  color: var(--muted);
+  font-size: 11px !important;
+  font-weight: 700;
+  letter-spacing: 1px !important;
+  text-transform: uppercase;
+}
+
+.ivd-parties {
+  display: grid;
+  grid-template-columns: 356px minmax(0, 1fr);
+  margin-top: 37px;
+}
+
+.ivd-parties p {
+  font-size: 13px;
+  line-height: 20.5px;
+}
+
+.ivd-parties .ivd-party-name {
+  margin: 8px 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ivd-table {
+  width: 100%;
+  margin-top: 28px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.ivd-table thead th {
+  padding: 11px 12px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.ivd-table thead th:first-child {
+  width: 312px;
+  border-radius: 6px 0 0 6px;
+}
+
+.ivd-table thead th:nth-child(2) {
+  width: 114px;
+}
+
+.ivd-table thead th:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.ivd-table tbody th,
+.ivd-table tbody td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.ivd-table tbody tr:not(.is-plain) th,
+.ivd-table tbody tr:not(.is-plain) td {
+  height: 62px;
+}
+
+.ivd-table tbody tr.is-plain th,
+.ivd-table tbody tr.is-plain td {
+  height: 44px;
+  color: var(--muted);
+}
+
+.ivd-table .is-center {
+  text-align: center !important;
+}
+
+.ivd-table .is-right {
+  text-align: right !important;
+}
+
+.ivd-item-title {
+  display: block;
+  font-weight: 700;
+}
+
+.is-plain .ivd-item-title {
+  font-weight: 400;
+}
+
+.ivd-item-sub {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ivd-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.ivd-verify {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.ivd-verify img {
+  width: 92px;
+  height: 92px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.ivd-verify p {
+  max-width: 190px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 17px;
+}
+
+.ivd-verify a {
+  color: var(--brand);
+  font-size: 10px;
+  word-break: break-all;
+}
+
+.ivd-totals {
+  width: 300px;
+  flex: none;
+  font-size: 13px;
+}
+
+.ivd-totals > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  line-height: 19px;
+}
+
+.ivd-totals dt {
+  color: var(--muted);
+}
+
+.ivd-totals .is-total {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 2px solid var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.ivd-totals .is-total dt {
+  color: var(--ink);
+}
+
+.ivd-totals .is-balance {
+  margin-top: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.ivd-totals .is-balance dt {
+  color: var(--brand);
+}
+
+.ivd-totals .is-balance dd {
+  font-size: 14px;
+}
+
+.ivd-totals .is-balance.is-due {
+  background: var(--warning-soft);
+}
+
+.ivd-totals .is-balance.is-due,
+.ivd-totals .is-balance.is-due dt {
+  color: var(--warning);
+}
+
+.ivd-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 23px;
+  margin-top: 24px;
+}
+
+.ivd-info section {
+  min-height: 109px;
+  padding: 18px 16px 16px;
+  border-radius: 10px;
+  background: var(--page-alt);
+}
+
+.ivd-info h2 {
+  margin-bottom: 8px;
+}
+
+.ivd-info p {
+  font-size: 12px;
+  line-height: 19.5px;
+}
+
+.ivd-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.ivd-foot div {
+  display: grid;
+  gap: 2px;
+}
+
+.ivd-foot strong {
+  font-size: 13px;
+}
+
+.ivd-foot span {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.ivd-foot .is-right {
+  text-align: right;
+}
+
+.ivd-docs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 12px;
+  max-width: 794px;
+  margin: 20px auto 0;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.ivd-docs button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ivd-message {
+  max-width: 520px;
+  margin: 80px auto 0;
+  padding: 32px;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+}
+
+.ivd-message h1 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.ivd-message p {
+  margin: 10px 0 20px;
+  color: var(--muted);
+}
+
+.ivd-sheet-skeleton {
+  display: grid;
+  gap: 22px;
+  min-height: 900px;
+}
+
+.ivd-skel {
+  display: block;
+  border-radius: 6px;
+  background: #e7ecea;
+}
+
+/* ---------- Phone (mockup "InvoiceMobile") ---------- */
+.ivd-phone {
+  min-height: 100vh;
+  padding-bottom: 32px;
+  background: var(--page-alt);
+}
+
+.ivm-bar {
+  position: sticky;
+  z-index: 5;
+  top: 0;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  height: 60px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  text-align: center;
+}
+
+.ivm-bar strong {
+  font-size: 18px;
+}
+
+.ivm-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: var(--ink) !important;
+  cursor: pointer;
+}
+
+.ivm-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.ivm {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.ivm-card {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.ivm-head {
+  padding-top: 24px;
+}
+
+.ivm-head::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 6px;
+  background: var(--brand);
+}
+
+.ivm-head-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ivm-head-top .ivd-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  font-size: 16px;
+}
+
+.ivm-brand {
+  flex: 1;
+  min-width: 0;
+}
+
+.ivm-brand strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.ivm-brand small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.ivm-head .ivd-stamp {
+  margin: 0 !important;
+  padding: 1px 10px;
+  border-width: 2.5px;
+  font-size: 16px !important;
+  letter-spacing: 3px !important;
+}
+
+.ivm-head h1 {
+  margin-top: 16px;
+  font-size: 27px;
+  font-weight: 700;
+}
+
+.ivm-number {
+  margin-top: 2px !important;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.ivm-amount {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.ivm-amount dt {
+  font-size: 14.5px;
+}
+
+.ivm-amount dd {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.ivm-amount.is-due {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.ivm-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 14px;
+}
+
+.ivm-meta dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ivm-meta dd {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ivm-card .ivd-eyebrow {
+  margin-bottom: 10px;
+}
+
+.ivm-strong {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.ivm-muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.ivm-card > p:not(.ivm-strong):not(.ivm-muted) {
+  font-size: 14px;
+}
+
+.ivm-items {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+}
+
+.ivm-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ivm-row strong {
+  font-size: 15px;
+}
+
+.ivm-plain {
+  color: var(--muted);
+  font-size: 14.5px;
+}
+
+.ivm-totals {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 14.5px;
+}
+
+.ivm-totals > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+.ivm-totals dt {
+  color: var(--muted);
+}
+
+.ivm-totals .is-total {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 2px solid var(--ink);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.ivm-totals .is-total dt {
+  color: var(--ink);
+}
+
+.ivm-totals .is-balance,
+.ivm-totals .is-balance dt {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.ivm-totals .is-balance.is-due,
+.ivm-totals .is-balance.is-due dt {
+  color: var(--warning);
+}
+
+.ivm-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.ivm-actions .ivd-btn {
+  min-height: 52px;
+  font-size: 16px;
+}
+
+.ivm-actions .ivd-docs {
+  margin: 0 0 4px;
+}
+
+.ivm-note {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* ---------- Print: only the sheet, on A4 ---------- */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .ivd-sheet,
+  .ivd-sheet * {
+    visibility: visible;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ivd-desk {
+    min-height: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .ivd-sheet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 794px;
+    max-width: none;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .ivd-toolbar-wrap,
+  .ivd-docs,
+  .mb-layer {
+    display: none !important;
+  }
+}
+
+/* Verification page */
+.ivd-verify-card {
+  text-align: left;
+}
+
+.ivd-verify-ok,
+.ivd-verify-bad {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px !important;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand) !important;
+  font-weight: 700;
+}
+
+.ivd-verify-bad {
+  background: #fbefe9;
+  color: var(--danger) !important;
+}
+
+.ivd-verify-list {
+  margin-top: 16px;
+}
+
+.ivd-verify-list > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+}
+
+.ivd-verify-list dt {
+  color: var(--muted);
+}
+
+.ivd-verify-list dd {
+  font-weight: 700;
+}
+
+/* Totals labels follow their row's weight. */
+.ivd-totals .is-total dt,
+.ivd-totals .is-balance dt,
+.ivm-totals .is-total dt,
+.ivm-totals .is-balance dt {
+  font-weight: 700;
+}
+
+/* UNPAID, REFUNDED, PARTIALLY PAID: a little smaller, as in the PDF. */
+.ivd-desk .ivd-stamp.is-long {
+  font-size: 22px !important;
+}

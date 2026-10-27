@@ -15,6 +15,7 @@ const { env } = require("../../config/env");
 const AppError = require("../../utils/AppError");
 const emailService = require("../email");
 const invoicesService = require("../invoices");
+const invoiceDocuments = require("../invoiceDocuments");
 const bookingRequestsService = require("../bookingRequests");
 const { calculateCancellationPolicy } = require("../cancellations/policy");
 const { hasPaymentAccess, paymentAccessKey } = require("../payments/paymentRecoveryCore");
@@ -197,11 +198,38 @@ const getDashboard = async ({ session }) => {
   });
 };
 
+// The invoice (and any credit notes) of the session's booking, as customer documents.
 const getInvoice = async ({ session }) => {
   const booking = await sessionBooking(session);
-  const invoice = await invoicesService.getInvoiceByBookingReference(booking.bookingReference);
-  if (!invoice) throw new AppError("Invoice not found", 404, "INVOICE_NOT_FOUND");
-  return invoice;
+  return invoiceDocuments.withQrCodes(await invoiceDocuments.getByBookingReference(booking.bookingReference));
+};
+
+// A 10-minute download link for the invoice or one of its credit notes.
+const invoicePdfLink = async ({ session, number = "" }) => {
+  const booking = await sessionBooking(session);
+  const document = invoiceDocuments.pickDocument(await invoiceDocuments.getByBookingReference(booking.bookingReference), number);
+  const { token, expiresAt } = invoiceDocuments.signDownloadLink({ bookingReference: booking.bookingReference, number: document.number });
+  return { url: `/api/my-booking/documents/pdf?token=${encodeURIComponent(token)}`, expiresAt, filename: require("../invoiceDocuments/pdf").pdfFileName(document) };
+};
+
+// The PDF behind a signed link: the link must be valid and for the session's own booking.
+const invoicePdf = async ({ session, token = "" }) => {
+  const booking = await sessionBooking(session);
+  const link = invoiceDocuments.readDownloadLink(token);
+  if (!link) throw new AppError("This download link has expired. Please download the invoice again.", 410, "INVOICE_LINK_EXPIRED");
+  if (link.bookingReference !== booking.bookingReference) throw notFound();
+  return invoiceDocuments.pdfFor(invoiceDocuments.pickDocument(await invoiceDocuments.getByBookingReference(link.bookingReference), link.number));
+};
+
+// "Email me a copy": the PDF to the booking email (never another address).
+const emailInvoiceCopy = async ({ session, ip = "", userAgent = "", requestId = "" }) => {
+  const booking = await sessionBooking(session);
+  const views = await invoiceDocuments.getByBookingReference(booking.bookingReference);
+  const { buffer, filename } = await invoiceDocuments.pdfFor(views.invoice);
+  const result = await emailService.sendInvoiceCopyEmail({ booking, view: views.invoice, pdf: buffer, filename });
+  audit("my_booking_invoice_emailed", { booking, ip, userAgent, requestId, metadata: { invoiceNumber: views.invoice.number, sent: result.sent } });
+  if (!result.sent) throw new AppError("We couldn't send the email right now. Please download the PDF instead.", 503, "INVOICE_EMAIL_FAILED");
+  return { message: `We've emailed invoice ${views.invoice.number} to ${core.maskEmail(booking.customer.email)}.` };
 };
 
 const ticketQrSvg = async ({ session }) => {
@@ -236,12 +264,20 @@ const getCancellationEstimate = async ({ session }) => {
 const submitRequest = async ({ session, payload, idempotencyKey, ip = "", userAgent = "", requestId = "" }) => {
   const booking = await sessionBooking(session);
   const key = `${booking._id}:${String(idempotencyKey)}`;
+  // Atomic claim of the key (the unique index also guards two requests at the same instant).
+  let previous = null;
   try {
-    await MyBookingActionKey.create({ key, booking: booking._id, action: payload.type });
+    previous = await MyBookingActionKey.findOneAndUpdate(
+      { key },
+      { $setOnInsert: { key, booking: booking._id, action: payload.type, status: "processing" } },
+      { upsert: true, new: false }
+    ).lean();
   } catch (error) {
     if (error?.code !== 11000) throw error;
-    const previous = await MyBookingActionKey.findOne({ key }).lean();
-    if (previous?.status === "done") return previous.response;
+    previous = await MyBookingActionKey.findOne({ key }).lean();
+  }
+  if (previous) {
+    if (previous.status === "done") return previous.response;
     throw new AppError("This request is already being sent.", 409, "MY_BOOKING_REQUEST_IN_PROGRESS");
   }
   try {
@@ -314,6 +350,9 @@ module.exports = {
   csrfToken,
   getDashboard,
   getInvoice,
+  invoicePdfLink,
+  invoicePdf,
+  emailInvoiceCopy,
   ticketQrSvg,
   ticketPdf,
   getCancellationEstimate,

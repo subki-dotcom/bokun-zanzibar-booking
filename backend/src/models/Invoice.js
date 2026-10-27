@@ -68,7 +68,13 @@ const invoiceSchema = new mongoose.Schema(
     paymentMethod: String,
     notes: String,
     cancellationPolicy: String,
-    paymentTerms: String
+    paymentTerms: String,
+    // The customer copy, frozen when the invoice is first issued (number, date, parties, lines, totals). The
+    // fields above follow the booking for accounting; the page and the PDF show this copy.
+    document: { type: mongoose.Schema.Types.Mixed, default: null },
+    documentIssuedAt: { type: Date, default: null },
+    // Random, for the public "Scan to verify" page (no personal data there).
+    verificationToken: { type: String, default: undefined }
   },
   { timestamps: true }
 );
@@ -77,5 +83,6 @@ invoiceSchema.index({ paymentStatus: 1, issueDate: -1, createdAt: -1 });
 invoiceSchema.index({ bookingReference: 1, paymentStatus: 1 });
 invoiceSchema.index({ bookingStatus: 1, issueDate: -1, createdAt: -1 });
 invoiceSchema.index({ paymentStatus: 1, dueDate: 1 });
+invoiceSchema.index({ verificationToken: 1 }, { unique: true, partialFilterExpression: { verificationToken: { $type: "string" } } });
 
 module.exports = mongoose.model("Invoice", invoiceSchema);
