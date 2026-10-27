@@ -29,7 +29,7 @@ export default function useBookingAnalytics(booking, reference = '') {
       } catch { /* analytics cannot change the booking UI */ }
     };
     void report();
-    window.addEventListener('riser:analytics-consent', report);
-    return () => { active = false; window.removeEventListener('riser:analytics-consent', report); };
+    window.addEventListener('zts:analytics-consent', report);
+    return () => { active = false; window.removeEventListener('zts:analytics-consent', report); };
   }, [booking, reference]);
 }

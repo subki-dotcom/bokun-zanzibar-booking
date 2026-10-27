@@ -31,7 +31,7 @@ const AgentRegisterPage = () => {
       setError("");
       setSuccess("");
       await registerAgent(form);
-      setSuccess("Your agent application has been submitted. Riser admin will review and approve your account.");
+      setSuccess("Your agent application has been submitted. Our team will review and approve your account.");
     } catch (err) {
       setError(err.message || "Could not submit agent application");
     } finally {

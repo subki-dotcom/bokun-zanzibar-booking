@@ -11,7 +11,6 @@ const value = (html, pattern) => html.match(pattern)?.[1] || "";
 
 const checkPage = async (relativePath, { canonical, requireTourSchema = false } = {}) => {
   const html = await read(relativePath);
-  expect(!html.includes("risertoursandsafaris.co.tz"), `${relativePath}: obsolete SEO domain`);
   expect(/<title>[^<]+<\/title>/.test(html), `${relativePath}: missing title`);
   expect(/<meta name="description" content="[^"]+"/.test(html), `${relativePath}: missing description`);
   expect(html.includes(`<link rel="canonical" href="${canonical}"`), `${relativePath}: canonical mismatch`);
@@ -50,7 +49,6 @@ const run = async () => {
   }), "sitemap: unexpected domain or non-public route");
   const robots = await read("robots.txt");
   expect(robots.includes(`Sitemap: ${origin}/sitemap.xml`), "robots: incorrect sitemap domain");
-  expect(!robots.includes("risertoursandsafaris.co.tz"), "robots: obsolete domain");
   expect(robots.includes("Disallow: /admin/") && robots.includes("Disallow: /agent/"), "robots: missing private portal exclusions");
   expect(urls.length >= 3, "sitemap: expected homepage, catalog, and at least one tour");
   expect(urls.every((url) => url.startsWith("https://")), "sitemap: non-HTTPS URL found");

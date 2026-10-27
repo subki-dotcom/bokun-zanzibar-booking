@@ -126,7 +126,7 @@ const PaymentCheckoutPage = () => {
             <Card.Body>
               <div className="payment-status-hero">
                 <div>
-                  <div className="payment-status-eyebrow">Riser Secure Checkout</div>
+                  <div className="payment-status-eyebrow">Secure checkout</div>
                   <h1>{booking.productTitle}</h1>
                   <p>{booking.bookingReference}</p>
                 </div>

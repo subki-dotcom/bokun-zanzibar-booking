@@ -13211,7 +13211,7 @@ textarea.form-control {
   }
 }
 
-/* Riser Business Platform Admin Shell */
+/* Business Platform admin shell */
 .admin-platform-shell {
   min-height: 100vh;
   display: grid;
@@ -22917,3 +22917,16 @@ textarea.form-control {
 .booking-trust-contact a { color: inherit; text-decoration: none; }
 .booking-trust-contact a:hover { text-decoration: underline; }
 .booking-trust-whatsapp { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; min-height: 40px; border: 1px solid #25d366; border-radius: 999px; color: #128c7e !important; font-weight: 700; }
+
+/* The brand mark (components/common/BrandMark) in place of the old letter squares. */
+.brand-mark-slot {
+  overflow: hidden;
+  padding: 0 !important;
+  background: none !important;
+}
+
+.brand-mark-slot > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

@@ -1,3 +1,4 @@
+import { BRAND } from "../../config/brand";
 import Card from "react-bootstrap/Card";
 import {
   BsCalendar3,
@@ -142,13 +143,13 @@ const ReviewOrderSummarySidebar = ({
         <Card.Body>
           <h5>Need help?</h5>
           <p>Our support team is here to help you.</p>
-          <a className="review-help-row" href="tel:+255778775044">
+          <a className="review-help-row" href={BRAND.phoneHref}>
             <BsTelephone />
-            <span>+255 778 775 044</span>
+            <span>{BRAND.phone}</span>
           </a>
-          <a className="review-help-row" href="mailto:info@risertoursandsafaris.co.tz">
+          <a className="review-help-row" href={`mailto:${BRAND.email}`}>
             <BsEnvelope />
-            <span>info@risertoursandsafaris.co.tz</span>
+            <span>{BRAND.email}</span>
           </a>
         </Card.Body>
       </Card>

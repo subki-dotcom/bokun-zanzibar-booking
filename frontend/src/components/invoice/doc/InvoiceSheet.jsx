@@ -1,4 +1,5 @@
 // The A4 invoice / credit note sheet (mockup "Invoice"): 794 px wide = A4 at 96 dpi, the same layout as the PDF.
+import BrandMark from "../../common/BrandMark";
 import { amountCell, companyLines, docDate, docDateTime, money, paymentMethodLine, tripWhen } from "./invoiceFormat";
 
 export const StatusStamp = ({ status }) =>
@@ -13,8 +14,8 @@ const InvoiceHeader = ({ doc }) => (
   <header className="ivd-head">
     <div>
       <div className="ivd-brand">
-        <span className="ivd-logo" role="img" aria-label={`${doc.company?.name || ""} logo`}>
-          {(doc.company?.name || "R").charAt(0)}
+        <span className="ivd-logo brand-mark-slot">
+          <BrandMark size="100%" title={`${doc.company?.name || ""} logo`} />
         </span>
         <span>
           <strong>{doc.company?.name}</strong>

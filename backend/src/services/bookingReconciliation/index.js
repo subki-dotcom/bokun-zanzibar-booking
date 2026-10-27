@@ -27,7 +27,7 @@ const PAYMENT_FIELDS = "_id bookingReference status verificationStatus accountin
 const REFUND_FIELDS = "bookingId status confirmedAccountingRefundedAmount confirmedRefundedAmount amount";
 const PROVIDER_LABELS = { GETYOURGUIDE: "GetYourGuide", VIATOR: "Viator", BOKUN_MARKETPLACE: "Bokun Marketplace", PESAPAL: "Pesapal", DPO: "DPO", PAYPAL: "PayPal", CASH_ON_ARRIVAL: "Cash", MANUAL_BANK: "Bank Transfer" };
 const CHANNEL_LABELS = {
-  DIRECT_WEBSITE: "Riser Direct", GETYOURGUIDE: "GetYourGuide", VIATOR: "Viator",
+  DIRECT_WEBSITE: "Website direct", GETYOURGUIDE: "GetYourGuide", VIATOR: "Viator",
   BOKUN_MARKETPLACE: "Bokun Marketplace", OTHER: "Other", UNKNOWN: "Unknown"
 };
 

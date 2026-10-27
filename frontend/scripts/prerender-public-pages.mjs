@@ -5,10 +5,12 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { createServer } from "vite";
+import { BRAND } from "../src/config/brand.js";
+import { organizationSchema } from "../src/config/site.js";
 
 const root = process.cwd();
 const dist = path.join(root, "dist");
-const brandName = String(process.env.VITE_BRAND_NAME || "Riser Tours & Safaris").trim();
+const brandName = String(process.env.VITE_BRAND_NAME || BRAND.name).trim();
 const siteUrl = String(process.env.VITE_SITE_URL || "https://zanzibartoursandsafaris.co.tz").replace(/\/$/, "");
 const configuredApi = String(process.env.SEO_API_BASE_URL || process.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 if (!configuredApi) {
@@ -192,11 +194,11 @@ const replaceHead = (html, metadata) => html
   .replace("</head>", () => `${metadata.head}\n  </head>`)
   .replace('<div id="root"></div>', () => `<div id="root">${metadata.body}</div>`);
 
-const jsonLd = (entries) => `<script id="riser-prerender-schema" type="application/ld+json">${JSON.stringify(entries).replace(/</g, "\\u003c")}</script>`;
+const jsonLd = (entries) => `<script id="zts-prerender-schema" type="application/ld+json">${JSON.stringify(entries).replace(/</g, "\\u003c")}</script>`;
 
 // agency: the TravelAgency entry (site-wide); the home page passes its own, which may carry a rating.
 const sharedSchema = (agency = null) => ([
-  { "@context": "https://schema.org", "@type": "Organization", "@id": `${siteUrl}/#organization`, name: brandName, url: siteUrl },
+  organizationSchema(siteUrl, brandName),
   { "@context": "https://schema.org", "@type": "WebSite", "@id": `${siteUrl}/#website`, name: brandName, url: siteUrl, publisher: { "@id": `${siteUrl}/#organization` } },
   ...(agency ? [agency] : [])
 ]);
@@ -205,10 +207,10 @@ const sharedSchema = (agency = null) => ([
 // Internal and bulky fields are left out.
 const pageData = (tour) => {
   const { rawBokunProduct, pickupPlaces, ...visible } = tour || {};
-  return `<script id="riser-prerender-tour" type="application/json">${JSON.stringify(visible).replace(/</g, "\\u003c")}</script>`;
+  return `<script id="zts-prerender-tour" type="application/json">${JSON.stringify(visible).replace(/</g, "\\u003c")}</script>`;
 };
 
-const DEFAULT_IMAGE = `${siteUrl}/images/home/hero-dhow-1280.jpg`;
+const DEFAULT_IMAGE = `${siteUrl}/brand/og-image.png`;
 const metadata = ({ title, description, canonical, image = DEFAULT_IMAGE, schemas, body, data = "" }) => ({
   title,
   description,
@@ -258,12 +260,12 @@ const run = async () => {
     title: home.title,
     description: home.description,
     canonical: homeCanonical,
-    image: `${siteUrl}/images/home/hero-dhow-1280.jpg`,
+    image: `${siteUrl}/brand/og-image.png`,
     schemas: [...sharedSchema(), ...home.schemas],
     body: home.html,
     data: [
       heroPreload(),
-      homeData ? `<script id="riser-prerender-home" type="application/json">${JSON.stringify(homeData).replace(/</g, "\\u003c")}</script>` : ""
+      homeData ? `<script id="zts-prerender-home" type="application/json">${JSON.stringify(homeData).replace(/</g, "\\u003c")}</script>` : ""
     ].filter(Boolean).join("\n    ")
   }));
   await writePage(template, "/tours", metadata(home.tours
@@ -273,7 +275,7 @@ const run = async () => {
         canonical: `${siteUrl}/tours`,
         schemas: [...sharedSchema(home.agency), home.tours.list],
         body: home.tours.html,
-        data: `<script id="riser-prerender-tours" type="application/json">${JSON.stringify(home.tours.data).replace(/</g, "\\u003c")}</script>`
+        data: `<script id="zts-prerender-tours" type="application/json">${JSON.stringify(home.tours.data).replace(/</g, "\\u003c")}</script>`
       }
     : {
         title: `Zanzibar Tours & Activities | ${brandName}`,

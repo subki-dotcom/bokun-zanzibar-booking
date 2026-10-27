@@ -15,7 +15,7 @@ const AgentPendingApprovalPage = () => {
         <p>
           {suspended
             ? `Please contact ${BRAND.name} support to review your account.`
-            : "Riser admin must approve your account before you can access the booking desk."}
+            : "Our team must approve your account before you can access the booking desk."}
         </p>
         <div className="d-flex flex-wrap gap-2">
           <Button as={Link} to="/agent/support" className="agent-primary-btn">Contact Support</Button>

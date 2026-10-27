@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { LuChevronLeft, LuDownload, LuPrinter } from "react-icons/lu";
 import { fetchInvoiceDocument, fetchInvoicePdfBlob } from "../../api/invoicesApi";
+import { BRAND } from "../../config/brand";
 import InvoiceSheet from "../../components/invoice/doc/InvoiceSheet";
 import { documentTitle } from "../../components/invoice/doc/invoiceFormat";
 import { InvoiceSkeleton } from "../public/InvoiceDetailsPage";
@@ -50,7 +51,7 @@ const AdminInvoiceDocumentPage = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `Riser-Tours-${doc.kind === "credit_note" ? "Credit-Note" : "Invoice"}-${doc.number}.pdf`;
+      link.download = `${BRAND.filePrefix}-${doc.kind === "credit_note" ? "CreditNote" : "Invoice"}-${doc.number}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();

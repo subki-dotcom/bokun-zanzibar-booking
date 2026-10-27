@@ -37,9 +37,9 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
     if (!w) return;
     w.dataLayer = w.dataLayer || [];
     w.gtag = w.gtag || function () { w.dataLayer.push(arguments); };
-    if (!w.__riserConsentDefaultsInitialized) {
+    if (!w.__ztsConsentDefaultsInitialized) {
       w.gtag('consent', 'default', { ...DENIED });
-      w.__riserConsentDefaultsInitialized = true;
+      w.__ztsConsentDefaultsInitialized = true;
     }
   };
   const eligible = () => {
@@ -70,15 +70,15 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
   const initializeTagManager = guard(() => {
     const w = browser();
     if (state.consent.analytics_storage !== 'granted' || !/^GTM-[A-Z0-9]+$/.test(config.gtmId || '') ||
-        w.__riserTagManagerInitialized) return;
+        w.__ztsTagManagerInitialized) return;
     const script = w.document.createElement('script');
     script.async = true;
-    script.dataset.riserTagManager = 'true';
+    script.dataset.ztsTagManager = 'true';
     script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(config.gtmId)}`;
     // Consent defaults and the visitor's choice are already in this shared dataLayer.
     w.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
     w.document.head.appendChild(script);
-    w.__riserTagManagerInitialized = true;
+    w.__ztsTagManagerInitialized = true;
   });
   const initialize = guard(() => {
     const w = browser();
@@ -89,21 +89,21 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
     w[`ga-disable-${config.measurementId}`] = false;
     const route = `${w.history?.state?.key}:${w.location.pathname}`;
     if (state.route !== route) { state.route = route; state.seen.clear(); }
-    if (!state.configured && !w.__riserAnalyticsInitialized) {
+    if (!state.configured && !w.__ztsAnalyticsInitialized) {
       w.gtag('set', 'ads_data_redaction', true);
       w.gtag('js', new Date());
       w.gtag('config', config.measurementId, { send_page_view: false, ...locationData(), allow_google_signals: false });
       if (config.directAds && /^AW-\d+$/.test(config.adsId || '') && /^[A-Za-z0-9_-]+$/.test(config.adsLabel || '')) {
         w.gtag('config', config.adsId, { send_page_view: false, ...locationData() });
       }
-      if (!w.document.querySelector('script[data-riser-google-tag]')) {
+      if (!w.document.querySelector('script[data-zts-google-tag]')) {
         const script = w.document.createElement('script');
-        script.async = true; script.dataset.riserGoogleTag = 'true';
+        script.async = true; script.dataset.ztsGoogleTag = 'true';
         script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(config.measurementId)}`;
         w.document.head.appendChild(script);
       }
-      state.configured = w.__riserAnalyticsInitialized = true;
-    } else if (w.__riserAnalyticsInitialized) {
+      state.configured = w.__ztsAnalyticsInitialized = true;
+    } else if (w.__ztsAnalyticsInitialized) {
       state.configured = true;
     }
     return state.consent.analytics_storage === 'granted';
@@ -113,7 +113,7 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
     for (const key of Object.keys(DENIED)) state.consent[key] = choices[key] === 'granted' ? 'granted' : 'denied';
     browser()?.gtag('consent', 'update', { ...state.consent });
     initialize();
-    browser()?.dispatchEvent(new Event('riser:analytics-consent'));
+    browser()?.dispatchEvent(new Event('zts:analytics-consent'));
     return true;
   });
   const send = (name, payload) => {
@@ -147,7 +147,7 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
       if (!input || !initialize()) return false;
       const payload = cleanEcommerce(input), id = text(input.transaction_id);
       if (!/^[A-Za-z0-9_-]{1,100}$/.test(id) || !payload.currency || !(payload.value > 0) || !payload.items?.length) return false;
-      const w = browser(), key = `riser:purchase:${config.measurementId}:${id}`;
+      const w = browser(), key = `zts:purchase:${config.measurementId}:${id}`;
       const emit = () => {
         if (state.purchases.has(id) || w.localStorage.getItem(key)) return false;
         // Fail closed if durable storage is unavailable. GA transaction_id also deduplicates receipts.

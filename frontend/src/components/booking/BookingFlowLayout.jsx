@@ -1,3 +1,4 @@
+import BrandMark from "../common/BrandMark";
 import { Container, Row, Col } from "react-bootstrap";
 import { BsGeoAlt, BsShieldCheck, BsClock, BsCarFront } from "react-icons/bs";
 import { toPlainText, truncateText } from "../../utils/formatters";
@@ -18,7 +19,7 @@ const resolveTourImage = (tour = {}) => {
 const CheckoutTopBar = ({ stepper = null }) => (
   <div className="checkout-topbar">
     <div className="checkout-brand">
-      <span className="checkout-brand-mark">{brandFirstWord.charAt(0)}</span>
+      <span className="checkout-brand-mark brand-mark-slot"><BrandMark size="100%" /></span>
       <span>
         <strong>{brandFirstWord}</strong>
         {brandRest.length ? <small>{brandRest.join(" ")}</small> : null}

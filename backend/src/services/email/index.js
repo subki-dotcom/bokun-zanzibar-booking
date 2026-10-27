@@ -21,14 +21,27 @@ const formatMoney = (amount = 0, currency = "USD") => {
 // Without a fresh sign-in link, emails point to the "Find your booking" form (never to booking data).
 const bookingUrl = (booking = {}) => require("../myBooking/links").lookupUrl(booking.bookingReference || "");
 
+const siteUrl = () => String(env.PUBLIC_SITE_URL || String(env.FRONTEND_URL || "").split(",")[0] || "").trim().replace(/\/+$/, "");
+
+// The company line under every email: legal name, address and TIN (empty parts left out).
+const legalLine = () =>
+  [env.COMPANY_LEGAL_NAME || env.BRAND_NAME, env.COMPANY_ADDRESS, env.COMPANY_TIN ? `TIN ${env.COMPANY_TIN}` : "", env.COMPANY_LICENCE ? `Licence ${env.COMPANY_LICENCE}` : ""]
+    .filter(Boolean)
+    .map(escapeHtml)
+    .join(" &middot; ");
+
 const buildEmailShell = ({ heading, body, ctaLabel = "View booking", ctaUrl = "" }) => `
-  <div style="background:#f5f7fa;padding:32px 16px;font-family:Arial,sans-serif;color:#0f172a">
-    <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #dde5ee;border-radius:12px;padding:28px">
-      <p style="margin:0 0 8px;color:#079650;font-size:14px;font-weight:700">${escapeHtml(env.BRAND_NAME.toUpperCase())}</p>
-      <h1 style="margin:0 0 16px;font-size:24px">${escapeHtml(heading)}</h1>
-      <div style="color:#52617a;font-size:15px;line-height:1.6">${body}</div>
-      ${ctaUrl ? `<p style="margin:24px 0 0"><a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#079650;color:#ffffff;padding:12px 18px;border-radius:7px;text-decoration:none;font-weight:700">${escapeHtml(ctaLabel)}</a></p>` : ""}
-      <p style="margin:26px 0 0;color:#64748b;font-size:13px">Need help? ${escapeHtml(env.SUPPORT_PHONE)} &middot; ${escapeHtml(env.EMAIL_REPLY_TO)}</p>
+  <div style="background:#f6f7f6;padding:32px 16px;font-family:Outfit,Arial,sans-serif;color:#14211f">
+    <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e3e7e5;border-radius:12px;padding:28px">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 18px"><tr>
+        <td style="padding-right:10px"><img src="${escapeHtml(siteUrl())}/brand/icon-192.png" width="36" height="36" alt="" style="display:block;border-radius:9px"></td>
+        <td style="color:#0e6b57;font-size:15px;font-weight:700">${escapeHtml(env.BRAND_NAME)}</td>
+      </tr></table>
+      <h1 style="margin:0 0 16px;font-size:24px;color:#14211f">${escapeHtml(heading)}</h1>
+      <div style="color:#2a3836;font-size:15px;line-height:1.6">${body}</div>
+      ${ctaUrl ? `<p style="margin:24px 0 0"><a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#0e6b57;color:#ffffff;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:700">${escapeHtml(ctaLabel)}</a></p>` : ""}
+      <p style="margin:26px 0 0;color:#55625f;font-size:13px">Need help? WhatsApp or call ${escapeHtml(env.SUPPORT_PHONE)} &middot; ${escapeHtml(env.EMAIL_REPLY_TO)}</p>
+      <p style="margin:8px 0 0;color:#8a9592;font-size:12px">${legalLine()}</p>
     </div>
   </div>`;
 
@@ -115,12 +128,19 @@ const buildBookingRequestEmail = (booking = {}, request = {}, templateKey = "req
   };
 };
 
+// "Zanzibar Tours & Safaris <bookings@…>": the address from EMAIL_FROM, always with this site's brand name.
+const senderAddress = () => {
+  const raw = String(env.EMAIL_FROM || "").trim();
+  const address = (raw.match(/<([^>]+)>/) || [null, raw])[1].trim();
+  return address ? `${env.BRAND_NAME.replace(/[<>"]/g, "")} <${address}>` : raw;
+};
+
 // attachments: [{ filename, content (Buffer) }]
 const sendWithResend = async ({ to, subject, html, replyTo = "", attachments = [] }) => {
   const response = await axios.post(
     "https://api.resend.com/emails",
     {
-      from: env.EMAIL_FROM,
+      from: senderAddress(),
       to: [to],
       reply_to: replyTo || env.EMAIL_REPLY_TO || undefined,
       subject,
@@ -130,7 +150,7 @@ const sendWithResend = async ({ to, subject, html, replyTo = "", attachments = [
     {
       headers: {
         Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        "User-Agent": "riser-booking-backend/1.0"
+        "User-Agent": "zts-booking-backend/1.0"
       },
       timeout: 15000
     }

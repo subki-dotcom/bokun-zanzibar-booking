@@ -130,6 +130,7 @@ const mapCandidateToSalesChannel = (candidate = {}) => {
     token.includes("direct") ||
     token.includes("website") ||
     token.includes("api") ||
+    // Older Bokun bookings name the website channel after the previous brand; they stay classified as direct.
     token.includes("riser tours") ||
     token.includes("zanzibar")
   ) {

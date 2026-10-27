@@ -154,7 +154,7 @@ test("creates normalized CRM sales leads and prevents active duplicate leads by 
       firstName: "Asha",
       lastName: "Traveler",
       email: "ASHA@EXAMPLE.COM",
-      phone: "+255 778 775 044",
+      phone: "+255 712 345 678",
       tags: ["VIP", "vip"]
     }
   });
@@ -163,13 +163,13 @@ test("creates normalized CRM sales leads and prevents active duplicate leads by 
       firstName: "Asha",
       lastName: "Traveler",
       email: "asha@example.com",
-      phone: "+255778775044"
+      phone: "+255712345678"
     }
   });
 
   assert.equal(first.action, "created");
   assert.equal(first.lead.emailNormalized, "asha@example.com");
-  assert.equal(first.lead.phoneNormalized, "+255778775044");
+  assert.equal(first.lead.phoneNormalized, "+255712345678");
   assert.deepEqual(first.lead.tags, ["VIP"]);
   assert.equal(second.action, "existing");
   assert.equal(state.leads.length, 1);
@@ -183,7 +183,7 @@ test("flags possible duplicate leads by phone but never by name only", async () 
       firstName: "Asha",
       lastName: "Traveler",
       email: "asha@example.com",
-      phone: "+255778775044"
+      phone: "+255712345678"
     }
   });
   const phoneMatch = await service.createLead({
@@ -191,7 +191,7 @@ test("flags possible duplicate leads by phone but never by name only", async () 
       firstName: "Different",
       lastName: "Person",
       email: "different@example.com",
-      phone: "+255 778 775 044"
+      phone: "+255 712 345 678"
     }
   });
   const nameOnly = await service.createLead({
@@ -257,11 +257,11 @@ test("lead helper clauses do not use names as stable duplicate identifiers", () 
     firstName: "Asha",
     lastName: "Traveler",
     email: "asha@example.com",
-    phone: "+255 778 775 044"
+    phone: "+255 712 345 678"
   });
 
   assert.ok(!__testables.buildExactLeadClauses(patch).some((clause) => clause.fullName));
   assert.deepEqual(__testables.buildPossibleLeadClauses(patch), [
-    { phoneNormalized: "+255778775044", status: { $nin: [CRM_LEAD_STATUS.CONVERTED, CRM_LEAD_STATUS.ARCHIVED] } }
+    { phoneNormalized: "+255712345678", status: { $nin: [CRM_LEAD_STATUS.CONVERTED, CRM_LEAD_STATUS.ARCHIVED] } }
   ]);
 });

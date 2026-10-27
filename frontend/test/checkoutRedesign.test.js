@@ -71,7 +71,7 @@ test("contact errors name each missing or wrong field", () => {
 });
 
 test("phone numbers are validated for the chosen code and sent as E.164", () => {
-  assert.deepEqual(validatePhone("0778 775 044", "TZ"), { valid: true, e164: "+255778775044", country: "TZ", message: "" });
+  assert.deepEqual(validatePhone("0712 345 678", "TZ"), { valid: true, e164: "+255712345678", country: "TZ", message: "" });
   const ownCode = validatePhone("+44 7911 123456", "TZ");
   assert.equal(ownCode.valid, true);
   assert.equal(ownCode.e164, "+447911123456");
@@ -121,7 +121,7 @@ test("payment methods appear only with an enabled provider", () => {
 });
 
 test("the WhatsApp help link names the tour, date and option", () => {
-  const href = whatsappHelpHref("https://wa.me/255778775044", { title: "Jozani Forest", date: "Tue, 10 Nov 2026", option: "Pickup from Kizimkazi hotels" });
+  const href = whatsappHelpHref("https://wa.me/255712345678", { title: "Jozani Forest", date: "Tue, 10 Nov 2026", option: "Pickup from Kizimkazi hotels" });
   assert.equal(decodeURIComponent(href.split("?text=")[1]), "Hi, I need help booking Jozani Forest on Tue, 10 Nov 2026 (Pickup from Kizimkazi hotels).");
   assert.equal(whatsappHelpHref("", {}), "");
 });

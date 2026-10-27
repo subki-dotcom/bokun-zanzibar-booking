@@ -21,7 +21,7 @@ const basePayload = {
     firstName: "Asha",
     lastName: "Juma",
     email: "asha@example.com",
-    phone: "+255778775044",
+    phone: "+255712345678",
     country: "TZ",
     hotelName: "Tembo House Hotel"
   }

@@ -1,4 +1,5 @@
 // The invoice on phones (mockup "InvoiceMobile"): cards instead of the A4 sheet. Same data as the sheet.
+import BrandMark from "../../common/BrandMark";
 import { StatusStamp } from "./InvoiceSheet";
 import { amountCell, docDate, mobileItemLine, money, paymentMethodLine } from "./invoiceFormat";
 
@@ -10,8 +11,8 @@ const InvoiceMobile = ({ doc, actions }) => {
     <div className="ivm" aria-label={`${credit ? "Credit note" : "Invoice"} ${doc.number}`}>
       <section className="ivm-card ivm-head">
         <div className="ivm-head-top">
-          <span className="ivd-logo" role="img" aria-label={`${doc.company?.name || ""} logo`}>
-            {(doc.company?.name || "R").charAt(0)}
+          <span className="ivd-logo brand-mark-slot">
+            <BrandMark size="100%" title={`${doc.company?.name || ""} logo`} />
           </span>
           <span className="ivm-brand">
             <strong>{doc.company?.name}</strong>

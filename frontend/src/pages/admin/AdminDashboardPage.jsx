@@ -531,7 +531,7 @@ const AdminDashboardPage = () => {
     <div className="admin-main-dashboard">
       <div className="admin-dashboard-page-head">
         <div>
-          <span className="admin-dashboard-eyebrow">Riser Business Platform</span>
+          <span className="admin-dashboard-eyebrow">Business Platform</span>
           <h1>Dashboard</h1>
         </div>
         <div className="admin-dashboard-toolbar" aria-label="Dashboard controls">

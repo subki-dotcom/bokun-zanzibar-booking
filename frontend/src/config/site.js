@@ -1,9 +1,10 @@
 // Everything the site says about the business, in one place: contacts, address, social links, travel styles
 // and the footer links. Contacts and social links can also be set in the hosting environment (VITE_*); see brand.js.
-import { BRAND } from "./brand";
+import { BRAND } from "./brand.js";
 
 export const SITE = {
   name: BRAND.name,
+  legalName: BRAND.legalName,
   website: BRAND.website,
   phone: BRAND.phone,
   phoneHref: BRAND.phoneHref,
@@ -149,6 +150,26 @@ export const FOOTER_LINKS = {
   ]
 };
 
+// The company behind the site, for search engines: name, legal name, logo, contacts, address; social profiles
+// only when set. The same entry is written into the prerendered pages and added by SeoHead in the browser.
+export const organizationSchema = (siteUrl = BRAND.website, name = BRAND.name) => {
+  const sameAs = Object.values(BRAND.social).filter(Boolean);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${siteUrl}/#organization`,
+    name,
+    legalName: BRAND.legalName,
+    url: siteUrl,
+    logo: `${siteUrl}/brand/logo-512.png`,
+    ...(BRAND.phone ? { telephone: BRAND.phone } : {}),
+    ...(BRAND.email ? { email: BRAND.email } : {}),
+    address: { "@type": "PostalAddress", streetAddress: BRAND.streetAddress, addressLocality: "Zanzibar", addressCountry: "TZ" },
+    ...(BRAND.taxId ? { taxID: BRAND.taxId } : {}),
+    ...(sameAs.length ? { sameAs } : {})
+  };
+};
+
 // The business as a travel agency, for search engines. A rating only for reviews collected on this site: ratings
 // from another site (reviews.source, e.g. Tripadvisor) must not be marked up as our own.
 export const travelAgencySchema = (reviews = null) => {
@@ -162,7 +183,8 @@ export const travelAgencySchema = (reviews = null) => {
     image: `${SITE.website}/images/home/hero-dhow-1280.jpg`,
     telephone: SITE.phone,
     email: SITE.email,
-    address: { "@type": "PostalAddress", addressLocality: SITE.address.locality, addressCountry: SITE.address.countryCode },
+    address: { "@type": "PostalAddress", streetAddress: BRAND.streetAddress, addressLocality: SITE.address.locality, addressCountry: SITE.address.countryCode },
+    logo: `${SITE.website}/brand/logo-512.png`,
     areaServed: ["Zanzibar", "Tanzania"],
     parentOrganization: { "@id": `${SITE.website}/#organization` },
     ...(sameAs.length ? { sameAs } : {}),

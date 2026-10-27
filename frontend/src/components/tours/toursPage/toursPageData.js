@@ -102,11 +102,11 @@ export const itemListSchema = (items = [], website = "") => ({
   }))
 });
 
-// The first page as the build saved it into /tours (script#riser-prerender-tours), for a plain /tours visit.
+// The first page as the build saved it into /tours (script#zts-prerender-tours), for a plain /tours visit.
 export const readPrerenderedTours = () => {
   if (typeof document === "undefined") return null;
   try {
-    const node = document.getElementById("riser-prerender-tours");
+    const node = document.getElementById("zts-prerender-tours");
     return node ? JSON.parse(node.textContent || "null") : null;
   } catch {
     return null;

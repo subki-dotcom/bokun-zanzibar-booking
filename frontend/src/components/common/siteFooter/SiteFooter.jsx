@@ -1,3 +1,4 @@
+import BrandMark from "../BrandMark";
 import { useEffect, useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { BsFacebook, BsInstagram, BsTiktok, BsWhatsapp, BsYoutube } from "react-icons/bs";
@@ -187,7 +188,7 @@ const SiteFooter = ({ compact = false }) => {
       <div className="sf-container sf-main">
         <div className="sf-brand">
           <Link to="/" className="sf-logo">
-            <span className="sf-logo-mark" aria-hidden="true">R</span>
+            <span className="sf-logo-mark brand-mark-slot" aria-hidden="true"><BrandMark size="100%" variant="light" /></span>
             <span className="sf-logo-name">{SITE.name}</span>
           </Link>
           <p>

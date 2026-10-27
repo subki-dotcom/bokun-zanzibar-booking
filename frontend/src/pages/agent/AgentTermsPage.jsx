@@ -1,3 +1,4 @@
+import { BRAND } from "../../config/brand";
 import { Button, Card } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { acceptAgentTerms } from "../../api/agentApi";
@@ -17,14 +18,14 @@ const AgentTermsPage = () => {
     <Card className="surface-card agent-status-card">
       <Card.Body>
         <span className="voucher-kicker">Agent Agreement</span>
-        <h2>Riser Agent Terms</h2>
+        <h2>{BRAND.name} agent terms</h2>
         <p>Before creating bookings, please confirm you understand these rules.</p>
         <ul className="agent-terms-list">
           <li>Bookings must be created with accurate customer information.</li>
           <li>Payment must be confirmed before the supplier confirmation is treated as final.</li>
           <li>Commission is paid only for eligible paid bookings.</li>
           <li>Voucher and customer details must not be shared with unauthorized people.</li>
-          <li>Cancellation requests are reviewed by Riser admin.</li>
+          <li>Cancellation requests are reviewed by our team.</li>
         </ul>
         <Button className="agent-primary-btn" onClick={accept}>Accept Terms</Button>
       </Card.Body>

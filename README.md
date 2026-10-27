@@ -474,7 +474,7 @@ Before using live Pesapal mode (`PESAPAL_MOCK_MODE=false`):
    - `PESAPAL_SUCCESS_URL=https://<public-domain>/payment-success`
    - `PESAPAL_CANCEL_URL=https://<public-domain>/payment-failure`
 3. Use a stable backend domain for production IPN, for example:
-   - `PESAPAL_IPN_URL=https://api.risertoursandsafaris.co.tz/api/payments/pesapal/ipn`
+   - `PESAPAL_IPN_URL=https://bokun-zanzibar-booking.onrender.com/api/payments/pesapal/ipn`
 4. Keep callback URLs public unless `PESAPAL_ALLOW_LOCAL_REDIRECTS=true` is intentionally enabled for local tests.
 
 Common API results:
@@ -557,3 +557,18 @@ Required production configuration:
 - Set `BOOKING_FINALIZATION_RETRY_ENABLED=true` for paid supplier-finalization retries.
 - Keep all gateway callback URLs public and configure the live credentials for each enabled gateway.
 - Keep `BOKUN_MOCK_MODE=false` in production. Cancellation sync uses the configured Bókun cancel endpoint. Confirm the Bókun amendment endpoint and payload for date/traveler edits before enabling automatic amendment sync; unresolved amendments are intentionally marked `manual_action_required` instead of sending an unsafe supplier request.
+
+## Brand
+
+This site is **Zanzibar Tours & Safaris** (zanzibartoursandsafaris.co.tz). Brand details are set in one place per app:
+
+- **Website:** `frontend/src/config/brand.js` (name, legal name, contacts, address, TIN, social links, logo files).
+  Each value can be overridden with a `VITE_*` variable on Vercel; an empty contact or social link is hidden.
+  Logo files: `frontend/public/brand/` (`logo.svg`, `logo-white.svg`, `icon.svg`, `favicon.svg`, PNG icons, `og-image.png`).
+- **Emails and PDFs:** `backend/src/config/env.js` (`BRAND_NAME`, `SUPPORT_PHONE`, `EMAIL_REPLY_TO`, `COMPANY_*`),
+  overridable on Render. The email sender name is always `BRAND_NAME`; the address comes from `EMAIL_FROM`.
+
+`npm run build` in `frontend/` ends with `scripts/check-brand.mjs`, which fails the build if the previous brand appears
+in the built site or the email/PDF templates (`backend/test/brandTemplates.test.js` checks the templates too).
+Internal identifiers that are stored in the database or sign existing links (accounting policy ids, payment-link
+signing contexts, the Bokun channel matcher) keep their old names on purpose; they are never shown to customers.

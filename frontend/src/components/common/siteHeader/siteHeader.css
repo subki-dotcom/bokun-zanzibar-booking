@@ -1,5 +1,5 @@
 /* Site header (mockups HeaderDesktop / HeaderHero / HeaderSticky / HeaderSearch / HeaderCheckout / HeaderMobile*). */
-@import "../../../styles/riserTokens.css";
+@import "../../../styles/brandTokens.css";
 
 /* The header's height, for pages that sit under it (the home hero is drawn behind the transparent header). */
 :root {

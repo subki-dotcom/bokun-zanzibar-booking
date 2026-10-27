@@ -1,5 +1,5 @@
 const BOOKING_SESSION_KEY = "zanzibar_booking_session_v2";
-const AGENT_DRAFTS_KEY = "riser_agent_booking_drafts_v1";
+const AGENT_DRAFTS_KEY = "zts_agent_booking_drafts_v1";
 const SESSION_TTL_MS = 6 * 60 * 60 * 1000;
 
 const nowIso = () => new Date().toISOString();

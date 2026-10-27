@@ -180,7 +180,7 @@ test("normalizes CRM customer identifiers and prevents exact duplicate customer 
       firstName: "Asha",
       lastName: "Traveler",
       email: "ASHA@EXAMPLE.COM",
-      phone: "+255 778 775 044",
+      phone: "+255 712 345 678",
       tags: ["VIP", " vip "]
     },
     auth: { id: "admin-1", role: "admin", email: "admin@example.test" },
@@ -191,7 +191,7 @@ test("normalizes CRM customer identifiers and prevents exact duplicate customer 
       firstName: "Asha",
       lastName: "Traveler",
       email: "asha@example.com",
-      phone: "+255778775044"
+      phone: "+255712345678"
     },
     auth: { id: "admin-1", role: "admin", email: "admin@example.test" },
     requestId: "crm-test-2"
@@ -199,7 +199,7 @@ test("normalizes CRM customer identifiers and prevents exact duplicate customer 
 
   assert.equal(first.action, "created");
   assert.equal(first.customer.emailNormalized, "asha@example.com");
-  assert.equal(first.customer.phoneNormalized, "+255778775044");
+  assert.equal(first.customer.phoneNormalized, "+255712345678");
   assert.deepEqual(first.customer.tags, ["VIP"]);
   assert.equal(second.action, "existing");
   assert.equal(state.customers.length, 1);
@@ -213,7 +213,7 @@ test("flags possible duplicates by phone while never matching by name only", asy
       firstName: "Asha",
       lastName: "Traveler",
       email: "asha@example.com",
-      phone: "+255778775044"
+      phone: "+255712345678"
     }
   });
   const phoneMatch = await service.createCustomer({
@@ -221,7 +221,7 @@ test("flags possible duplicates by phone while never matching by name only", asy
       firstName: "Different",
       lastName: "Person",
       email: "different@example.com",
-      phone: "+255 778 775 044"
+      phone: "+255 712 345 678"
     }
   });
   const nameOnly = await service.createCustomer({
@@ -363,11 +363,11 @@ test("CRM customer normalization helpers do not treat names as stable identifier
     firstName: "Asha",
     lastName: "Traveler",
     email: "asha@example.com",
-    phone: "+255 778 775 044"
+    phone: "+255 712 345 678"
   });
 
   assert.deepEqual(__testables.buildPossibleDuplicateClauses(patch), [
-    { phoneNormalized: "+255778775044" }
+    { phoneNormalized: "+255712345678" }
   ]);
   assert.ok(!__testables.buildExactCustomerClauses(patch).some((clause) => clause.fullName));
 });

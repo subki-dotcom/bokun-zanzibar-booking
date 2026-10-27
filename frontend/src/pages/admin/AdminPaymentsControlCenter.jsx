@@ -240,7 +240,7 @@ const AdminPaymentsControlCenter = () => {
                     onChange={(event) => update({ channel: event.target.value })}
                   >
                     <option value="">All channels</option>
-                    <option value="DIRECT_WEBSITE">Riser Direct</option>
+                    <option value="DIRECT_WEBSITE">Website direct</option>
                     <option value="GETYOURGUIDE">GetYourGuide</option>
                     <option value="VIATOR">Viator</option>
                     <option value="BOKUN_MARKETPLACE">Bokun Marketplace</option>

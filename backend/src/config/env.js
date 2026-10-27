@@ -100,22 +100,26 @@ const env = cleanEnv(process.env, {
   EMAIL_PROVIDER: str({ default: "resend" }),
   RESEND_API_KEY: str({ default: "" }),
   EMAIL_FROM: str({ default: "" }),
-  // The one brand name used in emails, payment pages and vouchers (the website reads VITE_BRAND_NAME).
-  BRAND_NAME: str({ default: "Riser Tours & Safaris" }),
-  SUPPORT_PHONE: str({ default: "+255 778 775 044" }),
-  EMAIL_REPLY_TO: str({ default: "info@risertoursandsafaris.co.tz" }),
+  // Brand of this site (Zanzibar Tours & Safaris) for emails, PDFs and vouchers. The website has the same details
+  // in frontend/src/config/brand.js. Each can be overridden in the hosting environment.
+  BRAND_NAME: str({ default: "Zanzibar Tours & Safaris" }),
+  SUPPORT_PHONE: str({ default: "+255 740 853 030" }),
+  // Replies to guest emails go here (the bookings inbox).
+  EMAIL_REPLY_TO: str({ default: "info@zanzibartoursandsafaris.co.tz" }),
   // The public website address used in "My booking" sign-in links (defaults to the first FRONTEND_URL).
-  PUBLIC_SITE_URL: str({ default: "" }),
+  PUBLIC_SITE_URL: str({ default: "https://zanzibartoursandsafaris.co.tz" }),
   // Cloudflare Turnstile secret for the "Find your booking" form; without it the form has no bot check.
   TURNSTILE_SECRET_KEY: str({ default: "" }),
   // Company details printed on invoices and credit notes (empty ones are left off).
-  COMPANY_LEGAL_NAME: str({ default: "" }),
-  COMPANY_ADDRESS: str({ default: "" }),
-  COMPANY_TIN: str({ default: "" }),
+  COMPANY_LEGAL_NAME: str({ default: "Zanzibar Tours and Safaris" }),
+  COMPANY_ADDRESS: str({ default: "Stone Town, Zanzibar, Tanzania" }),
+  COMPANY_TIN: str({ default: "157-694-596" }),
   COMPANY_LICENCE: str({ default: "" }),
   // VAT appears on invoices only when the company is VAT registered (rate from TAX_PERCENT).
   VAT_REGISTERED: bool({ default: false }),
   TAX_LABEL: str({ default: "VAT" }),
+  // This company's own Tripadvisor listing ("d12345678" from its address); other listings' reviews are not shown.
+  TRIPADVISOR_LISTING_ID: str({ default: "" }),
   GOOGLE_PLACES_API_KEY: str({ default: "" }),
   GOOGLE_PLACE_ID: str({ default: "" }),
   GOOGLE_REVIEW_URL: str({ default: "" }),

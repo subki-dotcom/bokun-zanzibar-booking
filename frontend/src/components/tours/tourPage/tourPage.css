@@ -1,5 +1,5 @@
 /* Single tour page (mockup "Tour Page"). Everything is scoped to .tp so other pages keep their styles. */
-@import "../../../styles/riserTokens.css";
+@import "../../../styles/brandTokens.css";
 
 .tp {
   background: var(--bg);

@@ -19,7 +19,7 @@ test("a tour's own Tripadvisor page gives its rating, count and where to read th
 
 test("the company's Tripadvisor page is kept for the home page but is not the tour's rating", () => {
   const mapped = mapProduct(product({
-    url: "https://www.tripadvisor.com/Attraction_Review-g8055401-d25068336-Reviews-Riser_tours_and_safaris_Zanzibar.html",
+    url: "https://www.tripadvisor.com/Attraction_Review-g8055401-d25068336-Reviews-Example_tours_Zanzibar.html",
     rating: 4.5,
     numReviews: 19
   }));
@@ -27,7 +27,7 @@ test("the company's Tripadvisor page is kept for the home page but is not the to
   assert.equal(mapped.reviewCount, 0);
   assert.equal(mapped.reviewSource, "");
   assert.deepEqual(mapped.tripadvisor, {
-    url: "https://www.tripadvisor.com/Attraction_Review-g8055401-d25068336-Reviews-Riser_tours_and_safaris_Zanzibar.html",
+    url: "https://www.tripadvisor.com/Attraction_Review-g8055401-d25068336-Reviews-Example_tours_Zanzibar.html",
     rating: 4.5,
     reviewCount: 19,
     scope: "company"

@@ -9,12 +9,12 @@ import TourPage from "../../components/tours/tourPage/TourPage";
 import SeoHead from "../../components/common/SeoHead";
 import { BRAND } from "../../config/brand";
 
-// The build writes each tour into its own page (script#riser-prerender-tour). Use it at once on a direct visit,
+// The build writes each tour into its own page (script#zts-prerender-tour). Use it at once on a direct visit,
 // then refresh from the API in the background.
 const readPrerenderedTour = (slug) => {
   if (typeof document === "undefined") return null;
   try {
-    const node = document.getElementById("riser-prerender-tour");
+    const node = document.getElementById("zts-prerender-tour");
     const tour = node ? JSON.parse(node.textContent || "null") : null;
     return tour && tour.slug === slug ? tour : null;
   } catch {

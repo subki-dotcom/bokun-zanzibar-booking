@@ -138,8 +138,8 @@ const BookingConfirmedPage = () => {
       if (initializeAnalytics()) void trackPurchase(data.analyticsPurchase);
     };
     report();
-    window.addEventListener("riser:analytics-consent", report);
-    return () => window.removeEventListener("riser:analytics-consent", report);
+    window.addEventListener("zts:analytics-consent", report);
+    return () => window.removeEventListener("zts:analytics-consent", report);
   }, [data]);
 
   if (error) {

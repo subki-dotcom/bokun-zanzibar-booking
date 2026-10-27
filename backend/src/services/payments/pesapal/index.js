@@ -990,7 +990,7 @@ const verifyOrderWithPesapal = async ({
 const requestRefund = async ({
   confirmationCode = "",
   amount = 0,
-  username = "Riser Tours admin",
+  username = `${env.BRAND_NAME} admin`,
   remarks = "",
   requestId = ""
 } = {}) => {
@@ -1004,7 +1004,7 @@ const requestRefund = async ({
   const payload = {
     confirmation_code: code,
     amount: refundAmount,
-    username: String(username || "Riser Tours admin").slice(0, 120),
+    username: String(username || `${env.BRAND_NAME} admin`).slice(0, 120),
     remarks: String(remarks || "Cancellation refund").slice(0, 250)
   };
 

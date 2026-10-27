@@ -165,7 +165,7 @@ test("PDF links are signed, short-lived, and only work with the session of that 
   assert.equal((await request("POST", path, { cookie: mine.cookie, body: {} })).status, 403);
   const link = await request("POST", path, { cookie: mine.cookie, body: {}, headers: { "x-csrf-token": mine.csrf } });
   assert.equal(link.status, 200, link.text);
-  assert.match(link.json.data.filename, /^Riser-Tours-Invoice-INV-\d{4}-\d{5}\.pdf$/);
+  assert.match(link.json.data.filename, /^ZanzibarTours-Invoice-INV-\d{4}-\d{5}\.pdf$/);
   assert.ok(Date.parse(link.json.data.expiresAt) - Date.now() <= 10 * 60 * 1000);
   const pdf = await request("GET", link.json.data.url, { cookie: mine.cookie });
   assert.equal(pdf.status, 200);

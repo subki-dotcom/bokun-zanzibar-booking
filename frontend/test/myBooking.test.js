@@ -53,6 +53,6 @@ test("sharing never includes the reference or a private link", () => {
 });
 
 test("the WhatsApp help message is pre-filled with the reference", () => {
-  const href = whatsappTripHref("https://wa.me/255778775044", "ZNZ-7F3K9Q2M", "Zanzibar Transfers");
+  const href = whatsappTripHref("https://wa.me/255712345678", "ZNZ-7F3K9Q2M", "Zanzibar Transfers");
   assert.match(decodeURIComponent(href), /booking ZNZ-7F3K9Q2M \(Zanzibar Transfers\)/);
 });

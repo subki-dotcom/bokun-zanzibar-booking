@@ -1,5 +1,6 @@
 // The cards of the booking page (mockups "MyBooking" and "MyBookingMobile"). Data comes from the server already
 // masked; nothing here reads or shows a full name, email or phone number.
+import BrandMark from "../common/BrandMark";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -405,7 +406,7 @@ export const ETicketCard = ({ data, onCopied, onShowContact, onToast }) => {
     <section className="mb-ticket" aria-labelledby="mb-ticket-title">
       <div className="mb-ticket-bar">
         <h2 id="mb-ticket-title">
-          <span className="mb-ticket-logo" aria-hidden="true">{SITE.name.charAt(0)}</span> E-ticket
+          <span className="mb-ticket-logo brand-mark-slot" aria-hidden="true"><BrandMark size="100%" variant="light" /></span> E-ticket
         </h2>
         <small>{cancelled ? "Cancelled – not valid" : "Show at pickup"}</small>
       </div>

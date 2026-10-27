@@ -1,5 +1,5 @@
 /* Tours & activities page (mockups "Tours", "ToursMobile", "ToursFiltersMobile"). Scoped to .tl. */
-@import "../../../styles/riserTokens.css";
+@import "../../../styles/brandTokens.css";
 
 .tl {
   --brand-tint-border: #d5e6e0;

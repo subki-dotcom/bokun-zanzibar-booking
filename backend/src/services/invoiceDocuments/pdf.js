@@ -4,6 +4,7 @@
 // kept together; every page has "Page X of Y".
 const path = require("path");
 const PDFDocument = require("pdfkit");
+const { drawBrandMark, filePrefix } = require("./brandMark");
 const QRCode = require("qrcode");
 
 const PX = 0.75;
@@ -85,14 +86,14 @@ const renderDocumentPdf = (view) =>
 
     // Header
     pageTop();
-    rect(PAD, 48, 44, 44, C.brand, 10);
-    font("bold", 20, "#FFFFFF");
-    textAt((view.company?.name || "R").charAt(0), PAD, 59, { width: 44, align: "center" });
+    drawBrandMark(doc, p(PAD), p(48), p(44));
     font("bold", 18);
     textAt(view.company?.name || "", PAD + 56, 51);
     font("regular", 11, C.muted);
     textAt(view.company?.tagline || "", PAD + 56, 73);
     const companyLines = [
+      // The registered name, when it differs from the brand name above.
+      view.company?.legalName && view.company.legalName !== view.company.name ? view.company.legalName : "",
       view.company?.address ? `${view.company.address}` : "",
       [view.company?.phone, view.company?.email].filter(Boolean).join(" · "),
       view.company?.website || "",
@@ -313,7 +314,7 @@ const renderDocumentPdf = (view) =>
     doc.end();
   });
 
-// "Riser-Tours-Invoice-INV-2026-00001.pdf"
-const pdfFileName = (view) => `Riser-Tours-${view.kind === "credit_note" ? "Credit-Note" : "Invoice"}-${String(view.number).replace(/[^A-Za-z0-9-]/g, "")}.pdf`;
+// "ZanzibarTours-Invoice-INV-2026-00001.pdf"
+const pdfFileName = (view) => `${filePrefix()}-${view.kind === "credit_note" ? "CreditNote" : "Invoice"}-${String(view.number).replace(/[^A-Za-z0-9-]/g, "")}.pdf`;
 
 module.exports = { renderDocumentPdf, pdfFileName };

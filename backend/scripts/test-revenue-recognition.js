@@ -15,7 +15,7 @@ const freePort = () =>
     });
   });
 const run = async () => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'riser-revenue-test-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'zts-revenue-test-'));
   const port = await freePort();
   const uri = `mongodb://127.0.0.1:${port}/?directConnection=true`;
   const mongo = spawn(
@@ -107,7 +107,7 @@ const run = async () => {
     // Only remove the directory created by this invocation, after checking its absolute parent.
     if (
       path.dirname(path.resolve(directory)) === path.resolve(os.tmpdir()) &&
-      path.basename(directory).startsWith('riser-revenue-test-')
+      path.basename(directory).startsWith('zts-revenue-test-')
     )
       fs.rmSync(directory, { recursive: true, force: true });
   }

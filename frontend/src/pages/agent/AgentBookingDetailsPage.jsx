@@ -1,3 +1,4 @@
+import { BRAND } from "../../config/brand";
 import { useEffect, useState } from "react";
 import { Badge, Button, Card } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
@@ -205,10 +206,10 @@ const AgentBookingDetailsPage = () => {
 
         <DetailPanel title="Pickup Support" icon={<BsGeoAlt />}>
           <p className="agent-detail-note">
-            For pickup changes or supplier confirmation, contact Riser support before the travel date.
+            For pickup changes or supplier confirmation, contact our support team before the travel date.
           </p>
-          <InfoRow label="WhatsApp" value="+255 778 775 044" />
-          <InfoRow label="Email" value="info@risertoursandsafaris.co.tz" />
+          <InfoRow label="WhatsApp" value={BRAND.phone} />
+          <InfoRow label="Email" value={BRAND.email} />
         </DetailPanel>
       </div>
     </div>
