@@ -1,6 +1,11 @@
 // The e-ticket PDF: tour, date, pickup, masked lead traveler, travelers, reference and its QR code.
 const PDFDocument = require("pdfkit");
+const path = require("path");
+const { drawBrandMark } = require("../invoiceDocuments/brandMark");
 
+const FONT_DIR = path.join(__dirname, "../../../assets/fonts");
+
+const PLAIN = { liga: false, clig: false, dlig: false };
 const BRAND = "#0E6B57";
 const INK = "#14211F";
 const MUTED = "#55625F";
@@ -26,8 +31,8 @@ const drawQr = (doc, qr, x, y, size) => {
 };
 
 const field = (doc, label, value, x, y, width) => {
-  doc.font("Helvetica").fontSize(8).fillColor(MUTED).text(label, x, y, { width });
-  doc.font("Helvetica-Bold").fontSize(11).fillColor(INK).text(value || "—", x, y + 11, { width });
+  doc.font("regular").fontSize(8).fillColor(MUTED).text(label, x, y, { width });
+  doc.font("bold").fontSize(11).fillColor(INK).text(value || "—", x, y + 11, { width });
 };
 
 const buildTicketPdf = ({ data, qr, brand = "", phone = "", email = "", site = "" }) =>
@@ -37,18 +42,25 @@ const buildTicketPdf = ({ data, qr, brand = "", phone = "", email = "", site = "
     doc.on("data", (chunk) => chunks.push(chunk));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
+    doc.registerFont("regular", path.join(FONT_DIR, "Outfit-400.ttf"));
+    doc.registerFont("bold", path.join(FONT_DIR, "Outfit-700.ttf"));
+    // No ligatures ("fi", "tt" as one glyph), so copied text reads exactly as written.
+    const plainText = doc.text.bind(doc);
+    doc.text = (value, x, y, options) =>
+      typeof x === "object" ? plainText(value, { features: PLAIN, ...x }) : plainText(value, x, y, { features: PLAIN, ...(options || {}) });
 
     const left = 48;
     const width = doc.page.width - 96;
     doc.roundedRect(left, 48, width, 56, 12).fill(BRAND);
-    doc.font("Helvetica-Bold").fontSize(16).fillColor("#FFFFFF").text("E-ticket", left + 20, 66);
-    doc.font("Helvetica").fontSize(10).fillColor("#FFFFFF").text(`${brand} · Show at pickup`, left + 20, 70, { width: width - 40, align: "right" });
+    drawBrandMark(doc, left + 16, 60, 32, "light");
+    doc.font("bold").fontSize(16).fillColor("#FFFFFF").text("E-ticket", left + 58, 68);
+    doc.font("regular").fontSize(10).fillColor("#FFFFFF").text(`${brand} · Show at pickup`, left + 20, 70, { width: width - 40, align: "right" });
 
     let y = 128;
-    doc.font("Helvetica").fontSize(9).fillColor(MUTED).text("Experience", left, y);
-    doc.font("Helvetica-Bold").fontSize(18).fillColor(INK).text(data.tour.title || "—", left, y + 12, { width });
+    doc.font("regular").fontSize(9).fillColor(MUTED).text("Experience", left, y);
+    doc.font("bold").fontSize(18).fillColor(INK).text(data.tour.title || "—", left, y + 12, { width });
     y = doc.y + 2;
-    if (data.tour.option) doc.font("Helvetica").fontSize(11).fillColor(MUTED).text(data.tour.option, left, y, { width });
+    if (data.tour.option) doc.font("regular").fontSize(11).fillColor(MUTED).text(data.tour.option, left, y, { width });
     y = doc.y + 18;
 
     const col = width / 2;
@@ -66,12 +78,12 @@ const buildTicketPdf = ({ data, qr, brand = "", phone = "", email = "", site = "
     doc.moveTo(left, y).lineTo(left + width, y).dash(4, { space: 4 }).strokeColor(BORDER).stroke().undash();
     y += 22;
     drawQr(doc, qr, left, y, 120);
-    doc.font("Helvetica").fontSize(9).fillColor(MUTED).text("Booking reference", left + 144, y + 24);
+    doc.font("regular").fontSize(9).fillColor(MUTED).text("Booking reference", left + 144, y + 24);
     doc.font("Courier-Bold").fontSize(20).fillColor(INK).text(data.reference, left + 144, y + 38);
-    doc.font("Helvetica").fontSize(9).fillColor(MUTED).text(`Status: ${data.status.label}`, left + 144, y + 66);
+    doc.font("regular").fontSize(9).fillColor(MUTED).text(`Status: ${data.status.label}`, left + 144, y + 66);
     y += 150;
 
-    doc.font("Helvetica").fontSize(9).fillColor(MUTED).text(
+    doc.font("regular").fontSize(9).fillColor(MUTED).text(
       `All times are Zanzibar time (EAT, UTC+3). The day before your trip our team confirms the exact pickup time on WhatsApp. Questions: ${[phone, email].filter(Boolean).join(" · ")}${site ? ` · ${site}` : ""}`,
       left,
       y,

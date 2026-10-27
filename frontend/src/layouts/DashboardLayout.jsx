@@ -1,3 +1,4 @@
+import BrandMark from "../components/common/BrandMark";
 import { useState } from "react";
 import { BRAND } from "../config/brand";
 import { Container, Nav, Navbar } from "react-bootstrap";
@@ -90,17 +91,17 @@ const DashboardLayout = ({ portal = "admin" }) => {
       <div className={`agent-shell ${isSidebarCollapsed ? "is-sidebar-collapsed" : ""} ${isMobileMenuOpen ? "is-mobile-menu-open" : ""}`}>
         <aside className="agent-sidebar">
           <Link to="/agent" className="agent-brand" onClick={closeMobileMenu}>
-            <span className="agent-brand-mark">R</span>
+            <span className="agent-brand-mark brand-mark-slot"><BrandMark size="100%" /></span>
             <span>
-              <strong>RISER</strong>
-              <small>TOURS & SAFARIS</small>
+              <strong>{BRAND.wordmark.top.toUpperCase()}</strong>
+              <small>{BRAND.wordmark.bottom.toUpperCase()}</small>
             </span>
           </Link>
 
           <div className="agent-profile-mini">
             <div className="agent-avatar">{String(user?.fullName || user?.email || "A").slice(0, 1).toUpperCase()}</div>
-            <strong>{user?.fullName || "Riser Agent"}</strong>
-            <small>{user?.companyName || "Riser Agent Portal"}</small>
+            <strong>{user?.fullName || "Agent"}</strong>
+            <small>{user?.companyName || "Agent portal"}</small>
             <span className="agent-online-dot">Online</span>
           </div>
 
@@ -143,7 +144,7 @@ const DashboardLayout = ({ portal = "admin" }) => {
                 <BsBell />
                 <span>5</span>
               </Link>
-              <a className="agent-icon-button is-whatsapp" href="https://wa.me/255778775044" target="_blank" rel="noreferrer" aria-label="WhatsApp support">
+              <a className="agent-icon-button is-whatsapp" href={BRAND.whatsappHref} target="_blank" rel="noreferrer" aria-label="WhatsApp support">
                 <BsWhatsapp />
               </a>
               <button type="button" className="agent-language-button">

@@ -8,7 +8,7 @@ function setup(extra = {}) {
   const store = new Map(), scripts = [], events = [];
   const w = { location: { hostname: 'zanzibartoursandsafaris.co.tz', origin: 'https://zanzibartoursandsafaris.co.tz', pathname: '/', search: '' },
     localStorage: { getItem: k => store.get(k), setItem: (k,v) => store.set(k,v), removeItem: k => store.delete(k) },
-    document: { title: 'Zanzibar Tours', referrer: 'https://google.com/search?q=private', querySelector: () => scripts.find(script => script.dataset.riserGoogleTag),
+    document: { title: 'Zanzibar Tours', referrer: 'https://google.com/search?q=private', querySelector: () => scripts.find(script => script.dataset.ztsGoogleTag),
       createElement: () => ({ dataset: {} }), head: { appendChild: s => scripts.push(s) } }, dispatchEvent: () => {},
     gtag: (...args) => events.push(args) };
   const config = { production: true, measurementId: 'G-G4HFYGCFLH', ...extra };

@@ -1,3 +1,4 @@
+import BrandMark from "../BrandMark";
 import { Link } from "react-router-dom";
 import { LuCheck, LuLock } from "react-icons/lu";
 import { SITE } from "../../../config/site";
@@ -31,7 +32,7 @@ const CheckoutHeader = ({ step = 0, confirmLeave = false, showSteps = true }) =>
     <header className="sh shc" role="banner">
       <div className="sh-container shc-inner">
         <Link to="/" className="sh-logo" onClick={leave} aria-label={`${SITE.name} home`}>
-          <span className="sh-logo-mark" aria-hidden="true">{SITE.name.charAt(0)}</span>
+          <span className="sh-logo-mark brand-mark-slot" aria-hidden="true"><BrandMark size="100%" /></span>
           <span className="sh-logo-text">
             <strong>{SITE.name}</strong>
           </span>

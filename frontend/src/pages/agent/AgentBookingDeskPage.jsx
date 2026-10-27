@@ -55,7 +55,7 @@ const AgentBookingDeskPage = ({ mode = "desk" }) => {
           <p className="section-subtitle mb-0">
             {mode === "products"
               ? "Browse Bókun tours, options, live prices, and start an option-level booking."
-              : "Create customer bookings as Riser Agent. Payments and commissions stay linked to your agent account."}
+              : "Create customer bookings as an agent. Payments and commissions stay linked to your agent account."}
           </p>
         </div>
         <Badge bg="success" className="agent-desk-badge">

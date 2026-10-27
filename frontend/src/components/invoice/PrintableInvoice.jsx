@@ -1,3 +1,4 @@
+import BrandMark from "../common/BrandMark";
 import Table from "react-bootstrap/Table";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { BRAND } from "../../config/brand";
@@ -46,7 +47,7 @@ const PrintableInvoice = ({ invoice }) => {
     <article className="invoice-paper">
       <header className="invoice-modern-header">
         <div className="invoice-brand-block">
-          <div className="invoice-brand-mark">R</div>
+          <div className="invoice-brand-mark brand-mark-slot"><BrandMark size="100%" /></div>
           <div>
             <h1>{BRAND.name}</h1>
             <p>Stone Town, Zanzibar</p>
@@ -158,8 +159,8 @@ const PrintableInvoice = ({ invoice }) => {
       </section>
 
       <footer className="invoice-footer-note">
-        <span>info@risertoursandsafaris.co.tz</span>
-        <span>+255 778 775 044</span>
+        <span>{BRAND.email}</span>
+        <span>{BRAND.phone}</span>
       </footer>
     </article>
   );

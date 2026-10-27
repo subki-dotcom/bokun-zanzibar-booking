@@ -23,5 +23,5 @@ export const initializeConsent = () => {
 };
 
 export const openCookiePreferences = () => {
-  if (typeof window !== 'undefined') window.dispatchEvent(new Event('riser:open-cookie-preferences'));
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('zts:open-cookie-preferences'));
 };

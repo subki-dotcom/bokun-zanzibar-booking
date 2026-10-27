@@ -1,4 +1,4 @@
-const MARKETING_ATTRIBUTION_KEY = "riser_marketing_attribution_v1";
+const MARKETING_ATTRIBUTION_KEY = "zts_marketing_attribution_v1";
 
 const cleanValue = (value = "", maxLength = 180) => String(value || "").trim().slice(0, maxLength);
 

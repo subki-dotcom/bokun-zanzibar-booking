@@ -4,8 +4,8 @@ import AdminSidebar from "../../components/admin/AdminSidebar";
 import AdminTopBar from "../../components/admin/AdminTopBar";
 import useAuth from "../../hooks/useAuth";
 
-const SIDEBAR_STATE_KEY = "riser.sidebar.collapsed";
-const LEGACY_SIDEBAR_STATE_KEY = "riser_admin_sidebar_collapsed";
+const SIDEBAR_STATE_KEY = "zts.sidebar.collapsed";
+const LEGACY_SIDEBAR_STATE_KEY = "zts_admin_sidebar_collapsed";
 
 const loadSidebarPreference = () => {
   const stored = localStorage.getItem(SIDEBAR_STATE_KEY) ?? localStorage.getItem(LEGACY_SIDEBAR_STATE_KEY);

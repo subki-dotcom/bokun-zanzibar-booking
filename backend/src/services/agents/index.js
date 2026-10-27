@@ -11,10 +11,10 @@ const { env } = require("../../config/env");
 const money = (value = 0) => Number(Number(value || 0).toFixed(2));
 
 const createReferralCode = (companyName = "") => {
-  const prefix = String(companyName || "RISER")
+  const prefix = String(companyName || "ZTS")
     .replace(/[^a-z0-9]/gi, "")
     .toUpperCase()
-    .slice(0, 8) || "RISER";
+    .slice(0, 8) || "ZTS";
   return `${prefix}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 };
 
@@ -252,7 +252,7 @@ const getAgentVoucher = async (agentId, referenceOrId) => {
     pax: booking.paxSummary || {},
     inclusions: booking.invoiceSnapshot?.included || [],
     importantNotes: booking.invoiceSnapshot?.importantInformation || [],
-    emergencyContact: "+255 778 775 044",
+    emergencyContact: env.SUPPORT_PHONE,
     paymentStatus: booking.paymentStatus,
     bookingStatus: booking.bookingStatus
   };

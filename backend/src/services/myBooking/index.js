@@ -241,7 +241,7 @@ const ticketPdf = async ({ session }) => {
   const data = await getDashboard({ session });
   const booking = await sessionBooking(session);
   const qr = QRCode.create(core.ticketCode(booking.bookingReference, env.JWT_SECRET), { errorCorrectionLevel: "M" });
-  return { filename: `${data.reference}-e-ticket.pdf`, buffer: await buildTicketPdf({ data, qr, brand: env.BRAND_NAME, phone: env.SUPPORT_PHONE, email: env.EMAIL_REPLY_TO, site: publicSiteUrl() }) };
+  return { filename: `${require("../invoiceDocuments/brandMark").filePrefix()}-Ticket-${data.reference}.pdf`, buffer: await buildTicketPdf({ data, qr, brand: env.BRAND_NAME, phone: env.SUPPORT_PHONE, email: env.EMAIL_REPLY_TO, site: publicSiteUrl() }) };
 };
 
 const getCancellationEstimate = async ({ session }) => {

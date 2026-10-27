@@ -32,7 +32,7 @@ test("personal data is masked", () => {
 test("the CSRF token is bound to its session and the QR code holds no personal data", () => {
   assert.notEqual(core.csrfTokenFor("a", "s"), core.csrfTokenFor("b", "s"));
   const code = core.ticketCode("znz-7f3k9q2m", "secret");
-  assert.match(code, /^RISER:ZNZ-7F3K9Q2M:[A-Za-z0-9_-]{12}$/);
+  assert.match(code, /^ZTS:ZNZ-7F3K9Q2M:[A-Za-z0-9_-]{12}$/);
 });
 
 test("references are normalised and old timestamp references are still accepted", () => {

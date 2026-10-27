@@ -1,5 +1,5 @@
 /* Site footer (mockups "Desktop – Footer" and "Mobile – Footer"). */
-@import "../../../styles/riserTokens.css";
+@import "../../../styles/brandTokens.css";
 
 /* "footer.sf": the shared tokens file (loaded again by other pages) sets .sf { color: var(--ink) }. */
 footer.sf {

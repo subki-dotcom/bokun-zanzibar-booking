@@ -1,4 +1,5 @@
 const ProductSnapshot = require("../../models/ProductSnapshot");
+const { withOwnReviews } = require("./reviewOwnership");
 const SyncLog = require("../../models/SyncLog");
 const AppError = require("../../utils/AppError");
 const bokunService = require("../../integrations/bokun");
@@ -744,7 +745,7 @@ const listTours = async ({ page = 1, limit = 9, style = "", query = "", requestI
       .limit(safeLimit)
       .lean();
   }
-  const normalizedItems = items.map(({ description, ...tour }) => ({
+  const normalizedItems = items.map((row) => withOwnReviews(row)).map(({ description, ...tour }) => ({
     ...normalizeListingSignalValues(tour),
     shortDescription: listingSummary({ ...tour, description }),
     styles: styleLabels(tour)
@@ -806,7 +807,7 @@ const getTourBySlug = async (slug, requestId) => {
   schedulePresentationRefresh(hydratedTour, requestId);
   // A missing or outdated "From" price is computed again in the background, as on the listing.
   scheduleListingSignalHydration([hydratedTour], requestId);
-  return hydratedTour;
+  return withOwnReviews(hydratedTour);
 };
 
 const getTourOptions = async (id, requestId) => {

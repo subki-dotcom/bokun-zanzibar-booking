@@ -48,7 +48,7 @@ export const CategoryTiles = ({ styles = [] }) =>
     </section>
   ) : null;
 
-const WISHLIST_KEY = "riser_wishlist_v1";
+const WISHLIST_KEY = "zts_wishlist_v1";
 const readWishlist = () => {
   try {
     return new Set(JSON.parse(localStorage.getItem(WISHLIST_KEY) || "[]"));

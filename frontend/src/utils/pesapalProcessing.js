@@ -1,5 +1,5 @@
-const STORAGE_PREFIX = "riser_pesapal_checkout:";
-export const PESAPAL_FRAME_RETURN_MESSAGE = "riser:pesapal-frame-return";
+const STORAGE_PREFIX = "zts_pesapal_checkout:";
+export const PESAPAL_FRAME_RETURN_MESSAGE = "zts:pesapal-frame-return";
 
 const asText = (value = "") => String(value || "").trim();
 

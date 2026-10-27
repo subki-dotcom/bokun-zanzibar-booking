@@ -38,7 +38,7 @@ import { defaultPhoneCountry, validatePhone } from "./phone";
 const SOURCE_CHANNEL = "direct_website";
 const SESSION_SOURCE = "single_product_page";
 const NOT_LISTED_PLACE = /not\s+listed|isn.?t\s+listed|send.*whatsapp|other\s+hotel|to\s+be\s+confirmed/i;
-const FORM_KEY = (slug) => `riser_checkout_form_v1:${slug}`;
+const FORM_KEY = (slug) => `zts_checkout_form_v1:${slug}`;
 
 const emptyForm = () => ({
   firstName: "",

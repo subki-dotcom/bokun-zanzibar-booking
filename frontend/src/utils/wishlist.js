@@ -1,5 +1,5 @@
 // Tours saved with the heart, on this device only.
-const WISHLIST_KEY = "riser_wishlist_v1";
+const WISHLIST_KEY = "zts_wishlist_v1";
 
 export const readWishlist = () => {
   try {

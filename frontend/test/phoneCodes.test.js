@@ -14,14 +14,14 @@ const countries = [
 ];
 
 test("normalizes a Tanzanian local number into international format", () => {
-  assert.equal(applyDialCodeToPhone("0778 775 044", "TZ", countries), "+255778775044");
+  assert.equal(applyDialCodeToPhone("0712 345 678", "TZ", countries), "+255712345678");
 });
 
 test("accepts a correctly formatted Tanzanian phone number", () => {
-  const result = validatePhoneNumber("+255 778 775 044", "TZ", countries);
+  const result = validatePhoneNumber("+255 712 345 678", "TZ", countries);
 
   assert.equal(result.isValid, true);
-  assert.equal(result.normalized, "+255778775044");
+  assert.equal(result.normalized, "+255712345678");
 });
 
 test("rejects a number that is too short for the selected country", () => {
@@ -40,7 +40,7 @@ test("accepts a phone from another country than the selected one", () => {
 });
 
 test("changing the country never rewrites a number the guest typed", () => {
-  assert.equal(replacePhoneDialCode("+255778775044", "TZ", "KE", countries), "+255778775044");
+  assert.equal(replacePhoneDialCode("+255712345678", "TZ", "KE", countries), "+255712345678");
 });
 
 test("changing the country swaps the dial code while no number is typed", () => {

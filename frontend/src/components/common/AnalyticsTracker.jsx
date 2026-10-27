@@ -21,14 +21,14 @@ const AnalyticsTracker = () => {
       } catch { return; }
       if (name) trackAnalyticsEvent(name, { link_location: 'public_site' });
     };
-    window.addEventListener('riser:consent-update', consent);
-    window.addEventListener('riser:analytics-consent', page);
+    window.addEventListener('zts:consent-update', consent);
+    window.addEventListener('zts:analytics-consent', page);
     document.addEventListener('click', click);
     return () => {
       suspendAnalytics();
       clearTimeout(timer);
-      window.removeEventListener('riser:consent-update', consent);
-      window.removeEventListener('riser:analytics-consent', page);
+      window.removeEventListener('zts:consent-update', consent);
+      window.removeEventListener('zts:analytics-consent', page);
       document.removeEventListener('click', click);
     };
   }, [location.key, location.pathname]);

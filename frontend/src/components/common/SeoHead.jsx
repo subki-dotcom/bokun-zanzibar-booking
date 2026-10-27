@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { BRAND } from "../../config/brand";
-import { travelAgencySchema } from "../../config/site";
+import { organizationSchema, travelAgencySchema } from "../../config/site";
 
 const setMeta = (selector, attribute, value) => {
   if (!value) return;
@@ -15,7 +15,7 @@ const setMeta = (selector, attribute, value) => {
 // schemas: extra JSON-LD entries for this page (memoize them; a new array re-runs the effect).
 // reviews: the site's real review summary ({ rating, count }), which adds a rating to the travel agency.
 // Pages without their own photo are shared with the home page's dhow photo.
-const DEFAULT_IMAGE = `${BRAND.website}/images/home/hero-dhow-1280.jpg`;
+const DEFAULT_IMAGE = `${BRAND.website}/brand/og-image.png`;
 
 const SeoHead = ({ title, description, image: pageImage = "", product = null, noIndex = false, schemas: extraSchemas = null, reviews = null }) => {
   const image = pageImage || DEFAULT_IMAGE;
@@ -31,6 +31,8 @@ const SeoHead = ({ title, description, image: pageImage = "", product = null, no
     document.head.querySelector('meta[property="og:title"]')?.setAttribute("content", pageTitle);
     setMeta('meta[property="og:description"]', "property", "og:description");
     document.head.querySelector('meta[property="og:description"]')?.setAttribute("content", pageDescription);
+    setMeta('meta[property="og:site_name"]', "property", "og:site_name");
+    document.head.querySelector('meta[property="og:site_name"]')?.setAttribute("content", BRAND.name);
     setMeta('meta[property="og:type"]', "property", "og:type");
     document.head.querySelector('meta[property="og:type"]')?.setAttribute("content", product?.name ? "product" : "website");
     setMeta('meta[property="og:url"]', "property", "og:url");
@@ -57,20 +59,12 @@ const SeoHead = ({ title, description, image: pageImage = "", product = null, no
     setMeta('meta[name="robots"]', "name", "robots");
     document.head.querySelector('meta[name="robots"]')?.setAttribute("content", noIndex ? "noindex, nofollow" : "index, follow");
 
-    const existingSchema = document.getElementById("riser-seo-schema");
+    const existingSchema = document.getElementById("zts-seo-schema");
     if (existingSchema) existingSchema.remove();
     // The build's copy of the same entries, so the page does not list them twice.
-    document.getElementById("riser-prerender-schema")?.remove();
+    document.getElementById("zts-prerender-schema")?.remove();
     const schemas = [
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "@id": `${BRAND.website}/#organization`,
-        name: BRAND.name,
-        url: BRAND.website,
-        email: BRAND.email,
-        telephone: BRAND.phone
-      },
+      organizationSchema(),
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
@@ -115,12 +109,12 @@ const SeoHead = ({ title, description, image: pageImage = "", product = null, no
       });
     }
     const schema = document.createElement("script");
-    schema.id = "riser-seo-schema";
+    schema.id = "zts-seo-schema";
     schema.type = "application/ld+json";
     schema.textContent = JSON.stringify(schemas);
     document.head.appendChild(schema);
 
-    return () => document.getElementById("riser-seo-schema")?.remove();
+    return () => document.getElementById("zts-seo-schema")?.remove();
   }, [description, extraSchemas, image, noIndex, product, reviews, title]);
 
   return null;

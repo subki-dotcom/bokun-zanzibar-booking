@@ -55,7 +55,7 @@ test("supplier photos are requested at the size shown; other images are left alo
 
 test("the travel agency schema has a rating only with real reviews", async () => {
   const view = await server.ssrLoadModule("/src/components/homePage/HomeView.jsx");
-  const brand = { name: "Riser Tours & Safaris", website: "https://example.test", phone: "+255", email: "a@b.c", social: {} };
+  const brand = { name: "Zanzibar Tours & Safaris", website: "https://example.test", phone: "+255", email: "a@b.c", social: {} };
   const [plain] = view.homeSchemas({ reviews: null }, brand);
   assert.equal(plain["@type"], "TravelAgency");
   assert.equal(plain.aggregateRating, undefined);

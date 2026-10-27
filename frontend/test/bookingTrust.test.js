@@ -9,6 +9,6 @@ test("free cancellation is taken from the real policy", () => {
 });
 
 test("the WhatsApp question names the tour", () => {
-  assert.equal(tourQuestionWhatsappHref("https://wa.me/255778775044", "Safari Blue"), "https://wa.me/255778775044?text=" + encodeURIComponent("Hello, I have a question about \"Safari Blue\"."));
+  assert.equal(tourQuestionWhatsappHref("https://wa.me/255712345678", "Safari Blue"), "https://wa.me/255712345678?text=" + encodeURIComponent("Hello, I have a question about \"Safari Blue\"."));
   assert.equal(tourQuestionWhatsappHref("", "x"), "");
 });

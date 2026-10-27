@@ -1,4 +1,4 @@
-export const CONSENT_KEY = 'riser_cookie_consent_v1';
+export const CONSENT_KEY = 'zts_cookie_consent_v1';
 export const CONSENT_LIFETIME_MS = 180 * 24 * 60 * 60 * 1000;
 export const consentSignals = (choice) => ({
   analytics_storage: choice?.analytics === true ? 'granted' : 'denied',

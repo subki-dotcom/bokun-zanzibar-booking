@@ -1,6 +1,7 @@
 // Everything the home page shows, from the product snapshots and real bookings, kept for ten minutes. No supplier
 // calls: prices are the stored "From" prices.
 const ProductSnapshot = require("../../models/ProductSnapshot");
+const { withOwnReviews } = require("./reviewOwnership");
 const Booking = require("../../models/Booking");
 const logger = require("../../config/logger");
 const { toListingCard, withoutRepeatedTitles } = require("./catalog");
@@ -34,12 +35,14 @@ const companyReviews = (rows = []) => {
 };
 
 const buildHomeData = async () => {
-  const [rows, bookings] = await Promise.all([
+  const [snapshotRows, bookings] = await Promise.all([
     ProductSnapshot.find(PUBLIC_FILTER)
       .select("bokunProductId title slug shortDescription description duration images fromPrice currency rating reviewCount reviewSource tripadvisor included pickupInfo featuredOnHome featuredInMenu options.active options.pickupSupported options.pricingType")
       .lean(),
     bookingCounts()
   ]);
+  // Reviews from another company's Tripadvisor listing are left out everywhere on the site.
+  const rows = snapshotRows.map((row) => withOwnReviews(row));
   const cards = rows.map(toHomeCard);
   const visible = showable(cards, bookings);
   const featured = pickFeatured(visible, bookings, 6);

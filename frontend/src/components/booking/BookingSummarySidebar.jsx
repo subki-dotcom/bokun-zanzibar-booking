@@ -1,3 +1,4 @@
+import { BRAND } from "../../config/brand";
 import Card from "react-bootstrap/Card";
 import Badge from "react-bootstrap/Badge";
 import {
@@ -190,11 +191,11 @@ const BookingSummarySidebar = ({
             <p>Our support team is here to help you</p>
             <div className="checkout-help-row">
               <BsWhatsapp />
-              <span>+255 778 775 044</span>
+              <span>{BRAND.phone}</span>
             </div>
             <div className="checkout-help-row">
               <BsEnvelope />
-              <span>info@risertoursandsafaris.co.tz</span>
+              <span>{BRAND.email}</span>
             </div>
           </Card.Body>
         </Card>

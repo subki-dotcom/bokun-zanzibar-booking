@@ -1,3 +1,4 @@
+import BrandMark from "../BrandMark";
 import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LuCalendarDays, LuCheck, LuChevronDown, LuMail, LuMenu, LuMessageCircle, LuPhone, LuSearch } from "react-icons/lu";
@@ -21,7 +22,7 @@ const HOVER_DELAY_MS = 150;
 
 export const Logo = ({ onClick }) => (
   <Link to="/" className="sh-logo" onClick={onClick} aria-label={`${SITE.name} home`}>
-    <span className="sh-logo-mark" aria-hidden="true">{SITE.name.charAt(0)}</span>
+    <span className="sh-logo-mark brand-mark-slot" aria-hidden="true"><BrandMark size="100%" /></span>
     <span className="sh-logo-text">
       <strong>{SITE.name}</strong>
       <small>{SITE.address.locality} · {SITE.address.country}</small>

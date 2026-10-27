@@ -1,0 +1,14 @@
+{
+  "name": "Zanzibar Tours & Safaris",
+  "short_name": "Zanzibar Tours",
+  "description": "Zanzibar tours, safaris and airport transfers, booked with a local team.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0E6B57",
+  "icons": [
+    { "src": "/brand/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/brand/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/brand/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

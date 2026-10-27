@@ -210,7 +210,7 @@ const AgentDashboardPage = () => {
     <div className="agent-dashboard-page">
       <div className="agent-dashboard-welcome">
         <div>
-          <h2>Welcome back, {dashboard?.agentName || "Riser Agent"}!</h2>
+          <h2>Welcome back, {dashboard?.agentName || "agent"}!</h2>
           <p>Here's what's happening with your business today.</p>
         </div>
         <div className="agent-date-pill"><BsCalendar3 /> {dayjs().format("dddd, DD MMMM YYYY")}</div>

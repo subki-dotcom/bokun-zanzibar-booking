@@ -26,7 +26,7 @@ test("admin layout supports persisted collapse state and mobile drawer controls"
   const layout = read("src/layouts/admin/AdminLayout.jsx");
   const topbar = read("src/components/admin/AdminTopBar.jsx");
 
-  assert.match(layout, /riser\.sidebar\.collapsed/);
+  assert.match(layout, /zts.sidebar.collapsed/);
   assert.match(layout, /LEGACY_SIDEBAR_STATE_KEY/);
   assert.match(layout, /event\.key === "Escape"/);
   assert.match(layout, /document\.body\.style\.overflow = isMobileMenuOpen \? "hidden"/);

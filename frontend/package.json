@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "test": "node --test ./test/*.test.js",
-    "build": "vite build && node scripts/prerender-public-pages.mjs",
+    "build": "vite build && node scripts/prerender-public-pages.mjs && node scripts/check-brand.mjs",
+    "check:brand": "node scripts/check-brand.mjs",
     "verify:seo": "node scripts/verify-public-seo.mjs",
     "preview": "vite preview"
   },

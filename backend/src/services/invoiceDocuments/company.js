@@ -11,7 +11,8 @@ const websiteHost = () => {
 };
 
 const companyDetails = () => ({
-  name: env.COMPANY_LEGAL_NAME || env.BRAND_NAME,
+  name: env.BRAND_NAME,
+  legalName: env.COMPANY_LEGAL_NAME || env.BRAND_NAME,
   tagline: "Zanzibar · Tanzania",
   address: env.COMPANY_ADDRESS,
   phone: env.SUPPORT_PHONE,

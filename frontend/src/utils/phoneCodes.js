@@ -134,7 +134,7 @@ export const getPhoneFormatExample = (countryCode = "", countries = []) => {
   const formatDigitCount = (format.match(/\./g) || []).length;
 
   if (!dialCode) {
-    return "+255778775044";
+    return "+255712345678";
   }
 
   if (formatDigitCount < 8 || formatDigitCount > 15) {

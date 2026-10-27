@@ -1,3 +1,5 @@
+import BrandMark from "../common/BrandMark";
+import { BRAND } from "../../config/brand";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -14,7 +16,7 @@ import {
   roleLabel
 } from "../../config/adminNavigation";
 
-const SECTION_STATE_KEY = "riser_admin_sidebar_sections";
+const SECTION_STATE_KEY = "zts_admin_sidebar_sections";
 
 const loadOpenSections = () => {
   try {
@@ -37,10 +39,10 @@ const PlannedBadge = () => <span className="admin-platform-nav-badge">Soon</span
 
 const SidebarBrand = ({ onNavigate, onClose }) => (
   <div className="admin-platform-brand-wrap">
-    <Link to="/admin" className="admin-platform-brand" onClick={onNavigate} aria-label="Riser admin dashboard">
-      <span className="admin-platform-brand-mark">R</span>
+    <Link to="/admin" className="admin-platform-brand" onClick={onNavigate} aria-label={`${BRAND.name} admin dashboard`}>
+      <span className="admin-platform-brand-mark brand-mark-slot"><BrandMark size="100%" /></span>
       <span className="admin-platform-brand-copy">
-        <strong>Riser</strong>
+        <strong>{BRAND.wordmark.top}</strong>
         <small>Business Platform</small>
       </span>
     </Link>

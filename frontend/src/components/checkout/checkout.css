@@ -1,5 +1,5 @@
 /* Checkout (mockups "Checkout" and "CheckoutMobile"). Scoped to .ck / .ck-header; tokens shared with the tour page. */
-@import "../../styles/riserTokens.css";
+@import "../../styles/brandTokens.css";
 
 .ck {
   min-height: 100vh;

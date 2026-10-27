@@ -3,6 +3,7 @@ const Refund = require("../../models/Refund");
 const Booking = require("../../models/Booking");
 const BookingRequest = require("../../models/BookingRequest");
 const AuditLog = require("../../models/AuditLog");
+const { env } = require("../../config/env");
 const AppError = require("../../utils/AppError");
 const logger = require("../../config/logger");
 const bookingsService = require("../bookings");
@@ -1184,7 +1185,7 @@ const processProviderRefund = async ({ refund, request, booking, payment, auth, 
     return pesapalService.requestRefund({
       confirmationCode,
       amount,
-      username: auth?.name || auth?.email || auth?.role || "Riser Tours admin",
+      username: auth?.name || auth?.email || auth?.role || `${env.BRAND_NAME} admin`,
       remarks: notes || refund.reason,
       requestId: traceId
     }).then((result) => ({

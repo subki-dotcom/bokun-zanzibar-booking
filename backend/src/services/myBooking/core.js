@@ -47,7 +47,7 @@ const csrfTokenFor = (sessionId = "", secret = "") =>
 const ticketCode = (reference = "", secret = "") => {
   const ref = normalizeReference(reference);
   const signature = crypto.createHmac("sha256", String(secret)).update(`riser-ticket:${ref}`).digest("base64url").slice(0, 12);
-  return `RISER:${ref}:${signature}`;
+  return `ZTS:${ref}:${signature}`;
 };
 
 const sixDigitCode = (randomInt = crypto.randomInt) => String(randomInt(0, 1000000)).padStart(6, "0");

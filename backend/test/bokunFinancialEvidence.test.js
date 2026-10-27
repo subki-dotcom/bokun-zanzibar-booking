@@ -229,7 +229,7 @@ test("missing commission, settlement, and currency conflicts require review", ()
   assert.equal(conflict.reasons.includes(STATUS.CURRENCY_MISMATCH), true);
 });
 
-test("internal Riser agent commission never becomes OTA commission", () => {
+test("internal agent commission never becomes OTA commission", () => {
   const booking = { agentId: "agent-john", sourceChannel: "AGENT_PORTAL", salesChannel: "DIRECT_WEBSITE" };
   const evidence = { grossAmount: "100.00", grossCurrency: "USD", invoiceEvidence: [{ type: "CustomerInvoice" }], paymentEvidence: [{ amount: "100.00" }] };
   const result = reconcileBokunFinancialEvidence({ booking, evidence: { ...evidence, agentCommissionAmount: "10.00" } });

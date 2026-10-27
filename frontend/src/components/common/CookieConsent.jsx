@@ -23,8 +23,8 @@ export default function CookieConsent({ store = cookieConsent }) {
       setDraft({ analytics: current?.analytics === true, advertising: current?.advertising === true });
       setOpen(true);
     };
-    window.addEventListener('riser:open-cookie-preferences', show);
-    return () => { unsubscribe(); window.removeEventListener('riser:open-cookie-preferences', show); };
+    window.addEventListener('zts:open-cookie-preferences', show);
+    return () => { unsubscribe(); window.removeEventListener('zts:open-cookie-preferences', show); };
   }, [store]);
   const save = (value) => {
     const persisted = store.save(value);

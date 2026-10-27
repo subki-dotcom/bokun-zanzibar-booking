@@ -62,6 +62,7 @@ export const documentTitle = (doc = {}) => (doc.kind === "credit_note" ? "Credit
 
 export const companyLines = (company = {}) =>
   [
+    company.legalName && company.legalName !== company.name ? company.legalName : "",
     company.address || "",
     [company.phone, company.email].filter(Boolean).join(" · "),
     company.website || "",

@@ -1,6 +1,7 @@
 // Pure helpers for the payment pages (mockups "Pay", "PayIssue", "Confirmed"): which screen a payment state shows,
 // and the trip line. Built only from the booking's payment status.
 import { formatTripDate, travellersText } from "../checkout/checkoutData.js";
+import { BRAND } from "../../config/brand.js";
 
 // pay | processing | problem | confirmed | cancelled, from the backend status and whether a provider page is open.
 export const screenFor = (data = null) => {
@@ -128,7 +129,7 @@ export const icsFile = (event, uid = "") =>
     ? [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//Riser Tours & Safaris//Booking//EN",
+        `PRODID:-//${BRAND.name}//Booking//EN`,
         "BEGIN:VEVENT",
         `UID:${uid || utcStamp(event.start)}@zanzibartoursandsafaris.co.tz`,
         `DTSTAMP:${utcStamp(new Date())}`,

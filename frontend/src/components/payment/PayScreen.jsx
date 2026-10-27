@@ -55,7 +55,7 @@ const PayScreen = ({ data, headingRef, choices = [], switching = false, picking 
   useEffect(() => {
     const onMessage = (event) => {
       if (event.source !== frameRef.current?.contentWindow) return;
-      if (event.data?.type === "riser:pesapal-frame-return") onFrameReturn?.();
+      if (event.data?.type === "zts:pesapal-frame-return") onFrameReturn?.();
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);

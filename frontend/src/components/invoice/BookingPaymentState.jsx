@@ -58,7 +58,7 @@ export function PaymentTruthDetails({ record = {} }) {
       <div><dt>Cash receipt</dt><dd>{cashReceipt?.status === 'CONFIRMED' ? 'Confirmed local receipt' : cashReceipt?.status === 'NONE' ? 'No local receipt recorded' : 'Unavailable'}</dd></div>
       <div><dt>Bank reconciliation</dt><dd>{reconciliation?.supported && reconciliation.status === 'RECONCILED' ? 'Reconciled' : 'Unavailable — payment review does not confirm bank reconciliation'}</dd></div>
     </dl>
-    <p className="bpt-note">Customer payment and local cash receipt are separate. A channel-reported payment does not confirm a payout to Riser.</p>
+    <p className="bpt-note">Customer payment and local cash receipt are separate. A channel-reported payment does not confirm a payout to us.</p>
     {payment?.conflict && <p className="bpt-review">Review the payment source before requesting another customer payment.</p>}
   </section>;
 }

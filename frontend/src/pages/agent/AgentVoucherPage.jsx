@@ -138,8 +138,8 @@ const AgentVoucherPage = () => {
 
           <div className="voucher-support">
             <strong>Emergency Contact / WhatsApp</strong>
-            <span>+255 778 775 044</span>
-            <span>info@risertoursandsafaris.co.tz</span>
+            <span>{BRAND.phone}</span>
+            <span>{BRAND.email}</span>
           </div>
         </Card.Body>
       </Card>

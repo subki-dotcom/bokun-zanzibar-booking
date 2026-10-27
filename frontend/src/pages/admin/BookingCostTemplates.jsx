@@ -438,7 +438,7 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
         <div>
           <span className="admin-platform-eyebrow">Booking Accounting / Cost Templates</span>
           <h2>Costed Products</h2>
-          <p>Products and options from Bokun with internal cost templates configured in Riser.</p>
+          <p>Products and options from Bokun with internal cost templates configured here.</p>
         </div>
         <div className="d-flex flex-wrap gap-2">
           <Button variant="outline-primary" onClick={syncProducts} disabled={syncingProducts}>

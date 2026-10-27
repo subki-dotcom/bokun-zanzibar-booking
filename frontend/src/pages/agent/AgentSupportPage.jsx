@@ -13,10 +13,10 @@ const AgentSupportPage = () => (
             <h5>Contact {BRAND.name}</h5>
             <p className="text-muted">Our operations team can help with booking flow, pickup, customer confirmation, and commission questions.</p>
             <div className="agent-desk-actions">
-              <Button as="a" href="https://wa.me/255778775044" target="_blank" rel="noreferrer" className="premium-btn text-white">
+              <Button as="a" href={BRAND.whatsappHref} target="_blank" rel="noreferrer" className="premium-btn text-white">
                 <BsWhatsapp className="me-2" /> WhatsApp
               </Button>
-              <Button as="a" href="mailto:info@risertoursandsafaris.co.tz" variant="outline-success">
+              <Button as="a" href={`mailto:${BRAND.email}`} variant="outline-success">
                 <BsEnvelope className="me-2" /> Email
               </Button>
             </div>

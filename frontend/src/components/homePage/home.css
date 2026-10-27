@@ -1,5 +1,5 @@
-/* Home page (mockups "HomePro" and "HomeProMobile"). Scoped to .hp; tokens in styles/riserTokens.css. */
-@import "../../styles/riserTokens.css";
+/* Home page (mockups "HomePro" and "HomeProMobile"). Scoped to .hp; tokens in styles/brandTokens.css. */
+@import "../../styles/brandTokens.css";
 
 .hp {
   background: var(--bg);

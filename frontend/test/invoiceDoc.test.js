@@ -25,5 +25,5 @@ test("only the card brand and last 4 digits are shown", () => {
 test("phone item line and company lines", () => {
   const doc = { trip: { date: "2026-11-30", startTime: "09:00" } };
   assert.equal(mobileItemLine(doc, { qty: 1, subDescription: "Nungwi hotel to Nungwi hotels · Adult" }), "30 Nov 2026 · 09:00 · 1 × Adult");
-  assert.deepEqual(companyLines({ phone: "+255 778 775 044", email: "info@x.tz", tin: "123" }), ["+255 778 775 044 · info@x.tz", "TIN: 123"]);
+  assert.deepEqual(companyLines({ phone: "+255 712 345 678", email: "info@x.tz", tin: "123" }), ["+255 712 345 678 · info@x.tz", "TIN: 123"]);
 });

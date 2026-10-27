@@ -340,7 +340,7 @@ test("imports confirmed Bokun booking once and repeated sync is idempotent", asy
   assert.equal(harness.state.audits.filter(row => row.action === "bokun_payment_status_synchronized").length, 1);
 });
 
-test("round-trip import preserves the existing internal Riser agent relationship", async () => {
+test("round-trip import preserves the existing internal agent relationship", async () => {
   const harness = createHarness({
     bookings: [{
       _id: "booking-agent-owned",
