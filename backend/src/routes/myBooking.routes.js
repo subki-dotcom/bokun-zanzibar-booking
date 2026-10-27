@@ -9,6 +9,7 @@ const {
   myBookingLookupReferenceLimiter,
   myBookingSignInLimiter,
   myBookingCodeLimiter,
+  myBookingInvoiceEmailLimiter,
   bookingRequestWriteLimiter
 } = require("../middleware/rateLimiter");
 const { noStore, loadSession, requireSession, requireSessionFor, requireSameOrigin, requireCsrf } = require("../middleware/myBookingSession");
@@ -25,6 +26,10 @@ router.post("/session/sign-out", requireSession, requireCsrf, controller.signOut
 const own = [requireSession, requireSessionFor("reference")];
 router.get("/bookings/:reference", own, validateRequest(schemas.bookingSchema), controller.dashboard);
 router.get("/bookings/:reference/invoice", own, controller.invoice);
+router.post("/bookings/:reference/invoice/pdf-link", own, requireCsrf, controller.invoicePdfLink);
+router.post("/bookings/:reference/invoice/email", own, requireCsrf, myBookingInvoiceEmailLimiter, controller.emailInvoice);
+// The signed link from pdf-link (10 minutes), only with the session of that booking.
+router.get("/documents/pdf", requireSession, controller.invoicePdf);
 router.get("/bookings/:reference/ticket.pdf", own, controller.ticketPdf);
 router.get("/bookings/:reference/ticket-qr.svg", own, controller.ticketQr);
 router.get("/bookings/:reference/cancellation-estimate", own, controller.cancellationEstimate);

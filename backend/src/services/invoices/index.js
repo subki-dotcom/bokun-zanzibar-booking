@@ -1,4 +1,3 @@
-const dayjs = require("dayjs");
 const Invoice = require("../../models/Invoice");
 const Refund = require("../../models/Refund");
 const { env } = require("../../config/env");
@@ -59,12 +58,9 @@ const resolveInvoiceAccounting = ({
   };
 };
 
-const nextInvoiceNumber = async () => {
-  const datePart = dayjs().format("YYYYMMDD");
-  const prefix = `INV-${datePart}`;
-  const countToday = await Invoice.countDocuments({ invoiceNumber: { $regex: `^${prefix}` } });
-  return `${prefix}-${String(countToday + 1).padStart(4, "0")}`;
-};
+// INV-2026-00001: one atomic counter per year, so numbers are unique and never reused. Invoices issued before
+// (INV-20261024-0001) keep their numbers.
+const nextInvoiceNumber = () => require("../invoiceDocuments/numbering").nextDocumentNumber("INV");
 
 const buildInvoiceSnapshot = async ({ booking, productSnapshot }) => {
   const existingInvoice = await Invoice.findOne({ bookingReference: booking.bookingReference })
@@ -195,12 +191,15 @@ const upsertInvoiceFromSnapshot = async (invoiceSnapshot) => {
   if (!bookingReference) throw new Error("Invoice bookingReference is required");
   const mutableSnapshot = { ...invoiceSnapshot };
   const invoiceNumber = mutableSnapshot.invoiceNumber;
+  // The issue date is set once, when the invoice is created; later syncs do not move it.
+  const issueDate = mutableSnapshot.issueDate || new Date();
   delete mutableSnapshot.invoiceNumber;
   delete mutableSnapshot.bookingReference;
+  delete mutableSnapshot.issueDate;
   try {
     const invoice = await Invoice.findOneAndUpdate(
       { bookingReference },
-      { $set: mutableSnapshot, $setOnInsert: { bookingReference, invoiceNumber } },
+      { $set: mutableSnapshot, $setOnInsert: { bookingReference, invoiceNumber, issueDate } },
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     );
     return typeof invoice?.toObject === "function" ? invoice.toObject() : invoice;

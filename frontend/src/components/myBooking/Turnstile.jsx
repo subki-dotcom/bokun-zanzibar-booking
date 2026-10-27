@@ -22,12 +22,15 @@ const loadScript = () => {
 
 export const turnstileEnabled = Boolean(SITE_KEY);
 
-// Cloudflare Turnstile bot check (only when VITE_TURNSTILE_SITE_KEY is set). onToken("") when it expires.
-const Turnstile = ({ onToken, resetSignal = 0 }) => {
+// Cloudflare Turnstile bot check (only when VITE_TURNSTILE_SITE_KEY is set). onToken("") when it expires;
+// onError(code) when the check cannot run (e.g. 110200: this domain is not allowed for the site key).
+const Turnstile = ({ onToken, onError = () => {}, resetSignal = 0 }) => {
   const box = useRef(null);
   const widget = useRef(null);
   const tokenRef = useRef(onToken);
   tokenRef.current = onToken;
+  const errorRef = useRef(onError);
+  errorRef.current = onError;
 
   useEffect(() => {
     if (!SITE_KEY) return undefined;
@@ -38,12 +41,23 @@ const Turnstile = ({ onToken, resetSignal = 0 }) => {
         widget.current = turnstile.render(box.current, {
           sitekey: SITE_KEY,
           size: "flexible",
-          callback: (token) => tokenRef.current(token),
+          callback: (token) => {
+            errorRef.current("");
+            tokenRef.current(token);
+          },
           "expired-callback": () => tokenRef.current(""),
-          "error-callback": () => tokenRef.current("")
+          "error-callback": (code) => {
+            tokenRef.current("");
+            errorRef.current(String(code || "error"));
+            // Handled here: no automatic retry loop.
+            return true;
+          }
         });
       })
-      .catch(() => tokenRef.current(""));
+      .catch(() => {
+        tokenRef.current("");
+        errorRef.current("script");
+      });
     return () => {
       cancelled = true;
       if (widget.current !== null && window.turnstile) window.turnstile.remove(widget.current);

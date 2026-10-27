@@ -33,6 +33,8 @@ const MyBookingOpenPage = lazy(() => import("../pages/public/MyBookingOpenPage")
 const BookingDashboardPage = lazy(() => import("../pages/public/BookingDashboardPage"));
 const InvoiceDetailsPage = lazy(() => import("../pages/public/InvoiceDetailsPage"));
 const AdminInvoicesPage = lazy(() => import("../pages/admin/AdminInvoicesPage"));
+const AdminInvoiceDocumentPage = lazy(() => import("../pages/admin/AdminInvoiceDocumentPage"));
+const VerifyInvoicePage = lazy(() => import("../pages/public/VerifyInvoicePage"));
 const LoginPage = lazy(() => import("../pages/public/LoginPage"));
 const AgentRegisterPage = lazy(() => import("../pages/public/AgentRegisterPage"));
 const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
@@ -125,6 +127,7 @@ const AppRoutes = () => {
         <Route path="/my-booking/open" element={<MyBookingOpenPage />} />
         <Route path="/my-booking/:reference" element={<BookingDashboardPage />} />
         <Route path="/invoice/:bookingReference" element={<InvoiceDetailsPage />} />
+        <Route path="/verify/:token" element={<VerifyInvoicePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/agent-register" element={<AgentRegisterPage />} />
         <Route path="/privacy" element={<LegalPage />} />
@@ -157,6 +160,7 @@ const AppRoutes = () => {
         <Route path="/admin/operations/bokun-sync/single-booking" element={<AdminBokunSyncPage />} />
         <Route path="/admin/booking-accounting/dashboard" element={<AdminBookingAccountingPage />} />
         <Route path="/admin/booking-accounting/invoices" element={<AdminInvoicesPage />} />
+        <Route path="/admin/booking-accounting/invoices/:invoiceNumber" element={<AdminInvoiceDocumentPage />} />
         <Route path="/admin/booking-accounting/payments" element={<AdminPaymentsPage />} />
         <Route path="/admin/booking-accounting/refunds" element={<AdminBookingAccountingPage />} />
         <Route path="/admin/booking-accounting/expenses" element={<AdminBookingAccountingPage />} />

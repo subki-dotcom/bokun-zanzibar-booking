@@ -115,7 +115,8 @@ const buildBookingRequestEmail = (booking = {}, request = {}, templateKey = "req
   };
 };
 
-const sendWithResend = async ({ to, subject, html, replyTo = "" }) => {
+// attachments: [{ filename, content (Buffer) }]
+const sendWithResend = async ({ to, subject, html, replyTo = "", attachments = [] }) => {
   const response = await axios.post(
     "https://api.resend.com/emails",
     {
@@ -123,7 +124,8 @@ const sendWithResend = async ({ to, subject, html, replyTo = "" }) => {
       to: [to],
       reply_to: replyTo || env.EMAIL_REPLY_TO || undefined,
       subject,
-      html
+      html,
+      attachments: attachments.length ? attachments.map((file) => ({ filename: file.filename, content: Buffer.from(file.content).toString("base64") })) : undefined
     },
     {
       headers: {
@@ -141,6 +143,21 @@ const toSafeEmailProviderError = (error = {}) => ({
   code: String(error?.response?.data?.name || error?.code || "EMAIL_PROVIDER_REQUEST_FAILED"),
   message: String(error?.response?.data?.message || error?.message || "Email provider request failed").slice(0, 500)
 });
+
+// The confirmation and payment emails carry the invoice PDF (skipped quietly if it cannot be made).
+const INVOICE_TEMPLATES = new Set(["booking_confirmed", "payment_paid", "supplier_confirmation_pending"]);
+const invoiceAttachments = async (booking, templateKey, requestId = "") => {
+  if (!INVOICE_TEMPLATES.has(templateKey)) return [];
+  try {
+    const documents = require("../invoiceDocuments");
+    const views = await documents.getByBookingReference(booking.bookingReference);
+    const { buffer, filename } = await documents.pdfFor(views.invoice);
+    return [{ filename, content: buffer }];
+  } catch (error) {
+    logger.warn("Invoice PDF not attached", { bookingReference: booking.bookingReference, templateKey, requestId, code: error.code || "", error: error.message });
+    return [];
+  }
+};
 
 const sendEmailOnce = async ({ booking, templateKey, message, requestId = "" }) => {
   const recipient = String(booking?.customer?.email || "").trim().toLowerCase();
@@ -179,7 +196,8 @@ const sendEmailOnce = async ({ booking, templateKey, message, requestId = "" }) 
     // Each email carries its own fresh sign-in link, so the guest lands signed in to this booking.
     const built = message(await require("../myBooking/links").emailAccessUrl(booking));
     delivery.subject = built.subject;
-    const providerResponse = await sendWithResend({ to: recipient, subject: built.subject, html: built.html });
+    const attachments = await invoiceAttachments(booking, templateKey, requestId);
+    const providerResponse = await sendWithResend({ to: recipient, subject: built.subject, html: built.html, attachments });
     delivery.status = "sent";
     delivery.providerMessageId = String(providerResponse.id || "");
     delivery.sentAt = new Date();
@@ -275,4 +293,27 @@ const sendMyBookingCodeEmail = ({ booking, code, minutes }) =>
     devLog: `${booking.bookingReference} code ${code}`
   });
 
-module.exports = { sendBookingEmailOnce, sendBookingRequestEmailOnce, sendContactMessage, sendMyBookingLinkEmail, sendMyBookingCodeEmail };
+// "Email me a copy" from the invoice page.
+const sendInvoiceCopyEmail = async ({ booking, view, pdf, filename }) => {
+  if (!isEmailConfigured) {
+    if (env.NODE_ENV !== "production") logger.info(`[dev] Invoice email not sent (no provider): ${view.number} → ${booking.customer?.email}`);
+    return { sent: false, reason: "email_not_configured" };
+  }
+  try {
+    await sendWithResend({
+      to: booking.customer.email,
+      subject: `Invoice ${view.number} – ${booking.bookingReference}`,
+      html: buildEmailShell({
+        heading: `Your invoice ${escapeHtml(view.number)}`,
+        body: `<p>Hello ${escapeHtml(booking.customer?.firstName || "Traveler")},</p><p>Your invoice for <strong>${escapeHtml(view.trip?.tour || booking.productTitle || "")}</strong> (booking ${escapeHtml(booking.bookingReference)}) is attached as a PDF.</p>`
+      }),
+      attachments: [{ filename, content: pdf }]
+    });
+    return { sent: true };
+  } catch (error) {
+    logger.warn("Invoice email failed", toSafeEmailProviderError(error));
+    return { sent: false, reason: "provider_error" };
+  }
+};
+
+module.exports = { sendInvoiceCopyEmail, sendBookingEmailOnce, sendBookingRequestEmailOnce, sendContactMessage, sendMyBookingLinkEmail, sendMyBookingCodeEmail };

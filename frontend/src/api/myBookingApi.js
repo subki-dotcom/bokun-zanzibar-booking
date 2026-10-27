@@ -52,3 +52,8 @@ export const ticketQrUrl = (reference) => `${MY_BOOKING_API_BASE_URL}${bookingPa
 
 export const newIdempotencyKey = () =>
   typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}-${Math.random().toString(36).slice(2, 14)}`;
+
+// Invoice PDF: a 10-minute signed link (same origin, needs this session), and "Email me a copy".
+export const requestInvoicePdfLink = (reference, number = "") =>
+  client.post(`${bookingPath(reference)}/invoice/pdf-link`, { number }).then(data);
+export const emailInvoiceCopy = (reference) => client.post(`${bookingPath(reference)}/invoice/email`, {}).then((response) => response.data);

@@ -46,10 +46,11 @@ test("missing Bókun currency is rejected for review instead of defaulting to US
 });
 
 test("invoice snapshot inherits booking transaction currency", async () => {
-  const originals = { findOne: Invoice.findOne, countDocuments: Invoice.countDocuments,
+  const DocumentCounter = require("../src/models/DocumentCounter");
+  const originals = { findOne: Invoice.findOne, counter: DocumentCounter.findOneAndUpdate,
     aggregate: Refund.aggregate, summary: payments.getVerifiedAccountingSummary };
   Invoice.findOne = () => ({ select: () => ({ lean: async () => null }) });
-  Invoice.countDocuments = async () => 0;
+  DocumentCounter.findOneAndUpdate = () => ({ lean: async () => ({ seq: 1 }) });
   Refund.aggregate = async () => [];
   payments.getVerifiedAccountingSummary = async ({ fallbackCurrency }) => ({ amount: 0, currency: fallbackCurrency });
   try {
@@ -65,7 +66,7 @@ test("invoice snapshot inherits booking transaction currency", async () => {
       assert.equal(snapshot.accountingCurrency, currency);
     }
   } finally {
-    Invoice.findOne = originals.findOne; Invoice.countDocuments = originals.countDocuments;
+    Invoice.findOne = originals.findOne; DocumentCounter.findOneAndUpdate = originals.counter;
     Refund.aggregate = originals.aggregate; payments.getVerifiedAccountingSummary = originals.summary;
   }
 });

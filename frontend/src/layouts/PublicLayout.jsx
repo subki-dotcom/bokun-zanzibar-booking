@@ -23,10 +23,12 @@ const PublicLayout = () => {
   const isConfirmedRoute = /^\/booking\/confirmed\/[^/]+\/?$/.test(location.pathname);
   // The home page header sits over the hero photo.
   const isHomeRoute = location.pathname === "/";
+  // The invoice and its verification page have their own toolbar (mockup "Invoice"): no site header or footer.
+  const isDocumentRoute = /^\/(invoice|verify)\/[^/]+\/?$/.test(location.pathname);
   const pageHasHeader = isTourCheckout || isConfirmedRoute;
   // Checkout, payment and confirmation pages get the one-line footer.
   const compactFooter = isCheckoutRoute || isTourCheckout || /^\/booking-confirmation\//.test(location.pathname);
-  const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/my-booking(?:\/|$)|\/invoice\/|\/login$|\/agent-register$)/.test(location.pathname);
+  const noIndexRoute = isCheckoutRoute || /^(\/booking-confirmation\/|\/my-booking(?:\/|$)|\/invoice\/|\/verify\/|\/login$|\/agent-register$)/.test(location.pathname);
 
   useEffect(() => {
     persistMarketingAttribution(location.search);
@@ -36,7 +38,7 @@ const PublicLayout = () => {
     <div className={`app-shell ${isCheckoutRoute ? "is-checkout-route" : ""}`.trim()}>
       <AnalyticsTracker />
       {noIndexRoute ? <SeoHead noIndex title={BRAND.name} description="Secure booking account and payment page." /> : null}
-      {pageHasHeader ? null : isCheckoutRoute ? (
+      {pageHasHeader || isDocumentRoute ? null : isCheckoutRoute ? (
         <SiteHeader variant="checkout" showSteps={false} />
       ) : (
         <div className={isTourRoute ? "sh-slot-tour" : undefined}>
@@ -50,10 +52,10 @@ const PublicLayout = () => {
           <Outlet />
         </Suspense>
       </main>
-      <SiteFooter compact={compactFooter} />
+      {isDocumentRoute ? null : <SiteFooter compact={compactFooter} />}
       <CookieConsent />
       {/* The home page has its own WhatsApp button. */}
-      {BRAND.whatsappHref && !isTourCheckout && !isConfirmedRoute && !isHomeRoute ? <FloatingWhatsAppButton href={BRAND.whatsappHref} /> : null}
+      {BRAND.whatsappHref && !isTourCheckout && !isConfirmedRoute && !isHomeRoute && !isDocumentRoute ? <FloatingWhatsAppButton href={BRAND.whatsappHref} /> : null}
     </div>
   );
 };
