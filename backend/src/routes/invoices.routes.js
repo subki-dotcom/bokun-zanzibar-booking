@@ -9,6 +9,9 @@ const router = express.Router();
 
 router.get(
   "/booking/:bookingReference",
+  // Only the guest (payment key or My booking session for this booking) or staff; anyone else gets 404.
+  loadSession,
+  requireBookingAccess("bookingReference"),
   invoicesController.getByBookingReference
 );
 router.get(
