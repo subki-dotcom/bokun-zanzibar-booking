@@ -2,7 +2,9 @@ import { createAnalytics } from './analyticsCore';
 const env = import.meta.env;
 const analytics = createAnalytics({ measurementId: env.VITE_GA_MEASUREMENT_ID,
   gtmId: 'GTM-PF7LKQ72',
-  adsId: env.VITE_GOOGLE_ADS_ID, adsLabel: env.VITE_GOOGLE_ADS_BOOKING_LABEL,
+  // Google Ads account of Zanzibar Tours & Safaris (VITE_GOOGLE_ADS_ID overrides). Purchase conversions also need
+  // VITE_GOOGLE_ADS_BOOKING_LABEL and VITE_GOOGLE_ADS_DIRECT_CONVERSIONS=true.
+  adsId: env.VITE_GOOGLE_ADS_ID || 'AW-18541089433', adsLabel: env.VITE_GOOGLE_ADS_BOOKING_LABEL,
   directAds: env.VITE_GOOGLE_ADS_DIRECT_CONVERSIONS === 'true', production: env.PROD,
   debug: env.VITE_ANALYTICS_DEBUG === 'true' });
 export const initializeAnalytics = analytics.initialize;

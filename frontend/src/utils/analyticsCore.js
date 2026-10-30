@@ -93,9 +93,6 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
       w.gtag('set', 'ads_data_redaction', true);
       w.gtag('js', new Date());
       w.gtag('config', config.measurementId, { send_page_view: false, ...locationData(), allow_google_signals: false });
-      if (config.directAds && /^AW-\d+$/.test(config.adsId || '') && /^[A-Za-z0-9_-]+$/.test(config.adsLabel || '')) {
-        w.gtag('config', config.adsId, { send_page_view: false, ...locationData() });
-      }
       if (!w.document.querySelector('script[data-zts-google-tag]')) {
         const script = w.document.createElement('script');
         script.async = true; script.dataset.ztsGoogleTag = 'true';
@@ -105,6 +102,11 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
       state.configured = w.__ztsAnalyticsInitialized = true;
     } else if (w.__ztsAnalyticsInitialized) {
       state.configured = true;
+    }
+    // The Google Ads tag: only once the visitor has accepted advertising cookies (it may come later than Analytics).
+    if (/^AW-\d+$/.test(config.adsId || '') && state.consent.ad_storage === 'granted' && !w.__ztsAdsInitialized) {
+      w.gtag('config', config.adsId, { send_page_view: false, ...locationData() });
+      w.__ztsAdsInitialized = true;
     }
     return state.consent.analytics_storage === 'granted';
   });

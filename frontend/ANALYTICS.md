@@ -16,3 +16,11 @@ Advertising tags require the corresponding advertising consent, independently of
 
 Verify with Tag Assistant Preview and GA4 Realtime after deployment. A container being
 installed does not mean that additional tags or conversion tracking have been configured.
+
+## Google Ads (AW-18541089433)
+
+The Google Ads tag of Zanzibar Tours & Safaris (`AW-18541089433`, set in `src/utils/analytics.js`, overridable with
+`VITE_GOOGLE_ADS_ID`) is configured through the same Google tag only after the visitor accepts advertising cookies
+(`ad_storage` granted); with Analytics-only consent it is not loaded. Purchase conversions are sent only when
+`VITE_GOOGLE_ADS_BOOKING_LABEL` (the conversion label from Google Ads) is set and `VITE_GOOGLE_ADS_DIRECT_CONVERSIONS=true`,
+once per booking, from the verified purchase receipt.

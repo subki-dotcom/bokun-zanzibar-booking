@@ -200,3 +200,16 @@ test('booking funnel events are sent with consent, add_payment_info included', (
   }
   assert.equal(s.api.event('made_up_event', receipt), false, 'unknown events are still dropped');
 });
+test('the Google Ads tag is configured only after advertising consent, once, without a conversion label', () => {
+  const adsConfig = (events) => events.filter(e => e[0] === 'config' && e[1] === 'AW-18541089433');
+  const page = setup({ adsId: 'AW-18541089433' });
+  page.api.consent({ analytics_storage: 'granted' });
+  assert.equal(adsConfig(page.events).length, 0);
+  page.api.consent(granted);
+  page.api.consent(granted);
+  assert.equal(adsConfig(page.events).length, 1);
+  assert.equal(adsConfig(page.events)[0][2].send_page_view, false);
+  const none = setup({ adsId: 'not-an-ads-id' });
+  none.api.consent(granted);
+  assert.equal(none.events.filter(e => e[0] === 'config' && /^AW-/.test(String(e[1]))).length, 0);
+});
