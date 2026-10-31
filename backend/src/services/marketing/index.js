@@ -1,9 +1,12 @@
 const MarketingLead = require("../../models/MarketingLead");
 const emailService = require("../email");
+const AppError = require("../../utils/AppError");
+const logger = require("../../config/logger");
 
 const cleanText = (value = "", maxLength = 300) => String(value || "").trim().slice(0, maxLength);
 
-// A message from the contact page: kept with the guest's lead and sent to the team's inbox.
+// A message from the contact page: kept with the guest's lead, then emailed to the team's inbox. If the email cannot
+// be sent the message stays saved, the failure is logged, and the visitor is told to use WhatsApp or email instead.
 const sendContactMessage = async ({ name, email, phone = "", travelDate = "", message, website = "" }) => {
   // Robots fill in the hidden "website" field; they get the same answer and nothing is kept.
   if (website) return { received: true };
@@ -18,7 +21,11 @@ const sendContactMessage = async ({ name, email, phone = "", travelDate = "", me
     context: { message: String(message).slice(0, 2000), travelDate }
   });
   const delivery = await emailService.sendContactMessage({ name, email, phone, travelDate, message });
-  return { received: true, emailed: delivery.sent };
+  if (!delivery.sent) {
+    logger.error("Contact message saved but not emailed", { reason: delivery.reason, email: String(email).replace(/^(.).*(@.*)$/, "$1***$2") });
+    throw new AppError("We could not send your message. Please try again, or contact us on WhatsApp.", 502, "CONTACT_EMAIL_FAILED");
+  }
+  return { received: true, emailed: true };
 };
 
 const captureLead = async (payload = {}) => {

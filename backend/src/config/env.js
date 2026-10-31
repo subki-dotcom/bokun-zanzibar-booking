@@ -110,6 +110,16 @@ const env = cleanEnv(process.env, {
   PUBLIC_SITE_URL: str({ default: "https://zanzibartoursandsafaris.co.tz" }),
   // Cloudflare Turnstile secret for the "Find your booking" form; without it the form has no bot check.
   TURNSTILE_SECRET_KEY: str({ default: "" }),
+  // Contact-page messages: sent to CONTACT_TO_EMAIL (falls back to EMAIL_REPLY_TO) through SMTP when SMTP_HOST is
+  // set, otherwise through Resend (EMAIL_ENABLED/RESEND_API_KEY). MAIL_FROM is the sender, e.g.
+  // "Zanzibar Tours & Safaris <info@zanzibartoursandsafaris.co.tz>" (falls back to SMTP_USER / EMAIL_FROM).
+  CONTACT_TO_EMAIL: str({ default: "" }),
+  SMTP_HOST: str({ default: "" }),
+  SMTP_PORT: num({ default: 465 }),
+  SMTP_SECURE: bool({ default: true }),
+  SMTP_USER: str({ default: "" }),
+  SMTP_PASS: str({ default: "" }),
+  MAIL_FROM: str({ default: "" }),
   // Company details printed on invoices and credit notes (empty ones are left off).
   COMPANY_LEGAL_NAME: str({ default: "Zanzibar Tours and Safaris" }),
   COMPANY_ADDRESS: str({ default: "Stone Town, Zanzibar, Tanzania" }),
