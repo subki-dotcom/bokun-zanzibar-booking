@@ -2,6 +2,7 @@ const axios = require("axios");
 const EmailDelivery = require("../../models/EmailDelivery");
 const logger = require("../../config/logger");
 const { env, isEmailConfigured } = require("../../config/env");
+const smtp = require("./smtp");
 
 const escapeHtml = (value = "") => String(value || "")
   .replace(/&/g, "&amp;")
@@ -136,7 +137,7 @@ const senderAddress = () => {
 };
 
 // attachments: [{ filename, content (Buffer) }]
-const sendWithResend = async ({ to, subject, html, replyTo = "", attachments = [] }) => {
+const sendWithResend = async ({ to, subject, html, text = "", replyTo = "", attachments = [] }) => {
   const response = await axios.post(
     "https://api.resend.com/emails",
     {
@@ -145,6 +146,7 @@ const sendWithResend = async ({ to, subject, html, replyTo = "", attachments = [
       reply_to: replyTo || env.EMAIL_REPLY_TO || undefined,
       subject,
       html,
+      text: text || undefined,
       attachments: attachments.length ? attachments.map((file) => ({ filename: file.filename, content: Buffer.from(file.content).toString("base64") })) : undefined
     },
     {
@@ -249,30 +251,70 @@ const sendBookingRequestEmailOnce = ({ booking, request, templateKey, requestId 
     requestId
   });
 
-// A message from the contact page, to the team's inbox; replying answers the guest.
-const sendContactMessage = async ({ name, email, phone = "", travelDate = "", message }) => {
-  if (!isEmailConfigured || !env.EMAIL_REPLY_TO) return { sent: false, reason: "email_not_configured" };
-  const rows = [
+// A message from the contact page, to the team's inbox (CONTACT_TO_EMAIL, else EMAIL_REPLY_TO). Every field is in
+// the HTML and the plain-text body, escaped; Reply answers the visitor. Sent through SMTP when it is set up,
+// otherwise through Resend. Returns { sent: true } or { sent: false, reason } (the reason is never shown to guests).
+const contactRecipient = () => String(env.CONTACT_TO_EMAIL || env.EMAIL_REPLY_TO || "").trim();
+
+// No line breaks in a header value (subject), whatever the visitor typed.
+const oneLine = (value = "", max = 120) => String(value || "").replace(/[\r\n\t]+/g, " ").trim().slice(0, max);
+
+const buildContactEmail = ({ name, email, phone = "", travelDate = "", message }) => {
+  const fields = [
     ["Name", name],
     ["Email", email],
-    ["Phone", phone],
-    ["Travel date", travelDate]
-  ].filter(([, value]) => value);
-  const body = `
-    <table style="border-collapse:collapse;margin:0 0 16px">${rows
-      .map(([label, value]) => `<tr><td style="padding:4px 12px 4px 0;color:#64748b">${escapeHtml(label)}</td><td style="padding:4px 0">${escapeHtml(value)}</td></tr>`)
+    ["Phone", phone || "—"],
+    ["Travel date", travelDate || "—"]
+  ];
+  const html = `
+  <div style="font-family:Arial,sans-serif;color:#14211f;max-width:640px">
+    <h1 style="font-size:20px;margin:0 0 16px">New message from the contact page</h1>
+    <table role="presentation" style="border-collapse:collapse;margin:0 0 16px;font-size:14px">${fields
+      .map(([label, value]) => `<tr><td style="padding:6px 16px 6px 0;color:#55625f;vertical-align:top">${escapeHtml(label)}</td><td style="padding:6px 0">${escapeHtml(value)}</td></tr>`)
       .join("")}</table>
-    <p style="white-space:pre-wrap;margin:0">${escapeHtml(message)}</p>`;
+    <p style="margin:0 0 6px;color:#55625f;font-size:14px">Message</p>
+    <div style="white-space:pre-wrap;font-size:15px;line-height:1.55;padding:12px 14px;background:#f6f7f6;border-radius:8px">${escapeHtml(message)}</div>
+    <p style="margin:16px 0 0;color:#8a9592;font-size:12px">Sent from the contact form on ${escapeHtml(env.BRAND_NAME)}. Press Reply to answer ${escapeHtml(name)}.</p>
+  </div>`;
+  const text = [
+    "New message from the contact page",
+    "",
+    ...fields.map(([label, value]) => `${label}: ${value}`),
+    "",
+    "Message:",
+    String(message || ""),
+    "",
+    `Press Reply to answer ${name}.`
+  ].join("\n");
+  return { subject: `New contact message from ${oneLine(name, 80)}`, html, text };
+};
+
+const sendContactMessage = async (
+  { name, email, phone = "", travelDate = "", message },
+  { smtpReady = smtp.isSmtpConfigured(), resendReady = isEmailConfigured } = {}
+) => {
+  const to = contactRecipient();
+  if (!to) return { sent: false, reason: "no_recipient" };
+  const { subject, html, text } = buildContactEmail({ name, email, phone, travelDate, message });
   try {
-    await sendWithResend({
-      to: env.EMAIL_REPLY_TO,
-      subject: `Website message from ${String(name).slice(0, 60)}`,
-      html: buildEmailShell({ heading: "New message from the contact page", body }),
-      replyTo: email
-    });
-    return { sent: true };
+    if (smtpReady) {
+      await smtp.sendSmtpMail({ to, replyTo: oneLine(email, 160), subject, html, text });
+      return { sent: true, via: "smtp" };
+    }
+    if (resendReady) {
+      await sendWithResend({ to, subject, html, text, replyTo: oneLine(email, 160) });
+      return { sent: true, via: "resend" };
+    }
+    logger.error("Contact message not emailed: no SMTP or Resend settings");
+    return { sent: false, reason: "email_not_configured" };
   } catch (error) {
-    logger.warn("Contact message email failed", toSafeEmailProviderError(error));
+    // Logged for the team; SMTP host, user and server replies never go back to the visitor.
+    logger.error("Contact message email failed", {
+      via: smtpReady ? "smtp" : "resend",
+      code: String(error?.code || error?.response?.data?.name || ""),
+      responseCode: Number(error?.responseCode || error?.response?.status || 0) || null,
+      message: String(error?.message || "").slice(0, 300)
+    });
     return { sent: false, reason: "provider_error" };
   }
 };
@@ -336,4 +378,4 @@ const sendInvoiceCopyEmail = async ({ booking, view, pdf, filename }) => {
   }
 };
 
-module.exports = { sendInvoiceCopyEmail, sendBookingEmailOnce, sendBookingRequestEmailOnce, sendContactMessage, sendMyBookingLinkEmail, sendMyBookingCodeEmail };
+module.exports = { buildContactEmail, sendInvoiceCopyEmail, sendBookingEmailOnce, sendBookingRequestEmailOnce, sendContactMessage, sendMyBookingLinkEmail, sendMyBookingCodeEmail };
