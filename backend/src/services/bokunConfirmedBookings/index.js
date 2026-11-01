@@ -326,7 +326,15 @@ const buildBookingPatch = ({
   return patch;
 };
 
-const buildCancellationPatch = ({ mapped, existing, source, requestId, nowDate }) => {
+// What a cancellation audit compares: status, cancellation and Bókun status, without the run's own timestamp.
+const cancellationFingerprint = ({ bookingStatus, cancellation, bokunStatus } = {}) => {
+  const { mappedAt, ...status } = bokunStatus || {};
+  const { reason = "", cancelledAt = null, cancelledBy = "" } = cancellation || {};
+  return JSON.stringify([bookingStatus || "", reason, cancelledAt ? new Date(cancelledAt).toISOString() : null, cancelledBy,
+    status.raw || "", status.normalized || "", status.sourceField || ""]);
+};
+
+const buildCancellationPatch =({ mapped, existing, source, requestId, nowDate }) => {
   const { snapshot, status, channel } = mapped;
   const bokunOperationalDates = {
     ...(snapshot.bokunOperationalDates || {}),
@@ -552,23 +560,28 @@ const createBokunConfirmedBookingImportService = ({
 
     await require('../bookingPayment/sync').syncBokunPayment({ booking, payload: mapped.snapshot.rawBokunResponse, source, requestId, now: now(), AuditLogModel });
 
-    await recordAudit({
-      action: "bokun_booking_cancelled_synchronized",
-      booking,
-      requestId,
-      reason: "Bokun reported this booking as cancelled",
-      before,
-      after: {
-        bookingStatus: booking.bookingStatus,
-        cancellation: maybeToObject(booking.cancellation),
-        bokunStatus: maybeToObject(booking.bokunStatus)
-      },
-      metadata: {
-        source,
-        rawStatus: mapped.status.rawStatus,
-        normalizedStatus: mapped.status.normalizedStatus
-      }
-    });
+    const after = {
+      bookingStatus: booking.bookingStatus,
+      cancellation: maybeToObject(booking.cancellation),
+      bokunStatus: maybeToObject(booking.bokunStatus)
+    };
+    // Every import run sees the same cancelled booking again: audited only when the cancellation itself changed
+    // (bokunStatus.mappedAt is the time of this run, not a change).
+    if (cancellationFingerprint(before) !== cancellationFingerprint(after)) {
+      await recordAudit({
+        action: "bokun_booking_cancelled_synchronized",
+        booking,
+        requestId,
+        reason: "Bokun reported this booking as cancelled",
+        before,
+        after,
+        metadata: {
+          source,
+          rawStatus: mapped.status.rawStatus,
+          normalizedStatus: mapped.status.normalizedStatus
+        }
+      });
+    }
 
     return {
       action: "cancelled",
