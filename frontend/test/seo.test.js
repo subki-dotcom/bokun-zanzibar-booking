@@ -39,3 +39,11 @@ test("the home description fits in Google's snippet", async () => {
   assert.ok(view.HOME_DESCRIPTION.length <= 160, `${view.HOME_DESCRIPTION.length} characters`);
   assert.ok(view.HOME_TITLE.length <= 70);
 });
+
+test("the old vercel.app address sends every page to the own domain", () => {
+  const vercel = JSON.parse(fs.readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
+  const rule = vercel.redirects.find((item) => item.has?.some((condition) => condition.value === "bokun-zanzibar-booking.vercel.app"));
+  assert.equal(rule.source, "/:path*");
+  assert.equal(rule.destination, "https://zanzibartoursandsafaris.co.tz/:path*");
+  assert.equal(rule.permanent, true);
+});
