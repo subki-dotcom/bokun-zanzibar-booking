@@ -1,11 +1,12 @@
-// SMTP sending (Nodemailer) for messages to the team's own inbox. Settings come only from the environment:
-// SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM. The transport is made once and reused.
+// SMTP sending (Nodemailer) for every email when it is set up (guest emails and the team inbox). Settings come only
+// from the environment: SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM. The transport is reused.
 const nodemailer = require("nodemailer");
 const { env } = require("../../config/env");
 
 let transport = null;
+let testTransport = false;
 
-const isSmtpConfigured = () => Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS);
+const isSmtpConfigured = () => testTransport || Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS);
 
 const smtpTransport = () => {
   if (!transport) {
@@ -34,6 +35,7 @@ const sendSmtpMail = (message) => smtpTransport().sendMail({ from: mailFrom(), .
 // Tests swap the transport (e.g. nodemailer's jsonTransport) without real SMTP settings.
 const setTransportForTests = (next) => {
   transport = next;
+  testTransport = Boolean(next);
 };
 
 module.exports = { isSmtpConfigured, sendSmtpMail, mailFrom, setTransportForTests };

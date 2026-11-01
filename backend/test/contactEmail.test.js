@@ -107,3 +107,19 @@ test("HTTP: saved first; a failed email answers 502 with a clear message; succes
   assert.equal(robot.status, 200);
   assert.ok(!(await MarketingLead.exists({ email: "bot@example.test" })));
 });
+
+test("sign-in links and invoice copies go out through SMTP too", async (t) => {
+  const sent = [];
+  smtp.setTransportForTests({ sendMail: async (message) => (sent.push(message), { messageId: "<test@local>" }) });
+  t.after(() => smtp.setTransportForTests(null));
+  assert.equal(emailService.canSendEmail(), true);
+  const booking = { bookingReference: "ZNZ-7F3K9Q2M", productTitle: "Zanzibar Transfers", customer: { firstName: "Amani", email: "amani@example.test" } };
+  assert.deepEqual(await emailService.sendMyBookingLinkEmail({ booking, url: "https://zanzibartoursandsafaris.co.tz/my-booking/open#token=abc", minutes: 30 }), { sent: true });
+  assert.equal(sent[0].to, "amani@example.test");
+  assert.match(sent[0].subject, /ZNZ-7F3K9Q2M/);
+  assert.ok(sent[0].html.includes("my-booking/open#token=abc"));
+  assert.equal(sent[0].replyTo, "info@zanzibartoursandsafaris.co.tz");
+  const copy = await emailService.sendInvoiceCopyEmail({ booking, view: { number: "INV-2026-00001", trip: { tour: "Zanzibar Transfers" } }, pdf: Buffer.from("%PDF-test"), filename: "ZanzibarTours-Invoice-INV-2026-00001.pdf" });
+  assert.deepEqual(copy, { sent: true });
+  assert.equal(sent[1].attachments[0].filename, "ZanzibarTours-Invoice-INV-2026-00001.pdf");
+});

@@ -166,6 +166,19 @@ const toSafeEmailProviderError = (error = {}) => ({
   message: String(error?.response?.data?.message || error?.message || "Email provider request failed").slice(0, 500)
 });
 
+// Every guest email goes out the same way: SMTP (Nodemailer) when SMTP_HOST/SMTP_USER/SMTP_PASS are set,
+// otherwise Resend (EMAIL_ENABLED + RESEND_API_KEY + EMAIL_FROM). Replies go to EMAIL_REPLY_TO unless given.
+const canSendEmail = () => smtp.isSmtpConfigured() || isEmailConfigured;
+
+const deliverEmail = async ({ to, subject, html, text = "", replyTo = "", attachments = [] }) => {
+  const reply = replyTo || env.EMAIL_REPLY_TO || undefined;
+  if (smtp.isSmtpConfigured()) {
+    const info = await smtp.sendSmtpMail({ to, subject, html, text: text || undefined, replyTo: reply, attachments });
+    return { id: String(info?.messageId || "") };
+  }
+  return sendWithResend({ to, subject, html, text, replyTo: reply, attachments });
+};
+
 // The confirmation and payment emails carry the invoice PDF (skipped quietly if it cannot be made).
 const INVOICE_TEMPLATES = new Set(["booking_confirmed", "payment_paid", "supplier_confirmation_pending"]);
 const invoiceAttachments = async (booking, templateKey, requestId = "") => {
@@ -201,7 +214,7 @@ const sendEmailOnce = async ({ booking, templateKey, message, requestId = "" }) 
 
   delivery.lastAttemptAt = new Date();
 
-  if (!isEmailConfigured) {
+  if (!canSendEmail()) {
     delivery.subject = message(bookingUrl(booking)).subject;
     delivery.status = "skipped";
     delivery.error = "Email delivery is not configured";
@@ -219,7 +232,7 @@ const sendEmailOnce = async ({ booking, templateKey, message, requestId = "" }) 
     const built = message(await require("../myBooking/links").emailAccessUrl(booking));
     delivery.subject = built.subject;
     const attachments = await invoiceAttachments(booking, templateKey, requestId);
-    const providerResponse = await sendWithResend({ to: recipient, subject: built.subject, html: built.html, attachments });
+    const providerResponse = await deliverEmail({ to: recipient, subject: built.subject, html: built.html, attachments });
     delivery.status = "sent";
     delivery.providerMessageId = String(providerResponse.id || "");
     delivery.sentAt = new Date();
@@ -322,12 +335,13 @@ const sendContactMessage = async (
 // "My booking" emails that are sent every time they are asked for (no once-per-booking record). Without an email
 // provider outside production the link is written to the server log so the flow can be tested locally.
 const sendMyBookingEmail = async ({ to, subject, heading, body, ctaLabel = "", ctaUrl = "", devLog = "" }) => {
-  if (!isEmailConfigured) {
+  if (!canSendEmail()) {
     if (env.NODE_ENV !== "production" && devLog) logger.info(`[dev] My booking email not sent (no provider): ${devLog}`);
+    else logger.error("My booking email not sent: no SMTP or Resend settings");
     return { sent: false, reason: "email_not_configured" };
   }
   try {
-    await sendWithResend({ to, subject, html: buildEmailShell({ heading, body, ctaLabel, ctaUrl }) });
+    await deliverEmail({ to, subject, html: buildEmailShell({ heading, body, ctaLabel, ctaUrl }) });
     return { sent: true };
   } catch (error) {
     logger.warn("My booking email failed", toSafeEmailProviderError(error));
@@ -357,12 +371,12 @@ const sendMyBookingCodeEmail = ({ booking, code, minutes }) =>
 
 // "Email me a copy" from the invoice page.
 const sendInvoiceCopyEmail = async ({ booking, view, pdf, filename }) => {
-  if (!isEmailConfigured) {
+  if (!canSendEmail()) {
     if (env.NODE_ENV !== "production") logger.info(`[dev] Invoice email not sent (no provider): ${view.number} → ${booking.customer?.email}`);
     return { sent: false, reason: "email_not_configured" };
   }
   try {
-    await sendWithResend({
+    await deliverEmail({
       to: booking.customer.email,
       subject: `Invoice ${view.number} – ${booking.bookingReference}`,
       html: buildEmailShell({
@@ -378,4 +392,4 @@ const sendInvoiceCopyEmail = async ({ booking, view, pdf, filename }) => {
   }
 };
 
-module.exports = { buildContactEmail, sendInvoiceCopyEmail, sendBookingEmailOnce, sendBookingRequestEmailOnce, sendContactMessage, sendMyBookingLinkEmail, sendMyBookingCodeEmail };
+module.exports = { canSendEmail, deliverEmail, buildContactEmail, sendInvoiceCopyEmail, sendBookingEmailOnce, sendBookingRequestEmailOnce, sendContactMessage, sendMyBookingLinkEmail, sendMyBookingCodeEmail };
