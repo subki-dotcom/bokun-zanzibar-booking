@@ -422,6 +422,37 @@ test("single resync synchronizes Bokun cancellation only for an existing local b
   assert.equal(cancelledAudits(), 1);
 });
 
+test("a channel amendment: the cancelled old Bokun booking does not cancel the booking now following the new one", async () => {
+  const harness = createHarness({
+    bookings: [
+      {
+        _id: "booking-amended",
+        bookingReference: "VTR-1001",
+        bokunBookingId: "BOKUN-2002",
+        bokunConfirmationCode: "CONF-2002",
+        bookingStatus: "confirmed",
+        paymentStatus: "paid",
+        sourceChannel: "viator",
+        salesChannel: "VIATOR",
+        customer: {},
+        bokunImport: {}
+      }
+    ],
+    // The old Bokun booking (BOKUN-1001) of the same channel reference was cancelled by the amendment.
+    lookupBooking: async () => ({
+      raw: confirmedBooking({ status: "CANCELLED", cancellationDate: "2026-08-07T10:00:00.000Z" })
+    })
+  });
+
+  const result = await harness.service.manualResync({ reference: "CONF-1001", requestId: "amended-cancel" });
+
+  assert.equal(result.result.action, "skipped");
+  assert.equal(result.result.reason, "cancelled_booking_replaced_by_active_bokun_booking");
+  assert.equal(harness.state.bookings[0].bookingStatus, "confirmed");
+  assert.equal(harness.state.bookings[0].bokunBookingId, "BOKUN-2002");
+  assert.equal(harness.state.audits.filter(row => row.action === "bokun_booking_cancelled_synchronized").length, 0);
+});
+
 test("existing paid direct website booking keeps local financial truth while linking to Bokun", async () => {
   const harness = createHarness({
     bookings: [

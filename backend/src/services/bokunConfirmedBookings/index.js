@@ -534,6 +534,20 @@ const createBokunConfirmedBookingImportService = ({
       };
     }
 
+    // A channel amendment (e.g. GetYourGuide) cancels the old Bókun booking and creates a new one with the same
+    // channel reference. The cancellation of the old one must not cancel the local booking that now follows the new,
+    // still active Bókun booking; otherwise the two keep overwriting each other on every import run.
+    const replacedBy = String(existing.bokunBookingId || "");
+    if (replacedBy && snapshot.bokunBookingId && replacedBy !== String(snapshot.bokunBookingId) && existing.bookingStatus !== "cancelled") {
+      return {
+        action: "skipped",
+        reason: "cancelled_booking_replaced_by_active_bokun_booking",
+        bookingReference: existing.bookingReference,
+        bokunBookingId: snapshot.bokunBookingId,
+        activeBokunBookingId: replacedBy
+      };
+    }
+
     if (dryRun) {
       return {
         action: "cancelled",
