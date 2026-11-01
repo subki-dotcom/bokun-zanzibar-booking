@@ -5,6 +5,9 @@ const analytics = createAnalytics({ measurementId: env.VITE_GA_MEASUREMENT_ID,
   // Google Ads account of Zanzibar Tours & Safaris (VITE_GOOGLE_ADS_ID overrides). Purchase conversions also need
   // VITE_GOOGLE_ADS_BOOKING_LABEL and VITE_GOOGLE_ADS_DIRECT_CONVERSIONS=true.
   adsId: env.VITE_GOOGLE_ADS_ID || 'AW-18541089433', adsLabel: env.VITE_GOOGLE_ADS_BOOKING_LABEL,
+  // "Contact form submitted" conversion (Submit lead form). WhatsApp / phone click labels stay empty until created in Ads.
+  contactLabel: env.VITE_GOOGLE_ADS_CONTACT_LABEL || 'tMbNCIOd-a8dEJmliolF',
+  whatsappLabel: env.VITE_GOOGLE_ADS_WHATSAPP_LABEL || '', phoneLabel: env.VITE_GOOGLE_ADS_PHONE_LABEL || '',
   directAds: env.VITE_GOOGLE_ADS_DIRECT_CONVERSIONS === 'true', production: env.PROD,
   debug: env.VITE_ANALYTICS_DEBUG === 'true' });
 export const initializeAnalytics = analytics.initialize;
@@ -13,6 +16,9 @@ export const updateAnalyticsConsent = analytics.consent;
 export const trackAnalyticsEvent = analytics.event;
 export const trackPageView = analytics.page;
 export const trackPurchase = analytics.purchase;
+export const trackContactLead = analytics.lead;
+export const trackContactClick = analytics.contactClick;
+export const rememberConversionUserData = analytics.rememberUserData;
 export const trackViewItem = (tour) => analytics.event('view_item', tourData(tour), `view:${globalThis.history?.state?.key}:${globalThis.location?.pathname}`);
 export const trackSelectItem = (tour) => analytics.event('select_item', tourData(tour));
 // Funnel steps on the tour page. Sent only with analytics consent (analytics.event checks it).

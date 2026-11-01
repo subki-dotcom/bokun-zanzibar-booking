@@ -9,7 +9,7 @@ import { usePaymentProviders } from "../../context/PaymentProvidersContext";
 import { clearBookingSession, readBookingSession, saveBookingSession } from "../../utils/bookingSession";
 import { buildMarketingContext } from "../../utils/marketingAttribution";
 import { buildPesapalProcessingPath } from "../../utils/pesapalProcessing";
-import { trackAnalyticsEvent } from "../../utils/analytics";
+import { rememberConversionUserData, trackAnalyticsEvent } from "../../utils/analytics";
 import { pickupAreaFromOption, pickupPlacesForOption } from "../../utils/pickupPlaces";
 import {
   buildPaxFromParticipants,
@@ -482,6 +482,9 @@ const useCheckout = () => {
       });
 
       trackAnalyticsEvent("add_payment_info", { currency, value: amount, payment_type: provider, items: itemFor(tour) });
+      // Google Ads enhanced conversions on the purchase page after the payment provider (this tab only, and only
+      // with ad_user_data consent; gtag hashes it there).
+      rememberConversionUserData({ email: customer.email, phone_number: customer.phone });
       void captureMarketingLead({
         email: customer.email,
         firstName: customer.firstName,
