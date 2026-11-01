@@ -413,6 +413,13 @@ test("single resync synchronizes Bokun cancellation only for an existing local b
   assert.equal(harness.state.bookings[0].cancellation.cancelledBy, "bokun_import");
   assert.equal(harness.state.bookings[0].bokunOperationalDates.cancellationDate.raw, "2026-08-07T10:00:00.000Z");
   assert.equal(new Date(harness.state.bookings[0].cancellation.cancelledAt).toISOString(), "2026-08-07T10:00:00.000Z");
+
+  // Every later run sees the same cancelled booking again: no new cancellation audit entry each time.
+  const cancelledAudits = () => harness.state.audits.filter(row => row.action === "bokun_booking_cancelled_synchronized").length;
+  assert.equal(cancelledAudits(), 1);
+  await harness.service.manualResync({ reference: "CONF-1001", requestId: "cancel-sync-2" });
+  await harness.service.manualResync({ reference: "CONF-1001", requestId: "cancel-sync-3" });
+  assert.equal(cancelledAudits(), 1);
 });
 
 test("existing paid direct website booking keeps local financial truth while linking to Bokun", async () => {

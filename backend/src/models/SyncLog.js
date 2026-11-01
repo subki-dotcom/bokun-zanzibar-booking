@@ -20,5 +20,7 @@ const syncLogSchema = new mongoose.Schema(
 syncLogSchema.index({ operation: 1, status: 1, startedAt: -1 });
 syncLogSchema.index({ source: 1, operation: 1, createdAt: -1 });
 syncLogSchema.index({ status: 1, createdAt: -1 });
+// Run logs of the Bókun sync jobs (one every few minutes) are kept for 7 days, then MongoDB deletes them itself.
+syncLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7 * 24 * 60 * 60, name: "synclog_ttl_7_days" });
 
 module.exports = mongoose.model("SyncLog", syncLogSchema);

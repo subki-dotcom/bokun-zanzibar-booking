@@ -3622,6 +3622,9 @@ const retryBookingFinalization = async ({ bookingId, auth, requestId, force = fa
   };
 };
 
+const RECONCILIATION_AUDIT_REPEAT_MS = 60 * 60 * 1000;
+const lastReconciliationAudit = { fingerprint: "", at: 0 };
+
 const reconcilePendingFinalizations = async ({
   limit = 20,
   auth = null,
@@ -3747,6 +3750,20 @@ const reconcilePendingFinalizations = async ({
       });
     }
   }
+
+  // The automatic run repeats every 30 seconds: it is audited only when it found or did something (a run by a
+  // person is always audited). Empty runs filled the database with hundreds of thousands of identical entries.
+  const didWork = summary.processed > 0 || summary.eligible > 0 || summary.confirmed > 0 || summary.failed > 0 ||
+    summary.manualReview > 0 || summary.duplicatesPrevented > 0;
+  if (!auth?.id && !force && !didWork) return { summary, results };
+  // The same outcome again (e.g. one booking still waiting for Bókun) is audited at most once an hour.
+  const fingerprint = JSON.stringify([summary, results.map((row) => `${row.bookingReference}:${row.status}:${row.errorCode || ""}`)]);
+  if (!auth?.id && !force && fingerprint === lastReconciliationAudit.fingerprint &&
+      Date.now() - lastReconciliationAudit.at < RECONCILIATION_AUDIT_REPEAT_MS) {
+    return { summary, results };
+  }
+  lastReconciliationAudit.fingerprint = fingerprint;
+  lastReconciliationAudit.at = Date.now();
 
   await AuditLog.create({
     actorId: auth?.id || null,

@@ -376,27 +376,36 @@ const applyBokunSnapshotToBooking = async ({
 
   if (businessChanged) {
     await updateInvoiceSnapshot(syncedBookingDoc);
-    await AuditLog.create({
-      actorId: null,
-      actorRole: source === "webhook" ? "bokun_webhook" : "bokun_poller",
-      action: source === "webhook" ? "booking_synced_from_bokun_webhook" : "booking_synced_from_bokun_polling",
-      entityType: "Booking",
-      entityId: syncedBookingDoc._id.toString(),
-      reason: reason || "Booking updated from Bokun source of truth",
-      requestId,
-      before,
-      after: {
-        bookingStatus: syncedBookingDoc.bookingStatus,
-        travelDate: syncedBookingDoc.travelDate,
-        startTime: syncedBookingDoc.startTime,
-        bokunBookingId: syncedBookingDoc.bokunBookingId,
-        bokunConfirmationCode: syncedBookingDoc.bokunConfirmationCode
-      },
-      metadata: {
-        syncSource: source,
-        bokunStatus: resolvedStatus
-      }
-    });
+    const action = source === "webhook" ? "booking_synced_from_bokun_webhook" : "booking_synced_from_bokun_polling";
+    const entityId = syncedBookingDoc._id.toString();
+    const after = {
+      bookingStatus: syncedBookingDoc.bookingStatus,
+      travelDate: syncedBookingDoc.travelDate,
+      startTime: syncedBookingDoc.startTime,
+      bokunBookingId: syncedBookingDoc.bokunBookingId,
+      bokunConfirmationCode: syncedBookingDoc.bokunConfirmationCode
+    };
+    // When two sync paths keep setting the same values again, the same entry is not written on every run.
+    const last = await AuditLog.findOne({ entityType: "Booking", entityId, action }, { before: 1, after: 1 })
+      .sort({ createdAt: -1 }).lean().catch(() => null);
+    const repeated = last && JSON.stringify(last.after) === JSON.stringify(after) && JSON.stringify(last.before) === JSON.stringify(before);
+    if (!repeated) {
+      await AuditLog.create({
+        actorId: null,
+        actorRole: source === "webhook" ? "bokun_webhook" : "bokun_poller",
+        action,
+        entityType: "Booking",
+        entityId,
+        reason: reason || "Booking updated from Bokun source of truth",
+        requestId,
+        before,
+        after,
+        metadata: {
+          syncSource: source,
+          bokunStatus: resolvedStatus
+        }
+      });
+    }
   }
 
   return {
