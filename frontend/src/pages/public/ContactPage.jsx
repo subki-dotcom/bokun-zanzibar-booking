@@ -2,7 +2,9 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LuClock, LuMail, LuMapPin, LuMessageCircle, LuPhone, LuRefreshCw } from "react-icons/lu";
 import SeoHead from "../../components/common/SeoHead";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { sendContactMessage } from "../../api/marketingApi";
+import { trackContactLead } from "../../utils/analytics";
 import { SITE, whatsappLink } from "../../config/site";
 import { SITE_PAGES } from "../../config/sitePages";
 import "./contactPage.css";
@@ -35,6 +37,18 @@ const withTimeout = (promise, ms) =>
     new Promise((_, reject) => setTimeout(() => reject(Object.assign(new Error("timeout"), { timeout: true })), ms))
   ]);
 
+// Phone for Google Ads enhanced conversions: E.164 (+447700900123) only when it is a valid international number.
+const toE164 = (value = "") => {
+  const raw = String(value).trim().replace(/^00/, "+");
+  if (!raw.startsWith("+")) return "";
+  try {
+    const parsed = parsePhoneNumberFromString(raw);
+    return parsed?.isValid() ? parsed.number : "";
+  } catch {
+    return "";
+  }
+};
+
 const prefersReducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 // Large round icons of the result panels: a check that draws itself, or an X.
@@ -64,6 +78,7 @@ const ContactPage = () => {
   const heading = useRef(null);
   const submitButton = useRef(null);
   const inFlight = useRef(false);
+  const submissionCount = useRef(0);
   const focusSubmit = useRef(false);
   const whatsapp = whatsappLink(SITE.whatsappHelloMessage);
 
@@ -107,9 +122,19 @@ const ContactPage = () => {
     setPhase("sending");
     setProgress("start");
     requestAnimationFrame(() => requestAnimationFrame(() => setProgress("running")));
+    // One id per submission, so the conversion is never counted twice for the same message.
+    submissionCount.current += 1;
+    const submissionId = `contact:${Date.now()}:${submissionCount.current}`;
     try {
       await withTimeout(sendContactMessage({ ...form, name: form.name.trim(), email: form.email.trim() }), SEND_TIMEOUT_MS);
       finish("sent");
+      // Conversion only after the server accepted the message, and never for robots (hidden "website" field filled:
+      // the server answers 200 to them too). Analytics can never change what the visitor sees.
+      if (!form.website) {
+        try {
+          trackContactLead(submissionId, { email: form.email, phone_number: toE164(form.phone) });
+        } catch { /* ignore */ }
+      }
     } catch (error) {
       setErrorKind(error?.status === 429 ? "rate" : "general");
       finish("error");

@@ -7,12 +7,15 @@ import App from "./app/App";
 import { AuthProvider } from "./context/AuthContext";
 import { PaymentProvidersProvider } from "./context/PaymentProvidersContext";
 import { initializeConsent } from "./utils/consent";
+import { installClickTracking } from "./utils/clickTracking";
 import { migrateBrandStorage } from "./utils/storageMigration";
 
 // Saved browser values under the old key names move to the current ones first.
 migrateBrandStorage();
 // Synchronous restoration before React effects can emit optional analytics.
 initializeConsent();
+// WhatsApp / phone / email link clicks, site-wide (one delegated listener).
+installClickTracking();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
