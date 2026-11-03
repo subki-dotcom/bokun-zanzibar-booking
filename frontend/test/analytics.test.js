@@ -259,13 +259,23 @@ test('WhatsApp and phone clicks: GA4 event with location; Ads conversion only wi
   assert.equal(before.api.contactClick('whatsapp_click', 'header'), false);
   assert.equal(before.events.filter(e => e[0] === 'event').length, 0, 'nothing before consent');
   const s = setup({ adsId: 'AW-18541089433' }); s.api.consent(granted);
+  const toGa4 = (name) => sent(s.events, name).filter(e => e[2].send_to === 'G-G4HFYGCFLH');
+  const toAds = (name) => sent(s.events, name).filter(e => e[2].send_to === 'AW-18541089433');
   assert.equal(s.api.contactClick('whatsapp_click', 'floating_button'), true);
   assert.equal(s.api.contactClick('phone_click', 'contact_page'), true);
-  assert.equal(sent(s.events, 'whatsapp_click')[0][2].link_location, 'floating_button');
-  assert.equal(sent(s.events, 'phone_click')[0][2].link_location, 'contact_page');
-  assert.equal(sent(s.events, 'conversion').length, 0, 'no labels: no Ads call');
+  assert.equal(toGa4('whatsapp_click')[0][2].link_location, 'floating_button');
+  assert.equal(toGa4('phone_click')[0][2].link_location, 'contact_page');
+  assert.equal(sent(s.events, 'conversion').length, 0, 'no labels: no label-based Ads conversion');
+  // The Google Ads event-based conversion "whatsapp_click": the same event to the Ads tag, once per click.
+  assert.equal(toAds('whatsapp_click').length, 1);
+  assert.equal(toAds('whatsapp_click')[0][2].link_location, 'floating_button');
+  assert.equal(toAds('phone_click').length, 0);
   s.api.contactClick('whatsapp_click', 'made-up');
-  assert.equal(sent(s.events, 'whatsapp_click')[1][2].link_location, undefined);
+  assert.equal(toGa4('whatsapp_click')[1][2].link_location, undefined);
+  assert.equal(toAds('whatsapp_click').length, 2);
+  const analyticsOnly = setup({ adsId: 'AW-18541089433' }); analyticsOnly.api.consent({ analytics_storage: 'granted' });
+  analyticsOnly.api.contactClick('whatsapp_click', 'header');
+  assert.equal(sent(analyticsOnly.events, 'whatsapp_click').filter(e => e[2].send_to === 'AW-18541089433').length, 0, 'Ads needs advertising consent');
   const labelled = setup({ adsId: 'AW-18541089433', whatsappLabel: 'waLabel', phoneLabel: 'telLabel' });
   labelled.api.consent(granted);
   labelled.api.contactClick('whatsapp_click', 'header'); labelled.api.contactClick('phone_click', 'footer');
