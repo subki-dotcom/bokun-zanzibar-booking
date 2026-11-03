@@ -34,6 +34,9 @@ Conversions:
   `whatsapp_click` / `phone_click` / `email_click` with `link_location` (Analytics consent); an Ads conversion too when
   `VITE_GOOGLE_ADS_WHATSAPP_LABEL` / `VITE_GOOGLE_ADS_PHONE_LABEL` is set (advertising consent). Add
   `data-track-location="…"` to a link to name its place explicitly.
+- Google Ads conversion "ZANZANZIBAR TOURS PROPART 2 (web) whatsapp_click" is event-based (no label): with advertising
+  consent every WhatsApp click also sends `whatsapp_click` to `AW-18541089433`. WhatsApp links open in a new tab, so
+  the snippet's delayed-navigation helper is not needed.
 
 Enhanced conversions: with `ad_user_data` granted, `gtag('set', 'user_data', { email, phone_number })` (email trimmed
 and lowercased, phone only in E.164) runs right before the contact conversion and the purchase events; gtag hashes it.

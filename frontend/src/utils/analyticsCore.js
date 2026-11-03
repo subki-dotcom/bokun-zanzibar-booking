@@ -247,7 +247,12 @@ export const createAnalytics = (config = {}, browser = () => typeof window === '
     const clickLabel = label(name === 'whatsapp_click' ? config.whatsappLabel : name === 'phone_click' ? config.phoneLabel : '');
     const toAds = Boolean(clickLabel) && adsAllowed();
     if (toAds) browser().gtag('event', 'conversion', { ...locationData(), send_to: `${config.adsId}/${clickLabel}` });
-    return toAnalytics || toAds;
+    // Google Ads conversion "whatsapp_click" (an event-based conversion, no label): the same event goes to the Ads tag.
+    // WhatsApp links open in a new tab, so nothing needs to wait for it.
+    const toAdsEvent = name === 'whatsapp_click' && adsAllowed();
+    if (toAdsEvent) browser().gtag('event', 'whatsapp_click', { ...locationData(),
+      ...(LINK_LOCATIONS.includes(location) ? { link_location: location } : {}), send_to: config.adsId });
+    return toAnalytics || toAds || toAdsEvent;
   });
   const suspend = guard(() => { if (browser()) browser()[`ga-disable-${config.measurementId}`] = true; });
   return { initialize, consent, event, page, purchase, suspend, lead, contactClick, rememberUserData };
