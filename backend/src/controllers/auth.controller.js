@@ -31,6 +31,15 @@ const registerAgent = asyncHandler(async (req, res) => {
   });
 });
 
+const changePassword = asyncHandler(async (req, res) => {
+  const data = await authService.changePassword(req.auth, req.validated.body);
+
+  return successResponse(res, {
+    message: "Password changed",
+    data
+  });
+});
+
 const me = asyncHandler(async (req, res) => {
   const profile = await authService.getProfile(req.auth);
 
@@ -41,6 +50,7 @@ const me = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  changePassword,
   login,
   registerAdmin,
   registerAgent,

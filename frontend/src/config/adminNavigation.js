@@ -684,11 +684,11 @@ export const adminNavigation = [
     children: [
       {
         id: "settings",
-        label: "System Settings",
+        label: "Settings",
         path: "/admin/settings",
         icon: BsGear,
         roles: ADMIN_ROLES.MANAGE,
-        status: "planned"
+        status: "active"
       }
     ]
   }

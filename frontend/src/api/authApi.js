@@ -17,6 +17,11 @@ export const registerAgent = async (payload) => {
   return response.data.data;
 };
 
+export const changePassword = async ({ currentPassword, newPassword }) => {
+  const response = await axiosClient.post("/auth/change-password", { currentPassword, newPassword });
+  return response.data.data;
+};
+
 export const fetchCurrentProfile = async () => {
   const response = await axiosClient.get("/auth/me", { timeout: AUTH_REQUEST_TIMEOUT_MS });
   return response.data.data;

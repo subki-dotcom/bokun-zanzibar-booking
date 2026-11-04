@@ -18137,6 +18137,61 @@ textarea.form-control {
   text-transform: uppercase;
 }
 
+/* Accordion sections: a folded section shows only its title; the icon rail (collapsed or tablet) shows every page. */
+.admin-platform-nav-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-platform-nav-section-toggle > span {
+  flex: 1;
+}
+
+.admin-platform-nav-section-toggle:hover,
+.admin-platform-nav-section-toggle:focus-visible {
+  color: var(--sidebar-text, inherit);
+  background: rgba(159, 176, 195, 0.12);
+}
+
+.admin-platform-nav-section-count {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  opacity: 0.75;
+}
+
+.admin-platform-nav-section.is-closed .admin-platform-nav-section-items {
+  display: none;
+}
+
+.admin-platform-nav-section.is-closed {
+  gap: 0;
+  padding: 0.2rem 0;
+}
+
+.admin-platform-nav-section + .admin-platform-nav-section.is-closed {
+  margin-top: 0;
+  padding-top: 0.2rem;
+}
+
+.admin-platform-sidebar.is-collapsed .admin-platform-nav-section.is-closed .admin-platform-nav-section-items {
+  display: grid;
+}
+
+@media (max-width: 1200px) and (min-width: 901px) {
+  .admin-platform-sidebar .admin-platform-nav-section.is-closed .admin-platform-nav-section-items {
+    display: grid;
+  }
+}
+
 .admin-platform-nav-section-items,
 .admin-platform-nav-nested,
 .admin-platform-nav-children {

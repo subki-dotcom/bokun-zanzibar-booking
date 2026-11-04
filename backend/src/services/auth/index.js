@@ -138,6 +138,24 @@ const login = async (payload) => {
   };
 };
 
+// Admin "Settings → My account": the current password must be right; the new one is hashed by the model.
+const changePassword = async (auth, { currentPassword, newPassword }) => {
+  if (auth?.userType === "agent") {
+    throw new AppError("Agents change their password in the agent portal.", 403, "PASSWORD_CHANGE_FORBIDDEN");
+  }
+  const user = await User.findById(auth?.id).select("+password");
+  if (!user || !user.isActive) throw new AppError("User not found", 404, "USER_NOT_FOUND");
+  if (!(await user.comparePassword(currentPassword))) {
+    throw new AppError("The current password is not right.", 400, "CURRENT_PASSWORD_INVALID");
+  }
+  if (await user.comparePassword(newPassword)) {
+    throw new AppError("The new password must be different from the current one.", 400, "PASSWORD_UNCHANGED");
+  }
+  user.password = newPassword;
+  await user.save();
+  return { changed: true };
+};
+
 const getProfile = async (auth) => {
   const Model = auth.userType === "agent" ? Agent : User;
   const user = await Model.findById(auth.id).lean();
@@ -168,6 +186,7 @@ module.exports = {
   registerAdmin,
   registerAgent,
   login,
+  changePassword,
   getProfile,
   signToken,
   canSeedAdmin

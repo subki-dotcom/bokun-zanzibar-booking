@@ -51,6 +51,7 @@ const AdminOperationsPage = lazy(() => import("../pages/admin/AdminOperationsPag
 const AdminBusinessIntelligencePage = lazy(() => import("../pages/admin/AdminBusinessIntelligencePage"));
 const AdminDisasterRecoveryPage = lazy(() => import("../pages/admin/AdminDisasterRecoveryPage"));
 const AdminSystemHealthPage = lazy(() => import("../pages/admin/AdminSystemHealthPage"));
+const AdminSettingsPage = lazy(() => import("../pages/admin/AdminSettingsPage"));
 const AdminPerformanceReviewPage = lazy(() => import("../pages/admin/AdminPerformanceReviewPage"));
 const AdminProductionReadinessPage = lazy(() => import("../pages/admin/AdminProductionReadinessPage"));
 const AdminBookingAccountingPage = lazy(() => import("../pages/admin/AdminBookingAccountingPage"));
@@ -338,7 +339,7 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/admin/settings" element={<AdminUnavailablePage module="Settings" title="Settings" />} />
+        <Route path="/admin/settings" element={<ProtectedRoute roles={["super_admin", "admin"]}><AdminSettingsPage /></ProtectedRoute>} />
 
         <Route path="/admin/bookings" element={<Navigate to="/admin/operations/bookings" replace />} />
         <Route path="/admin/agents" element={<Navigate to="/admin/operations/agents" replace />} />

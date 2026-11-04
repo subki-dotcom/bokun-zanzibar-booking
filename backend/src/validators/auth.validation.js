@@ -10,6 +10,15 @@ const loginSchema = z.object({
   params: z.object({}).optional()
 });
 
+const changePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(1).max(200),
+    newPassword: z.string().min(8, "The new password needs at least 8 characters.").max(128)
+  }),
+  query: z.object({}).optional(),
+  params: z.object({}).optional()
+});
+
 const registerAdminSchema = z.object({
   body: z.object({
     firstName: z.string().min(2),
@@ -40,6 +49,7 @@ const registerAgentSchema = z.object({
 });
 
 module.exports = {
+  changePasswordSchema,
   loginSchema,
   registerAdminSchema,
   registerAgentSchema
