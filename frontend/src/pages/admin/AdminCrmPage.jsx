@@ -312,6 +312,8 @@ const AdminCrmPage = () => {
   const [crmReportResult, setCrmReportResult] = useState(null);
   const [crmReportFormat, setCrmReportFormat] = useState("CSV");
   const [showLeadForm, setShowLeadForm] = useState(false);
+  // Which intake drawer is open on the Opportunities / Quotes / Follow-ups / Tasks / B2B pages.
+  const [crmDrawer, setCrmDrawer] = useState("");
   const [leadForm, setLeadForm] = useState(emptyLeadForm);
   const [opportunityForm, setOpportunityForm] = useState(emptyOpportunityForm);
   const [quoteForm, setQuoteForm] = useState(emptyQuoteForm);
@@ -601,6 +603,7 @@ const AdminCrmPage = () => {
       }
       const result = await createCrmOpportunity(payload);
       setOpportunityForm(emptyOpportunityForm);
+      setCrmDrawer("");
       await load({ silent: true });
       setActionMessage(result.action === "existing" ? "Existing opportunity matched." : "Opportunity saved.");
     } catch (err) {
@@ -651,6 +654,7 @@ const AdminCrmPage = () => {
       };
       const result = await createCrmQuote(payload);
       setQuoteForm(emptyQuoteForm);
+      setCrmDrawer("");
       await load({ silent: true });
       setActionMessage(`Quote ${result.quote?.quoteNumber || ""} saved.`);
     } catch (err) {
@@ -732,6 +736,7 @@ const AdminCrmPage = () => {
       };
       const result = await createCrmFollowUp(payload);
       setFollowUpForm(emptyFollowUpForm);
+      setCrmDrawer("");
       await load({ silent: true });
       setActionMessage(`Follow-up ${result.followUp?.type || ""} saved.`);
     } catch (err) {
@@ -779,6 +784,7 @@ const AdminCrmPage = () => {
       };
       const result = await createCrmTask(payload);
       setTaskForm(emptyTaskForm);
+      setCrmDrawer("");
       await load({ silent: true });
       setActionMessage(`Task ${result.task?.title || ""} saved.`);
     } catch (err) {
@@ -854,6 +860,7 @@ const AdminCrmPage = () => {
       };
       const result = await createCrmB2BPartner(payload);
       setB2BPartnerForm(emptyB2BPartnerForm);
+      setCrmDrawer("");
       await load({ silent: true });
       setActionMessage(result.action === "existing" ? "Existing B2B partner matched." : "B2B partner saved.");
     } catch (err) {
@@ -1042,6 +1049,31 @@ const AdminCrmPage = () => {
             {mode === "leads" ? (
               <Button variant="primary" onClick={() => setShowLeadForm(true)}>
                 <BsClipboard2Check aria-hidden="true" /> Add lead
+              </Button>
+            ) : null}
+            {mode === "opportunities" ? (
+              <Button variant="primary" onClick={() => setCrmDrawer("opportunities")}>
+                <BsGraphUpArrow aria-hidden="true" /> Add opportunity
+              </Button>
+            ) : null}
+            {mode === "quotes" ? (
+              <Button variant="primary" onClick={() => setCrmDrawer("quotes")}>
+                <BsReceipt aria-hidden="true" /> New quote
+              </Button>
+            ) : null}
+            {mode === "followUps" ? (
+              <Button variant="primary" onClick={() => setCrmDrawer("followUps")}>
+                <BsBell aria-hidden="true" /> Schedule follow-up
+              </Button>
+            ) : null}
+            {mode === "tasks" ? (
+              <Button variant="primary" onClick={() => setCrmDrawer("tasks")}>
+                <BsJournalCheck aria-hidden="true" /> New task
+              </Button>
+            ) : null}
+            {mode === "b2bAgents" ? (
+              <Button variant="primary" onClick={() => setCrmDrawer("b2bAgents")}>
+                <BsPeople aria-hidden="true" /> Add partner
               </Button>
             ) : null}
           </>
@@ -2009,10 +2041,12 @@ const AdminCrmPage = () => {
 
       {mode === "opportunities" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">Opportunity Intake</h5>
+          <Offcanvas show={crmDrawer === "opportunities"} onHide={() => setCrmDrawer("")} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>Add opportunity</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitOpportunity}>
                   <Row className="g-3">
                     <Col xs={12}>
@@ -2088,17 +2122,17 @@ const AdminCrmPage = () => {
                       <Form.Label>Notes</Form.Label>
                       <Form.Control as="textarea" rows={3} value={opportunityForm.notes} onChange={(event) => updateOpportunityForm("notes", event.target.value)} />
                     </Col>
-                    <Col xs={12}>
+                    <Col xs={12} className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setCrmDrawer("")}>Cancel</Button>
                       <Button type="submit" disabled={savingOpportunity}>
                         <BsGraphUpArrow /> {savingOpportunity ? "Saving" : "Save Opportunity"}
                       </Button>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card h-100">
               <Card.Body>
                 <h5 className="mb-3">Opportunity Pipeline</h5>
@@ -2153,10 +2187,12 @@ const AdminCrmPage = () => {
 
       {mode === "quotes" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">Quote Builder</h5>
+          <Offcanvas show={crmDrawer === "quotes"} onHide={() => setCrmDrawer("")} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>New quote</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitQuote}>
                   <Row className="g-3">
                     <Col md={6} xl={12}>
@@ -2254,17 +2290,17 @@ const AdminCrmPage = () => {
                       <Form.Label>Terms</Form.Label>
                       <Form.Control as="textarea" rows={2} value={quoteForm.terms} onChange={(event) => updateQuoteForm("terms", event.target.value)} />
                     </Col>
-                    <Col xs={12}>
+                    <Col xs={12} className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setCrmDrawer("")}>Cancel</Button>
                       <Button type="submit" disabled={savingQuote}>
                         <BsReceipt /> {savingQuote ? "Saving" : "Save Quote"}
                       </Button>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card h-100">
               <Card.Body>
                 <h5 className="mb-3">Quote Register</h5>
@@ -2390,10 +2426,12 @@ const AdminCrmPage = () => {
 
       {mode === "followUps" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">Schedule Follow-up</h5>
+          <Offcanvas show={crmDrawer === "followUps"} onHide={() => setCrmDrawer("")} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>Schedule follow-up</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitFollowUp}>
                   <Row className="g-3">
                     <Col xs={12}>
@@ -2433,17 +2471,17 @@ const AdminCrmPage = () => {
                       <Form.Label>Notes</Form.Label>
                       <Form.Control as="textarea" rows={3} value={followUpForm.notes} onChange={(event) => updateFollowUpForm("notes", event.target.value)} />
                     </Col>
-                    <Col xs={12}>
+                    <Col xs={12} className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setCrmDrawer("")}>Cancel</Button>
                       <Button type="submit" disabled={savingFollowUp}>
                         <BsBell /> {savingFollowUp ? "Saving" : "Save Follow-up"}
                       </Button>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card h-100">
               <Card.Body>
                 <h5 className="mb-3">Follow-up Queue</h5>
@@ -2503,10 +2541,12 @@ const AdminCrmPage = () => {
 
       {mode === "tasks" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">Create Task</h5>
+          <Offcanvas show={crmDrawer === "tasks"} onHide={() => setCrmDrawer("")} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>New task</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitTask}>
                   <Row className="g-3">
                     <Col xs={12}>
@@ -2541,17 +2581,17 @@ const AdminCrmPage = () => {
                       <Form.Label>Description</Form.Label>
                       <Form.Control as="textarea" rows={3} value={taskForm.description} onChange={(event) => updateTaskForm("description", event.target.value)} />
                     </Col>
-                    <Col xs={12}>
+                    <Col xs={12} className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setCrmDrawer("")}>Cancel</Button>
                       <Button type="submit" disabled={savingTask}>
                         <BsJournalCheck /> {savingTask ? "Saving" : "Save Task"}
                       </Button>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card h-100">
               <Card.Body>
                 <h5 className="mb-3">Sales Task Queue</h5>
@@ -2681,10 +2721,12 @@ const AdminCrmPage = () => {
 
       {mode === "b2bAgents" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">B2B / Agent Intake</h5>
+          <Offcanvas show={crmDrawer === "b2bAgents"} onHide={() => setCrmDrawer("")} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>Add partner</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitB2BPartner}>
                   <Row className="g-3">
                     <Col md={6} xl={12}>
@@ -2767,17 +2809,17 @@ const AdminCrmPage = () => {
                       <Form.Label>Notes</Form.Label>
                       <Form.Control as="textarea" rows={3} value={b2bPartnerForm.notes} onChange={(event) => updateB2BPartnerForm("notes", event.target.value)} />
                     </Col>
-                    <Col xs={12}>
+                    <Col xs={12} className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setCrmDrawer("")}>Cancel</Button>
                       <Button type="submit" disabled={savingB2BPartner}>
                         <BsPeople /> {savingB2BPartner ? "Saving" : "Save Partner"}
                       </Button>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card">
               <Card.Body>
                 <h5 className="mb-3">B2B Partner Pipeline</h5>

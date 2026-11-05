@@ -1110,9 +1110,79 @@
   box-shadow: 0 0 0 4px rgba(14, 107, 87, 0.15);
 }
 
+/* The drawer is narrow whatever the screen size, so viewport-based form columns stack. */
+.adm-drawer form .row > [class*="col-sm-"],
+.adm-drawer form .row > [class*="col-md-"],
+.adm-drawer form .row > [class*="col-lg-"],
+.adm-drawer form .row > [class*="col-xl-"] {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
 .adm-drawer .btn-primary {
   --bs-btn-bg: #0e6b57;
   --bs-btn-border-color: #0e6b57;
   --bs-btn-hover-bg: #0a5242;
   --bs-btn-hover-border-color: #0a5242;
+}
+
+/* ── Step 4: older accounting pages follow the same template ─────────────────────────────────────────
+   Invoices, Journal Entries, Chart of Accounts, Trial Balance, General Ledger, AR/AP, Cash & Bank and
+   Period Close keep their own markup; these rules give them the shared look (brand icon tiles, the same
+   KPI value size, money that never splits across lines, regular-weight table text). Light mode only:
+   adminDark.css handles the dark theme. */
+:where(.admin-platform-shell:not([data-admin-theme="dark"])) :is(
+  .ap-kpi.blue > span, .cb-kpi.blue > span, .cb-kpi.purple > span,
+  .gl-kpi-card.transactions > span, .gl-kpi-card.accounts > span,
+  .tb-kpi-card.debit > span, .tb-kpi-card.activity > span
+) {
+  background: #e7f3ef;
+  color: #0e6b57;
+}
+
+.admin-platform-shell:not([data-admin-theme="dark"]) .admin-platform-content :is(
+  .journal-kpi-card:not(.posted):not(.draft):not(.problem) > span,
+  .coa-kpi-icon, .iv-kpi:not(.amber):not(.green):not(.purple) .iv-kpi-icon, .iv-kpi.purple .iv-kpi-icon,
+  .pc-health-card:not(.is-teal):not(.is-amber):not(.is-red) .pc-health-icon
+) {
+  background: #e7f3ef;
+  color: #0e6b57;
+}
+
+/* KPI values: one size, and "USD 1,313.33" stays on one line. */
+.admin-platform-content :is(
+  .ap-kpi, .cb-kpi, .gl-kpi-card, .tb-kpi-card, .journal-kpi-card, .iv-kpi, .ar-kpi, .coa-kpi-card, .fa-kpi, .br-kpi
+) strong {
+  font-size: clamp(18px, 1.5vw, 24px);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Money and other right-aligned figures never split ("USD" on one line, the amount on the next). */
+.admin-platform-content :is(td, th).text-end,
+.admin-platform-content :is(td, th)[class*="amount"],
+.admin-platform-content :is(td, th)[class*="money"] {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Table body text is regular weight; links and <strong> keep their emphasis. */
+.admin-platform-content :is(.journal-table, .tb-table, .gl-table, .coa-table, .ap-table-wrap table, .cb-table-wrap table) tbody td {
+  font-weight: 400;
+}
+
+/* Journal register: the entry number and posting date stay on one line; the description takes the rest. */
+.admin-platform-content .journal-table :is(td, th):is(:nth-child(2), :nth-child(3)) {
+  white-space: nowrap;
+}
+
+/* …and the description wraps to at most two lines (full text in its tooltip) so the register fits without scrolling. */
+.admin-platform-content .journal-table td span[title] {
+  display: -webkit-box;
+  max-width: none;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }

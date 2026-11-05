@@ -26,13 +26,14 @@ export const formatAdminDate = (value) => {
   if (!date) return "—";
   // Plain calendar dates ("2026-11-05") are shown as that day, whatever the browser's time zone.
   const plain = typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
-  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", ...(plain ? { timeZone: "UTC" } : {}) });
+  // Some browsers write September as "Sept"; every month is three letters here.
+  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", ...(plain ? { timeZone: "UTC" } : {}) }).replace("Sept", "Sep");
 };
 
 export const formatAdminDateTime = (value) => {
   const date = toDate(value);
   if (!date) return "—";
-  const day = date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const day = date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace("Sept", "Sep");
   const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
   return `${day}, ${time}`;
 };
