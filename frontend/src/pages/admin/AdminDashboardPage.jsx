@@ -149,19 +149,29 @@ const getBookingSourceLabel = (source) => CHANNEL_LABELS[source] || CHANNEL_LABE
 const normalizeBreakdownRows = (rows = [], type = "channel") => {
   const total = rows.reduce((sum, row) => sum + Number(row.count || row.bookings || 0), 0);
 
-  return rows.slice(0, 6).map((row, index) => {
+  // Rows with the same label are one row (e.g. "DIRECT_WEBSITE" and "direct_website" are both "Direct Website").
+  const merged = new Map();
+  for (const row of rows) {
     const key = row._id || "unknown";
-    const count = Number(row.count || row.bookings || 0);
     const normalizedStatus = normalizeStatus(key);
-    return {
-      id: key,
-      label: type === "status" ? titleize(normalizedStatus) : getBookingSourceLabel(key),
-      count,
-      percent: total > 0 ? Math.round((count / total) * 100) : 0,
-      sales: Number(row.sales || 0),
-      color: type === "status" ? STATUS_COLORS[normalizedStatus] || "#94a3b8" : CHANNEL_COLORS[index % CHANNEL_COLORS.length]
-    };
-  });
+    const label = type === "status" ? titleize(normalizedStatus) : getBookingSourceLabel(key);
+    const current = merged.get(label) || { id: key, label, normalizedStatus, count: 0, sales: 0 };
+    current.count += Number(row.count || row.bookings || 0);
+    current.sales += Number(row.sales || 0);
+    merged.set(label, current);
+  }
+
+  return [...merged.values()]
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 6)
+    .map((row, index) => ({
+      id: row.id,
+      label: row.label,
+      count: row.count,
+      percent: total > 0 ? Math.round((row.count / total) * 100) : 0,
+      sales: row.sales,
+      color: type === "status" ? STATUS_COLORS[row.normalizedStatus] || "#94a3b8" : CHANNEL_COLORS[index % CHANNEL_COLORS.length]
+    }));
 };
 
 const buildDonutGradient = (rows = []) => {
