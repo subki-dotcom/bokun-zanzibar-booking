@@ -1,4 +1,5 @@
 import Loader from "../../components/common/Loader";
+import { formatAdminMoney } from "../../utils/adminFormat";
 import { formatLabel } from "../../utils/formatLabel";
 import { useEffect, useState } from "react";
 import { Badge, Button, Card, Form, Table } from "react-bootstrap";
@@ -6,7 +7,7 @@ import { Link, useParams } from "react-router-dom";
 import { allocateSettlement, fetchSettlementDetail, reconcileSettlement, reverseSettlementAllocation } from "../../api/adminApi";
 
 const label = (value = "") => formatLabel(value);
-const money = (value, currency) => value == null || !currency ? "Unknown" : new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(value));
+const money = (value, currency) => value == null || !currency ? "Unknown" : formatAdminMoney(value, currency);
 
 export default function AdminSettlementDetailPage() {
   const { settlementId } = useParams();

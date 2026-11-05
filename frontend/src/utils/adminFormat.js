@@ -10,7 +10,8 @@ export const formatAdminMoney = (value, currency = "USD") => {
   const number = Number(value);
   if (value === null || value === undefined || value === "" || !Number.isFinite(number)) return "—";
   const code = /^[A-Z]{3}$/.test(String(currency || "")) ? currency : "USD";
-  const decimals = code === "TZS" ? 0 : 2;
+  // TZS is shown without decimals unless the amount has cents, so no value is ever rounded away.
+  const decimals = code === "TZS" && Number.isInteger(Math.round(number * 100) / 100) ? 0 : 2;
   return `${code} ${number.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
 };
 
@@ -34,4 +35,13 @@ export const formatAdminDateTime = (value) => {
   const day = date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
   return `${day}, ${time}`;
+};
+
+// Drop-in replacements for utils/formatters on admin pages (same arguments): money as "USD 1,080.00" (missing
+// amounts count as 0, as before), dates as "05 Nov 2026" or, when the old pattern had a time, "05 Nov 2026, 00:32".
+export const formatCurrency = (amount = 0, currency = "USD") => formatAdminMoney(Number(amount || 0), currency || "USD");
+
+export const formatDate = (value, pattern = "MMM D, YYYY") => {
+  if (!value) return "—";
+  return /[Hh]/.test(String(pattern)) ? formatAdminDateTime(value) : formatAdminDate(value);
 };

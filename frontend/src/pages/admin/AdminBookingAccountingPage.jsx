@@ -41,7 +41,7 @@ import { AdminMetricCard, StatusBadge, formatDateTime } from "../../components/a
 import ErrorAlert from "../../components/common/ErrorAlert";
 import { PageHeader } from "../../components/admin/ui";
 import Loader from "../../components/common/Loader";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatAdminDate } from "../../utils/adminFormat";
 import {
   BOOKING_ACCOUNTING_VIEW_CONFIG,
   bookingAccountingModeFromPath
@@ -151,11 +151,7 @@ const resolveDateRange = (preset = "this_month") => {
 };
 
 const formatNumber = (value = 0) => new Intl.NumberFormat("en-US").format(Math.round(safeNumber(value)));
-const formatShortDate = (value = "") => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
-};
+const formatShortDate = (value = "") => formatAdminDate(value);
 
 const statusTone = (value = "") => {
   const normalized = String(value || "").toLowerCase();

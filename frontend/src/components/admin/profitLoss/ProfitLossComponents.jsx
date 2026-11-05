@@ -1,4 +1,4 @@
-import { useState } from 'react'; import { Link } from 'react-router-dom'; import { BsChevronDown,BsChevronRight,BsExclamationTriangleFill } from 'react-icons/bs'; import { formatCurrency } from '../../../utils/formatters'; import { change,statementRows } from './profitLossView';
+import { useState } from 'react'; import { Link } from 'react-router-dom'; import { BsChevronDown,BsChevronRight,BsExclamationTriangleFill } from 'react-icons/bs'; import { formatCurrency } from '../../../utils/adminFormat'; import { change,statementRows } from './profitLossView';
 export const money=(value,currency,expense=false)=>{if(value==null||!currency)return'Unavailable';const text=formatCurrency(Math.abs(Number(value)),currency);return expense&&Number(value)!==0?`(${text})`:Number(value)<0?`(${text})`:text};
 export const PLSkeleton=()=> <div className="pl-skeleton" role="status" aria-label="Loading Profit and Loss">{Array.from({length:8},(_,i)=><span key={i}/>)}</div>;
 export const PLKpi=({label,value,detail,icon:Icon,tone='teal'})=><article className={`pl-kpi is-${tone}`}><i><Icon/></i><div><small>{label}</small><strong>{value}</strong><span>{detail}</span></div></article>;

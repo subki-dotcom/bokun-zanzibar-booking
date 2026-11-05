@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatAdminMoney, formatAdminNumber } from "../../utils/adminFormat";
 import { formatLabel } from "../../utils/formatLabel";
 import { Button, Card, Col, Form, Row, Table, Offcanvas } from "react-bootstrap";
 import { BsArchive, BsArrowClockwise, BsBarChartLine, BsBell, BsClipboard2Check, BsDownload, BsExclamationTriangle, BsGraphUpArrow, BsJournalCheck, BsPeople, BsReceipt, BsShieldCheck } from "react-icons/bs";
@@ -165,19 +166,13 @@ const duplicateName = (customer = {}) =>
   customer?.fullName || customer?.email || customer?.crmCustomerNumber || customer?._id || "-";
 
 const leadName = (lead = {}) => lead.fullName || [lead.firstName, lead.lastName].filter(Boolean).join(" ") || "-";
-const formatMoney = (amount = 0, currency = "USD") => {
-  try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "USD" }).format(Number(amount || 0));
-  } catch (_error) {
-    return `${currency || "USD"} ${Number(amount || 0).toFixed(2)}`;
-  }
-};
+const formatMoney = (amount = 0, currency = "USD") => formatAdminMoney(Number(amount || 0), currency || "USD");
 const formatReportCell = (value, type = "text", currency = "USD") => {
   if (value === null || value === undefined || value === "") return "-";
   if (type === "money") return formatMoney(value, currency);
   if (type === "percent") return `${Number(value || 0).toFixed(2)}%`;
   if (type === "boolean") return value ? "Yes" : "No";
-  if (type === "number") return Number(value || 0).toLocaleString();
+  if (type === "number") return formatAdminNumber(Number(value || 0));
   if (typeof value === "object") return JSON.stringify(value);
   return formatLabel(value);
 };
@@ -1569,7 +1564,7 @@ const AdminCrmPage = () => {
                       disabled={runningCrmReport}
                     >
                       {(selectedCrmReport?.supportedExports || ["CSV"]).map((format) => (
-                        <option key={format} value={format}>{format}</option>
+                        <option key={format} value={format}>{formatLabel(format)}</option>
                       ))}
                     </Form.Select>
                     <Button size="sm" variant="outline-primary" onClick={exportSelectedCrmReport} disabled={runningCrmReport || !selectedCrmReportType}>
@@ -2431,7 +2426,7 @@ const AdminCrmPage = () => {
                     <Col xs={12}>
                       <Form.Label>Priority</Form.Label>
                       <Form.Select value={followUpForm.priority} onChange={(event) => updateFollowUpForm("priority", event.target.value)}>
-                        {crmPriorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+                        {crmPriorities.map((priority) => <option key={priority} value={priority}>{formatLabel(priority)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col xs={12}>
@@ -2539,7 +2534,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Priority</Form.Label>
                       <Form.Select value={taskForm.priority} onChange={(event) => updateTaskForm("priority", event.target.value)}>
-                        {crmPriorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+                        {crmPriorities.map((priority) => <option key={priority} value={priority}>{formatLabel(priority)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col xs={12}>

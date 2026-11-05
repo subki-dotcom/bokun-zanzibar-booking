@@ -112,7 +112,7 @@ const AdminDataQualityPage = () => {
                 </div>
                 <Form.Select value={severity} onChange={(event) => changeSeverity(event.target.value)} aria-label="Severity filter">
                   <option value="">All severities</option>
-                  {(summary?.severityLevels || []).map((item) => <option key={item} value={item}>{item}</option>)}
+                  {(summary?.severityLevels || []).map((item) => <option key={item} value={item}>{formatLabel(item)}</option>)}
                 </Form.Select>
               </div>
               <Table responsive hover className="align-middle mb-0">

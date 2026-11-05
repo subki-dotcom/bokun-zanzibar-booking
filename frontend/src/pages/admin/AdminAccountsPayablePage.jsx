@@ -10,7 +10,7 @@ import { createBusinessExpense, createSupplierPayment, fetchAccountsPayableDashb
 import { ADMIN_PERMISSIONS } from "../../config/adminNavigation";
 import { useAuthContext } from "../../context/AuthContext";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 
 const TABS = [
   ["all", "All Invoices"], ["outstanding", "Outstanding"], ["overdue", "Overdue"],

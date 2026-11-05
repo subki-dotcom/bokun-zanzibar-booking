@@ -13,7 +13,7 @@ import {
 import ErrorAlert from '../../components/common/ErrorAlert';
 import Loader from '../../components/common/Loader';
 import ListingPagination from '../../components/tours/listing/ListingPagination';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/adminFormat';
 
 const label = (value = "") => formatLabel(value);
 const variant = (value = '') => {
@@ -252,10 +252,10 @@ const AdminPaymentsControlCenter = () => {
                     onChange={(event) => update({ paymentStatus: event.target.value })}
                   >
                     <option value="">All states</option>
-                    <option>PAID</option>
-                    <option>PARTIALLY_PAID</option>
-                    <option>UNPAID</option>
-                    <option>REFUNDED</option>
+                    <option value="PAID">{formatLabel("PAID")}</option>
+                    <option value="PARTIALLY_PAID">{formatLabel("PARTIALLY_PAID")}</option>
+                    <option value="UNPAID">{formatLabel("UNPAID")}</option>
+                    <option value="REFUNDED">{formatLabel("REFUNDED")}</option>
                   </Form.Select>
                 </div>
                 <div className="col-lg-2">
@@ -265,11 +265,11 @@ const AdminPaymentsControlCenter = () => {
                     onChange={(event) => update({ settlementStatus: event.target.value })}
                   >
                     <option value="">All states</option>
-                    <option>AWAITING_SETTLEMENT_DATA</option>
-                    <option>PENDING</option>
-                    <option>PARTIALLY_RECEIVED</option>
-                    <option>RECEIVED</option>
-                    <option>NOT_APPLICABLE</option>
+                    <option value="AWAITING_SETTLEMENT_DATA">{formatLabel("AWAITING_SETTLEMENT_DATA")}</option>
+                    <option value="PENDING">{formatLabel("PENDING")}</option>
+                    <option value="PARTIALLY_RECEIVED">{formatLabel("PARTIALLY_RECEIVED")}</option>
+                    <option value="RECEIVED">{formatLabel("RECEIVED")}</option>
+                    <option value="NOT_APPLICABLE">{formatLabel("NOT_APPLICABLE")}</option>
                   </Form.Select>
                 </div>
                 <div className="col-lg-2">
@@ -279,10 +279,10 @@ const AdminPaymentsControlCenter = () => {
                     onChange={(event) => update({ reconciliationStatus: event.target.value })}
                   >
                     <option value="">All results</option>
-                    <option>MATCHED</option>
-                    <option>PARTIAL</option>
-                    <option>NEEDS_REVIEW</option>
-                    <option>MISMATCH</option>
+                    <option value="MATCHED">{formatLabel("MATCHED")}</option>
+                    <option value="PARTIAL">{formatLabel("PARTIAL")}</option>
+                    <option value="NEEDS_REVIEW">{formatLabel("NEEDS_REVIEW")}</option>
+                    <option value="MISMATCH">{formatLabel("MISMATCH")}</option>
                   </Form.Select>
                 </div>
                 <div className="col-lg-1">

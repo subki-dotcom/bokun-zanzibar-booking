@@ -20,7 +20,7 @@ import {
   fetchTrialBalance
 } from "../../api/adminApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 
 const ACCOUNT_TABS = [
   { key: "all", label: "All Accounts", type: "" },

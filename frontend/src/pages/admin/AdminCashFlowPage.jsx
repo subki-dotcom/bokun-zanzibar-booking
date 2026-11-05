@@ -1,4 +1,5 @@
 import Loader from "../../components/common/Loader";
+import { formatAdminMoney } from "../../utils/adminFormat";
 import { PageHeader } from "../../components/admin/ui";
 import { useCallback,useEffect,useMemo,useState } from 'react';
 import { Button,Form } from 'react-bootstrap';
@@ -9,7 +10,7 @@ import { change,comparisonRange,resolvePeriod } from '../../components/admin/pro
 import './cashFlow.css';
 
 const OPTIONS=[['THIS_MONTH','This Month'],['LAST_MONTH','Last Month'],['THIS_QUARTER','This Quarter'],['LAST_QUARTER','Last Quarter'],['THIS_YEAR','This Year'],['LAST_YEAR','Last Year'],['CUSTOM','Custom Range']];
-const money=(v,c)=>v==null||!c?'Unavailable':new Intl.NumberFormat('en-US',{style:'currency',currency:c,maximumFractionDigits:2}).format(Number(v));
+const money=(v,c)=>v==null||!c?'Unavailable':formatAdminMoney(v,c);
 const labelDate=v=>v?new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(`${v}T00:00:00Z`)):'';
 const pct=(a,b)=>{const v=change(a,b);return v==null?'':`${v>=0?'↑':'↓'} ${Math.abs(v).toFixed(1)}% vs previous period`};
 const Kpi=({label,value,detail,icon:Icon,tone=''})=><article className={`cf-kpi ${tone}`}><i><Icon/></i><div><small>{label}</small><strong>{value}</strong>{detail?<span>{detail}</span>:null}</div></article>;

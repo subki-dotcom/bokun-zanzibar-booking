@@ -31,7 +31,7 @@ import {
 import { AdminMetricCard, StatusBadge, formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
 const safeNumber = (value) => {
@@ -593,7 +593,7 @@ const CostLineModal = ({ show, onHide, onSave, basisTypes = [], line }) => {
           <Col md={6}>
             <Form.Label>Cost Category</Form.Label>
             <Form.Select value={draft.category} onChange={(event) => patch({ category: event.target.value })}>
-              {COMMON_COST_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+              {COMMON_COST_CATEGORIES.map((category) => <option key={category} value={category}>{formatLabel(category)}</option>)}
             </Form.Select>
           </Col>
           <Col md={6}>

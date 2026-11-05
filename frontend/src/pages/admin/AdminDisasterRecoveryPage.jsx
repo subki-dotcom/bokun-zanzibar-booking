@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatAdminDateTime } from "../../utils/adminFormat";
 import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
@@ -26,18 +27,7 @@ const statusVariant = (status = "") => ({
 
 const formatStatus = (value = "") => formatLabel(value);
 
-const formatDate = (value = "") => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-};
+const formatDate = (value = "") => (value ? formatAdminDateTime(value) : "-");
 
 const OperationCard = ({ title, operation }) => (
   <Card className="surface-card h-100">

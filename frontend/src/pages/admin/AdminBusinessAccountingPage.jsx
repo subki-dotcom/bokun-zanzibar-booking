@@ -18,7 +18,7 @@ import {
 } from "react-icons/bs";
 import { fetchBusinessAccountingFoundation } from "../../api/adminApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/adminFormat";
 
 const PERIOD_OPTIONS = [
   { value: "today", label: "Today" },

@@ -34,7 +34,7 @@ import {
   StatGrid,
   StatusBadge as UiStatusBadge
 } from "../../components/admin/ui";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/adminFormat";
 import { adminAlertCount, bokunSyncState } from "../../utils/adminStatus";
 
 const numberFormatter = new Intl.NumberFormat("en-US");

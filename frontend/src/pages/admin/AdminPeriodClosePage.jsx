@@ -4,7 +4,7 @@ import { Button, Form, Modal, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { BsArrowClockwise, BsCalendar3, BsCheckCircleFill, BsChevronRight, BsExclamationTriangleFill, BsFileEarmarkBarGraph, BsJournalText, BsLockFill, BsPlusLg, BsSafe, BsXCircleFill } from "react-icons/bs";
 import { closeAccountingPeriod, createAccountingPeriod, fetchAccountingPeriods, fetchPeriodCloseOverview } from "../../api/adminApi";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 import "./periodClose.css";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];

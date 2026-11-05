@@ -19,7 +19,7 @@ import {
 import { Link, useSearchParams } from "react-router-dom";
 import { fetchCashBankDashboard } from "../../api/adminApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 
 const LIMITS = [10, 25, 50, 100];
 const TABS = [["all", "All Transactions"], ["inflow", "Inflows"], ["outflow", "Outflows"], ["transfer", "Transfers"]];

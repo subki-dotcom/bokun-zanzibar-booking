@@ -1,4 +1,5 @@
 import Loader from "../../components/common/Loader";
+import { formatAdminMoney } from "../../utils/adminFormat";
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Form, Offcanvas } from 'react-bootstrap';
 import { PageHeader } from '../../components/admin/ui';
@@ -38,7 +39,7 @@ const channelCode = (channel) => (channel && typeof channel === 'object' ? chann
 const cash = (v, c) =>
   v == null || !c
     ? 'Unavailable'
-    : new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(Number(v));
+    : formatAdminMoney(v, c);
 const Badge = ({ value }) => (
   <span className={`br-badge ${String(value || 'unknown').toLowerCase()}`}>{label(value)}</span>
 );
@@ -277,7 +278,7 @@ export default function AdminBookingReconciliationPage() {
               <Form.Select value={f.status} onChange={(e) => change('status', e.target.value)}>
                 <option value="">All Reconciliation Statuses</option>
                 {['RECONCILED', 'NEEDS_REVIEW', 'MISMATCH', 'UNRECONCILED'].map((x) => (
-                  <option key={x}>{x}</option>
+                  <option key={x} value={x}>{formatLabel(x)}</option>
                 ))}
               </Form.Select>
             </div>

@@ -24,7 +24,7 @@ import {
 } from "../../api/adminApi";
 import { formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 
 const SOURCE_OPTIONS = [
   "MANUAL",

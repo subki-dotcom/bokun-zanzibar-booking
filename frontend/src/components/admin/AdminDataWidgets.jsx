@@ -1,4 +1,5 @@
 import { BsBarChartLine } from "react-icons/bs";
+import { formatAdminDateTime } from "../../utils/adminFormat";
 import { formatLabel } from "../../utils/formatLabel";
 import { StatCard, StatusBadge as UiStatusBadge } from "./ui";
 
@@ -47,18 +48,7 @@ export const statusVariant = (status = "") => ({
   warn: "warning"
 })[status] || "secondary";
 
-export const formatDateTime = (value = "") => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-};
+export const formatDateTime = (value = "") => (value ? formatAdminDateTime(value) : "-");
 
 // Older pages import these two; they now render the design-system StatCard and StatusBadge (components/admin/ui).
 export const AdminMetricCard = ({ label, value, detail = "", icon: Icon = BsBarChartLine, status = "" }) => (

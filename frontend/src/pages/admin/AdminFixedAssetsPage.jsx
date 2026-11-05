@@ -1,4 +1,5 @@
 import Loader from "../../components/common/Loader";
+import { formatAdminMoney } from "../../utils/adminFormat";
 import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -28,11 +29,7 @@ const numericValue = (v) => {
 const money = (v, c) =>
   v == null || !c
     ? 'Unavailable'
-    : new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: c,
-        maximumFractionDigits: 2,
-      }).format(numericValue(v));
+    : formatAdminMoney(numericValue(v), c);
 const date = (v) =>
   v
     ? new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(
@@ -350,7 +347,7 @@ export default function AdminFixedAssetsPage() {
                 >
                   <option value="all">All Statuses</option>
                   {[...new Set((d.items || []).map((r) => r.status))].map((v) => (
-                    <option key={v}>{v}</option>
+                    <option key={v} value={v}>{formatLabel(v)}</option>
                   ))}
                 </Form.Select>
               </div>

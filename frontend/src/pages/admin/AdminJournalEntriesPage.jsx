@@ -28,7 +28,7 @@ import {
 } from "../../api/adminApi";
 import { formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 
 const STATUS_OPTIONS = ["DRAFT", "SUBMITTED", "PENDING_APPROVAL", "APPROVED", "POSTED", "REVERSED", "VOID"];
 const SOURCE_OPTIONS = [

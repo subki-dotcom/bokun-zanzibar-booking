@@ -22,7 +22,7 @@ import {
   previewCustomerInvoicePosting,
 } from '../../api/adminApi';
 import ErrorAlert from '../../components/common/ErrorAlert';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/adminFormat';
 
 const TABS = [
   ['all', 'All Invoices'],

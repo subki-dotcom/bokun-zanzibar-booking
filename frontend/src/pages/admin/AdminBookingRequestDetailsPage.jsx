@@ -18,7 +18,7 @@ import {
 } from "../../api/bookingRequestsApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/adminFormat";
 import { cancellationDisplayText, formatCancellationDeadline, hasKnownRefundAmount } from "../../utils/cancellationPolicy";
 
 const label = (value = "") => formatLabel(value);

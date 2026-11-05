@@ -23,7 +23,7 @@ import {
   BsXCircle
 } from "react-icons/bs";
 import { adminCancelBooking, fetchAdminBookings } from "../../api/bookingsApi";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/adminFormat";
 import { AdminPage, PageHeader, SectionCard, StatCard, StatGrid } from "../../components/admin/ui";
 
 const BOOKING_STATUSES = [
