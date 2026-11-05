@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsArchive, BsClipboard2Check, BsDatabaseCheck, BsShieldCheck } from "react-icons/bs";
 import {
@@ -200,21 +201,23 @@ const AdminDisasterRecoveryPage = () => {
 
   return (
     <div className="admin-disaster-recovery-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Production Readiness</span>
-          <h2>Disaster Recovery</h2>
-          <p>Backup policy, restore planning, RPO state, and immutable audit history for MongoDB recovery operations.</p>
-        </div>
-        <div className="d-flex flex-wrap gap-2">
-          <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing || planning}>
-            <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-          </Button>
-          <Button className="premium-btn text-white" onClick={createBackupPlan} disabled={planning}>
-            <BsArchive /> Create backup dry-run
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Control & System"
+        title="Disaster Recovery"
+        description="Backup policy, restore planning, RPO state, and immutable audit history for MongoDB recovery operations."
+        actions={
+          <>
+            <div className="d-flex flex-wrap gap-2">
+              <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing || planning}>
+                <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
+              </Button>
+              <Button className="premium-btn text-white" onClick={createBackupPlan} disabled={planning}>
+                <BsArchive /> Create backup dry-run
+              </Button>
+            </div>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
       {notice ? <Alert variant="info">{notice}</Alert> : null}

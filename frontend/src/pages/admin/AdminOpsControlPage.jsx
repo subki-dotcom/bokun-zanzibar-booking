@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Alert, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsBell, BsExclamationTriangle, BsPlayCircle } from "react-icons/bs";
 import {
@@ -77,16 +78,18 @@ const AdminOpsControlPage = () => {
 
   return (
     <div className="admin-ops-control-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Operations Control</span>
-          <h2>Ops Control</h2>
-          <p>System alerts, failed jobs, safe retry actions, and persisted operational evidence.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing || Boolean(busy)}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Control & System"
+        title="Ops Control"
+        description="System alerts, failed jobs, safe retry actions, and persisted operational evidence."
+        actions={
+          <>
+            <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing || Boolean(busy)}>
+              <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
       {notice ? <Alert variant="info">{notice}</Alert> : null}

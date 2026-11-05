@@ -1,20 +1,20 @@
 export const BOKUN_SYNC_VIEW_CONFIG = {
   "confirmed-import": {
-    title: "Confirmed Booking Import",
-    eyebrow: "Bokun Sync",
-    subtitle: "Import operationally confirmed Bokun bookings from connected channels into local accounting records.",
+    title: "Bókun Integration",
+    eyebrow: "Integrations",
+    subtitle: "Automatic: the server imports confirmed Bókun bookings (website, GetYourGuide, Viator and other channels) on a schedule. Check the scheduled import here, or run it now.",
     actionLabel: "Run confirmed import"
   },
   manual: {
-    title: "Manual Sync",
-    eyebrow: "Bokun Sync",
-    subtitle: "Run a controlled manual Bokun confirmed-booking sync with date/status filters.",
+    title: "Sync Center",
+    eyebrow: "Integrations",
+    subtitle: "Manual: run a one-off import for the dates and statuses you choose, for example to catch up after a gap. The scheduled import keeps running on its own.",
     actionLabel: "Run manual sync"
   },
   "single-booking": {
-    title: "Single Booking Sync",
-    eyebrow: "Bokun Sync",
-    subtitle: "Resync one Bokun/local booking by confirmation code, external reference, Bokun ID, or booking reference.",
+    title: "Manual Lookup",
+    eyebrow: "Integrations",
+    subtitle: "One booking: find it in Bókun by confirmation code, OTA reference, Bókun ID or our reference, and refresh it here.",
     actionLabel: "Run single resync"
   }
 };

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -212,16 +213,18 @@ const AdminBokunSyncPage = () => {
 
   return (
     <div className="admin-bokun-sync-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">{config.eyebrow}</span>
-          <h2>{config.title}</h2>
-          <p>{config.subtitle}</p>
-        </div>
-        <Button as={Link} to="/admin/operations/bokun-sync/sync-logs" variant="outline-secondary">
-          <BsArchive /> Sync Logs
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Integrations"
+        title={<>{config.title}</>}
+        description={<>{config.subtitle}</>}
+        actions={
+          <>
+            <Button as={Link} to="/admin/operations/bokun-sync/sync-logs" variant="outline-secondary">
+              <BsArchive /> Sync Logs
+            </Button>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
       {notice ? <Alert variant="success">{notice}</Alert> : null}

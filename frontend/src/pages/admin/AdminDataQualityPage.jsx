@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsClipboard2Check, BsExclamationTriangle } from "react-icons/bs";
 import { fetchDataQualityIssues, fetchDataQualitySummary } from "../../api/adminApi";
@@ -51,16 +52,18 @@ const AdminDataQualityPage = () => {
 
   return (
     <div className="admin-data-quality-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Control</span>
-          <h2>Data Quality</h2>
-          <p>Completeness checks for bookings, payments, refunds, invoices, expenses, FX, and reconciliation evidence.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Control & System"
+        title="Data Quality"
+        description="Completeness checks for bookings, payments, refunds, invoices, expenses, FX, and reconciliation evidence."
+        actions={
+          <>
+            <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+              <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
 

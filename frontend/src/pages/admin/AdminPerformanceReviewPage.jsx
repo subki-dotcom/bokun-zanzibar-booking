@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsDatabaseCheck, BsGraphUpArrow, BsShieldCheck } from "react-icons/bs";
 import {
@@ -102,16 +103,18 @@ const AdminPerformanceReviewPage = () => {
 
   return (
     <div className="admin-performance-review-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Production Readiness</span>
-          <h2>Performance Review</h2>
-          <p>Query-pattern coverage, declared Mongo indexes, and migration-safe review guidance for admin reporting.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Reports & Analytics"
+        title="Performance"
+        description="Query-pattern coverage, declared Mongo indexes, and migration-safe review guidance for admin reporting."
+        actions={
+          <>
+            <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+              <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
 

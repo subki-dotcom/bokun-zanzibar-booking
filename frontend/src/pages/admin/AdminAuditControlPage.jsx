@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsJournalCheck, BsShieldCheck } from "react-icons/bs";
 import {
@@ -56,16 +57,18 @@ const AdminAuditControlPage = () => {
 
   return (
     <div className="admin-audit-control-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Audit & Control</span>
-          <h2>Audit & Control</h2>
-          <p>Immutable audit logs, financial change evidence, and sanitized traceability for admin actions.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Control & System"
+        title="Audit Trail"
+        description="Who changed what, and when: a log that cannot be edited, for every admin and money change."
+        actions={
+          <>
+            <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+              <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
 

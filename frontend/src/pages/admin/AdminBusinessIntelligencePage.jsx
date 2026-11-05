@@ -55,7 +55,7 @@ export default function AdminBusinessIntelligencePage() {
 
   return <div className="admin-business-intelligence-page bi-dashboard">
     <header className="bi-header">
-      <div className="bi-header-copy"><p className="bi-breadcrumb">Reports &amp; Analytics <span>/</span> Business Intelligence</p><div className="bi-title"><span><BsBarChartLine aria-hidden="true" /></span><div><h1>Business Intelligence</h1><p>Executive analytics, sales, product performance, channel insights and financial metrics from the business platform.</p></div></div></div>
+      <div className="bi-header-copy"><p className="adm-eyebrow">Reports &amp; Analytics</p><div className="bi-title"><span><BsBarChartLine aria-hidden="true" /></span><div><h1>Business Intelligence</h1><p>Executive analytics, sales, product performance, channel insights and financial metrics from the business platform.</p></div></div></div>
       <div className="bi-header-actions">
         <button className="bi-date-button" type="button" onClick={() => choosePeriod('CUSTOM')} aria-expanded={periodChoice === 'CUSTOM'} aria-controls="bi-custom-range"><BsCalendar3 aria-hidden="true" />{busy ? 'Loading date range…' : periodLabel(range)}</button>
         <label className="bi-period"><span className="visually-hidden">Reporting period</span><select value={periodChoice} onChange={(event) => choosePeriod(event.target.value)}>{PERIOD_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
