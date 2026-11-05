@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Badge, Button, ButtonGroup, Card, Col, Form, Modal, Row, Table } from "react-bootstrap";
+import { PageHeader } from "../../components/admin/ui";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   BsArchive,
@@ -434,12 +435,11 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
 
   return (
     <div className="booking-cost-template-module">
-      <div className="admin-platform-page-header cost-template-page-title">
-        <div>
-          <span className="admin-platform-eyebrow">Booking Accounting / Cost Templates</span>
-          <h2>Costed Products</h2>
-          <p>Products and options from Bokun with internal cost templates configured here.</p>
-        </div>
+      <PageHeader
+        eyebrow="Booking Accounting"
+        title="Cost Templates"
+        description="Expected costs per Bókun product and option, used to estimate profit until real expenses are recorded."
+        actions={
         <div className="d-flex flex-wrap gap-2">
           <Button variant="outline-primary" onClick={syncProducts} disabled={syncingProducts}>
             <BsArrowRepeat /> {syncingProducts ? "Syncing Bokun" : "Sync Bokun Products"}
@@ -448,10 +448,11 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
             <BsArrowRepeat /> Refresh Data
           </Button>
           <Button as={Link} to="/admin/booking-accounting/cost-templates/new" variant="primary">
-            <BsPlus /> New Template
+            <BsPlus aria-hidden="true" /> New template
           </Button>
         </div>
-      </div>
+        }
+      />
 
       <ErrorAlert error={error} />
       {syncResult ? (

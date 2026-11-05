@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card, Form, Offcanvas, Table } from 'react-bootstrap';
+import { PageHeader } from '../../components/admin/ui';
 import { BsArrowClockwise, BsCreditCard2Front, BsEye, BsShieldCheck } from 'react-icons/bs';
 import {
   fetchPaymentReconciliation,
@@ -205,17 +206,16 @@ const AdminPaymentsControlCenter = () => {
   };
   return (
     <main className="admin-payments-page">
-      <header className="admin-recovery-head">
-        <div>
-          <h2>Payments</h2>
-          <p className="section-subtitle">
-            Guest payment and OTA payout evidence are tracked separately for each booking.
-          </p>
-        </div>
-        <Button className="premium-btn text-white" onClick={() => load()} disabled={state.loading}>
-          <BsArrowClockwise /> Refresh
-        </Button>
-      </header>
+      <PageHeader
+        eyebrow="Booking Accounting"
+        title="Payments"
+        description="What guests paid, and what OTAs paid out to you, tracked separately for each booking."
+        actions={
+          <Button variant="outline-secondary" onClick={() => load()} disabled={state.loading}>
+            <BsArrowClockwise aria-hidden="true" /> Refresh
+          </Button>
+        }
+      />
       <ErrorAlert error={state.error} />
       {state.loading ? (
         <Loader message="Loading financial control center..." />

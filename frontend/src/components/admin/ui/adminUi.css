@@ -54,6 +54,15 @@
   gap: 0.75rem 1.25rem;
 }
 
+/* Pages not (yet) wrapped in AdminPage still get the same space under the header. */
+.adm-page-header {
+  margin-bottom: 1.25rem;
+}
+
+.adm-page > .adm-page-header {
+  margin-bottom: 0;
+}
+
 .adm-page-header-copy {
   min-width: 0;
   flex: 1 1 320px;

@@ -38,6 +38,7 @@ import {
 } from "../../api/adminApi";
 import { AdminMetricCard, StatusBadge, formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
+import { PageHeader } from "../../components/admin/ui";
 import Loader from "../../components/common/Loader";
 import { formatCurrency } from "../../utils/formatters";
 import {
@@ -643,12 +644,11 @@ export const BookingAccountingDashboard = ({
 
   return (
     <div className="booking-accounting-dashboard">
-      <div className="booking-accounting-dashboard-head">
-        <div>
-          <span>Booking Accounting / Dashboard</span>
-          <h1>Booking Accounting Dashboard</h1>
-          <p>Real-time overview of your booking financial performance and reconciliation status.</p>
-        </div>
+      <PageHeader
+        eyebrow="Booking Accounting"
+        title="Accounting Dashboard"
+        description="Revenue, costs, profit and reconciliation for your bookings."
+        actions={
         <div className="booking-accounting-dashboard-actions" aria-label="Booking accounting dashboard controls">
           <label>
             <BsCalendar3 aria-hidden="true" />
@@ -692,10 +692,11 @@ export const BookingAccountingDashboard = ({
             <BsDownload aria-hidden="true" /> Export
           </button>
           <Link to="/admin/operations/bokun-sync/confirmed-import">
-            <BsArrowClockwise aria-hidden="true" /> Sync Bokun
+            <BsArrowClockwise aria-hidden="true" /> Sync Bókun
           </Link>
         </div>
-      </div>
+        }
+      />
 
       {error ? <DashboardError message={error} onRetry={onRefresh} /> : null}
       {dashboard?.currencyWarning ? (
@@ -1375,16 +1376,16 @@ const AdminBookingAccountingPage = () => {
 
   return (
     <div className="admin-booking-accounting-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">{config.eyebrow}</span>
-          <h2>{config.title}</h2>
-          <p>{config.subtitle}</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Booking Accounting"
+        title={config.title}
+        description={config.subtitle}
+        actions={
+          <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+            <BsArrowClockwise aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
+          </Button>
+        }
+      />
 
       {mode !== "profitability" ? (
         <>

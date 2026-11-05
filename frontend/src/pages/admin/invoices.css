@@ -1,5 +1,6 @@
-.iv-page, .iv-drawer { --iv-ink:#142743; --iv-muted:#63738b; --iv-line:#e0e8f2; --iv-teal:#009a99; color:var(--iv-ink); font-family:Inter,"Segoe UI",Arial,sans-serif; font-size:14px; line-height:1.5; font-variant-numeric:tabular-nums; }
-.iv-page { min-width:0; max-width:1760px; width:100%; margin:auto; }
+.iv-page, .iv-drawer { --iv-ink:#142743; --iv-muted:#63738b; --iv-line:#e0e8f2; --iv-teal:#009a99; color:var(--iv-ink); font-family:"Outfit",system-ui,sans-serif; font-size:14px; line-height:1.5; font-variant-numeric:tabular-nums; }
+.iv-page { min-width:0; max-width:1440px; width:100%; margin:auto; display:grid; gap:1rem; }
+.iv-page .bpt-badge { white-space:nowrap; }
 .iv-page *, .iv-drawer * { box-sizing:border-box; }
 .iv-page h1,.iv-page h2,.iv-drawer h2,.iv-drawer h3 { font-family:inherit; color:var(--iv-ink); }
 .iv-page button,.iv-page input,.iv-page select,.iv-drawer button { font:inherit; }

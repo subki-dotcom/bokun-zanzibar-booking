@@ -1,6 +1,8 @@
 import Loader from "../../components/common/Loader";
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Form, Offcanvas } from 'react-bootstrap';
+import { PageHeader } from '../../components/admin/ui';
+import { formatLabel } from '../../utils/formatLabel';
 import {
   BsArrowClockwise,
   BsCalendar3,
@@ -148,17 +150,11 @@ export default function AdminBookingReconciliationPage() {
     rows = d.items || [];
   return (
     <main className="br-page">
-      <header className="br-header">
-        <div>
-          <nav>
-            Booking Accounting / <b>Reconciliation</b>
-          </nav>
-          <h1>Booking Accounting Reconciliation</h1>
-          <p>
-            Reconcile bookings, customer payments, channel settlements, refunds and accounting
-            records.
-          </p>
-        </div>
+      <PageHeader
+        eyebrow="Booking Accounting"
+        title="Reconciliation"
+        description="Do bookings, guest payments, channel settlements, refunds and accounting records agree?"
+        actions={
         <div className="br-actions">
           <label>
             <BsCalendar3 />
@@ -201,17 +197,18 @@ export default function AdminBookingReconciliationPage() {
               'AGENT',
               'OTHER',
             ].map((x) => (
-              <option key={x}>{x}</option>
+              <option key={x} value={x}>{formatLabel(x)}</option>
             ))}
           </Form.Select>
           <Button variant="outline-secondary" onClick={load}>
             <BsArrowClockwise /> Refresh
           </Button>
-          <Button onClick={exp}>
-            <BsDownload /> Export
+          <Button variant="primary" onClick={exp}>
+            <BsDownload aria-hidden="true" /> Export
           </Button>
         </div>
-      </header>
+        }
+      />
       {state.error ? (
         <div className="br-error" role="alert">
           {state.error}
