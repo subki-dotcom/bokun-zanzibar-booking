@@ -43,6 +43,7 @@ import {
 } from "../../api/adminApi";
 import { AdminMetricCard, StatusBadge, formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
+import { AdminPage, FilterBar, PageHeader, StatCard, StatGrid, Truncate } from "../../components/admin/ui";
 import Loader from "../../components/common/Loader";
 
 const modeFromPath = (pathname = "") => {
@@ -940,196 +941,113 @@ const AdminCrmPage = () => {
     }
   };
 
+  // Title, short description and the stats that matter on each CRM page. The full set of KPIs is on the CRM
+  // Dashboard only; the other pages show the one to three numbers about what they list.
+  const pageMeta = {
+    dashboard: ["CRM Dashboard", "Customers, leads, opportunities and follow-ups at a glance."],
+    customers: ["Customers", "One record per customer, from bookings and enquiries."],
+    leads: ["Leads", "People who enquired but have not booked yet."],
+    opportunities: ["Opportunities", "Possible sales you are working on, with their value and stage."],
+    pipeline: ["Sales Pipeline", "Opportunities by stage."],
+    quotes: ["Quotes", "Prices sent to customers and their answers."],
+    followUps: ["Follow-ups", "Calls and messages planned for customers."],
+    tasks: ["Tasks", "To-dos for the team."],
+    conversations: ["Conversations", "Messages and calls logged for a customer."],
+    duplicates: ["Duplicate Review", "Customer records that may be the same person."],
+    b2bAgents: ["Agents / B2B", "Partners who sell your tours."],
+    lostOpportunities: ["Lost Opportunities", "Sales that did not happen, and why."],
+    reports: ["CRM Reports", "Run and export CRM reports."],
+    controls: ["CRM Controls", "Data quality, audit coverage and permissions for CRM."],
+    imports: ["CRM Imports", "Bring customers, leads or partners in from a CSV file."]
+  };
+  const [pageTitle, pageDescription] = pageMeta[mode] || pageMeta.dashboard;
+
+  const stat = {
+    customers: { label: "Customers", value: metrics.customerCount || 0, helper: "Customer records", icon: BsPeople },
+    duplicates: {
+      label: "Possible duplicates",
+      value: metrics.possibleDuplicateCount || 0,
+      helper: `${metrics.openDuplicateCount || 0} open to review`,
+      icon: BsShieldCheck,
+      status: (metrics.openDuplicateCount || 0) > 0 ? "warning" : ""
+    },
+    leads: { label: "Leads", value: metrics.leadCount || 0, helper: `${metrics.newLeadCount || 0} new, ${metrics.qualifiedLeadCount || 0} qualified`, icon: BsClipboard2Check },
+    opportunities: { label: "Open opportunities", value: metrics.openOpportunityCount || 0, helper: `${metrics.wonOpportunityCount || 0} won, ${metrics.lostOpportunityCount || 0} lost`, icon: BsGraphUpArrow },
+    pipeline: { label: "Weighted pipeline", value: formatMoney(metrics.weightedPipelineValue || 0), helper: `${formatMoney(metrics.openPipelineValue || 0)} open forecast`, icon: BsGraphUpArrow },
+    quotes: { label: "Quotes", value: metrics.quoteCount || 0, helper: `${metrics.sentQuoteCount || 0} sent, ${metrics.acceptedQuoteCount || 0} accepted`, icon: BsReceipt },
+    followUps: {
+      label: "Follow-ups due",
+      value: metrics.followUpsDueCount || 0,
+      helper: `${metrics.pendingFollowUpCount || 0} pending, ${metrics.missedFollowUpCount || 0} missed`,
+      icon: BsBell,
+      status: (metrics.followUpsDueCount || 0) > 0 ? "due" : ""
+    },
+    tasks: { label: "Open tasks", value: metrics.openTaskCount || 0, helper: `${metrics.tasksDueCount || 0} due now`, icon: BsJournalCheck, status: (metrics.tasksDueCount || 0) > 0 ? "due" : "" },
+    b2b: { label: "B2B partners", value: metrics.b2bPartnerCount || 0, helper: `${metrics.activeB2BPartnerCount || 0} active, ${metrics.openB2BPartnerCount || 0} in pipeline`, icon: BsPeople },
+    alerts: {
+      label: "CRM alerts",
+      value: crmAlertSummary.total || 0,
+      helper: `${crmNotificationSummary.total || 0} in-app notifications`,
+      icon: BsExclamationTriangle,
+      status: (crmAlertSummary.total || 0) > 0 ? "warning" : ""
+    },
+    forecast: { label: "CRM forecast", value: formatMoney(analyticsTotals.weightedPipelineValue || 0), helper: `${analyticsTotals.openOpportunityCount || 0} open opportunities`, icon: BsBarChartLine },
+    dataIssues: {
+      label: "CRM data issues",
+      value: crmControls?.dataQuality?.totalDetected || 0,
+      helper: `${crmControlIssues.length} shown below`,
+      icon: BsShieldCheck,
+      status: (crmControls?.dataQuality?.totalDetected || 0) > 0 ? "warning" : ""
+    },
+    audit: { label: "Audit coverage", value: crmControls?.auditCoverage?.totalRequirements || 0, helper: `${crmControls?.auditCoverage?.observed || 0} seen in the audit log`, icon: BsArchive },
+    permissions: {
+      label: "CRM permissions",
+      value: `${crmControls?.permissions?.declaredCount || 0}/${crmControls?.permissions?.requiredCount || 0}`,
+      helper: "Required permissions declared",
+      icon: BsShieldCheck,
+      status: crmControls?.permissions?.staffSensitiveAccessDenied ? "" : "failed"
+    },
+    lostForecast: { label: "Lost value", value: formatMoney(lostOpportunityValue), helper: `${lostOpportunityItems.length} lost opportunities`, icon: BsArchive },
+    timeline: { label: "Timeline events", value: timelineItems.length, helper: selectedCustomer ? customerName(selectedCustomer) : "Select a customer", icon: BsArchive }
+  };
+  const statsByMode = {
+    dashboard: ["customers", "leads", "opportunities", "pipeline", "quotes", "followUps", "tasks", "b2b", "duplicates", "alerts"],
+    customers: ["customers", "duplicates"],
+    leads: ["leads", "opportunities"],
+    opportunities: ["opportunities", "pipeline", "quotes"],
+    pipeline: ["opportunities", "pipeline"],
+    quotes: ["quotes", "opportunities"],
+    followUps: ["followUps", "tasks"],
+    tasks: ["tasks", "followUps"],
+    conversations: ["timeline", "customers"],
+    duplicates: ["duplicates", "customers"],
+    b2bAgents: ["b2b"],
+    lostOpportunities: ["lostForecast", "opportunities"],
+    reports: ["forecast", "opportunities", "leads"],
+    controls: ["dataIssues", "audit", "permissions"],
+    imports: ["customers", "leads", "b2b"]
+  };
+  const visibleStats = (statsByMode[mode] || statsByMode.dashboard).map((key) => ({ key, ...stat[key] }));
+
   return (
-    <div className="admin-crm-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Customer Lifecycle</span>
-          <h2>
-            {mode === "pipeline"
-              ? "Sales Pipeline"
-              : mode === "opportunities"
-                ? "Opportunities"
-              : mode === "lostOpportunities"
-                ? "Lost Opportunities"
-              : mode === "conversations"
-                ? "Conversations"
-              : mode === "quotes"
-                ? "Quotes"
-                : mode === "b2bAgents"
-                  ? "B2B / Agents"
-                : mode === "controls"
-                  ? "CRM Controls"
-                : mode === "imports"
-                  ? "CRM Imports"
-                : mode === "reports"
-                  ? "CRM Reports"
-                : mode === "followUps"
-                  ? "Follow-ups"
-                : mode === "tasks"
-                  ? "Tasks"
-                : mode === "leads"
-                ? "Leads"
-                : mode === "duplicates"
-                  ? "Duplicate Review"
-                  : mode === "customers"
-                    ? "Customer Master"
-                    : "CRM"}
-          </h2>
-          <p>Bokun remains booking truth while CRM owns pre-booking customer lifecycle data.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+    <AdminPage className="admin-crm-page">
+      <PageHeader
+        eyebrow="CRM"
+        title={pageTitle}
+        description={pageDescription}
+        actions={
+          <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+            <BsArrowClockwise aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
+          </Button>
+        }
+      />
 
       <ErrorAlert error={error} />
-      {actionMessage ? <div className="alert alert-success">{actionMessage}</div> : null}
+      {actionMessage ? <div className="alert alert-success mb-0">{actionMessage}</div> : null}
 
-      <Row className="g-3">
-        <Col md={6} xl={3}>
-          <AdminMetricCard label="Customers" value={metrics.customerCount || 0} detail="Customer master records" icon={BsPeople} />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Possible Duplicates"
-            value={metrics.possibleDuplicateCount || 0}
-            detail={`${metrics.openDuplicateCount || 0} open review items`}
-            icon={BsShieldCheck}
-            status={(metrics.openDuplicateCount || 0) > 0 ? "warn" : "pass"}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Leads"
-            value={metrics.leadCount || 0}
-            detail={`${metrics.newLeadCount || 0} new, ${metrics.qualifiedLeadCount || 0} qualified`}
-            icon={BsClipboard2Check}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Open Opportunities"
-            value={metrics.openOpportunityCount || 0}
-            detail={`${metrics.wonOpportunityCount || 0} won, ${metrics.lostOpportunityCount || 0} lost`}
-            icon={BsGraphUpArrow}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Weighted Pipeline"
-            value={formatMoney(metrics.weightedPipelineValue || 0)}
-            detail={`${formatMoney(metrics.openPipelineValue || 0)} open forecast`}
-            icon={BsGraphUpArrow}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Quotes"
-            value={metrics.quoteCount || 0}
-            detail={`${metrics.sentQuoteCount || 0} sent, ${metrics.acceptedQuoteCount || 0} accepted`}
-            icon={BsReceipt}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Follow-ups Due"
-            value={metrics.followUpsDueCount || 0}
-            detail={`${metrics.pendingFollowUpCount || 0} pending, ${metrics.missedFollowUpCount || 0} missed`}
-            icon={BsBell}
-            status={(metrics.followUpsDueCount || 0) > 0 ? "warn" : "pass"}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Open Tasks"
-            value={metrics.openTaskCount || 0}
-            detail={`${metrics.tasksDueCount || 0} due now`}
-            icon={BsJournalCheck}
-            status={(metrics.tasksDueCount || 0) > 0 ? "warn" : "pass"}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="B2B Partners"
-            value={metrics.b2bPartnerCount || 0}
-            detail={`${metrics.activeB2BPartnerCount || 0} active, ${metrics.openB2BPartnerCount || 0} in pipeline`}
-            icon={BsPeople}
-          />
-        </Col>
-        {mode === "dashboard" ? (
-          <Col md={6} xl={3}>
-            <AdminMetricCard
-              label="CRM Alerts"
-              value={crmAlertSummary.total || 0}
-              detail={`${crmNotificationSummary.total || 0} in-app notifications`}
-              icon={BsExclamationTriangle}
-              status={(crmAlertSummary.total || 0) > 0 ? "warn" : "pass"}
-            />
-          </Col>
-        ) : null}
-        {mode === "reports" ? (
-          <Col md={6} xl={3}>
-            <AdminMetricCard
-              label="CRM Forecast"
-              value={formatMoney(analyticsTotals.weightedPipelineValue || 0)}
-              detail={`${analyticsTotals.openOpportunityCount || 0} open opportunities`}
-              icon={BsBarChartLine}
-            />
-          </Col>
-        ) : null}
-        {mode === "controls" ? (
-          <>
-            <Col md={6} xl={3}>
-              <AdminMetricCard
-                label="CRM Data Issues"
-                value={crmControls?.dataQuality?.totalDetected || 0}
-                detail={`${crmControlIssues.length} shown in this view`}
-                icon={BsShieldCheck}
-                status={(crmControls?.dataQuality?.totalDetected || 0) > 0 ? "warn" : "pass"}
-              />
-            </Col>
-            <Col md={6} xl={3}>
-              <AdminMetricCard
-                label="Audit Coverage"
-                value={crmControls?.auditCoverage?.totalRequirements || 0}
-                detail={`${crmControls?.auditCoverage?.observed || 0} observed from AuditLog`}
-                icon={BsArchive}
-              />
-            </Col>
-            <Col md={6} xl={3}>
-              <AdminMetricCard
-                label="CRM Permissions"
-                value={`${crmControls?.permissions?.declaredCount || 0}/${crmControls?.permissions?.requiredCount || 0}`}
-                detail="Required CRM permissions declared"
-                icon={BsShieldCheck}
-                status={crmControls?.permissions?.staffSensitiveAccessDenied ? "pass" : "fail"}
-              />
-            </Col>
-          </>
-        ) : null}
-        {mode === "lostOpportunities" ? (
-          <Col md={6} xl={3}>
-            <AdminMetricCard
-              label="Lost Forecast"
-              value={formatMoney(lostOpportunityValue)}
-              detail={`${lostOpportunityItems.length} lost opportunities`}
-              icon={BsArchive}
-              status={lostOpportunityItems.length ? "warn" : "pass"}
-            />
-          </Col>
-        ) : null}
-        {mode === "conversations" ? (
-          <Col md={6} xl={3}>
-            <AdminMetricCard
-              label="Timeline Events"
-              value={timelineItems.length}
-              detail={selectedCustomer ? customerName(selectedCustomer) : "Select a customer"}
-              icon={BsArchive}
-            />
-          </Col>
-        ) : null}
-      </Row>
+      <StatGrid columns={mode === "dashboard" ? 4 : visibleStats.length >= 3 ? 3 : 4}>
+        {visibleStats.map(({ key, ...card }) => <StatCard key={key} {...card} />)}
+      </StatGrid>
 
       {mode === "dashboard" ? (
         <Row className="g-4 mt-1">
@@ -1612,13 +1530,14 @@ const AdminCrmPage = () => {
           <Col xs={12}>
             <Card className="surface-card">
               <Card.Body>
-                <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-                  <div>
-                    <h5 className="mb-1">{selectedCrmReport?.title || "CRM Report"}</h5>
-                    <small className="text-muted">{selectedCrmReport?.description || "Select a CRM report."}</small>
-                  </div>
-                  <div className="d-flex flex-wrap gap-2">
+                <div className="mb-3">
+                  <h5 className="mb-1">{selectedCrmReport?.title || "CRM Report"}</h5>
+                  <small className="text-muted">{selectedCrmReport?.description || "Select a CRM report."}</small>
+                </div>
+                <div className="mb-3">
+                  <FilterBar>
                     <Form.Select
+                      size="sm"
                       aria-label="CRM report"
                       value={selectedCrmReportType}
                       onChange={(event) => runSelectedCrmReport(event.target.value)}
@@ -1628,10 +1547,11 @@ const AdminCrmPage = () => {
                         <option key={report.type} value={report.type}>{report.title}</option>
                       ))}
                     </Form.Select>
-                    <Button variant="outline-dark" onClick={() => runSelectedCrmReport()} disabled={runningCrmReport || !selectedCrmReportType}>
+                    <Button size="sm" variant="primary" onClick={() => runSelectedCrmReport()} disabled={runningCrmReport || !selectedCrmReportType}>
                       Run
                     </Button>
                     <Form.Select
+                      size="sm"
                       aria-label="CRM report export format"
                       value={crmReportFormat}
                       onChange={(event) => setCrmReportFormat(event.target.value)}
@@ -1641,10 +1561,10 @@ const AdminCrmPage = () => {
                         <option key={format} value={format}>{format}</option>
                       ))}
                     </Form.Select>
-                    <Button className="premium-btn text-white" onClick={exportSelectedCrmReport} disabled={runningCrmReport || !selectedCrmReportType}>
-                      <BsDownload /> Export
+                    <Button size="sm" variant="outline-primary" onClick={exportSelectedCrmReport} disabled={runningCrmReport || !selectedCrmReportType}>
+                      <BsDownload aria-hidden="true" /> Export
                     </Button>
-                  </div>
+                  </FilterBar>
                 </div>
                 <Table responsive hover className="align-middle mb-0">
                   <thead>
@@ -2942,7 +2862,7 @@ const AdminCrmPage = () => {
                           <small className="text-muted">{customer.crmCustomerNumber || customer.id}</small>
                         </td>
                         <td>
-                          <span className="d-block">{customer.email || "-"}</span>
+                          <span className="d-block"><Truncate value={customer.email} max={32} /></span>
                           <small className="text-muted">{customer.phone || customer.whatsappNumber || "-"}</small>
                         </td>
                         <td><StatusBadge value={customer.lifecycleStage} /></td>
@@ -3178,22 +3098,7 @@ const AdminCrmPage = () => {
           </Col>
         </Row>
       ) : null}
-
-      <Row className="g-4 mt-1">
-        <Col>
-          <Card className="surface-card">
-            <Card.Body>
-              <h5 className="mb-3">Enabled CRM Foundation</h5>
-              <div className="d-flex flex-wrap gap-2">
-                {(dashboard?.enabledModules || []).map((item) => (
-                  <StatusBadge key={item} value={item} />
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </div>
+    </AdminPage>
   );
 };
 
