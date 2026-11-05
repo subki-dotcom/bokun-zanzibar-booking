@@ -25,6 +25,7 @@ import {
 } from "../../api/adminApi";
 import { fetchRecentBookings } from "../../api/bookingsApi";
 import { formatCurrency, formatDate } from "../../utils/formatters";
+import { adminAlertCount, bokunSyncState } from "../../utils/adminStatus";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 
@@ -453,12 +454,8 @@ const AdminDashboardPage = () => {
   const operationsOverview = dashboardData.operationsOverview || {};
   const queue = operationsOverview.queue || {};
   const operationalAlerts = dashboardData.operationalAlerts?.alerts || [];
-  const unreadAlerts =
-    Number(dashboardData.operationalAlerts?.counts?.paidPendingSupplier || 0) +
-    Number(dashboardData.operationalAlerts?.counts?.failedPayments || 0) +
-    Number(dashboardData.operationalAlerts?.counts?.failedEmailDeliveries || 0) +
-    Number(queue.retriableFinalizations || 0) +
-    Number(queue.openBookingRequests || 0);
+  // Same count as the top bar (utils/adminStatus.js).
+  const unreadAlerts = adminAlertCount({ operationalAlerts: dashboardData.operationalAlerts, operationsOverview });
 
   const sourceRows = useMemo(() => normalizeBreakdownRows(summary.sourceBreakdown || [], "channel"), [summary.sourceBreakdown]);
   const statusRows = useMemo(() => normalizeBreakdownRows(summary.bookingStatusBreakdown || [], "status"), [summary.bookingStatusBreakdown]);
@@ -471,10 +468,10 @@ const AdminDashboardPage = () => {
   const activeDrivers = fleet.activeDrivers ?? null;
   const onTripNow = trips.onTripNow ?? null;
   const bokunStatus = dashboardData.bokunSyncStatus;
-  const bokunMode = bokunStatus?.integration?.dataMode || "unknown";
   const bokunWorker = bokunStatus?.confirmedBookingImport?.worker || {};
-  const bokunReady = Boolean(bokunStatus?.confirmedBookingImport?.ready);
   const latestBokunSync = queue.latestBokunSync;
+  // Same Bókun state as the top bar (utils/adminStatus.js).
+  const bokunSync = bokunSyncState(bokunStatus);
 
   const metricCards = [
     {
@@ -550,9 +547,9 @@ const AdminDashboardPage = () => {
         </div>
       </div>
 
-      <div className={`admin-dashboard-sync-strip is-${bokunReady ? "healthy" : bokunMode === "mock" ? "warning" : "muted"}`}>
+      <div className={`admin-dashboard-sync-strip is-${bokunSync.status === "unknown" ? "muted" : bokunSync.status === "critical" ? "warning" : bokunSync.status}`} title={bokunSync.detail}>
         <span><BsCloudCheck aria-label="Synchronization" /></span>
-        <strong>{bokunMode === "live" ? "Live API" : titleize(bokunMode)}</strong>
+        <strong>{bokunSync.label}</strong>
         <small>
           {bokunWorker.lastSuccessAt
             ? `Last import ${formatRelativeTime(bokunWorker.lastSuccessAt)}`
