@@ -1,0 +1,584 @@
+/* Admin theme: the one source of truth for admin tokens (type, colour, spacing, shape) and the app shell.
+   Loaded by the admin layout only and scoped to .admin-platform-shell, so the public website never changes.
+   Components in components/admin/ui use only these variables. */
+
+/* ============ STEP 1: tokens ============ */
+.admin-platform-shell {
+  /* Type */
+  --adm-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --adm-fs-title: 24px;
+  --adm-fs-section: 16px;
+  --adm-fs-body: 14px;
+  --adm-fs-table: 13.5px;
+  --adm-fs-small: 12px;
+  --adm-fs-kpi: 26px;
+  --adm-fs-eyebrow: 11px;
+  --adm-lh-body: 1.45;
+  --adm-lh-heading: 1.2;
+
+  /* Text */
+  --adm-ink: #0f172a;
+  --adm-text: #475569;
+  --adm-muted: #64748b;
+
+  /* Brand */
+  --adm-brand: #0e6b57;
+  --adm-brand-hover: #0a5242;
+  --adm-brand-soft: #e7f3ef;
+
+  /* Neutrals */
+  --adm-page-bg: #f6f7f9;
+  --adm-surface: #ffffff;
+  --adm-surface-alt: #f9fafb;
+  --adm-border: #e5e7eb;
+  --adm-border-subtle: #eef0f3;
+  --adm-border-strong: #d0d5dd;
+  --adm-row-hover: #f8fafc;
+
+  /* Status: background / text */
+  --adm-success-soft: #ecfdf3;
+  --adm-success: #067647;
+  --adm-warning-soft: #fffaeb;
+  --adm-warning: #b54708;
+  --adm-danger-soft: #fef3f2;
+  --adm-danger: #b42318;
+  --adm-info-soft: #eff8ff;
+  --adm-info: #175cd3;
+  --adm-neutral-soft: #f2f4f7;
+  --adm-neutral: #344054;
+
+  /* Charts, in this order everywhere */
+  --adm-chart-1: #0e6b57;
+  --adm-chart-2: #2e90fa;
+  --adm-chart-3: #f79009;
+  --adm-chart-4: #7a5af8;
+  --adm-chart-5: #ee46bc;
+  --adm-chart-6: #667085;
+
+  /* Spacing (4px grid) */
+  --adm-space-1: 4px;
+  --adm-space-2: 8px;
+  --adm-space-3: 12px;
+  --adm-space-4: 16px;
+  --adm-space-5: 20px;
+  --adm-space-6: 24px;
+  --adm-space-8: 32px;
+  --adm-space-10: 40px;
+
+  /* Shape and depth */
+  --adm-radius-control: 8px;
+  --adm-radius: 12px;
+  --adm-radius-pill: 999px;
+  --adm-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --adm-shadow-pop: 0 12px 24px -4px rgba(16, 24, 40, 0.12);
+  --adm-focus: 0 0 0 4px rgba(14, 107, 87, 0.15);
+
+  /* Shell (re-maps the existing sidebar variables) */
+  --admin-sidebar-expanded: 248px;
+  --admin-sidebar-collapsed: 72px;
+  --sidebar-bg: #0b1f1a;
+  --sidebar-bg-secondary: #10292300;
+  --sidebar-text: #e6efec;
+  --sidebar-muted: #8aa39b;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-accent: #0e6b57;
+  --sidebar-accent-light: #0e6b57;
+  --mobile-sidebar-bg: #0b1f1a;
+  --mobile-text: #e6efec;
+  --mobile-muted: #8aa39b;
+  --mobile-border: rgba(255, 255, 255, 0.08);
+
+  background: var(--adm-page-bg);
+  color: var(--adm-text);
+  font-family: var(--adm-font);
+  font-size: var(--adm-fs-body);
+  line-height: var(--adm-lh-body);
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
+
+/* One sans font in the admin: no serif display headings. */
+.admin-platform-shell :is(h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, button, input, select, textarea, table) {
+  font-family: var(--adm-font);
+  letter-spacing: normal;
+}
+
+.admin-platform-shell :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--adm-ink);
+  line-height: var(--adm-lh-heading);
+}
+
+/* Type scale applied to the design-system pieces. */
+.admin-platform-shell .adm-title {
+  font-size: var(--adm-fs-title);
+  font-weight: 600;
+}
+
+.admin-platform-shell .adm-card-title {
+  font-size: var(--adm-fs-section);
+  font-weight: 600;
+}
+
+.admin-platform-shell .adm-eyebrow {
+  font-size: var(--adm-fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.admin-platform-shell .adm-description {
+  max-width: 72ch;
+  color: var(--adm-text);
+  font-size: var(--adm-fs-body);
+}
+
+.admin-platform-shell .adm-stat-value {
+  font-size: var(--adm-fs-kpi);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-platform-shell .adm-stat-label,
+.admin-platform-shell .adm-stat-helper {
+  font-size: var(--adm-fs-small);
+  font-weight: 500;
+  color: var(--adm-muted);
+}
+
+.admin-platform-shell .adm-table {
+  font-size: var(--adm-fs-table);
+}
+
+.admin-platform-shell .adm-card,
+.admin-platform-shell .adm-stat {
+  border-color: var(--adm-border);
+  border-radius: var(--adm-radius);
+  box-shadow: var(--adm-shadow);
+}
+
+/* ============ STEP 2: app shell ============ */
+
+/* Sidebar: 248px, dark, 36px items, brand-green active pill. */
+.admin-platform-shell .admin-platform-sidebar {
+  box-shadow: none;
+}
+
+.admin-platform-shell .admin-platform-nav-link,
+.admin-platform-shell .admin-platform-nav-trigger {
+  min-height: 36px;
+  padding: 0 10px;
+  gap: 10px;
+  border-radius: 8px;
+  color: rgba(230, 239, 236, 0.86);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.admin-platform-shell .admin-platform-nav-link svg:first-child,
+.admin-platform-shell .admin-platform-nav-trigger svg:first-child {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-platform-shell .admin-platform-nav-link:hover,
+.admin-platform-shell .admin-platform-nav-link:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.admin-platform-shell .admin-platform-nav-link.active {
+  background: var(--adm-brand);
+  box-shadow: none;
+  color: #ffffff;
+}
+
+.admin-platform-shell .admin-platform-nav-row-arrow {
+  display: none;
+}
+
+.admin-platform-shell .admin-platform-nav-section {
+  padding: 0;
+}
+
+.admin-platform-shell .admin-platform-nav-section + .admin-platform-nav-section {
+  margin-top: 24px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.admin-platform-shell .admin-platform-nav-section + .admin-platform-nav-section.is-closed {
+  margin-top: 8px;
+}
+
+.admin-platform-shell .admin-platform-nav-section-label {
+  color: var(--sidebar-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.admin-platform-shell .admin-platform-nav-section-toggle {
+  min-height: 30px;
+  padding: 0 10px;
+}
+
+.admin-platform-shell .admin-platform-nav-section-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.admin-platform-shell .admin-platform-nav-section-items {
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.admin-platform-shell .admin-platform-brand-copy strong {
+  font-family: var(--adm-font);
+  font-weight: 700;
+}
+
+/* Top bar: 60px, white, bottom border; breadcrumb left, search centre, status / alerts / account right. */
+.admin-platform-shell .admin-platform-topbar {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 420px) auto;
+  gap: 16px;
+  min-height: 60px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  backdrop-filter: none;
+}
+
+.admin-platform-shell .admin-platform-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-platform-shell .admin-platform-icon-button {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid var(--adm-border);
+  border-radius: 8px;
+  background: var(--adm-surface);
+  color: var(--adm-ink);
+}
+
+.admin-platform-shell .admin-platform-page-title h1 {
+  display: none;
+}
+
+.admin-platform-shell .admin-platform-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--adm-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.admin-platform-shell .admin-platform-breadcrumbs a {
+  color: var(--adm-muted);
+  text-decoration: none;
+}
+
+.admin-platform-shell .admin-platform-breadcrumbs a:hover {
+  color: var(--adm-ink);
+}
+
+.admin-platform-shell .admin-platform-breadcrumb-item:not(:last-child)::after {
+  color: #98a2b3;
+}
+
+.admin-platform-shell .admin-platform-topbar-center {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.admin-platform-shell .admin-platform-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Page search (Ctrl+K). */
+.adm-search {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.adm-search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--adm-border-strong);
+  border-radius: 8px;
+  background: var(--adm-surface);
+  color: var(--adm-muted);
+}
+
+.adm-search-field:focus-within {
+  border-color: var(--adm-brand);
+  box-shadow: var(--adm-focus);
+}
+
+.adm-search-field input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--adm-ink);
+  font-size: 14px;
+  outline: none;
+}
+
+.adm-search-field kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--adm-border);
+  border-radius: 6px;
+  background: var(--adm-surface-alt);
+  color: var(--adm-muted);
+  font-family: var(--adm-font);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.adm-search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 1060;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--adm-border);
+  border-radius: 12px;
+  background: var(--adm-surface);
+  box-shadow: var(--adm-shadow-pop);
+}
+
+.adm-search-results button {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--adm-ink);
+  font-size: 14px;
+  text-align: left;
+}
+
+.adm-search-results button small {
+  color: var(--adm-muted);
+  font-size: 12px;
+}
+
+.adm-search-results button.is-active,
+.adm-search-results button:hover {
+  background: var(--adm-brand-soft);
+}
+
+/* Bókun status chip. */
+.admin-platform-shell .admin-platform-sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Alerts bell with a count badge, and the account (avatar) menu. */
+.adm-icon-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--adm-border);
+  border-radius: 8px;
+  background: var(--adm-surface);
+  color: var(--adm-ink);
+}
+
+.adm-icon-button:hover {
+  background: var(--adm-row-hover);
+  color: var(--adm-ink);
+}
+
+.adm-bell-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 2px solid var(--adm-surface);
+  border-radius: 999px;
+  background: var(--adm-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+
+.adm-avatar-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.adm-avatar-button::after {
+  display: none;
+}
+
+.adm-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--adm-brand);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.adm-avatar-button:focus-visible .adm-avatar {
+  box-shadow: var(--adm-focus);
+}
+
+.adm-user-dropdown {
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid var(--adm-border);
+  border-radius: 12px;
+  box-shadow: var(--adm-shadow-pop);
+  font-family: var(--adm-font);
+}
+
+.adm-user-dropdown-head {
+  display: grid;
+  padding: 6px 10px;
+}
+
+.adm-user-dropdown-head strong {
+  color: var(--adm-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.adm-user-dropdown-head small {
+  color: var(--adm-muted);
+  font-size: 12px;
+}
+
+.adm-user-dropdown .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--adm-ink);
+  font-size: 14px;
+}
+
+.adm-user-dropdown .dropdown-item:hover,
+.adm-user-dropdown .dropdown-item:focus {
+  background: var(--adm-row-hover);
+}
+
+/* Bookings filter row: wraps inside its card instead of running past it. */
+.admin-platform-shell .admin-bookings-filter-desktop {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+/* Content area: the same width and padding on every page. */
+.admin-platform-shell .admin-platform-content {
+  padding: 24px;
+  background: var(--adm-page-bg);
+}
+
+.admin-platform-shell .admin-platform-content > * {
+  width: 100%;
+  max-width: 1440px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Drawer below 992px: same dark sidebar, off-canvas, with an overlay. */
+@media (max-width: 991.98px) {
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-nav-link,
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-nav-trigger,
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-nav-section-label,
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-brand-copy strong,
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-user-info strong {
+    color: var(--sidebar-text);
+  }
+
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-nav-link.active {
+    background: var(--adm-brand);
+    color: #fff;
+  }
+
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-user-mini {
+    border-color: var(--sidebar-border);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .admin-platform-shell .admin-platform-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-platform-shell .admin-platform-content {
+    padding: 16px;
+  }
+
+  /* Two KPI cards per row on phones: values stay on one line. */
+  .admin-platform-shell .adm-stat-value {
+    font-size: 20px;
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
+
+  .admin-platform-shell .admin-platform-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .admin-platform-shell .admin-platform-page-title {
+    display: none;
+  }
+
+  .adm-search-field kbd,
+  .adm-hide-sm {
+    display: none;
+  }
+
+  .admin-platform-shell .admin-platform-sync-pill {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+}

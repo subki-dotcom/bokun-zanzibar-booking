@@ -17319,7 +17319,7 @@ textarea.form-control {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 991.98px) {
   .admin-platform-shell,
   .admin-platform-shell.is-sidebar-collapsed {
     display: block;
@@ -18187,11 +18187,6 @@ textarea.form-control {
   display: grid;
 }
 
-@media (max-width: 1200px) and (min-width: 901px) {
-  .admin-platform-sidebar .admin-platform-nav-section.is-closed .admin-platform-nav-section-items {
-    display: grid;
-  }
-}
 
 .admin-platform-nav-section-items,
 .admin-platform-nav-nested,
@@ -18480,134 +18475,8 @@ textarea.form-control {
   transform: translate(0, -50%);
 }
 
-@media (max-width: 1200px) and (min-width: 901px) {
-  .admin-platform-shell {
-    grid-template-columns: var(--admin-sidebar-collapsed) minmax(0, 1fr);
-  }
 
-  .admin-platform-sidebar {
-    width: var(--admin-sidebar-collapsed);
-  }
-
-  .admin-platform-sidebar .admin-platform-brand-wrap {
-    justify-content: center;
-    padding-right: 0.86rem;
-    padding-left: 0.86rem;
-  }
-
-  .admin-platform-sidebar .admin-platform-brand {
-    justify-content: center;
-  }
-
-  .admin-platform-sidebar .admin-platform-brand-copy,
-  .admin-platform-sidebar .admin-platform-user-info,
-  .admin-platform-sidebar .admin-platform-user-chevron,
-  .admin-platform-sidebar .admin-platform-nav-section-label,
-  .admin-platform-sidebar .admin-platform-nav-link span,
-  .admin-platform-sidebar .admin-platform-nav-trigger span,
-  .admin-platform-sidebar .admin-platform-nav-row-arrow,
-  .admin-platform-sidebar .admin-platform-nav-badge,
-  .admin-platform-sidebar .admin-platform-sidebar-footer-action span {
-    display: none;
-  }
-
-  .admin-platform-sidebar .admin-platform-user-mini {
-    display: flex;
-    justify-content: center;
-    min-height: auto;
-    margin: 0.25rem 0.86rem 0.8rem;
-    padding: 0.55rem 0;
-  }
-
-  .admin-platform-sidebar .admin-platform-nav {
-    overflow-x: visible;
-    padding-right: 0.8rem;
-    padding-left: 0.8rem;
-  }
-
-  .admin-platform-sidebar .admin-platform-nav-section {
-    justify-items: center;
-  }
-
-  .admin-platform-sidebar .admin-platform-nav-section::before {
-    display: block;
-    width: 28px;
-    height: 1px;
-    background: var(--sidebar-border);
-    content: "";
-  }
-
-  .admin-platform-sidebar .admin-platform-nav-section:first-child::before {
-    display: none;
-  }
-
-  .admin-platform-sidebar .admin-platform-nav-link,
-  .admin-platform-sidebar .admin-platform-nav-trigger {
-    justify-content: center;
-    width: 44px;
-    min-height: 44px;
-    padding: 0;
-  }
-
-  .admin-platform-sidebar .admin-platform-nav-link.active {
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .admin-platform-sidebar .admin-platform-nav-link.active::before {
-    position: absolute;
-    left: -0.8rem;
-    width: 3px;
-    height: 32px;
-    border-radius: 999px;
-    background: var(--sidebar-accent-light);
-    content: "";
-  }
-
-  .admin-platform-sidebar .admin-platform-sidebar-footer {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    padding-right: 0.8rem;
-    padding-left: 0.8rem;
-  }
-
-  .admin-platform-sidebar .admin-platform-sidebar-footer-action {
-    width: 44px;
-    padding: 0;
-  }
-
-  .admin-platform-sidebar [data-tooltip]::after {
-    position: absolute;
-    left: calc(100% + 0.7rem);
-    top: 50%;
-    z-index: 1200;
-    min-width: max-content;
-    max-width: 220px;
-    transform: translate(0.2rem, -50%);
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    border-radius: 8px;
-    background: #ffffff;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
-    color: #102544;
-    content: attr(data-tooltip);
-    font-size: 0.78rem;
-    font-weight: 800;
-    line-height: 1.2;
-    opacity: 0;
-    padding: 0.48rem 0.62rem;
-    pointer-events: none;
-    white-space: nowrap;
-    transition: opacity 0.16s ease, transform 0.16s ease;
-  }
-
-  .admin-platform-sidebar [data-tooltip]:hover::after,
-  .admin-platform-sidebar [data-tooltip]:focus-visible::after {
-    opacity: 1;
-    transform: translate(0, -50%);
-  }
-}
-
-@media (max-width: 900px) {
+@media (max-width: 991.98px) {
   .admin-platform-shell,
   .admin-platform-shell.is-sidebar-collapsed {
     display: block;

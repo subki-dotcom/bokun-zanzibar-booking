@@ -523,11 +523,11 @@
 }
 
 /* Text links in admin pages: brand green, not browser blue. */
-.admin-platform-content a:not(.btn):not(.dropdown-item):not(.nav-link):not(.page-link) {
+.admin-platform-content a:not(.btn):not(.dropdown-item):not(.nav-link):not(.page-link):not(.is-primary):not([class*="primary"]) {
   color: var(--adm-brand);
 }
 
-.admin-platform-content a:not(.btn):not(.dropdown-item):not(.nav-link):not(.page-link):hover {
+.admin-platform-content a:not(.btn):not(.dropdown-item):not(.nav-link):not(.page-link):not(.is-primary):not([class*="primary"]):hover {
   color: var(--adm-brand-hover);
 }
 

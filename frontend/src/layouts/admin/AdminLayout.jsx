@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import AdminTopBar from "../../components/admin/AdminTopBar";
 import "../../components/admin/ui/adminUi.css";
+import "../../components/admin/ui/admin-theme.css";
 import "../../components/admin/ui/adminDark.css";
 import useAuth from "../../hooks/useAuth";
 
@@ -46,6 +47,16 @@ const AdminLayout = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  // Inter for the admin only (the public site keeps its own fonts): loaded once when the admin opens.
+  useEffect(() => {
+    if (typeof document === "undefined" || document.getElementById("adm-font-inter")) return;
+    const link = document.createElement("link");
+    link.id = "adm-font-inter";
+    link.rel = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
+    document.head.appendChild(link);
+  }, []);
 
   // Modals and drawers render outside the shell, so the theme is also set on <html> while the admin is open.
   useEffect(() => {
@@ -99,7 +110,7 @@ const AdminLayout = () => {
   const handleToggleSidebar = () => {
     const isMobile =
       typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 900px)").matches;
+      window.matchMedia("(max-width: 991.98px)").matches;
 
     if (isMobile) {
       setIsMobileMenuOpen((current) => !current);
@@ -129,8 +140,6 @@ const AdminLayout = () => {
           menuButtonRef.current?.focus();
         }}
         onLogout={logout}
-        theme={theme}
-        onToggleTheme={toggleTheme}
       />
       <button
         type="button"
@@ -147,6 +156,8 @@ const AdminLayout = () => {
           menuButtonRef={menuButtonRef}
           onToggleSidebar={handleToggleSidebar}
           onLogout={logout}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
         <main className="admin-platform-content">
           <Outlet />

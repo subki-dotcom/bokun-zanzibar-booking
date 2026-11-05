@@ -18,10 +18,10 @@ export const PageHeader = ({ eyebrow = "", title, description = "", actions = nu
   <header className="adm-page-header">
     <div className="adm-page-header-copy">
       {eyebrow ? <span className="adm-eyebrow">{eyebrow}</span> : null}
-      <h2 className="adm-title">
+      <h1 className="adm-title">
         {Icon ? <Icon aria-hidden="true" className="adm-title-icon" /> : null}
         {title}
-      </h2>
+      </h1>
       {description ? <p className="adm-description">{description}</p> : null}
     </div>
     {actions ? <div className="adm-page-actions">{actions}</div> : null}
