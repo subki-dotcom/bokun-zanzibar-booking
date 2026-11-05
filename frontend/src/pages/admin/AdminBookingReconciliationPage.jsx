@@ -33,6 +33,10 @@ const label = (v) =>
     .replaceAll('_', ' ')
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
+// The API sends the channel as { code: "GETYOURGUIDE", label: "GetYourGuide" } (older rows: a plain code).
+const channelName = (channel) =>
+  channel && typeof channel === 'object' ? channel.label || label(channel.code) : label(channel);
+const channelCode = (channel) => (channel && typeof channel === 'object' ? channel.code || '' : String(channel || ''));
 const cash = (v, c) =>
   v == null || !c
     ? 'Unavailable'
@@ -312,7 +316,7 @@ export default function AdminBookingReconciliationPage() {
                             <b>{r.customer.name}</b>
                             <small>{r.product}</small>
                           </td>
-                          <td>{label(r.channel)}</td>
+                          <td title={channelCode(r.channel)}>{channelName(r.channel)}</td>
                           <td>{r.travelDate}</td>
                           <td>
                             <Badge value={r.customerPayment.status} />
@@ -353,7 +357,7 @@ export default function AdminBookingReconciliationPage() {
                       <dl>
                         <div>
                           <dt>Channel</dt>
-                          <dd>{label(r.channel)}</dd>
+                          <dd title={channelCode(r.channel)}>{channelName(r.channel)}</dd>
                         </div>
                         <div>
                           <dt>Customer payment</dt>
