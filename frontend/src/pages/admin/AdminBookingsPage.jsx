@@ -1,4 +1,5 @@
 import { PaymentTruthBadge, SettlementBadge } from '../../components/invoice/BookingPaymentState';
+import { formatLabel } from "../../utils/formatLabel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
@@ -75,12 +76,7 @@ const defaultLimit = () => {
   return 20;
 };
 
-const titleize = (value = "") =>
-  String(value || "unknown")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+const titleize = (value = "") => formatLabel(value);
 
 const readQuery = (searchParams) => {
   const limit = Number(searchParams.get("limit") || defaultLimit());

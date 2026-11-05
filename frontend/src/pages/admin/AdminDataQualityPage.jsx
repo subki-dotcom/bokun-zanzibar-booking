@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsClipboard2Check, BsExclamationTriangle } from "react-icons/bs";
@@ -90,7 +91,7 @@ const AdminDataQualityPage = () => {
               <div className="d-grid gap-2">
                 {(summary?.topIssues || []).map((item) => (
                   <div key={item.code} className="d-flex justify-content-between gap-3 border rounded-3 p-2">
-                    <span>{item.code.replaceAll("_", " ")}</span>
+                    <span>{formatLabel(item.code)}</span>
                     <Badge bg={item.severity === "CRITICAL" ? "danger" : item.severity === "ERROR" ? "warning" : "secondary"}>
                       {item.count}
                     </Badge>
@@ -127,7 +128,7 @@ const AdminDataQualityPage = () => {
                   {issues.length ? issues.map((item, index) => (
                     <tr key={`${item.code}-${item.entityType}-${item.entityId}-${index}`}>
                       <td>
-                        <strong className="d-block">{item.code.replaceAll("_", " ")}</strong>
+                        <strong className="d-block">{formatLabel(item.code)}</strong>
                         <small className="text-muted">{item.message}</small>
                       </td>
                       <td>

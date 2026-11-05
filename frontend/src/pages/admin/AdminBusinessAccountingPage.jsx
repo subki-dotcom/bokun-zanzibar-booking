@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { Button } from "react-bootstrap";
 import {
@@ -46,11 +47,7 @@ const KPI_LABELS = {
 
 const money = (value, currency = "USD") => formatCurrency(value || 0, currency || "USD");
 
-const prettyLabel = (value = "") =>
-  String(value || "")
-    .replace(/[_-]+/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+const prettyLabel = (value = "") => formatLabel(value);
 
 const changeText = (value) => {
   if (value === null || value === undefined) return "New activity";
@@ -264,7 +261,7 @@ const AuthoritativeFactsSummary = ({ facts }) => {
         <table className="table table-sm align-middle mb-0">
           <thead><tr><th>Currency</th><th className="text-end">Bookings</th><th className="text-end">Gross revenue</th><th className="text-end">Collected</th><th className="text-end">OTA payout</th><th className="text-end">Refunds</th><th className="text-end">Direct costs</th><th>Evidence</th></tr></thead>
           <tbody>{items.map((item) => {
-            const payout = item.otaPayoutsReceived === null ? "Awaiting evidence" : money(item.otaPayoutsReceived, item.currency);
+            const payout = item.otaPayoutsReceived === null ? "Not received yet" : money(item.otaPayoutsReceived, item.currency);
             const pending = (item.evidence?.unknownOtaPayoutBookings || 0) + (item.evidence?.unknownCommissionBookings || 0);
             return <tr key={item.currency}>
               <td><strong>{item.currency}</strong></td>

@@ -30,11 +30,7 @@ const periods = [
   ['THIS_YEAR', 'This Year'],
   ['CUSTOM', 'Custom Range'],
 ];
-const label = (v) =>
-  String(v || 'Unknown')
-    .replaceAll('_', ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+const label = (value = "") => formatLabel(value);
 // The API sends the channel as { code: "GETYOURGUIDE", label: "GetYourGuide" } (older rows: a plain code).
 const channelName = (channel) =>
   channel && typeof channel === 'object' ? channel.label || label(channel.code) : label(channel);

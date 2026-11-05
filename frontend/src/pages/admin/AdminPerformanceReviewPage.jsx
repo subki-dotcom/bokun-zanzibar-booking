@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatLabel as plainLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsDatabaseCheck, BsGraphUpArrow, BsShieldCheck } from "react-icons/bs";
@@ -27,7 +28,7 @@ const priorityVariant = (priority = "") => ({
   low: "secondary"
 })[priority] || "secondary";
 
-const formatLabel = (value = "") => String(value || "-").replaceAll("_", " ");
+const formatLabel = (value = "") => plainLabel(value);
 
 const formatIndex = (spec = {}) =>
   Object.entries(spec || {})

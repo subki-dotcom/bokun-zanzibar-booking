@@ -1,4 +1,5 @@
 import { PaymentTruthBadge } from '../../components/invoice/BookingPaymentState';
+import { formatLabel } from "../../utils/formatLabel";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -89,12 +90,7 @@ const requestDashboardWidget = async (key, request, fallbackMessage) => {
   }
 };
 
-const titleize = (value = "") =>
-  String(value || "unknown")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+const titleize = (value = "") => formatLabel(value);
 
 const formatCompactCurrency = (amount = 0, currency = "USD") => {
   const numericAmount = Number(amount || 0);

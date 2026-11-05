@@ -24,7 +24,7 @@ test("management accounting dashboard uses the aggregated business accounting fo
   assert.ok(pageSource.includes("Authoritative Booking Facts"));
   assert.ok(pageSource.includes("foundation?.authoritativeFinancialFacts"));
   assert.ok(pageSource.includes("Read-only"));
-  assert.ok(pageSource.includes("Awaiting evidence"));
+  assert.ok(pageSource.includes("Not received yet"));
 });
 
 test("management accounting dashboard keeps source strategy user-facing and supports real filters/export", () => {

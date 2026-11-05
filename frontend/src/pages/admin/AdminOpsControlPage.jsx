@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { Alert, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsBell, BsExclamationTriangle, BsPlayCircle } from "react-icons/bs";
@@ -118,7 +119,7 @@ const AdminOpsControlPage = () => {
             </div>
             <Form.Select value={category} onChange={(event) => changeCategory(event.target.value)} aria-label="Alert category">
               <option value="">All categories</option>
-              {(summary?.categories || []).map((item) => <option key={item} value={item}>{item.replaceAll("_", " ")}</option>)}
+              {(summary?.categories || []).map((item) => <option key={item} value={item}>{formatLabel(item)}</option>)}
             </Form.Select>
           </div>
         </Card.Body>

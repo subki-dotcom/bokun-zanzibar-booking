@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
@@ -32,7 +33,7 @@ const DATE_RANGE_FIELDS = [
 const DEFAULT_STATUSES = "CONFIRMED,CANCELLED";
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
-const label = (value = "") => String(value || "-").replaceAll("_", " ");
+const label = (value = "") => formatLabel(value);
 
 const dataModeLabel = (value = "") => ({
   live: "Live Bokun API",

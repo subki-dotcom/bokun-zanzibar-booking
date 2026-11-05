@@ -1,4 +1,5 @@
 import Loader from "../../components/common/Loader";
+import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { useEffect, useState } from "react";
 import { Badge, Button, Card, Form, Table } from "react-bootstrap";
@@ -6,7 +7,7 @@ import { BsArrowClockwise, BsCashCoin } from "react-icons/bs";
 import { Link } from "react-router-dom";
 import { createSettlement, fetchSettlements } from "../../api/adminApi";
 
-const label = (value = "") => String(value || "UNKNOWN").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+const label = (value = "") => formatLabel(value);
 const statusVariant = (status = "") => ["RECONCILED", "RECEIVED"].includes(status) ? "success" : ["MISMATCH", "NEEDS_REVIEW"].includes(status) ? "danger" : "warning";
 const money = (value, currency) => value == null || !currency ? "Unavailable" : new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(value));
 

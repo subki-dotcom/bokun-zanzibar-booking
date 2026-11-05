@@ -1,4 +1,5 @@
 import Loader from "../../components/common/Loader";
+import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Form, Modal } from 'react-bootstrap';
@@ -38,11 +39,7 @@ const date = (v) =>
         new Date(v)
       )
     : '—';
-const label = (v) =>
-  String(v || '')
-    .toLowerCase()
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+const label = (value = "") => formatLabel(value);
 const Kpi = ({ title, value, note, icon: Icon, tone = '' }) => (
   <article className={`fa-kpi ${tone}`}>
     <i>

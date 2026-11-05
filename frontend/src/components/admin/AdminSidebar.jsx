@@ -163,7 +163,6 @@ const SidebarSection = ({ section, pathname, collapsed, onNavigate, openSections
           onClick={onToggle}
         >
           <span>{section.label}</span>
-          <small className="admin-platform-nav-section-count">{section.children.length}</small>
           {open ? <BsChevronDown aria-hidden="true" /> : <BsChevronRight aria-hidden="true" />}
         </button>
       ) : (

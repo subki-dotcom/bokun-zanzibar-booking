@@ -1,4 +1,5 @@
 import BookingPaymentOverview from '../../components/invoice/BookingPaymentOverview';
+import { formatLabel } from "../../utils/formatLabel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { newBookingExpenseForm, bookingExpensePayload } from "./bookingExpenseForm";
 import { Badge, Button, Card, Col, Form, Modal, Offcanvas, Row, Table } from "react-bootstrap";
@@ -55,7 +56,7 @@ const safeNumber = (value) => {
 const money = (value, currency = "USD") => formatCurrency(safeNumber(value), currency || "USD");
 const optionalMoney = (value, currency = "USD") => value === null || value === undefined || value === "" ? "-" : money(value, currency);
 const percent = (value) => `${safeNumber(value).toFixed(2)}%`;
-const label = (value = "") => String(value || "-").replaceAll("_", " ");
+const label = (value = "") => formatLabel(value);
 
 const EvidenceBadge = ({ value }) => {
   const normalized = String(value || "UNKNOWN").toUpperCase();
@@ -164,12 +165,7 @@ const statusTone = (value = "") => {
   return "neutral";
 };
 
-const prettyLabel = (value = "") =>
-  String(value || "-")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+const prettyLabel = (value = "") => formatLabel(value);
 
 const formatKpiValue = (kpi = {}, currency = "USD") => {
   if (kpi.type === "count") return formatNumber(kpi.value);
@@ -430,7 +426,7 @@ const RecentFinancials = ({ rows = [], currency = "USD", onTrace }) => {
 const FactValue = ({ label: title, value, currency: code }) => (
   <div className="d-flex justify-content-between gap-3 border-bottom py-2">
     <span className="text-muted">{title}</span>
-    <strong className="text-end">{value === null || value === undefined ? "Awaiting evidence" : code ? money(value, code) : value}</strong>
+    <strong className="text-end">{value === null || value === undefined ? "Not received yet" : code ? money(value, code) : value}</strong>
   </div>
 );
 
@@ -584,7 +580,7 @@ const AuthoritativeSummary = ({ summary, loading }) => {
                 <td className="text-end">{item.bookings}</td>
                 <td className="text-end">{money(item.grossBookingRevenue, item.currency)}</td>
                 <td className="text-end">{money(item.guestPaymentsCollected, item.currency)}</td>
-                <td className="text-end">{item.otaReceivables === null ? "Awaiting evidence" : money(item.otaReceivables, item.currency)}</td>
+                <td className="text-end">{item.otaReceivables === null ? "Not received yet" : money(item.otaReceivables, item.currency)}</td>
                 <td className="text-end">{money(item.refunds, item.currency)}</td>
                 <td className="text-end">{money(item.directCosts, item.currency)}</td>
                 <td className="text-end">{money(item.grossProfit, item.currency)}</td>

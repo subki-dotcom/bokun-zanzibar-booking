@@ -1,7 +1,8 @@
 import { BsBarChartLine } from "react-icons/bs";
+import { formatLabel } from "../../utils/formatLabel";
 import { StatCard, StatusBadge as UiStatusBadge } from "./ui";
 
-export const formatStatusLabel = (value = "") => String(value || "-").replaceAll("_", " ");
+export const formatStatusLabel = (value = "") => formatLabel(value);
 
 export const statusVariant = (status = "") => ({
   ACTIVE: "success",

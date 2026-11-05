@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsArchive, BsClipboard2Check, BsDatabaseCheck, BsShieldCheck } from "react-icons/bs";
@@ -23,7 +24,7 @@ const statusVariant = (status = "") => ({
   RUNNING: "primary"
 })[status] || "secondary";
 
-const formatStatus = (value = "") => String(value || "-").replaceAll("_", " ");
+const formatStatus = (value = "") => formatLabel(value);
 
 const formatDate = (value = "") => {
   if (!value) return "-";

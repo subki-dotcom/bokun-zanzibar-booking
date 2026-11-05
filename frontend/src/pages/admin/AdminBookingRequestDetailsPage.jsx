@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
 import { Alert, Badge, Button, Card, Col, Form, Row } from "react-bootstrap";
 import { BsArrowLeft, BsArrowRepeat, BsCheck2Circle, BsEnvelope, BsExclamationTriangle, BsXCircle } from "react-icons/bs";
 import { Link, useParams } from "react-router-dom";
@@ -20,7 +21,7 @@ import Loader from "../../components/common/Loader";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { cancellationDisplayText, formatCancellationDeadline, hasKnownRefundAmount } from "../../utils/cancellationPolicy";
 
-const label = (value = "") => String(value || "-").replaceAll("_", " ");
+const label = (value = "") => formatLabel(value);
 const statusVariant = (value = "") => (["completed", "approved", "synced", "refunded", "partially_refunded", "paid", "eligible"].includes(value) ? "success" : ["rejected", "failed", "cancelled", "unavailable"].includes(value) ? "danger" : "warning");
 const travelerLabel = (pax = {}) => `Adults ${pax.adults || 0}, Children ${pax.children || 0}, Infants ${pax.infants || 0}`;
 const providerLabel = (value = "") => ({ paypal: "PayPal", pesapal: "Pesapal", dpo: "DPO Pay", manual_bank_transfer: "Manual bank transfer", cash: "Cash", other: "Other" }[String(value || "").toLowerCase()] || value || "-");

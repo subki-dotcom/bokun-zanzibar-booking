@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsJournalCheck, BsShieldCheck } from "react-icons/bs";
@@ -122,7 +123,7 @@ const AdminAuditControlPage = () => {
                   {financialChanges.length ? financialChanges.map((item) => (
                     <tr key={item.id}>
                       <td>
-                        <strong className="d-block">{item.action}</strong>
+                        <strong className="d-block" title={item.action}>{formatLabel(item.action)}</strong>
                         <small className="text-muted">{actorLabel(item.actor)}</small>
                       </td>
                       <td>{item.reference || item.entity?.id || "-"}</td>
@@ -153,7 +154,7 @@ const AdminAuditControlPage = () => {
                 <tbody>
                   {auditLogs.length ? auditLogs.map((item) => (
                     <tr key={item.id}>
-                      <td>{item.action}</td>
+                      <td title={item.action}>{formatLabel(item.action)}</td>
                       <td>
                         <strong className="d-block">{item.entity?.type}</strong>
                         <small className="text-muted">{item.reference || item.entity?.id}</small>

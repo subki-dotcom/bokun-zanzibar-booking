@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
 import { Alert, Badge, Button, ButtonGroup, Card, Col, Form, Modal, Row, Table } from "react-bootstrap";
 import { PageHeader } from "../../components/admin/ui";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -38,10 +39,7 @@ const safeNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 const money = (value, currency = "USD") => formatCurrency(safeNumber(value), currency || "USD");
-const label = (value = "") =>
-  String(value || "-")
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (match) => match.toUpperCase());
+const label = (value = "") => formatLabel(value);
 const todayInput = () => new Date().toISOString().slice(0, 10);
 
 const COMMON_COST_CATEGORIES = [

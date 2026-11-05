@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { formatLabel } from "../../utils/formatLabel";
 import { Badge, Button, Card, Form, Offcanvas, Table } from 'react-bootstrap';
 import { PageHeader } from '../../components/admin/ui';
 import { BsArrowClockwise, BsCreditCard2Front, BsEye, BsShieldCheck } from 'react-icons/bs';
@@ -14,10 +15,7 @@ import Loader from '../../components/common/Loader';
 import ListingPagination from '../../components/tours/listing/ListingPagination';
 import { formatCurrency } from '../../utils/formatters';
 
-const label = (value = '') =>
-  String(value || 'Unknown')
-    .replaceAll('_', ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+const label = (value = "") => formatLabel(value);
 const variant = (value = '') => {
   const code = String(value).toUpperCase();
   if (['PAID', 'MATCHED', 'VERIFIED', 'RECEIVED', 'RECONCILED', 'NOT_APPLICABLE'].includes(code))

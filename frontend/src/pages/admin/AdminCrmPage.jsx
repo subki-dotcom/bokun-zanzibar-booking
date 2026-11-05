@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
 import { Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArchive, BsArrowClockwise, BsBarChartLine, BsBell, BsClipboard2Check, BsDownload, BsExclamationTriangle, BsGraphUpArrow, BsJournalCheck, BsPeople, BsReceipt, BsShieldCheck } from "react-icons/bs";
 import { useLocation } from "react-router-dom";
@@ -178,7 +179,7 @@ const formatReportCell = (value, type = "text", currency = "USD") => {
   if (type === "boolean") return value ? "Yes" : "No";
   if (type === "number") return Number(value || 0).toLocaleString();
   if (typeof value === "object") return JSON.stringify(value);
-  return String(value).replaceAll("_", " ");
+  return formatLabel(value);
 };
 const toIsoDateTime = (value = "") => {
   if (!value) return "";
@@ -1077,7 +1078,7 @@ const AdminCrmPage = () => {
                     {crmAlertItems.length ? crmAlertItems.map((alert) => (
                       <tr key={alert.alertKey}>
                         <td>
-                          <strong className="d-block">{alert.title || alert.type?.replaceAll("_", " ")}</strong>
+                          <strong className="d-block">{alert.title || formatLabel(alert.type)}</strong>
                           <small className="text-muted">{alert.message || alert.reference || "-"}</small>
                         </td>
                         <td><StatusBadge value={alert.severity} /></td>
@@ -1119,7 +1120,7 @@ const AdminCrmPage = () => {
                     {crmNotificationItems.length ? crmNotificationItems.map((notification) => (
                       <tr key={notification.notificationKey}>
                         <td>
-                          <strong className="d-block">{notification.title || notification.type?.replaceAll("_", " ")}</strong>
+                          <strong className="d-block">{notification.title || formatLabel(notification.type)}</strong>
                           <small className="text-muted">{notification.message || notification.reference || "-"}</small>
                           <small className="d-block text-muted">{notification.delivery?.mode || "IN_APP_DERIVED"}</small>
                         </td>
@@ -1139,7 +1140,7 @@ const AdminCrmPage = () => {
           <Col xs={12}>
             <Card className="surface-card">
               <Card.Body>
-                <h5 className="mb-2">Notification Delivery Guardrail</h5>
+                <h5 className="mb-2">How notifications are sent</h5>
                 <p className="mb-0 text-muted">
                   These are CRM in-app notifications derived from records already in the system. External email, SMS, WhatsApp, or provider delivery is not claimed here.
                 </p>
@@ -1163,7 +1164,7 @@ const AdminCrmPage = () => {
                       onChange={(event) => updateCrmImportForm("importType", event.target.value)}
                     >
                       {crmImportTypes.map((type) => (
-                        <option key={type} value={type}>{type.replaceAll("_", " ")}</option>
+                        <option key={type} value={type}>{formatLabel(type)}</option>
                       ))}
                     </Form.Select>
                   </Form.Group>
@@ -1345,7 +1346,7 @@ const AdminCrmPage = () => {
                     {crmControlIssues.length ? crmControlIssues.map((issue) => (
                       <tr key={issue.issueKey}>
                         <td>
-                          <strong className="d-block">{String(issue.code || "").replaceAll("_", " ")}</strong>
+                          <strong className="d-block">{formatLabel(issue.code)}</strong>
                           <small className="text-muted">{issue.message}</small>
                         </td>
                         <td><StatusBadge value={issue.severity} /></td>
@@ -1466,7 +1467,7 @@ const AdminCrmPage = () => {
           <Col xl={5}>
             <Card className="surface-card h-100">
               <Card.Body>
-                <h5 className="mb-3">Privacy & Duplicate Guardrails</h5>
+                <h5 className="mb-3">Privacy and duplicates</h5>
                 <div className="d-flex flex-column gap-3">
                   {crmControlPrivacyEntries.map(([key, value]) => (
                     <div key={key} className="border-bottom pb-2">
@@ -1796,7 +1797,7 @@ const AdminCrmPage = () => {
             <Col xs={12}>
               <Card className="surface-card">
                 <Card.Body>
-                  <h5 className="mb-3">Analytics Guardrails</h5>
+                  <h5 className="mb-3">How to read these numbers</h5>
                   <div className="d-flex flex-column gap-2">
                     {analyticsLimitations.map((item) => (
                       <div key={item} className="text-muted">{item}</div>
@@ -1924,13 +1925,13 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Source</Form.Label>
                       <Form.Select value={leadForm.source} onChange={(event) => updateLeadForm("source", event.target.value)}>
-                        {leadSources.map((source) => <option key={source} value={source}>{source.replaceAll("_", " ")}</option>)}
+                        {leadSources.map((source) => <option key={source} value={source}>{formatLabel(source)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
                       <Form.Label>Status</Form.Label>
                       <Form.Select value={leadForm.status} onChange={(event) => updateLeadForm("status", event.target.value)}>
-                        {leadStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                        {leadStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col xs={12}>
@@ -1979,7 +1980,7 @@ const AdminCrmPage = () => {
                             value={lead.status || "NEW"}
                             onChange={(event) => changeLeadStatus(lead, event.target.value)}
                           >
-                            {leadStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                            {leadStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                           </Form.Select>
                         </td>
                         <td>{formatDateTime(lead.nextFollowUpAt)}</td>
@@ -2030,7 +2031,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Stage</Form.Label>
                       <Form.Select value={opportunityForm.stage} onChange={(event) => updateOpportunityForm("stage", event.target.value)}>
-                        {opportunityStages.map((stage) => <option key={stage} value={stage}>{stage.replaceAll("_", " ")}</option>)}
+                        {opportunityStages.map((stage) => <option key={stage} value={stage}>{formatLabel(stage)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2054,14 +2055,14 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Source</Form.Label>
                       <Form.Select value={opportunityForm.source} onChange={(event) => updateOpportunityForm("source", event.target.value)}>
-                        {leadSources.map((source) => <option key={source} value={source}>{source.replaceAll("_", " ")}</option>)}
+                        {leadSources.map((source) => <option key={source} value={source}>{formatLabel(source)}</option>)}
                       </Form.Select>
                     </Col>
                     {opportunityForm.stage === "LOST" ? (
                       <Col xs={12}>
                         <Form.Label>Lost reason</Form.Label>
                         <Form.Select value={opportunityForm.lostReason} onChange={(event) => updateOpportunityForm("lostReason", event.target.value)}>
-                          {lostReasons.map((reason) => <option key={reason} value={reason}>{reason.replaceAll("_", " ")}</option>)}
+                          {lostReasons.map((reason) => <option key={reason} value={reason}>{formatLabel(reason)}</option>)}
                         </Form.Select>
                       </Col>
                     ) : null}
@@ -2123,7 +2124,7 @@ const AdminCrmPage = () => {
                           >
                             {opportunityStages
                               .filter((stage) => !["WON", "LOST"].includes(stage) || stage === opportunity.stage)
-                              .map((stage) => <option key={stage} value={stage}>{stage.replaceAll("_", " ")}</option>)}
+                              .map((stage) => <option key={stage} value={stage}>{formatLabel(stage)}</option>)}
                           </Form.Select>
                         </td>
                         <td>{formatDateTime(opportunity.expectedCloseDate)}</td>
@@ -2176,7 +2177,7 @@ const AdminCrmPage = () => {
                     <Col xs={12}>
                       <Form.Label>Line item type</Form.Label>
                       <Form.Select value={quoteForm.itemType} onChange={(event) => updateQuoteForm("itemType", event.target.value)}>
-                        {quoteLineItemTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
+                        {quoteLineItemTypes.map((type) => <option key={type} value={type}>{formatLabel(type)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col xs={12}>
@@ -2368,7 +2369,7 @@ const AdminCrmPage = () => {
           <Col xs={12}>
             <Card className="surface-card">
               <Card.Body>
-                <h5 className="mb-2">Quote Revenue Guardrail</h5>
+                <h5 className="mb-2">Quotes are not revenue</h5>
                 <p className="mb-0 text-muted">
                   Quote value is sales forecast only. Actual revenue remains sourced from booking accounting after Bokun confirms the booking.
                 </p>
@@ -2401,7 +2402,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Type</Form.Label>
                       <Form.Select value={followUpForm.type} onChange={(event) => updateFollowUpForm("type", event.target.value)}>
-                        {followUpTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
+                        {followUpTypes.map((type) => <option key={type} value={type}>{formatLabel(type)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2464,7 +2465,7 @@ const AdminCrmPage = () => {
                             onChange={(event) => changeFollowUpStatus(followUp, event.target.value)}
                             disabled={followUp.status === "COMPLETED"}
                           >
-                            {followUpStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                            {followUpStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                           </Form.Select>
                         </td>
                         <td>{followUp.notes || followUp.outcome || "-"}</td>
@@ -2506,7 +2507,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Related entity</Form.Label>
                       <Form.Select value={taskForm.relatedEntityType} onChange={(event) => updateTaskForm("relatedEntityType", event.target.value)}>
-                        {taskRelatedEntityTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
+                        {taskRelatedEntityTypes.map((type) => <option key={type} value={type}>{formatLabel(type)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2575,7 +2576,7 @@ const AdminCrmPage = () => {
                             onChange={(event) => changeTaskStatus(task, event.target.value)}
                             disabled={task.status === "DONE"}
                           >
-                            {taskStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                            {taskStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                           </Form.Select>
                         </td>
                         <td>
@@ -2639,7 +2640,7 @@ const AdminCrmPage = () => {
                         >
                           {opportunityStages
                             .filter((stage) => !["WON", "LOST"].includes(stage) || stage === opportunity.stage)
-                            .map((stage) => <option key={stage} value={stage}>{stage.replaceAll("_", " ")}</option>)}
+                            .map((stage) => <option key={stage} value={stage}>{formatLabel(stage)}</option>)}
                         </Form.Select>
                       </div>
                     )) : (
@@ -2659,7 +2660,7 @@ const AdminCrmPage = () => {
           <Col xs={12}>
             <Card className="surface-card">
               <Card.Body>
-                <h5 className="mb-2">Pipeline Forecast Guardrail</h5>
+                <h5 className="mb-2">Forecasts are estimates</h5>
                 <p className="mb-0 text-muted">
                   Pipeline value is forecast only. Actual revenue and profit remain sourced from Booking Accounting after Bokun confirms the booking.
                 </p>
@@ -2680,7 +2681,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Partner type</Form.Label>
                       <Form.Select value={b2bPartnerForm.partnerType} onChange={(event) => updateB2BPartnerForm("partnerType", event.target.value)}>
-                        {b2bPartnerTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
+                        {b2bPartnerTypes.map((type) => <option key={type} value={type}>{formatLabel(type)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2706,7 +2707,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Status</Form.Label>
                       <Form.Select value={b2bPartnerForm.status} onChange={(event) => updateB2BPartnerForm("status", event.target.value)}>
-                        {b2bPartnerStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                        {b2bPartnerStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2715,7 +2716,7 @@ const AdminCrmPage = () => {
                         value={b2bPartnerForm.commissionModel}
                         onChange={(event) => updateB2BPartnerForm("commissionModel", event.target.value)}
                       >
-                        {b2bCommissionModels.map((model) => <option key={model} value={model}>{model.replaceAll("_", " ")}</option>)}
+                        {b2bCommissionModels.map((model) => <option key={model} value={model}>{formatLabel(model)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2732,7 +2733,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Net rate model</Form.Label>
                       <Form.Select value={b2bPartnerForm.netRateModel} onChange={(event) => updateB2BPartnerForm("netRateModel", event.target.value)}>
-                        {b2bNetRateModels.map((model) => <option key={model} value={model}>{model.replaceAll("_", " ")}</option>)}
+                        {b2bNetRateModels.map((model) => <option key={model} value={model}>{formatLabel(model)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2786,14 +2787,14 @@ const AdminCrmPage = () => {
                       <tr key={partner.id || partner._id}>
                         <td>
                           <strong className="d-block">{partner.companyName}</strong>
-                          <small className="text-muted">{partner.partnerNumber || partner.partnerType?.replaceAll("_", " ")}</small>
+                          <small className="text-muted">{partner.partnerNumber || formatLabel(partner.partnerType)}</small>
                         </td>
                         <td>
                           <span className="d-block">{partner.contactPerson || "-"}</span>
                           <small className="text-muted">{partner.email || partner.phone || "-"}</small>
                         </td>
                         <td>
-                          <span className="d-block">{partner.commissionModel?.replaceAll("_", " ") || "NONE"}</span>
+                          <span className="d-block">{formatLabel(partner.commissionModel) || "NONE"}</span>
                           <small className="text-muted">
                             {partner.creditLimit ? `${formatMoney(partner.creditLimit, partner.currency)} credit` : "No accounting posting"}
                           </small>
@@ -2804,7 +2805,7 @@ const AdminCrmPage = () => {
                             value={partner.status || "PROSPECT"}
                             onChange={(event) => changeB2BPartnerStatus(partner, event.target.value)}
                           >
-                            {b2bPartnerStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                            {b2bPartnerStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                           </Form.Select>
                         </td>
                         <td>{formatDateTime(partner.updatedAt || partner.createdAt)}</td>
@@ -2922,7 +2923,7 @@ const AdminCrmPage = () => {
                           onChange={(event) => updateCommunicationForm("channel", event.target.value)}
                         >
                           {communicationChannels.map((channel) => (
-                            <option key={channel} value={channel}>{channel.replaceAll("_", " ")}</option>
+                            <option key={channel} value={channel}>{formatLabel(channel)}</option>
                           ))}
                         </Form.Select>
                       </Form.Group>
@@ -2935,7 +2936,7 @@ const AdminCrmPage = () => {
                           onChange={(event) => updateCommunicationForm("direction", event.target.value)}
                         >
                           {communicationDirections.map((direction) => (
-                            <option key={direction} value={direction}>{direction.replaceAll("_", " ")}</option>
+                            <option key={direction} value={direction}>{formatLabel(direction)}</option>
                           ))}
                         </Form.Select>
                       </Form.Group>
@@ -3025,8 +3026,8 @@ const AdminCrmPage = () => {
                         <td>
                           {event.communication?.channel ? (
                             <>
-                              <span className="d-block">{event.communication.channel.replaceAll("_", " ")}</span>
-                              <small className="text-muted">{event.communication.status?.replaceAll("_", " ")}</small>
+                              <span className="d-block">{formatLabel(event.communication.channel)}</span>
+                              <small className="text-muted">{formatLabel(event.communication.status)}</small>
                             </>
                           ) : "-"}
                         </td>

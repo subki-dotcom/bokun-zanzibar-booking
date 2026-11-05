@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
 import { PageHeader } from "../../components/admin/ui";
 import { Badge, Button, Card, Col, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsCheckCircle, BsExclamationTriangle, BsHeartPulse, BsXCircle } from "react-icons/bs";
@@ -24,7 +25,7 @@ const statusIcon = (status = "") => {
   return BsExclamationTriangle;
 };
 
-const formatStatus = (value = "") => String(value || "-").replaceAll("_", " ");
+const formatStatus = (value = "") => formatLabel(value);
 
 const formatDate = (value = "") => {
   if (!value) return "-";

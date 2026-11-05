@@ -1,10 +1,11 @@
 import Loader from "../../components/common/Loader";
+import { formatLabel } from "../../utils/formatLabel";
 import { useEffect, useState } from "react";
 import { Badge, Button, Card, Form, Table } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import { allocateSettlement, fetchSettlementDetail, reconcileSettlement, reverseSettlementAllocation } from "../../api/adminApi";
 
-const label = (value = "") => String(value || "UNKNOWN").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+const label = (value = "") => formatLabel(value);
 const money = (value, currency) => value == null || !currency ? "Unknown" : new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(value));
 
 export default function AdminSettlementDetailPage() {
