@@ -756,11 +756,35 @@ export const getAdminRouteMeta = (pathname = "") => {
   };
 };
 
+// How well an item matches the current URL: the length of its path when the URL is that path or a page below it
+// (or starts with its matchPrefix), else 0.
+const matchLength = (item, pathname = "") => {
+  if (!item.path && !item.matchPrefix) return 0;
+  if (item.path === pathname) return item.path.length + 1;
+  if (item.path && item.path !== "/admin" && pathname.startsWith(`${item.path}/`)) return item.path.length;
+  if (item.matchPrefix && pathname.startsWith(item.matchPrefix)) return item.matchPrefix.length;
+  return 0;
+};
+
+// The one menu item for a URL: the most specific match. "/admin/crm/leads" lights up Leads only, not also
+// CRM Dashboard ("/admin/crm"); "/admin/business-accounting/settlements/import" lights up Import Settlements only.
+export const activeAdminNavItemId = (pathname = "", items = adminNavigationItems) => {
+  let best = null;
+  let bestLength = 0;
+  for (const item of items) {
+    const length = matchLength(item, pathname);
+    if (length > bestLength) {
+      best = item;
+      bestLength = length;
+    }
+  }
+  return best?.id || "";
+};
+
 export const isAdminNavItemActive = (item, pathname = "") => {
-  if (!item.path && !item.matchPrefix) return false;
-  if (item.path === pathname) return true;
-  if (item.path && item.path !== "/admin" && pathname.startsWith(`${item.path}/`)) return true;
-  return Boolean(item.matchPrefix && pathname.startsWith(item.matchPrefix));
+  if (!matchLength(item, pathname)) return false;
+  const known = adminNavigationItems.some((navItem) => navItem.id === item.id);
+  return known ? activeAdminNavItemId(pathname) === item.id : true;
 };
 
 export const hasActiveAdminChild = (item, pathname = "") => {
