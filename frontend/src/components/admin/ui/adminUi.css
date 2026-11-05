@@ -245,10 +245,15 @@
 /* ---- Data table ---- */
 .adm-table-scroll {
   max-width: 100%;
-  max-height: min(70vh, 720px);
-  overflow: auto;
+  overflow-x: auto;
   border: 1px solid var(--adm-border);
   border-radius: 10px;
+}
+
+/* Long tables scroll inside the card with a sticky header; short ones do not get a scrollbar. */
+.adm-table-scroll.is-tall {
+  max-height: min(70vh, 720px);
+  overflow-y: auto;
 }
 
 .adm-table-scroll:focus-visible {

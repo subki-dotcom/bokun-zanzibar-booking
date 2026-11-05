@@ -23,6 +23,7 @@ import {
 } from "react-icons/bs";
 import { adminCancelBooking, fetchAdminBookings } from "../../api/bookingsApi";
 import { formatCurrency, formatDate } from "../../utils/formatters";
+import { AdminPage, PageHeader, SectionCard, StatCard, StatGrid } from "../../components/admin/ui";
 
 const BOOKING_STATUSES = [
   { value: "all", label: "All Statuses" },
@@ -228,15 +229,8 @@ const PageAction = ({ as: Component = "button", children, className = "", ...pro
   <Component className={`admin-bookings-action ${className}`.trim()} {...props}>{children}</Component>
 );
 
-const MetricCard = ({ icon: Icon, label, value, detail, tone = "teal" }) => (
-  <section className={`admin-bookings-card admin-bookings-metric is-${tone}`}>
-    <span className="admin-bookings-metric-icon"><Icon aria-hidden="true" /></span>
-    <div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{detail}</small>
-    </div>
-  </section>
+const MetricCard = ({ icon, label, value, detail, loading = false }) => (
+  <StatCard label={label} value={value} helper={detail} icon={icon} loading={loading} />
 );
 
 const Skeleton = ({ rows = 3, className = "" }) => (
@@ -716,13 +710,12 @@ const AdminBookingsPage = () => {
   ];
 
   return (
-    <div className="admin-bookings-page">
-      <div className="admin-bookings-page-head">
-        <div>
-          <span>Operations / Bookings</span>
-          <h1>Bookings</h1>
-          <p>Manage all bookings and reservations</p>
-        </div>
+    <AdminPage className="admin-bookings-page">
+      <PageHeader
+        eyebrow="Operations"
+        title="Bookings"
+        description="Every booking from the website, Bókun and partners, with its payment and supplier status."
+        actions={
         <div className="admin-bookings-actions">
           <PageAction as={Link} to="/admin/operations/bokun-sync/confirmed-import">
             <BsArrowClockwise aria-hidden="true" />
@@ -741,34 +734,25 @@ const AdminBookingsPage = () => {
             New Booking
           </PageAction>
         </div>
-      </div>
+        }
+      />
 
       {notice ? <div className="admin-bookings-notice">{notice}</div> : null}
 
-      <div className="admin-bookings-metric-grid">
-        {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
-      </div>
+      <StatGrid columns={3}>
+        {metrics.map((metric) => <MetricCard key={metric.label} {...metric} loading={loading} />)}
+      </StatGrid>
 
       <div className="admin-bookings-chart-grid">
-        <section className="admin-bookings-card admin-bookings-chart-card">
-          <div className="admin-bookings-card-head">
-            <h2>Bookings Trend</h2>
-            <span>Last 7 travel dates</span>
-          </div>
+        <SectionCard title="Bookings trend" description="Last 7 travel dates">
           <TrendChart rows={summary.trend || []} loading={loading} />
-        </section>
-        <section className="admin-bookings-card admin-bookings-chart-card">
-          <div className="admin-bookings-card-head">
-            <h2>Bookings by Source</h2>
-          </div>
+        </SectionCard>
+        <SectionCard title="Bookings by source">
           <DonutChart rows={sourceRows} total={sourceTotal} loading={loading} emptyMessage="No source data available." />
-        </section>
-        <section className="admin-bookings-card admin-bookings-chart-card">
-          <div className="admin-bookings-card-head">
-            <h2>Legacy Payment Status</h2>
-          </div>
+        </SectionCard>
+        <SectionCard title="Payment status" description="Recorded on the booking">
           <DonutChart rows={paymentRows} total={paymentTotal} loading={loading} emptyMessage="No payment data available." />
-        </section>
+        </SectionCard>
       </div>
 
       <section className="admin-bookings-filter-card">
@@ -844,7 +828,7 @@ const AdminBookingsPage = () => {
           </>
         )}
       </section>
-    </div>
+    </AdminPage>
   );
 };
 

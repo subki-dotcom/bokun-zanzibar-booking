@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Badge, Button, Card, Form, Table } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
+import { BsPeople } from "react-icons/bs";
 import {
   fetchAdminAgents,
   updateAdminAgentCommission,
   updateAdminAgentStatus
 } from "../../api/adminApi";
-import Loader from "../../components/common/Loader";
-import ErrorAlert from "../../components/common/ErrorAlert";
+import { AdminPage, DataTable, EmptyState, ErrorState, PageHeader, SectionCard, StatusBadge, Truncate } from "../../components/admin/ui";
+import { formatLabel } from "../../utils/formatLabel";
 
 const AdminAgentsPage = () => {
   const [agents, setAgents] = useState([]);
@@ -60,97 +61,103 @@ const AdminAgentsPage = () => {
     }
   };
 
-  if (loading) {
-    return <Loader message="Loading agents..." />;
-  }
+  const columns = [
+    {
+      key: "agent",
+      header: "Agent",
+      render: (agent) => (
+        <>
+          <strong className="d-block">{agent.companyName}</strong>
+          <small className="text-muted">{agent.fullName}</small>
+        </>
+      )
+    },
+    {
+      key: "contact",
+      header: "Contact",
+      render: (agent) => (
+        <>
+          <Truncate value={agent.email} max={30} />
+          <small className="d-block text-muted">{agent.phone || "—"}</small>
+        </>
+      )
+    },
+    { key: "type", header: "Type", render: (agent) => formatLabel(agent.agentType || "partner") },
+    { key: "account", header: "Account", render: (agent) => <StatusBadge value={agent.isActive ? "active" : "inactive"} label={agent.isActive ? "Active" : "Suspended"} /> },
+    { key: "approval", header: "Approval", render: (agent) => <StatusBadge value={agent.approvalStatus || "approved"} /> },
+    {
+      key: "commission",
+      header: "Commission %",
+      render: (agent) => (
+        <Form.Control
+          type="number"
+          min="0"
+          max="100"
+          step="0.01"
+          size="sm"
+          defaultValue={agent.commissionPercent ?? ""}
+          aria-label={`Commission for ${agent.companyName}`}
+          className="admin-agent-commission-input"
+          onBlur={(event) => {
+            const value = event.target.value;
+            if (value !== "" && Number(value) !== Number(agent.commissionPercent || 0)) {
+              handleCommissionSave(agent, value);
+            }
+          }}
+        />
+      )
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      align: "end",
+      render: (agent) => (
+        <div className="d-inline-flex flex-wrap justify-content-end gap-2">
+          <Button
+            size="sm"
+            variant={agent.isActive ? "outline-danger" : "outline-primary"}
+            disabled={savingId === agent._id}
+            onClick={() => handleStatusChange(agent, "isActive", agent.isActive ? "suspended" : "active")}
+          >
+            {agent.isActive ? "Suspend" : "Activate"}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline-secondary"
+            disabled={savingId === agent._id}
+            onClick={() => handleStatusChange(agent, "approvalStatus", agent.approvalStatus === "approved" ? "suspended" : "approved")}
+          >
+            {agent.approvalStatus === "approved" ? "Mark suspended" : "Approve"}
+          </Button>
+        </div>
+      )
+    }
+  ];
 
   return (
-    <>
-      <h2 className="mb-1">Agents</h2>
-      <p className="section-subtitle mb-4">Manage agent access, approval status, and commission rates.</p>
-      <ErrorAlert error={error} />
-
-      <Card className="surface-card">
-        <Card.Body>
-          <Table responsive hover>
-            <thead>
-              <tr>
-                <th>Agent</th>
-                <th>Contact</th>
-                <th>Type</th>
-                <th>Account</th>
-                <th>Approval</th>
-                <th>Commission %</th>
-                <th className="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {agents.map((agent) => (
-                <tr key={agent._id}>
-                  <td>
-                    <strong>{agent.companyName}</strong>
-                    <small className="d-block text-muted">{agent.fullName}</small>
-                  </td>
-                  <td>
-                    {agent.email}
-                    <small className="d-block text-muted">{agent.phone || "-"}</small>
-                  </td>
-                  <td>{agent.agentType || "partner"}</td>
-                  <td>
-                    <Badge bg={agent.isActive ? "success" : "secondary"}>
-                      {agent.isActive ? "Active" : "Suspended"}
-                    </Badge>
-                  </td>
-                  <td>{agent.approvalStatus || "approved"}</td>
-                  <td>
-                    <Form.Control
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      defaultValue={agent.commissionPercent ?? ""}
-                      aria-label={`Commission for ${agent.companyName}`}
-                      className="admin-agent-commission-input"
-                      onBlur={(event) => {
-                        const value = event.target.value;
-                        if (value !== "" && Number(value) !== Number(agent.commissionPercent || 0)) {
-                          handleCommissionSave(agent, value);
-                        }
-                      }}
-                    />
-                  </td>
-                  <td className="text-end">
-                    <div className="agent-table-actions">
-                      <Button
-                        size="sm"
-                        variant={agent.isActive ? "outline-danger" : "outline-success"}
-                        disabled={savingId === agent._id}
-                        onClick={() => handleStatusChange(agent, "isActive", agent.isActive ? "suspended" : "active")}
-                      >
-                        {agent.isActive ? "Suspend" : "Activate"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline-primary"
-                        disabled={savingId === agent._id}
-                        onClick={() => handleStatusChange(agent, "approvalStatus", agent.approvalStatus === "approved" ? "suspended" : "approved")}
-                      >
-                        {agent.approvalStatus === "approved" ? "Mark Suspended" : "Approve"}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {!agents.length ? (
-                <tr>
-                  <td colSpan="7" className="text-center text-muted py-4">No agents found.</td>
-                </tr>
-              ) : null}
-            </tbody>
-          </Table>
-        </Card.Body>
-      </Card>
-    </>
+    <AdminPage>
+      <PageHeader
+        eyebrow="Operations"
+        title="Assignments"
+        description="Agents and B2B partners: who can sell, their approval and their commission."
+      />
+      {error && agents.length ? <ErrorState title="Something went wrong" message={error} /> : null}
+      <SectionCard title="Agents" description={loading ? "" : `${agents.length} agent${agents.length === 1 ? "" : "s"}`}>
+        <DataTable
+          columns={columns}
+          rows={agents}
+          rowKey={(agent) => agent._id}
+          loading={loading}
+          error={!agents.length ? error : ""}
+          onRetry={() => {
+            setLoading(true);
+            loadAgents();
+          }}
+          empty={<EmptyState icon={BsPeople} title="No agents yet" message="Agents appear here after they register in the agent portal." />}
+          caption="Agents"
+        />
+      </SectionCard>
+    </AdminPage>
   );
 };
 

@@ -152,7 +152,7 @@ export const DataTable = ({
 
   return (
     <>
-      <div className="adm-table-scroll" role="region" aria-label={caption || "Table"} tabIndex={0}>
+      <div className={cx("adm-table-scroll", visible.length > 12 && "is-tall")} role="region" aria-label={caption || "Table"} tabIndex={0}>
         <table className="adm-table">
           {caption ? <caption className="visually-hidden">{caption}</caption> : null}
           <thead>
