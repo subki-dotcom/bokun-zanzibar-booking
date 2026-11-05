@@ -582,3 +582,537 @@
     justify-content: center;
   }
 }
+
+
+/* ============ STEP 3: components ============ */
+
+/* PageHeader: title row, one-line description, actions right; on phones the actions wrap below. */
+.admin-platform-shell .adm-page-header {
+  align-items: flex-start;
+  gap: 12px 24px;
+}
+
+.admin-platform-shell .adm-page > .adm-page-header {
+  margin-bottom: 0;
+}
+
+.admin-platform-shell .adm-page {
+  gap: 24px;
+}
+
+.admin-platform-shell .adm-title-status {
+  margin-left: 10px;
+  font-size: 0;
+  vertical-align: middle;
+}
+
+.admin-platform-shell .adm-title-status .adm-badge {
+  font-size: 12px;
+}
+
+/* Buttons: 36px (32px small), one radius, 16px icons with an 8px gap, one disabled look. */
+.admin-platform-shell .btn {
+  min-height: 36px;
+  padding: 0 14px;
+  gap: 8px;
+  border-radius: var(--adm-radius-control);
+  font-family: var(--adm-font);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.admin-platform-shell .btn-sm {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.admin-platform-shell .btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.admin-platform-shell .btn-outline-secondary,
+.admin-platform-shell .btn-light,
+.admin-platform-shell .btn-secondary {
+  --bs-btn-color: var(--adm-ink);
+  --bs-btn-bg: var(--adm-surface);
+  --bs-btn-border-color: var(--adm-border-strong);
+  --bs-btn-hover-color: var(--adm-ink);
+  --bs-btn-hover-bg: var(--adm-row-hover);
+  --bs-btn-hover-border-color: var(--adm-border-strong);
+  --bs-btn-active-color: var(--adm-ink);
+  --bs-btn-active-bg: var(--adm-neutral-soft);
+  --bs-btn-active-border-color: var(--adm-border-strong);
+  --bs-btn-disabled-color: #98a2b3;
+  --bs-btn-disabled-bg: var(--adm-surface);
+  --bs-btn-disabled-border-color: var(--adm-border);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+.admin-platform-shell .btn-danger,
+.admin-platform-shell .btn-outline-danger {
+  --bs-btn-color: var(--adm-danger);
+  --bs-btn-bg: var(--adm-surface);
+  --bs-btn-border-color: #fda29b;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--adm-danger);
+  --bs-btn-hover-border-color: var(--adm-danger);
+}
+
+.admin-platform-shell .btn-link {
+  min-height: auto;
+  padding: 0 4px;
+  text-decoration: none;
+}
+
+.admin-platform-shell .btn:disabled,
+.admin-platform-shell .btn.disabled {
+  opacity: 0.5;
+}
+
+/* Inputs and selects: 36px, 8px radius, #d0d5dd border, brand focus ring; labels 13px/500 above. */
+.admin-platform-shell :is(.form-control, .form-select):not(textarea) {
+  min-height: 36px;
+}
+
+.admin-platform-shell :is(.form-control, .form-select) {
+  border-color: var(--adm-border-strong);
+  border-radius: var(--adm-radius-control);
+  color: var(--adm-ink);
+  font-family: var(--adm-font);
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+.admin-platform-shell :is(.form-control-sm, .form-select-sm) {
+  min-height: 32px;
+  font-size: 13px;
+}
+
+.admin-platform-shell :is(.form-control, .form-select):focus {
+  border-color: var(--adm-brand);
+  box-shadow: var(--adm-focus);
+}
+
+.admin-platform-shell .form-label {
+  margin-bottom: 6px;
+  color: var(--adm-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* StatusBadge: pill, 12px/500, a small dot before the text. */
+.admin-platform-shell .adm-badge {
+  gap: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.adm-badge-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* StatCard: label top-left, 32px tinted icon tile top-right, 26px tabular value, 12px helper, equal heights. */
+.admin-platform-shell .adm-stat-grid {
+  align-items: stretch;
+  gap: 16px;
+}
+
+.admin-platform-shell .adm-stat {
+  min-height: 0;
+  height: 100%;
+  gap: 6px;
+  padding: 20px;
+}
+
+.admin-platform-shell .adm-stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--adm-brand-soft);
+  color: var(--adm-brand);
+}
+
+.admin-platform-shell .adm-stat-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-platform-shell .adm-stat-trend {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-platform-shell .adm-stat-trend.is-good { color: var(--adm-success); }
+.admin-platform-shell .adm-stat-trend.is-bad { color: var(--adm-danger); }
+
+/* Max 4 per row on desktop, 2 on tablets, 1-2 on phones. */
+@media (max-width: 1199.98px) {
+  .admin-platform-shell .adm-stat-grid,
+  .admin-platform-shell .adm-stat-grid.cols-3,
+  .admin-platform-shell .adm-stat-grid.cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* SectionCard: 12px radius, 56px header with a bottom border, 20px body. */
+.admin-platform-shell .adm-card-header {
+  align-items: center;
+  min-height: 56px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--adm-border-subtle);
+}
+
+.admin-platform-shell .adm-card-description {
+  margin-top: 2px;
+  color: var(--adm-muted);
+  font-size: 13px;
+}
+
+.admin-platform-shell .adm-card-body {
+  padding: 20px;
+}
+
+.admin-platform-shell .adm-card.is-flush .adm-card-body {
+  padding: 0;
+}
+
+/* DataTable: 40px header on #f9fafb, 52px rows, subtle separators, bold first column, tabular numbers. */
+.admin-platform-shell .adm-table-scroll {
+  border-color: var(--adm-border);
+  border-radius: 10px;
+}
+
+.admin-platform-shell .adm-table th {
+  height: 40px;
+  padding: 0 16px;
+  background: var(--adm-surface-alt);
+  border-bottom: 1px solid var(--adm-border);
+  color: var(--adm-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.admin-platform-shell .adm-table td {
+  height: 52px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--adm-border-subtle);
+  color: var(--adm-text);
+  font-size: var(--adm-fs-table);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-platform-shell .adm-table td:first-child {
+  color: var(--adm-ink);
+  font-weight: 600;
+}
+
+.admin-platform-shell .adm-table tbody tr:nth-child(even) td {
+  background: transparent;
+}
+
+.admin-platform-shell .adm-table tbody tr:hover td {
+  background: var(--adm-row-hover);
+}
+
+.admin-platform-shell .adm-table td.is-actions {
+  width: 56px;
+  padding-right: 12px;
+}
+
+/* Row actions: one "⋯" button. */
+.adm-row-actions-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--adm-muted);
+}
+
+.adm-row-actions-toggle::after {
+  display: none;
+}
+
+.adm-row-actions-toggle:hover,
+.adm-row-actions-toggle[aria-expanded="true"] {
+  border-color: var(--adm-border);
+  background: var(--adm-surface);
+  color: var(--adm-ink);
+}
+
+.adm-row-actions-menu {
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--adm-border);
+  border-radius: 10px;
+  box-shadow: var(--adm-shadow-pop);
+  font-family: var(--adm-font);
+}
+
+.adm-row-actions-menu .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 14px;
+}
+
+.adm-row-actions-menu .dropdown-item.is-danger {
+  color: var(--adm-danger);
+}
+
+/* Pagination bar: rows per page, range, prev / next. */
+.admin-platform-shell .adm-pagination {
+  justify-content: flex-end;
+  gap: 16px;
+  padding-top: 12px;
+  font-size: 13px;
+}
+
+.adm-pagination-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  color: var(--adm-muted);
+  font-size: 13px;
+}
+
+.adm-pagination-size .form-select {
+  width: auto;
+  min-width: 72px;
+}
+
+.adm-pagination-range {
+  color: var(--adm-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-pagination-nav {
+  display: inline-flex;
+  gap: 6px;
+}
+
+/* FilterBar: one row; Reset is a text button; extra filters fold behind "Filters" on phones. */
+.adm-filter-extra {
+  display: contents;
+}
+
+.adm-filter-toggle {
+  display: none !important;
+}
+
+.admin-platform-shell .adm-filter-search {
+  height: 36px;
+  border-color: var(--adm-border-strong);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+/* EmptyState: 40px icon in a soft circle, 15px/600 title, one line of text. */
+.admin-platform-shell .adm-state {
+  gap: 8px;
+  padding: 40px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+}
+
+.admin-platform-shell .adm-state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 4px;
+  border-radius: 999px;
+  background: var(--adm-brand-soft);
+  color: var(--adm-brand);
+  font-size: 18px;
+}
+
+.admin-platform-shell .adm-state.is-error .adm-state-icon {
+  background: var(--adm-danger-soft);
+  color: var(--adm-danger);
+}
+
+.admin-platform-shell .adm-state strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Popovers and modals. */
+.admin-platform-shell ~ .modal .modal-content,
+.modal-content,
+.offcanvas {
+  font-family: var(--adm-font, inherit);
+}
+
+@media (max-width: 767.98px) {
+  .admin-platform-shell .adm-page-actions {
+    width: 100%;
+  }
+
+  .admin-platform-shell .adm-page-actions > .btn,
+  .admin-platform-shell .adm-page-actions > a {
+    flex: 1 1 auto;
+  }
+
+  /* Filters sheet on phones. */
+  .adm-filter-toggle {
+    display: inline-flex !important;
+  }
+
+  .adm-filter-extra {
+    display: none;
+    flex: 1 1 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .adm-filter-extra.is-open {
+    display: flex;
+  }
+
+  /* Tables become stacked row cards (key fields only). */
+  .admin-platform-shell .adm-table-scroll {
+    border: 0;
+    overflow: visible;
+  }
+
+  .admin-platform-shell .adm-table,
+  .admin-platform-shell .adm-table tbody,
+  .admin-platform-shell .adm-table tr,
+  .admin-platform-shell .adm-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-platform-shell .adm-table thead {
+    display: none;
+  }
+
+  .admin-platform-shell .adm-table tr {
+    position: relative;
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--adm-border);
+    border-radius: 12px;
+    background: var(--adm-surface);
+  }
+
+  .admin-platform-shell .adm-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    height: auto;
+    padding: 4px 0;
+    border: 0;
+    text-align: right;
+  }
+
+  .admin-platform-shell .adm-table td::before {
+    content: attr(data-label);
+    flex: none;
+    color: var(--adm-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+  }
+
+  .admin-platform-shell .adm-table td:first-child {
+    display: block;
+    padding-right: 40px;
+    text-align: left;
+  }
+
+  .admin-platform-shell .adm-table td:first-child::before,
+  .admin-platform-shell .adm-table td[data-label=""]::before {
+    display: none;
+  }
+
+  .admin-platform-shell .adm-table td.is-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: auto;
+    padding: 0;
+  }
+
+  .admin-platform-shell .adm-table td.adm-hide-mobile {
+    display: none;
+  }
+
+  .admin-platform-shell .adm-table tbody tr:hover td {
+    background: transparent;
+  }
+
+  .admin-platform-shell .adm-pagination {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .adm-pagination-size {
+    display: none;
+  }
+}
+
+/* Right-side drawers for "Add …" forms (Record payout, Add lead, Record evidence). */
+.offcanvas.adm-drawer {
+  --bs-offcanvas-width: min(440px, 100vw);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  box-shadow: 0 12px 24px -4px rgba(16, 24, 40, 0.12);
+}
+
+.adm-drawer .offcanvas-header {
+  min-height: 60px;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.adm-drawer .offcanvas-title {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.adm-drawer .form-label {
+  margin-bottom: 6px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.adm-drawer :is(.form-control, .form-select) {
+  min-height: 36px;
+  border-color: #d0d5dd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.adm-drawer :is(.form-control, .form-select):focus {
+  border-color: #0e6b57;
+  box-shadow: 0 0 0 4px rgba(14, 107, 87, 0.15);
+}
+
+.adm-drawer .btn-primary {
+  --bs-btn-bg: #0e6b57;
+  --bs-btn-border-color: #0e6b57;
+  --bs-btn-hover-bg: #0a5242;
+  --bs-btn-hover-border-color: #0a5242;
+}

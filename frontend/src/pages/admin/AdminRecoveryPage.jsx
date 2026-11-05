@@ -105,21 +105,6 @@ const AdminRecoveryPage = () => {
     },
     { key: "amount", header: "Amount", money: true, render: (item) => formatAdminMoney(item.amount || 0, item.currency || "USD") },
     { key: "error", header: "Last error", render: (item) => <span className="admin-recovery-error">{item.finalization?.lastError?.message || item.finalization?.status || "—"}</span> },
-    {
-      key: "actions",
-      header: "Actions",
-      align: "end",
-      render: (item) => (
-        <div className="d-inline-flex flex-wrap justify-content-end gap-2">
-          <Button size="sm" variant="outline-primary" onClick={() => retry(item.bookingId)} disabled={busyId === item.bookingId}>
-            <BsArrowClockwise aria-hidden="true" /> Retry
-          </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => cancel(item.bookingId, item.bookingReference)} disabled={busyId === item.bookingId}>
-            <BsTrash aria-hidden="true" /> Cancel
-          </Button>
-        </div>
-      )
-    }
   ];
 
   return (
@@ -148,6 +133,10 @@ const AdminRecoveryPage = () => {
           columns={columns}
           rows={items}
           rowKey={(item) => item.bookingId}
+          rowActions={(item) => [
+            { label: "Retry Bókun confirmation", icon: BsArrowClockwise, disabled: busyId === item.bookingId, onClick: () => retry(item.bookingId) },
+            { label: "Cancel booking", icon: BsTrash, danger: true, disabled: busyId === item.bookingId, onClick: () => cancel(item.bookingId, item.bookingReference) }
+          ]}
           loading={loading}
           error={error}
           onRetry={() => load({ force: true })}

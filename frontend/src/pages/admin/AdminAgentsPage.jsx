@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Form } from "react-bootstrap";
+import { Form } from "react-bootstrap";
 import { BsPeople } from "react-icons/bs";
 import {
   fetchAdminAgents,
@@ -107,31 +107,6 @@ const AdminAgentsPage = () => {
         />
       )
     },
-    {
-      key: "actions",
-      header: "Actions",
-      align: "end",
-      render: (agent) => (
-        <div className="d-inline-flex flex-wrap justify-content-end gap-2">
-          <Button
-            size="sm"
-            variant={agent.isActive ? "outline-danger" : "outline-primary"}
-            disabled={savingId === agent._id}
-            onClick={() => handleStatusChange(agent, "isActive", agent.isActive ? "suspended" : "active")}
-          >
-            {agent.isActive ? "Suspend" : "Activate"}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline-secondary"
-            disabled={savingId === agent._id}
-            onClick={() => handleStatusChange(agent, "approvalStatus", agent.approvalStatus === "approved" ? "suspended" : "approved")}
-          >
-            {agent.approvalStatus === "approved" ? "Mark suspended" : "Approve"}
-          </Button>
-        </div>
-      )
-    }
   ];
 
   return (
@@ -147,6 +122,22 @@ const AdminAgentsPage = () => {
           columns={columns}
           rows={agents}
           rowKey={(agent) => agent._id}
+          rowActions={(agent) => [
+            {
+              label: agent.isActive ? "Suspend account" : "Activate account",
+              danger: agent.isActive,
+              disabled: savingId === agent._id,
+              onClick: () => {
+                if (agent.isActive && !window.confirm(`Suspend ${agent.companyName}? They will not be able to sign in.`)) return;
+                handleStatusChange(agent, "isActive", agent.isActive ? "suspended" : "active");
+              }
+            },
+            {
+              label: agent.approvalStatus === "approved" ? "Mark as suspended" : "Approve",
+              disabled: savingId === agent._id,
+              onClick: () => handleStatusChange(agent, "approvalStatus", agent.approvalStatus === "approved" ? "suspended" : "approved")
+            }
+          ]}
           loading={loading}
           error={!agents.length ? error : ""}
           onRetry={() => {

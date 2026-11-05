@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatLabel } from "../../utils/formatLabel";
-import { Button, Card, Col, Form, Row, Table } from "react-bootstrap";
+import { Button, Card, Col, Form, Row, Table, Offcanvas } from "react-bootstrap";
 import { BsArchive, BsArrowClockwise, BsBarChartLine, BsBell, BsClipboard2Check, BsDownload, BsExclamationTriangle, BsGraphUpArrow, BsJournalCheck, BsPeople, BsReceipt, BsShieldCheck } from "react-icons/bs";
 import { useLocation } from "react-router-dom";
 import {
@@ -316,6 +316,7 @@ const AdminCrmPage = () => {
   const [selectedCrmReportType, setSelectedCrmReportType] = useState("");
   const [crmReportResult, setCrmReportResult] = useState(null);
   const [crmReportFormat, setCrmReportFormat] = useState("CSV");
+  const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadForm, setLeadForm] = useState(emptyLeadForm);
   const [opportunityForm, setOpportunityForm] = useState(emptyOpportunityForm);
   const [quoteForm, setQuoteForm] = useState(emptyQuoteForm);
@@ -548,6 +549,7 @@ const AdminCrmPage = () => {
     setCrmImportForm((prev) => ({ ...prev, [field]: value }));
   };
 
+
   const submitLead = async (event) => {
     event.preventDefault();
     setSavingLead(true);
@@ -561,6 +563,7 @@ const AdminCrmPage = () => {
         phone: leadForm.phone || ""
       });
       setLeadForm(emptyLeadForm);
+      setShowLeadForm(false);
       await load({ silent: true });
       setActionMessage(result.action === "existing" ? "Existing lead matched." : "Lead saved.");
     } catch (err) {
@@ -1037,9 +1040,16 @@ const AdminCrmPage = () => {
         title={pageTitle}
         description={pageDescription}
         actions={
-          <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-            <BsArrowClockwise aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
-          </Button>
+          <>
+            <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+              <BsArrowClockwise aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+            {mode === "leads" ? (
+              <Button variant="primary" onClick={() => setShowLeadForm(true)}>
+                <BsClipboard2Check aria-hidden="true" /> Add lead
+              </Button>
+            ) : null}
+          </>
         }
       />
 
@@ -1900,35 +1910,37 @@ const AdminCrmPage = () => {
 
       {mode === "leads" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">Lead Intake</h5>
+          <Offcanvas show={showLeadForm} onHide={() => setShowLeadForm(false)} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>Add lead</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitLead}>
                   <Row className="g-3">
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>First name</Form.Label>
                       <Form.Control value={leadForm.firstName} onChange={(event) => updateLeadForm("firstName", event.target.value)} required />
                     </Col>
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>Last name</Form.Label>
                       <Form.Control value={leadForm.lastName} onChange={(event) => updateLeadForm("lastName", event.target.value)} required />
                     </Col>
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>Email</Form.Label>
                       <Form.Control type="email" value={leadForm.email} onChange={(event) => updateLeadForm("email", event.target.value)} />
                     </Col>
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>Phone or WhatsApp</Form.Label>
                       <Form.Control value={leadForm.phone} onChange={(event) => updateLeadForm("phone", event.target.value)} />
                     </Col>
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>Source</Form.Label>
                       <Form.Select value={leadForm.source} onChange={(event) => updateLeadForm("source", event.target.value)}>
                         {leadSources.map((source) => <option key={source} value={source}>{formatLabel(source)}</option>)}
                       </Form.Select>
                     </Col>
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>Status</Form.Label>
                       <Form.Select value={leadForm.status} onChange={(event) => updateLeadForm("status", event.target.value)}>
                         {leadStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
@@ -1939,16 +1951,18 @@ const AdminCrmPage = () => {
                       <Form.Control as="textarea" rows={3} value={leadForm.notes} onChange={(event) => updateLeadForm("notes", event.target.value)} />
                     </Col>
                     <Col xs={12}>
-                      <Button type="submit" disabled={savingLead}>
-                        <BsClipboard2Check /> {savingLead ? "Saving" : "Save Lead"}
-                      </Button>
+                      <div className="d-flex justify-content-end gap-2">
+                        <Button variant="outline-secondary" onClick={() => setShowLeadForm(false)}>Cancel</Button>
+                        <Button type="submit" disabled={savingLead}>
+                          <BsClipboard2Check aria-hidden="true" /> {savingLead ? "Saving" : "Save lead"}
+                        </Button>
+                      </div>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card h-100">
               <Card.Body>
                 <h5 className="mb-3">Lead Pipeline</h5>
