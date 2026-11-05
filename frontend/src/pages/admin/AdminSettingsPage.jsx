@@ -7,6 +7,7 @@ import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
 import useAuth from "../../hooks/useAuth";
 import { roleLabel } from "../../config/adminNavigation";
+import { AdminPage, PageHeader } from "../../components/admin/ui";
 
 const StatusBadge = ({ ok, okText = "Set up", offText = "Not set up" }) => (
   <Badge bg={ok ? "success" : "secondary"}>{ok ? okText : offText}</Badge>
@@ -145,16 +146,17 @@ const AdminSettingsPage = () => {
   const paymentName = { pesapal: "Pesapal", dpo: "DPO", paypal: "PayPal" };
 
   return (
-    <div className="d-grid gap-3">
-      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <div>
-          <h1 className="h4 mb-0">Settings</h1>
-          <small className="text-muted">Your account, and how the website is set up.</small>
-        </div>
-        <Button variant="outline-secondary" size="sm" onClick={load} disabled={loading}>
-          <BsArrowClockwise aria-hidden="true" className="me-1" /> Refresh
-        </Button>
-      </div>
+    <AdminPage>
+      <PageHeader
+        eyebrow="Settings"
+        title="Settings"
+        description="Your account, and how the website is set up."
+        actions={
+          <Button variant="outline-secondary" onClick={load} disabled={loading}>
+            <BsArrowClockwise aria-hidden="true" /> Refresh
+          </Button>
+        }
+      />
 
       <ErrorAlert error={error} />
 
@@ -216,7 +218,7 @@ const AdminSettingsPage = () => {
           <strong>{data.system?.where}</strong> and save; the server restarts by itself.
         </Alert>
       ) : null}
-    </div>
+    </AdminPage>
   );
 };
 
