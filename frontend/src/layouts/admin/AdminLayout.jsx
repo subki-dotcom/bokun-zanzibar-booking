@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import AdminTopBar from "../../components/admin/AdminTopBar";
+import "../../components/admin/ui/adminUi.css";
 import useAuth from "../../hooks/useAuth";
 
 const SIDEBAR_STATE_KEY = "zts.sidebar.collapsed";

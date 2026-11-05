@@ -1,0 +1,571 @@
+/* Admin design system (components/admin/ui). Scoped to the admin shell, so public pages are untouched.
+   Brand: green #0e6b57, font Outfit, serif headings (same tokens as styles/brandTokens.css). */
+.admin-platform-shell {
+  --adm-brand: #0e6b57;
+  --adm-brand-hover: #0a5242;
+  --adm-brand-soft: #e7f3ef;
+  --adm-ink: #14211f;
+  --adm-text: #2a3836;
+  --adm-muted: #5b6865;
+  --adm-border: #e3e7e5;
+  --adm-border-strong: #c9d1ce;
+  --adm-surface: #ffffff;
+  --adm-surface-alt: #f6f8f7;
+  --adm-row-hover: #f3faf7;
+  --adm-radius: 12px;
+  --adm-shadow: 0 1px 2px rgba(20, 33, 31, 0.04), 0 4px 14px rgba(20, 33, 31, 0.05);
+  --adm-danger: #b42318;
+  --adm-danger-soft: #fef3f2;
+  --adm-warning: #8a4b05;
+  --adm-warning-soft: #fdf3e3;
+  --adm-success: #0e6b57;
+  --adm-success-soft: #e7f3ef;
+  --adm-info: #175cd3;
+  --adm-info-soft: #eef4ff;
+  --adm-neutral: #4b5563;
+  --adm-neutral-soft: #eef0f2;
+  --adm-focus: 0 0 0 3px rgba(14, 107, 87, 0.28);
+}
+
+/* ---- Page container and header ---- */
+.adm-page {
+  display: grid;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 1440px;
+  min-width: 0;
+  margin: 0 auto;
+  color: var(--adm-text);
+}
+
+.adm-page.is-wide {
+  max-width: none;
+}
+
+.adm-page > * {
+  min-width: 0;
+}
+
+.adm-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+
+.adm-page-header-copy {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.adm-eyebrow {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--adm-brand);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.adm-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--adm-ink);
+  font-size: clamp(1.35rem, 1.1rem + 0.8vw, 1.75rem);
+  line-height: 1.2;
+}
+
+.adm-title-icon {
+  color: var(--adm-brand);
+  font-size: 0.9em;
+}
+
+.adm-description {
+  max-width: 72ch;
+  margin: 0.35rem 0 0;
+  color: var(--adm-muted);
+  font-size: 0.92rem;
+}
+
+.adm-page-actions,
+.adm-card-actions,
+.adm-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ---- Stat cards ---- */
+.adm-stat-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.adm-stat-grid.cols-3 {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.adm-stat {
+  display: grid;
+  align-content: start;
+  gap: 0.3rem;
+  min-width: 0;
+  min-height: 112px;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  background: var(--adm-surface);
+  box-shadow: var(--adm-shadow);
+}
+
+.adm-stat-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.adm-stat-label {
+  color: var(--adm-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.adm-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--adm-brand-soft);
+  color: var(--adm-brand);
+}
+
+.adm-stat-value {
+  color: var(--adm-ink);
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.adm-stat-helper {
+  color: var(--adm-muted);
+  font-size: 0.8rem;
+}
+
+.adm-stat .adm-badge {
+  justify-self: start;
+}
+
+/* ---- Section card ---- */
+.adm-card {
+  min-width: 0;
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  background: var(--adm-surface);
+  box-shadow: var(--adm-shadow);
+}
+
+.adm-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 1rem 1.15rem 0;
+}
+
+.adm-card-title {
+  margin: 0;
+  color: var(--adm-ink);
+  font-size: 1.05rem;
+}
+
+.adm-card-description {
+  margin: 0.2rem 0 0;
+  color: var(--adm-muted);
+  font-size: 0.85rem;
+}
+
+.adm-card-body {
+  min-width: 0;
+  padding: 1rem 1.15rem 1.1rem;
+}
+
+.adm-card.is-flush .adm-card-body {
+  padding: 0.75rem 0 0;
+}
+
+/* ---- Status badge (one colour map; failed red, cancelled grey) ---- */
+.adm-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-badge.is-success { background: var(--adm-success-soft); color: var(--adm-success); }
+.adm-badge.is-warning { background: var(--adm-warning-soft); color: var(--adm-warning); }
+.adm-badge.is-danger { background: var(--adm-danger-soft); color: var(--adm-danger); }
+.adm-badge.is-neutral { background: var(--adm-neutral-soft); color: var(--adm-neutral); }
+.adm-badge.is-info { background: var(--adm-info-soft); color: var(--adm-info); }
+
+/* ---- Data table ---- */
+.adm-table-scroll {
+  max-width: 100%;
+  max-height: min(70vh, 720px);
+  overflow: auto;
+  border: 1px solid var(--adm-border);
+  border-radius: 10px;
+}
+
+.adm-table-scroll:focus-visible {
+  outline: none;
+  box-shadow: var(--adm-focus);
+}
+
+.adm-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.87rem;
+}
+
+.adm-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--adm-border);
+  background: var(--adm-surface-alt);
+  color: var(--adm-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.adm-table td {
+  padding: 0.62rem 0.75rem;
+  border-bottom: 1px solid var(--adm-border);
+  color: var(--adm-text);
+  vertical-align: middle;
+}
+
+.adm-table tbody tr:nth-child(even) td {
+  background: #fbfcfc;
+}
+
+.adm-table tbody tr:hover td {
+  background: var(--adm-row-hover);
+}
+
+.adm-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.adm-table .is-end {
+  text-align: right;
+}
+
+.adm-table .is-money {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.adm-table tr.is-clickable {
+  cursor: pointer;
+}
+
+.adm-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  color: var(--adm-muted);
+  font-size: 0.85rem;
+}
+
+.adm-pagination > div {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.adm-truncate {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+/* ---- Filter bar ---- */
+.adm-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.adm-filter-bar .form-select,
+.adm-filter-bar .form-control,
+.adm-filter-bar select,
+.adm-filter-bar input[type="date"] {
+  width: auto;
+  min-width: 150px;
+  max-width: 100%;
+}
+
+.adm-filter-search {
+  display: flex;
+  flex: 1 1 240px;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0 0.7rem;
+  border: 1px solid var(--adm-border-strong);
+  border-radius: 8px;
+  background: var(--adm-surface);
+  color: var(--adm-muted);
+}
+
+.adm-filter-search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--adm-text);
+  outline: none;
+}
+
+.adm-filter-search:focus-within {
+  border-color: var(--adm-brand);
+  box-shadow: var(--adm-focus);
+}
+
+.adm-filter-actions {
+  margin-left: auto;
+}
+
+/* ---- Empty, error and loading states ---- */
+.adm-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 2.2rem 1rem;
+  border: 1px dashed var(--adm-border-strong);
+  border-radius: 10px;
+  background: var(--adm-surface-alt);
+  color: var(--adm-muted);
+  text-align: center;
+}
+
+.adm-state strong {
+  color: var(--adm-ink);
+}
+
+.adm-state p {
+  max-width: 52ch;
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.adm-state-icon {
+  color: var(--adm-brand);
+  font-size: 1.6rem;
+}
+
+.adm-state.is-error .adm-state-icon {
+  color: var(--adm-danger);
+}
+
+.adm-skeleton {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.4rem 0;
+}
+
+.adm-skeleton-line {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eef1f0 25%, #f7f9f8 50%, #eef1f0 75%);
+  background-size: 200% 100%;
+  animation: adm-shimmer 1.3s linear infinite;
+}
+
+.adm-skeleton-line.is-value {
+  width: 60%;
+  height: 22px;
+}
+
+@keyframes adm-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-skeleton-line {
+    animation: none;
+  }
+}
+
+/* ---- Buttons: primary = brand green, secondary = outline, danger = red. No default Bootstrap blue in the admin. ---- */
+.admin-platform-shell .btn-primary {
+  --bs-btn-bg: var(--adm-brand);
+  --bs-btn-border-color: var(--adm-brand);
+  --bs-btn-hover-bg: var(--adm-brand-hover);
+  --bs-btn-hover-border-color: var(--adm-brand-hover);
+  --bs-btn-active-bg: var(--adm-brand-hover);
+  --bs-btn-active-border-color: var(--adm-brand-hover);
+  --bs-btn-disabled-bg: var(--adm-brand);
+  --bs-btn-disabled-border-color: var(--adm-brand);
+  --bs-btn-focus-shadow-rgb: 14, 107, 87;
+}
+
+.admin-platform-shell .btn-outline-primary {
+  --bs-btn-color: var(--adm-brand);
+  --bs-btn-border-color: var(--adm-brand);
+  --bs-btn-hover-bg: var(--adm-brand);
+  --bs-btn-hover-border-color: var(--adm-brand);
+  --bs-btn-active-bg: var(--adm-brand-hover);
+  --bs-btn-active-border-color: var(--adm-brand-hover);
+  --bs-btn-disabled-color: var(--adm-brand);
+  --bs-btn-disabled-border-color: var(--adm-brand);
+  --bs-btn-focus-shadow-rgb: 14, 107, 87;
+}
+
+.admin-platform-shell .btn-info,
+.admin-platform-shell .btn-secondary {
+  --bs-btn-color: var(--adm-text);
+  --bs-btn-bg: var(--adm-surface);
+  --bs-btn-border-color: var(--adm-border-strong);
+  --bs-btn-hover-color: var(--adm-ink);
+  --bs-btn-hover-bg: var(--adm-surface-alt);
+  --bs-btn-hover-border-color: var(--adm-border-strong);
+  --bs-btn-active-bg: var(--adm-surface-alt);
+}
+
+.admin-platform-shell .btn-link {
+  --bs-btn-color: var(--adm-brand);
+  --bs-btn-hover-color: var(--adm-brand-hover);
+}
+
+.admin-platform-shell .btn:focus-visible,
+.admin-platform-shell a:focus-visible,
+.admin-platform-shell .form-control:focus,
+.admin-platform-shell .form-select:focus {
+  border-color: var(--adm-brand);
+  box-shadow: var(--adm-focus);
+  outline: none;
+}
+
+.admin-platform-shell .page-link {
+  --bs-pagination-color: var(--adm-brand);
+  --bs-pagination-active-bg: var(--adm-brand);
+  --bs-pagination-active-border-color: var(--adm-brand);
+}
+
+.admin-platform-shell .nav-tabs .nav-link.active,
+.admin-platform-shell .nav-pills .nav-link.active {
+  --bs-nav-pills-link-active-bg: var(--adm-brand);
+}
+
+.admin-platform-shell .form-check-input:checked {
+  border-color: var(--adm-brand);
+  background-color: var(--adm-brand);
+}
+
+/* Tables still on react-bootstrap <Table>: same header and row style as DataTable, scroll inside their card. */
+.admin-platform-shell .table-responsive {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.admin-platform-shell .table > thead th {
+  background: var(--adm-surface-alt);
+  color: var(--adm-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.admin-platform-shell .table > tbody > tr:hover > * {
+  --bs-table-accent-bg: var(--adm-row-hover);
+}
+
+/* Bootstrap badges in the admin follow the same calm palette (failed red, secondary grey). */
+.admin-platform-shell .badge.bg-success { background: var(--adm-success-soft) !important; color: var(--adm-success); }
+.admin-platform-shell .badge.bg-warning { background: var(--adm-warning-soft) !important; color: var(--adm-warning); }
+.admin-platform-shell .badge.bg-danger { background: var(--adm-danger-soft) !important; color: var(--adm-danger); }
+.admin-platform-shell .badge.bg-secondary { background: var(--adm-neutral-soft) !important; color: var(--adm-neutral); }
+.admin-platform-shell .badge.bg-info,
+.admin-platform-shell .badge.bg-primary { background: var(--adm-info-soft) !important; color: var(--adm-info); }
+
+/* ---- Mobile ---- */
+@media (max-width: 575.98px) {
+  .adm-page {
+    gap: 1rem;
+  }
+
+  .adm-page-actions {
+    width: 100%;
+  }
+
+  .adm-stat-grid,
+  .adm-stat-grid.cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .adm-stat {
+    min-height: 0;
+    padding: 0.8rem;
+  }
+
+  .adm-stat-value {
+    font-size: 1.15rem;
+  }
+
+  .adm-card-header,
+  .adm-card-body {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .adm-filter-bar > *,
+  .adm-filter-bar .form-select,
+  .adm-filter-bar select,
+  .adm-filter-bar input[type="date"] {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .adm-filter-actions {
+    margin-left: 0;
+  }
+}

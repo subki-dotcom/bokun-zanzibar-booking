@@ -1,5 +1,5 @@
-import { Badge, Card } from "react-bootstrap";
 import { BsBarChartLine } from "react-icons/bs";
+import { StatCard, StatusBadge as UiStatusBadge } from "./ui";
 
 export const formatStatusLabel = (value = "") => String(value || "-").replaceAll("_", " ");
 
@@ -59,24 +59,9 @@ export const formatDateTime = (value = "") => {
   });
 };
 
+// Older pages import these two; they now render the design-system StatCard and StatusBadge (components/admin/ui).
 export const AdminMetricCard = ({ label, value, detail = "", icon: Icon = BsBarChartLine, status = "" }) => (
-  <Card className="surface-card h-100">
-    <Card.Body>
-      <div className="d-flex justify-content-between align-items-start gap-3">
-        <div>
-          <small className="text-muted d-block">{label}</small>
-          <strong className="fs-4 d-block">{value}</strong>
-          {detail ? <span className="text-muted small">{detail}</span> : null}
-        </div>
-        <span className="admin-platform-brand-mark d-inline-flex align-items-center justify-content-center">
-          <Icon aria-hidden="true" />
-        </span>
-      </div>
-      {status ? <Badge bg={statusVariant(status)} className="mt-3 text-capitalize">{formatStatusLabel(status)}</Badge> : null}
-    </Card.Body>
-  </Card>
+  <StatCard label={label} value={value} helper={detail} icon={Icon} status={status} />
 );
 
-export const StatusBadge = ({ value = "" }) => (
-  <Badge bg={statusVariant(value)} className="text-capitalize">{formatStatusLabel(value)}</Badge>
-);
+export const StatusBadge = ({ value = "" }) => <UiStatusBadge value={value} />;
