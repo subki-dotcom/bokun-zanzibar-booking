@@ -24,6 +24,7 @@ export default function AdminBusinessIntelligencePage() {
   const busy = financial.loading || operational.loading;
   const money = (value) => formatMoney(value, currency);
   const summary = fin?.financialSummary || {};
+  const notPosted = Boolean(fin) && !(Number(summary.postingCount) > 0);
   const customers = ops?.customers || {};
   const operations = ops?.operations || {};
   const trends = useMemo(() => mergeTrend(fin?.trend, ops?.trend), [fin, ops]);
@@ -64,7 +65,9 @@ export default function AdminBusinessIntelligencePage() {
     {periodChoice === 'CUSTOM' && <form className="bi-custom-range" id="bi-custom-range" onSubmit={applyRange}><label>From<input type="date" required value={draft.from} onChange={(event) => setDraft((value) => ({ ...value, from: event.target.value }))} /></label><label>To<input type="date" required min={draft.from || undefined} value={draft.to} onChange={(event) => setDraft((value) => ({ ...value, to: event.target.value }))} /></label><button type="submit" className="bi-refresh">Apply range</button><span>Dates use {range?.timeZone || 'Africa/Dar_es_Salaam'}. The current report stays selected until you apply.</span>{dateError && <p role="alert">{dateError}</p>}</form>}
     <div className="bi-report-context"><span><i />Read-only executive report</span><span>{currency ? `Reporting currency: ${currency}` : 'Reporting currency loading'} · {range?.timeZone || 'Africa/Dar_es_Salaam'}</span></div>
     <div className="bi-kpi-grid">
-      <BIKpi label="Total Revenue" value={money(fin?.kpis?.revenue?.value)} metric={fin?.kpis?.revenue} icon={BsCashCoin} tone="blue" state={financial} values={fin?.trend?.map((row) => row.revenue)} note="Booked revenue + other business income" />
+      {/* Revenue here comes from posted journal entries only. With none posted in the period, "0.00" would read as
+          "no sales", so it says so plainly and points to Booking Accounting for booking sales. */}
+      <BIKpi label="Total Revenue" value={notPosted ? 'Not posted yet' : money(fin?.kpis?.revenue?.value)} metric={notPosted ? null : fin?.kpis?.revenue} icon={BsCashCoin} tone="blue" state={financial} values={fin?.trend?.map((row) => row.revenue)} note={notPosted ? 'No journal entries are posted for this period. Booking sales are in Booking Accounting.' : 'Booked revenue + other business income'} />
       <BIKpi label="Total Bookings" value={formatNumber(ops?.kpis?.totalBookings?.value)} metric={ops?.kpis?.totalBookings} icon={BsCart3} tone="teal" state={operational} values={ops?.trend?.map((row) => row.bookings)} note="All recorded booking statuses" />
       <BIKpi label="Total Customers" value={formatNumber(ops?.kpis?.totalCustomers?.value)} metric={ops?.kpis?.totalCustomers} icon={BsPeople} tone="rose" state={operational} note="Distinct identified customers in this period" />
       <BIKpi label="Profit Margin" value={formatPercentage(fin?.kpis?.profitMargin?.value)} metric={fin?.kpis?.profitMargin} icon={BsPieChart} tone="purple" state={financial} note={provisional || 'Net profit / total revenue'} />
