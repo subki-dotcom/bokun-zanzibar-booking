@@ -609,7 +609,8 @@ export const BookingAccountingDashboard = ({
   loading,
   refreshing,
   error,
-  onRefresh
+  onRefresh,
+  paymentOverview = null
 }) => {
   const currency = dashboard?.currency || "USD";
   const channels = asArray(dashboard?.filters?.channels);
@@ -727,6 +728,9 @@ export const BookingAccountingDashboard = ({
             ))
           : secondaryKpis.map(({ id, icon, kpi }) => <SecondaryKpiCard key={id} icon={icon} kpi={kpi} currency={currency} />)}
       </div>
+
+      {/* Customer Payment & Settlement: below the page header and KPIs, not above them. */}
+      {paymentOverview}
 
       <div className="booking-accounting-dashboard-chart-grid">
         <DashboardCard className="is-wide">
@@ -1331,8 +1335,8 @@ const AdminBookingAccountingPage = () => {
   if (mode === "dashboard") {
     return (
       <>
-        <BookingPaymentOverview query={{ period: "CUSTOM", from: dashboardFilters.fromDate, to: dashboardFilters.toDate, ...(dashboardFilters.channel ? { channel: dashboardFilters.channel } : {}) }} refreshKey={refreshing} />
         <BookingAccountingDashboard
+          paymentOverview={<BookingPaymentOverview query={{ period: "CUSTOM", from: dashboardFilters.fromDate, to: dashboardFilters.toDate, ...(dashboardFilters.channel ? { channel: dashboardFilters.channel } : {}) }} refreshKey={refreshing} />}
           dashboard={data.dashboard}
           authoritativeSummary={data.authoritativeSummary}
           summaryLoading={summaryLoading}
