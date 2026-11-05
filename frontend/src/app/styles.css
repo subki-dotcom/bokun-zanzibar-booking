@@ -17626,8 +17626,9 @@ textarea.form-control {
     min-height: 190px;
   }
 
+  /* The value above each bar is hidden here, so the bar takes the first row (it collapsed to 0 before). */
   .admin-dashboard-bar-column {
-    grid-template-rows: auto minmax(110px, 1fr) auto;
+    grid-template-rows: minmax(110px, 1fr) auto;
   }
 
   .admin-dashboard-bar-value {
