@@ -20570,8 +20570,8 @@ textarea.form-control {
 }
 
 .journal-primary-action {
-  border-color: #0f6cf5;
-  background: linear-gradient(135deg, #0f6cf5, #0b8fd8);
+  border-color: #0e6b57;
+  background: linear-gradient(135deg, #0e6b57, #0a5242);
   color: #ffffff;
 }
 
@@ -20691,7 +20691,7 @@ textarea.form-control {
 }
 
 .journal-tabs button.active {
-  color: #0f6cf5;
+  color: #0e6b57;
 }
 
 .journal-tabs button.active::after {
@@ -20701,7 +20701,7 @@ textarea.form-control {
   left: 0;
   height: 3px;
   border-radius: 999px 999px 0 0;
-  background: #0f6cf5;
+  background: #0e6b57;
   content: "";
 }
 
@@ -20746,7 +20746,7 @@ textarea.form-control {
 .journal-search input:focus,
 .journal-entries-page .form-select:focus,
 .journal-entries-page .form-control:focus {
-  border-color: #0f6cf5;
+  border-color: #0e6b57;
   box-shadow: 0 0 0 0.18rem rgba(15, 108, 245, 0.12);
 }
 
@@ -20823,7 +20823,7 @@ textarea.form-control {
 .journal-link {
   border: 0;
   background: transparent;
-  color: #0f6cf5;
+  color: #0e6b57;
   font-weight: 950;
   padding: 0;
 }
@@ -21009,9 +21009,9 @@ textarea.form-control {
   justify-content: center;
   min-height: 40px;
   width: max-content;
-  border: 1px solid #0f6cf5;
+  border: 1px solid #0e6b57;
   border-radius: 8px;
-  color: #0f6cf5;
+  color: #0e6b57;
   font-size: 0.85rem;
   font-weight: 850;
   padding: 0.45rem 0.8rem;
@@ -21043,7 +21043,7 @@ textarea.form-control {
 }
 
 .journal-form-warning a {
-  color: #0f6cf5;
+  color: #0e6b57;
   font-weight: 900;
 }
 
@@ -21293,7 +21293,7 @@ textarea.form-control {
   .journal-mobile-card button:not(.btn) {
     border: 0;
     background: transparent;
-    color: #0f6cf5;
+    color: #0e6b57;
     font-weight: 950;
     padding: 0;
   }

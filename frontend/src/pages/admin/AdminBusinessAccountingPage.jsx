@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Button } from "react-bootstrap";
 import {
   BsArrowClockwise,
@@ -404,51 +405,48 @@ const AdminBusinessAccountingPage = () => {
 
   return (
     <div className="management-accounting-page">
-      <div className="management-accounting-header">
-        <div>
-          <div className="management-accounting-breadcrumb">
-            <BsBank aria-hidden="true" />
-            <span>Business Accounting</span>
-            <span>/</span>
-            <strong>Management Accounting</strong>
-          </div>
-          <h1>Management Accounting</h1>
-          <p>Company-wide contribution, income, and expense evidence without duplicating booking accounting revenue.</p>
-        </div>
-
-        <div className="management-accounting-actions">
-          <label>
-            <BsCalendar3 aria-hidden="true" />
-            <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Accounting period">
-              {PERIOD_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
-          {period === "custom" ? (
-            <>
-              <input
-                type="date"
-                value={customRange.fromDate}
-                aria-label="Custom range start"
-                onChange={(event) => setCustomRange((current) => ({ ...current, fromDate: event.target.value }))}
-              />
-              <input
-                type="date"
-                value={customRange.toDate}
-                aria-label="Custom range end"
-                onChange={(event) => setCustomRange((current) => ({ ...current, toDate: event.target.value }))}
-              />
-            </>
-          ) : null}
-          <Button type="button" variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing || loading}>
-            <BsArrowClockwise aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
-          </Button>
-          <Button type="button" variant="outline-secondary" onClick={() => downloadCsv(foundation)} disabled={!foundation || loading}>
-            <BsDownload aria-hidden="true" /> Export
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="Management Accounting"
+        description="Company income and expenses, and what bookings contribute, without counting booking revenue twice."
+        actions={
+          <>
+    
+            <div className="management-accounting-actions">
+              <label>
+                <BsCalendar3 aria-hidden="true" />
+                <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Accounting period">
+                  {PERIOD_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              {period === "custom" ? (
+                <>
+                  <input
+                    type="date"
+                    value={customRange.fromDate}
+                    aria-label="Custom range start"
+                    onChange={(event) => setCustomRange((current) => ({ ...current, fromDate: event.target.value }))}
+                  />
+                  <input
+                    type="date"
+                    value={customRange.toDate}
+                    aria-label="Custom range end"
+                    onChange={(event) => setCustomRange((current) => ({ ...current, toDate: event.target.value }))}
+                  />
+                </>
+              ) : null}
+              <Button type="button" variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing || loading}>
+                <BsArrowClockwise aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
+              </Button>
+              <Button type="button" variant="outline-secondary" onClick={() => downloadCsv(foundation)} disabled={!foundation || loading}>
+                <BsDownload aria-hidden="true" /> Export
+              </Button>
+            </div>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
 

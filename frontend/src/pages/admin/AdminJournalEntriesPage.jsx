@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Button, Form, Modal, Spinner } from "react-bootstrap";
 import {
   BsArrowClockwise,
@@ -464,20 +465,22 @@ const AdminJournalEntriesPage = () => {
 
   return (
     <div className="journal-entries-page">
-      <div className="journal-page-header">
-        <div>
-          <nav aria-label="Breadcrumb"><span>Business Accounting</span><strong>Journal Entries</strong></nav>
-          <h1>Journal Entries</h1>
-          <p>Record and manage financial transactions using double-entry accounting.</p>
-        </div>
-        <div className="journal-header-actions">
-          <Form.Control type="date" value={query.fromDate} onChange={(event) => updateQuery(setSearchParams, { fromDate: event.target.value, page: 1 })} aria-label="From date" />
-          <Form.Control type="date" value={query.toDate} onChange={(event) => updateQuery(setSearchParams, { toDate: event.target.value, page: 1 })} aria-label="To date" />
-          <Button className="journal-primary-action" onClick={() => setShowForm(true)}><BsPlusLg /> New Journal Entry</Button>
-          <Button variant="outline-secondary" disabled title="Journal import requires a safe import preview service"><BsUpload /> Import</Button>
-          <Button variant="outline-secondary" onClick={exportJournals} disabled={refreshing}><BsDownload /> Export</Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="Journal Entries"
+        description="Record and manage financial transactions using double-entry accounting."
+        actions={
+          <>
+            <div className="journal-header-actions">
+              <Form.Control type="date" value={query.fromDate} onChange={(event) => updateQuery(setSearchParams, { fromDate: event.target.value, page: 1 })} aria-label="From date" />
+              <Form.Control type="date" value={query.toDate} onChange={(event) => updateQuery(setSearchParams, { toDate: event.target.value, page: 1 })} aria-label="To date" />
+              <Button className="journal-primary-action" onClick={() => setShowForm(true)}><BsPlusLg /> New Journal Entry</Button>
+              <Button variant="outline-secondary" disabled title="Journal import requires a safe import preview service"><BsUpload /> Import</Button>
+              <Button variant="outline-secondary" onClick={exportJournals} disabled={refreshing}><BsDownload /> Export</Button>
+            </div>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
       {message ? <div className="alert alert-success journal-message">{message}</div> : null}

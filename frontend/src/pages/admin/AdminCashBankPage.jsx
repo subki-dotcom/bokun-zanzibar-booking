@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Button, Form, Spinner } from "react-bootstrap";
 import {
   BsArrowClockwise,
@@ -109,15 +110,12 @@ const AdminCashBankPage = () => {
   };
 
   return <main className="cash-bank-page">
-    <header className="cb-header">
-      <div><nav>Business Accounting / <strong>Cash &amp; Bank</strong></nav><h1>Cash &amp; Bank</h1><p>View ledger-backed cash accounts, movements, transfers, and reconciliation readiness.</p></div>
-      <div className="cb-header-actions">
+    <PageHeader eyebrow="Business Accounting" title={<>Cash &amp; Bank</>} description="View ledger-backed cash accounts, movements, transfers, and reconciliation readiness." actions={<><div className="cb-header-actions">
         <label><BsCalendar3 /><input type="date" value={filters.fromDate} onChange={(event) => updateQuery(setParams, { fromDate: event.target.value, page: 1 })} /><span>-</span><input type="date" value={filters.toDate} onChange={(event) => updateQuery(setParams, { toDate: event.target.value, page: 1 })} /></label>
         <Button variant="outline-primary" onClick={exportCsv} disabled={!data?.items?.length}><BsDownload /> Export CSV</Button>
         <Button variant="outline-secondary" onClick={() => load(true)} disabled={refreshing}>{refreshing ? <Spinner size="sm" /> : <BsArrowClockwise />} Refresh</Button>
         <Button disabled title={data?.capabilities?.createTransactionReason || "Use the approved source workflow"}><BsPlusLg /> New Transaction</Button>
-      </div>
-    </header>
+      </div></>} />
     <ErrorAlert error={error} />
     {loading ? <div className="cb-skeleton">{Array.from({ length: 8 }).map((_, index) => <span key={index} />)}</div> : <>
       <section className="cb-kpis">

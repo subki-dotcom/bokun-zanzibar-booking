@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Button, Form, Modal, Spinner } from "react-bootstrap";
 import {
   BsArchive,
@@ -677,31 +678,33 @@ const AdminChartOfAccountsPage = () => {
 
   return (
     <div className="chart-accounts-page">
-      <div className="chart-accounts-header">
-        <div>
-          <nav aria-label="Breadcrumb"><span>Business Accounting</span><strong>Chart of Accounts</strong></nav>
-          <h1>Chart of Accounts</h1>
-          <p>Organize and manage your account structure for accurate financial reporting.</p>
-        </div>
-        <div className="chart-accounts-actions">
-          <Form.Select
-            value={query.status}
-            onChange={(event) => updateQueryParams(setSearchParams, { status: event.target.value, page: 1 })}
-            aria-label="Account status filter"
-          >
-            {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </Form.Select>
-          <Button variant="outline-secondary" disabled title="CSV/Excel import requires import preview service">
-            <BsFileEarmarkArrowUp /> Import
-          </Button>
-          <Button variant="outline-secondary" onClick={exportFilteredAccounts} disabled={refreshing}>
-            <BsDownload /> Export
-          </Button>
-          <Button className="coa-primary-action" onClick={() => openForm()}>
-            <BsPlusLg /> Add Account
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="Chart of Accounts"
+        description="Organize and manage your account structure for accurate financial reporting."
+        actions={
+          <>
+            <div className="chart-accounts-actions">
+              <Form.Select
+                value={query.status}
+                onChange={(event) => updateQueryParams(setSearchParams, { status: event.target.value, page: 1 })}
+                aria-label="Account status filter"
+              >
+                {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </Form.Select>
+              <Button variant="outline-secondary" disabled title="CSV/Excel import requires import preview service">
+                <BsFileEarmarkArrowUp /> Import
+              </Button>
+              <Button variant="outline-secondary" onClick={exportFilteredAccounts} disabled={refreshing}>
+                <BsDownload /> Export
+              </Button>
+              <Button className="coa-primary-action" onClick={() => openForm()}>
+                <BsPlusLg /> Add Account
+              </Button>
+            </div>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
       {actionMessage ? <div className="alert alert-success chart-accounts-message">{actionMessage}</div> : null}

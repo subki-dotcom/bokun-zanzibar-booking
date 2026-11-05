@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Button, Form, Spinner } from "react-bootstrap";
 import {
   BsArrowClockwise,
@@ -284,40 +285,42 @@ const AdminGeneralLedgerRegisterPage = () => {
 
   return (
     <div className="general-ledger-register-page">
-      <header className="gl-page-header">
-        <div>
-          <nav aria-label="Breadcrumb">Business Accounting / <strong>General Ledger</strong></nav>
-          <h1>General Ledger</h1>
-          <p>View all posted journal transactions and their impact on your accounts.</p>
-        </div>
-        <div className="gl-header-actions">
-          <label>
-            <BsCalendar3 />
-            <input
-              type="date"
-              value={filters.fromDate}
-              onChange={(event) => updateQuery(setSearchParams, { fromDate: event.target.value, page: 1 })}
-              aria-label="From date"
-            />
-            <span>-</span>
-            <input
-              type="date"
-              value={filters.toDate}
-              onChange={(event) => updateQuery(setSearchParams, { toDate: event.target.value, page: 1 })}
-              aria-label="To date"
-            />
-          </label>
-          <Button variant="outline-primary" onClick={exportLedger} disabled={exporting}>
-            {exporting ? <Spinner size="sm" /> : <BsDownload />} Export
-          </Button>
-          <Button
-            variant="outline-secondary"
-            onClick={() => updateQuery(setSearchParams, { view: "account", page: 1 })}
-          >
-            <BsLayers /> View by Account
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="General Ledger"
+        description="View all posted journal transactions and their impact on your accounts."
+        actions={
+          <>
+            <div className="gl-header-actions">
+              <label>
+                <BsCalendar3 />
+                <input
+                  type="date"
+                  value={filters.fromDate}
+                  onChange={(event) => updateQuery(setSearchParams, { fromDate: event.target.value, page: 1 })}
+                  aria-label="From date"
+                />
+                <span>-</span>
+                <input
+                  type="date"
+                  value={filters.toDate}
+                  onChange={(event) => updateQuery(setSearchParams, { toDate: event.target.value, page: 1 })}
+                  aria-label="To date"
+                />
+              </label>
+              <Button variant="outline-primary" onClick={exportLedger} disabled={exporting}>
+                {exporting ? <Spinner size="sm" /> : <BsDownload />} Export
+              </Button>
+              <Button
+                variant="outline-secondary"
+                onClick={() => updateQuery(setSearchParams, { view: "account", page: 1 })}
+              >
+                <BsLayers /> View by Account
+              </Button>
+            </div>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
       {loading ? <Skeleton /> : null}

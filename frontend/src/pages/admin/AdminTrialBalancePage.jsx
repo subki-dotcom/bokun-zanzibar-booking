@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Button, Form, Spinner } from "react-bootstrap";
 import {
   BsArrowClockwise,
@@ -281,33 +282,35 @@ const AdminTrialBalancePage = () => {
 
   return (
     <div className="trial-balance-page">
-      <header className="tb-page-header">
-        <div>
-          <nav aria-label="Breadcrumb">Business Accounting / <strong>Trial Balance</strong></nav>
-          <h1>Trial Balance</h1>
-          <p>Review opening balances, period movements, and closing balances across all ledger accounts.</p>
-        </div>
-        <div className="tb-header-actions">
-          <label>
-            <BsCalendar3 />
-            <input type="date" value={filters.fromDate} onChange={(event) => updateQuery(setSearchParams, { fromDate: event.target.value, page: 1 })} aria-label="From date" />
-            <span>-</span>
-            <input type="date" value={filters.toDate} onChange={(event) => updateQuery(setSearchParams, { toDate: event.target.value, page: 1 })} aria-label="To date" />
-          </label>
-          <Button variant="outline-secondary" disabled title="Compare period needs a dedicated comparison contract">
-            Compare Period
-          </Button>
-          <Button variant="outline-primary" onClick={exportTrialBalance} disabled={exporting}>
-            {exporting ? <Spinner size="sm" /> : <BsDownload />} Export
-          </Button>
-          <Button variant="outline-secondary" onClick={() => window.print()}>
-            <BsPrinter /> Print
-          </Button>
-          <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-            {refreshing ? <Spinner size="sm" /> : <BsArrowClockwise />} Refresh
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="Trial Balance"
+        description="Review opening balances, period movements, and closing balances across all ledger accounts."
+        actions={
+          <>
+            <div className="tb-header-actions">
+              <label>
+                <BsCalendar3 />
+                <input type="date" value={filters.fromDate} onChange={(event) => updateQuery(setSearchParams, { fromDate: event.target.value, page: 1 })} aria-label="From date" />
+                <span>-</span>
+                <input type="date" value={filters.toDate} onChange={(event) => updateQuery(setSearchParams, { toDate: event.target.value, page: 1 })} aria-label="To date" />
+              </label>
+              <Button variant="outline-secondary" disabled title="Compare period needs a dedicated comparison contract">
+                Compare Period
+              </Button>
+              <Button variant="outline-primary" onClick={exportTrialBalance} disabled={exporting}>
+                {exporting ? <Spinner size="sm" /> : <BsDownload />} Export
+              </Button>
+              <Button variant="outline-secondary" onClick={() => window.print()}>
+                <BsPrinter /> Print
+              </Button>
+              <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+                {refreshing ? <Spinner size="sm" /> : <BsArrowClockwise />} Refresh
+              </Button>
+            </div>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
       {loading ? <Skeleton /> : null}

@@ -505,6 +505,32 @@
   --bs-btn-active-bg: var(--adm-surface-alt);
 }
 
+/* Page-specific primary buttons (Chart of Accounts, Journal Entries) follow the brand too. */
+.admin-platform-shell .coa-primary-action,
+.admin-platform-shell .journal-primary-action {
+  border-color: var(--adm-brand);
+  background: var(--adm-brand);
+  color: #fff;
+}
+
+.admin-platform-shell .coa-primary-action:hover,
+.admin-platform-shell .coa-primary-action:focus-visible,
+.admin-platform-shell .journal-primary-action:hover,
+.admin-platform-shell .journal-primary-action:focus-visible {
+  border-color: var(--adm-brand-hover);
+  background: var(--adm-brand-hover);
+  color: #fff;
+}
+
+/* Text links in admin pages: brand green, not browser blue. */
+.admin-platform-content a:not(.btn):not(.dropdown-item):not(.nav-link):not(.page-link) {
+  color: var(--adm-brand);
+}
+
+.admin-platform-content a:not(.btn):not(.dropdown-item):not(.nav-link):not(.page-link):hover {
+  color: var(--adm-brand-hover);
+}
+
 .admin-platform-shell .btn-link {
   --bs-btn-color: var(--adm-brand);
   --bs-btn-hover-color: var(--adm-brand-hover);

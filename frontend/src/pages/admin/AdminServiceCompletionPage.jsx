@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Badge, Button, Card, Form, Modal, Table } from "react-bootstrap";
 import {
   createServiceCompletion,
@@ -58,7 +59,7 @@ export default function AdminServiceCompletionPage() {
   };
 
   return <main className="admin-page-container">
-    <header className="d-flex justify-content-between align-items-start mb-4"><div><p className="text-muted mb-1">Business Accounting / Operations</p><h1>Service Completions</h1><p className="text-muted mb-0">Operational proof of delivery. Booking, payment, completion, and revenue remain separate states.</p></div><Button variant="outline-secondary" onClick={() => load()}>Refresh</Button></header>
+    <PageHeader eyebrow="Business Accounting" title="Service Completion" description="Operational proof of delivery. Booking, payment, completion, and revenue remain separate states." actions={<><Button variant="outline-secondary" onClick={() => load()}>Refresh</Button></>} />
     {state.error ? <div className="alert alert-danger">{state.error}</div> : null}
     <Card className="mb-4"><Card.Body><h2 className="h5">Admin Completion Review</h2><Form className="d-flex gap-2" onSubmit={reviewArrival}><Form.Control required placeholder="Booking or Bókun confirmation reference" value={reviewReference} onChange={(event) => setReviewReference(event.target.value)} /><Button type="submit" variant="outline-primary">Review Bókun Arrival</Button></Form>
       {review ? <div className="mt-4"><div className="row g-3"><div className="col-md-3"><strong>Booking Status</strong><div>{label(review.booking.bookingStatus)}</div></div><div className="col-md-3"><strong>Payment State</strong><div>{label(review.booking.paymentState)}</div></div><div className="col-md-3"><strong>Bókun Activity Status</strong><div>{label(review.booking.bokunActivityStatus)}</div></div><div className="col-md-3"><strong>Service Completion Status</strong><div>{label(review.serviceCompletionStatus)}</div></div></div>

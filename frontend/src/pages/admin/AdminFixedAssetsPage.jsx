@@ -1,4 +1,5 @@
 import Loader from "../../components/common/Loader";
+import { PageHeader } from "../../components/admin/ui";
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Form, Modal } from 'react-bootstrap';
 import {
@@ -218,33 +219,33 @@ export default function AdminFixedAssetsPage() {
   };
   return (
     <main className="fa-page">
-      <header className="fa-header">
-        <div>
-          <nav>
-            Business Accounting / Assets / <strong>Fixed Assets</strong>
-          </nav>
-          <h1>Fixed Assets</h1>
-          <p>Manage fixed assets, depreciation, useful life, book value, and asset history.</p>
-        </div>
-        <div>
-          <Button onClick={openAdd}>
-            + Add Asset
-          </Button>
-          <Button
-            variant="outline-secondary"
-            disabled
-            title="Validated import workflow is not available"
-          >
-            Import
-          </Button>
-          <Button variant="outline-secondary" onClick={download} disabled={!d.items?.length}>
-            <BsDownload /> Export
-          </Button>
-          <Button variant="outline-secondary" onClick={load}>
-            <BsArrowClockwise /> Refresh
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="Assets"
+        description="Manage fixed assets, depreciation, useful life, book value, and asset history."
+        actions={
+          <>
+            <div>
+              <Button onClick={openAdd}>
+                + Add Asset
+              </Button>
+              <Button
+                variant="outline-secondary"
+                disabled
+                title="Validated import workflow is not available"
+              >
+                Import
+              </Button>
+              <Button variant="outline-secondary" onClick={download} disabled={!d.items?.length}>
+                <BsDownload /> Export
+              </Button>
+              <Button variant="outline-secondary" onClick={load}>
+                <BsArrowClockwise /> Refresh
+              </Button>
+            </div>
+          </>
+        }
+      />
       {state.error ? (
         <div className="fa-error" role="alert">
           {state.error}
