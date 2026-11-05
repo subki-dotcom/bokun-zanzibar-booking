@@ -23,7 +23,6 @@ import {
   BsReceipt
 } from "react-icons/bs";
 import {
-  fetchBookingAccountingCostTemplates,
   fetchBookingAccountingDashboard,
   fetchBookingFinancialFacts,
   fetchAuthoritativeFinancialSummary,
@@ -1156,6 +1155,8 @@ const AdminBookingAccountingPage = () => {
   const [error, setError] = useState("");
   const [summaryError, setSummaryError] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(true);
+  const [totalsLoading, setTotalsLoading] = useState(false);
+  const [totalsError, setTotalsError] = useState("");
   const dashboardRequest = useRef(0);
   const [financialFacts, setFinancialFacts] = useState(null);
   const [financialFactsLoading, setFinancialFactsLoading] = useState(false);
@@ -1223,46 +1224,31 @@ const AdminBookingAccountingPage = () => {
         return;
       }
 
-      if (mode === "expenses") {
-        const [dashboard, expenses] = await Promise.all([
-          fetchBookingAccountingDashboard({ limit: 25 }),
-          fetchBookingAccountingExpenses(expenseQuery)
-        ]);
-        setData((current) => ({
-          ...current,
-          dashboard,
-          expenses
-        }));
-        return;
+      // Each list page loads only its own records; the four summary cards come from the (slower) dashboard call,
+      // loaded separately so they never hold the table back. Before, every page waited for all seven calls.
+      const fetchers = {
+        invoices: () => fetchBookingAccountingInvoices({ limit: 100 }),
+        refunds: () => fetchBookingAccountingRefunds({ limit: 100 }),
+        expenses: () => fetchBookingAccountingExpenses(expenseQuery),
+        profitability: () => fetchBookingAccountingProfitability({ limit: 100 }),
+        reconciliation: () => fetchBookingAccountingReconciliation({ limit: 100 })
+      };
+      if (mode !== "profitability") {
+        setTotalsLoading(true);
+        setTotalsError("");
+        fetchBookingAccountingDashboard({ limit: 25 })
+          .then((dashboard) => {
+            if (request === dashboardRequest.current) setData((current) => ({ ...current, dashboard }));
+          })
+          .catch((err) => {
+            if (request === dashboardRequest.current) setTotalsError(err.message || "Summary figures could not be loaded.");
+          })
+          .finally(() => {
+            if (request === dashboardRequest.current) setTotalsLoading(false);
+          });
       }
-
-      const [
-        dashboard,
-        invoices,
-        refunds,
-        expenses,
-        costTemplates,
-        profitability,
-        reconciliation
-      ] = await Promise.all([
-        fetchBookingAccountingDashboard({ limit: 25 }),
-        fetchBookingAccountingInvoices({ limit: 100 }),
-        fetchBookingAccountingRefunds({ limit: 100 }),
-        fetchBookingAccountingExpenses(expenseQuery),
-        fetchBookingAccountingCostTemplates(),
-        fetchBookingAccountingProfitability({ limit: 100 }),
-        fetchBookingAccountingReconciliation({ limit: 100 })
-      ]);
-
-      setData({
-        dashboard,
-        invoices,
-        refunds,
-        expenses,
-        costTemplates,
-        profitability,
-        reconciliation
-      });
+      const records = await (fetchers[mode] || fetchers.invoices)();
+      if (request === dashboardRequest.current) setData((current) => ({ ...current, [fetchers[mode] ? mode : "invoices"]: records }));
     } catch (err) {
       setError(err.message || "Failed to load booking accounting");
     } finally {
@@ -1334,8 +1320,6 @@ const AdminBookingAccountingPage = () => {
     reconciliation: data.reconciliation?.items || []
   }), [data]);
 
-  if (loading && mode !== "dashboard" && !mode.startsWith("cost-template")) return <Loader message="Loading booking accounting..." />;
-
   if (mode === "cost-templates") {
     return <CostTemplatesDashboard initialData={data.costTemplates} />;
   }
@@ -1398,44 +1382,58 @@ const AdminBookingAccountingPage = () => {
         </Button>
       </div>
 
-      <ErrorAlert error={error} />
+      {mode !== "profitability" ? (
+        <>
+          {totalsError ? <p className="text-muted small mb-2">Summary figures are unavailable right now ({totalsError}).</p> : null}
+          <Row className="g-3 mb-4">
+            <Col md={6} xl={3}>
+              <AdminMetricCard
+                label="Collected Revenue"
+                value={totalsLoading ? "…" : money(totals.collectedRevenue, currency)}
+                detail={totalsLoading ? "Loading" : `${totals.invoiceCount || 0} invoices`}
+                icon={BsCashCoin}
+              />
+            </Col>
+            <Col md={6} xl={3}>
+              <AdminMetricCard
+                label="Confirmed Refunded"
+                value={totalsLoading ? "…" : money(totals.confirmedRefundedAmount, currency)}
+                detail={totalsLoading ? "Loading" : `${totals.refundCount || 0} refund records`}
+                icon={BsCreditCard2Front}
+                status={totals.openRefundCount ? "processing" : ""}
+              />
+            </Col>
+            <Col md={6} xl={3}>
+              <AdminMetricCard
+                label="Gross Profit"
+                value={totalsLoading ? "…" : money(totals.grossProfit, currency)}
+                detail={totalsLoading ? "Loading" : `${percent(totals.profitMargin)} margin`}
+                icon={BsGraphUpArrow}
+              />
+            </Col>
+            <Col md={6} xl={3}>
+              <AdminMetricCard
+                label="Reconciliation Issues"
+                value={totalsLoading ? "…" : totals.reconciliationIssueCount || 0}
+                detail={totalsLoading ? "Loading" : `${totals.openRefundCount || 0} open refunds`}
+                icon={BsExclamationTriangle}
+                status={totalsLoading ? "" : totals.reconciliationIssueCount ? "WARNING" : "COMPLETED"}
+              />
+            </Col>
+          </Row>
+        </>
+      ) : null}
 
-      <Row className="g-3 mb-4">
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Collected Revenue"
-            value={money(totals.collectedRevenue, currency)}
-            detail={`${totals.invoiceCount || 0} invoices`}
-            icon={BsCashCoin}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Confirmed Refunded"
-            value={money(totals.confirmedRefundedAmount, currency)}
-            detail={`${totals.refundCount || 0} refund records`}
-            icon={BsCreditCard2Front}
-            status={totals.openRefundCount ? "processing" : ""}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Gross Profit"
-            value={money(totals.grossProfit, currency)}
-            detail={`${percent(totals.profitMargin)} margin`}
-            icon={BsGraphUpArrow}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Reconciliation Issues"
-            value={totals.reconciliationIssueCount || 0}
-            detail={`${totals.openRefundCount || 0} open refunds`}
-            icon={BsExclamationTriangle}
-            status={totals.reconciliationIssueCount ? "WARNING" : "COMPLETED"}
-          />
-        </Col>
-      </Row>
+      {loading ? (
+        <SectionCard title={config.title} detail="Loading records…">
+          <DashboardSkeleton rows={6} className="is-table" />
+        </SectionCard>
+      ) : error ? (
+        <SectionCard title={config.title} detail="">
+          <DashboardError message={error} onRetry={() => load()} />
+        </SectionCard>
+      ) : (
+        <>
 
       {mode === "invoices" ? (
         <SectionCard title="Invoice Records" detail={`${data.invoices?.total || 0} matching records`}>
@@ -1521,6 +1519,8 @@ const AdminBookingAccountingPage = () => {
           <ReconciliationTable items={tableItems.reconciliation} />
         </SectionCard>
       ) : null}
+        </>
+      )}
     </div>
   );
 };
