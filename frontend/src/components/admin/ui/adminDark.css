@@ -1,0 +1,334 @@
+/* Admin dark mode: [data-admin-theme="dark"] on the admin shell (and <html> while the admin is open).
+   1. The design-system tokens switch to dark values (components/admin/ui follow automatically).
+   2. Bootstrap 5.3 components follow data-bs-theme="dark" (cards, forms, tables, modals, dropdowns).
+   3. A broad layer below covers older page styles that hard-code light surfaces and dark text.
+      Status badges, pills and chips keep their own colours (they carry meaning). */
+
+[data-admin-theme="dark"].admin-platform-shell,
+[data-admin-theme="dark"] .admin-platform-shell {
+  --adm-brand: #3fb594;
+  --adm-brand-hover: #5ccaa9;
+  --adm-brand-soft: #173a31;
+  --adm-ink: #e8f0ed;
+  --adm-text: #c8d4d0;
+  --adm-muted: #93a39f;
+  --adm-border: #263532;
+  --adm-border-strong: #364944;
+  --adm-surface: #131d1b;
+  --adm-surface-alt: #182522;
+  --adm-row-hover: #1d2e2a;
+  --adm-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --adm-danger: #f97066;
+  --adm-danger-soft: #3a1a17;
+  --adm-warning: #f6c66b;
+  --adm-warning-soft: #362a12;
+  --adm-success: #5ccaa9;
+  --adm-success-soft: #153228;
+  --adm-info: #84adff;
+  --adm-info-soft: #172544;
+  --adm-neutral: #b4bfc9;
+  --adm-neutral-soft: #24302e;
+  --adm-focus: 0 0 0 3px rgba(63, 181, 148, 0.35);
+  --bs-body-bg: #0d1513;
+  --bs-body-color: #c8d4d0;
+  background: #0d1513;
+  color: var(--adm-text);
+  color-scheme: dark;
+}
+
+/* Shell: page background and top bar. */
+[data-admin-theme="dark"] .admin-platform-main,
+[data-admin-theme="dark"] .admin-platform-content {
+  background: #0d1513;
+}
+
+[data-admin-theme="dark"] .admin-platform-topbar {
+  border-bottom-color: var(--adm-border);
+  background: rgba(15, 24, 22, 0.96);
+}
+
+[data-admin-theme="dark"] .admin-platform-topbar :is(h1, .admin-platform-page-title, .admin-breadcrumbs, .admin-breadcrumbs a) {
+  color: var(--adm-ink);
+}
+
+[data-admin-theme="dark"] .admin-platform-topbar :is(.admin-platform-icon-button, .admin-platform-alert-pill, .admin-platform-role-pill, .admin-platform-search, .admin-platform-logout) {
+  border-color: var(--adm-border-strong);
+  background: var(--adm-surface);
+  color: var(--adm-text);
+}
+
+[data-admin-theme="dark"] .admin-platform-search input {
+  background: transparent;
+  color: var(--adm-text);
+}
+
+/* Older pages: surfaces. Anything that is a card, panel, KPI tile, register, list item or section box. */
+[data-admin-theme="dark"] .admin-platform-content :is(
+  .card, .surface-card, section, article, aside, header[class*="card"],
+  [class*="-card"]:not([class*="-card-"]), [class*="-panel"], [class*="-kpi"]:not([class*="-kpi-"]),
+  [class*="-register"], [class*="-tile"], [class*="-box"], [class*="-summary"], [class*="-sheet"],
+  [class*="-row"]:not(tr), [class*="-item"]:not(li):not(.dropdown-item), [class*="-filters"], [class*="filter-card"],
+  [class*="-strip"], [class*="-note"], [class*="-empty"], [class*="-list"] > div, .iv-pagination, .modal-content, .offcanvas
+):not([class*="badge"]):not([class*="status"]):not([class*="pill"]):not([class*="chip"]):not([class*="tag"]):not(.adm-badge):not(.btn) {
+  border-color: var(--adm-border) !important;
+  background-color: var(--adm-surface) !important;
+  background-image: none !important;
+  box-shadow: var(--adm-shadow);
+}
+
+/* Older pages: text. */
+[data-admin-theme="dark"] .admin-platform-content {
+  color: var(--adm-text);
+}
+
+[data-admin-theme="dark"] .admin-platform-content :is(h1, h2, h3, h4, h5, h6, strong, b, dt, legend, label, caption, .form-label):not(.badge):not([class*="badge"]):not([class*="status"]):not([class*="pill"]):not([class*="chip"]) {
+  color: var(--adm-ink) !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content :is(p, span, small, li, dd, td, em, time, nav, div):not(.badge):not([class*="badge"]):not([class*="status"]):not([class*="pill"]):not([class*="chip"]):not([class*="tag"]):not([class*="icon"]):not(.adm-eyebrow) {
+  color: inherit;
+}
+
+[data-admin-theme="dark"] .admin-platform-content :is(.text-muted, small, .section-subtitle, [class*="muted"], [class*="detail"], [class*="helper"], [class*="caption"], [class*="subtitle"]):not([class*="badge"]):not([class*="status"]) {
+  color: var(--adm-muted) !important;
+}
+
+/* Status badges inside cards keep their colours on the dark surface but use the dark palette. */
+[data-admin-theme="dark"] .admin-platform-content :is([class*="badge"], [class*="status"], [class*="pill"], [class*="chip"]):is([class*="success"], [class*="paid"], [class*="posted"], [class*="confirmed"], [class*="pass"], [class*="healthy"]) {
+  background-color: var(--adm-success-soft) !important;
+  color: var(--adm-success) !important;
+}
+
+/* Tables. */
+[data-admin-theme="dark"] .admin-platform-content table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--adm-text);
+  --bs-table-hover-bg: var(--adm-row-hover);
+  --bs-table-hover-color: var(--adm-ink);
+  color: var(--adm-text);
+}
+
+[data-admin-theme="dark"] .admin-platform-content table :is(th, thead td) {
+  border-color: var(--adm-border) !important;
+  background: var(--adm-surface-alt) !important;
+  color: var(--adm-muted) !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content :is(.table-responsive, [class*="table-scroll"], [class*="table-wrap"], [class*="-table"]:not(table):not(td)) {
+  border-color: var(--adm-border) !important;
+  background-color: transparent !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content table td {
+  border-color: var(--adm-border) !important;
+  background-color: transparent !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content table tbody tr:hover td {
+  background-color: var(--adm-row-hover) !important;
+}
+
+[data-admin-theme="dark"] .adm-table tbody tr:nth-child(even) td {
+  background: #151f1d;
+}
+
+/* Form fields that pages styled themselves. */
+[data-admin-theme="dark"] .admin-platform-content :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+  border-color: var(--adm-border-strong) !important;
+  background-color: #0f1917 !important;
+  color: var(--adm-ink) !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content :is(input, textarea)::placeholder {
+  color: #6f807b;
+}
+
+[data-admin-theme="dark"] .admin-platform-content label:has(> input[type="search"]),
+[data-admin-theme="dark"] .admin-platform-content label:has(> select) {
+  border-color: var(--adm-border-strong) !important;
+  background-color: #0f1917 !important;
+}
+
+/* Buttons that pages styled themselves (secondary look). Primary / brand buttons keep the brand colour. */
+[data-admin-theme="dark"] .admin-platform-content button:not(.btn):not([class*="primary"]):not([class*="link"]):not([aria-pressed="true"]):not([aria-current="page"]):not([class*="active"]):not([class*="badge"]),
+[data-admin-theme="dark"] .admin-platform-content .btn-outline-secondary,
+[data-admin-theme="dark"] .admin-platform-content .btn-light {
+  border-color: var(--adm-border-strong) !important;
+  background-color: var(--adm-surface-alt) !important;
+  color: var(--adm-text) !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content :is(button, a, [role="button"]):is([class*="primary"], .btn-primary, [aria-pressed="true"], [aria-current="page"]):not(.btn-outline-primary):not(.text-primary) {
+  border-color: var(--adm-brand) !important;
+  background-color: #0e6b57 !important;
+  background-image: none !important;
+  color: #fff !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content .btn-outline-primary {
+  --bs-btn-color: var(--adm-brand);
+  --bs-btn-border-color: var(--adm-brand);
+}
+
+/* Links. */
+[data-admin-theme="dark"] .admin-platform-content a:not(.btn):not(.dropdown-item):not(.nav-link):not(.page-link) {
+  color: var(--adm-brand);
+}
+
+/* Chart tracks, skeletons and dividers. */
+[data-admin-theme="dark"] .admin-platform-content :is([class*="track"], [class*="skeleton"] > span, [class*="progress"]:not(.progress-bar)) {
+  background-color: #22312e !important;
+}
+
+[data-admin-theme="dark"] .adm-skeleton-line {
+  background: linear-gradient(90deg, #1d2a27 25%, #253532 50%, #1d2a27 75%);
+  background-size: 200% 100%;
+}
+
+[data-admin-theme="dark"] .admin-platform-content hr,
+[data-admin-theme="dark"] .admin-platform-content [class*="divider"] {
+  border-color: var(--adm-border) !important;
+}
+
+/* Alerts. */
+[data-admin-theme="dark"] .admin-platform-content .alert-success { background: var(--adm-success-soft); color: var(--adm-success); border-color: transparent; }
+[data-admin-theme="dark"] .admin-platform-content .alert-warning { background: var(--adm-warning-soft); color: var(--adm-warning); border-color: transparent; }
+[data-admin-theme="dark"] .admin-platform-content .alert-danger { background: var(--adm-danger-soft); color: var(--adm-danger); border-color: transparent; }
+[data-admin-theme="dark"] .admin-platform-content :is(.alert-info, .alert-light) { background: var(--adm-info-soft); color: var(--adm-info); border-color: transparent; }
+
+/* Icon tiles on KPI cards and alert lists: a dark tint instead of a light pastel square. */
+[data-admin-theme="dark"] .admin-platform-content :is([class*="-icon"], [class*="icon-"], [class*="kpi"] > span, [class*="kpi"] > i):not(svg):not([class*="badge"]) {
+  background-color: #1d2c29 !important;
+  background-image: none !important;
+}
+
+/* Link-styled buttons (invoice and journal numbers). */
+[data-admin-theme="dark"] .admin-platform-content button[class*="link"] {
+  color: var(--adm-brand) !important;
+}
+
+/* Dashboard: sync strip pill and donut centre. */
+[data-admin-theme="dark"] .admin-dashboard-sync-strip strong {
+  background: var(--adm-success-soft) !important;
+  color: var(--adm-success) !important;
+}
+
+[data-admin-theme="dark"] .admin-dashboard-sync-strip.is-warning strong {
+  background: var(--adm-warning-soft) !important;
+  color: var(--adm-warning) !important;
+}
+
+[data-admin-theme="dark"] .admin-dashboard-donut > div,
+[data-admin-theme="dark"] .admin-bookings-donut > div {
+  background: var(--adm-surface) !important;
+}
+
+/* Grid, layout and page-header wrappers are never painted. */
+[data-admin-theme="dark"] .admin-platform-content :is([class*="-grid"], [class*="-stack"], [class*="-layout"], [class*="-header"], [class*="-head"], [class*="-title"]):not([class*="card"]) {
+  background-color: transparent !important;
+  box-shadow: none;
+}
+
+/* Page wrappers (e.g. Business Intelligence) never paint a light page background. */
+[data-admin-theme="dark"] .admin-platform-content > *,
+[data-admin-theme="dark"] .admin-platform-content > * > :is([class$="-page"], [class*="-page "], main) {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Links styled as buttons (page actions) and labels that wrap date / search fields. */
+[data-admin-theme="dark"] .admin-platform-content a:is([class*="action"], [class*="button"]):not([class*="primary"]):not(.btn-primary):not(.is-primary) {
+  border-color: var(--adm-border-strong) !important;
+  background-color: var(--adm-surface-alt) !important;
+  color: var(--adm-text) !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content a:is([class*="action"], [class*="button"]).is-primary {
+  border-color: var(--adm-brand) !important;
+  background-color: #0e6b57 !important;
+  color: #fff !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content label:has(input:not([type="checkbox"]):not([type="radio"])) {
+  border-color: var(--adm-border-strong) !important;
+  background-color: #0f1917 !important;
+  color: var(--adm-text) !important;
+}
+
+/* Page warning boxes (yellow notes). */
+[data-admin-theme="dark"] .admin-platform-content :is([class*="-warning"], [class*="warning-"]):not([class*="badge"]):not([class*="status"]):not(button) {
+  border-color: #4a3a17 !important;
+  background-color: var(--adm-warning-soft) !important;
+  color: var(--adm-warning) !important;
+}
+
+/* Metric grids, info / quality / notice / error boxes that pages styled with light tints. */
+[data-admin-theme="dark"] .admin-platform-content [class*="-metrics"] > * {
+  border-color: var(--adm-border) !important;
+  background-color: var(--adm-surface-alt) !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content :is([class*="-info"], [class*="-notice"], [class*="currency-note"]):not([class*="icon"]):not([class*="badge"]):not(button) {
+  border-color: #233a5c !important;
+  background-color: var(--adm-info-soft) !important;
+  color: var(--adm-info) !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content [class*="-quality"]:not([class*="badge"]):not(button):not(a) {
+  border-color: #4a3a17 !important;
+  background-color: var(--adm-warning-soft) !important;
+  color: var(--adm-warning) !important;
+}
+
+[data-admin-theme="dark"] .admin-platform-content :is([class*="-error"], .error):not([class*="badge"]):not(button):not(input) {
+  border-color: #5a2420 !important;
+  background-color: var(--adm-danger-soft) !important;
+  color: var(--adm-danger) !important;
+}
+
+/* Totals, footers, equations and amount chips that pages tint white or pale. */
+[data-admin-theme="dark"] .admin-platform-content :is([class*="total"], [class*="-foot"], [class*="footer"], [class*="equation"], [class*="-amount"], [class*="-chip"], tfoot td, tfoot th):not([class*="badge"]):not(button):not(a) {
+  border-color: var(--adm-border) !important;
+  background-color: var(--adm-surface-alt) !important;
+  color: var(--adm-ink) !important;
+}
+
+/* Text that pages colour dark navy: plain paragraphs, cells and list items read in the dark text colour. */
+[data-admin-theme="dark"] .admin-platform-content :is(p:not([class]), td, li, dd, figcaption) {
+  color: var(--adm-text) !important;
+}
+
+[data-admin-theme="dark"] .adm-description,
+[data-admin-theme="dark"] .adm-card-description,
+[data-admin-theme="dark"] .adm-stat-helper,
+[data-admin-theme="dark"] .adm-stat-label {
+  color: var(--adm-muted) !important;
+}
+
+[data-admin-theme="dark"] .adm-title,
+[data-admin-theme="dark"] .adm-card-title,
+[data-admin-theme="dark"] .adm-stat-value {
+  color: var(--adm-ink) !important;
+}
+
+[data-admin-theme="dark"] .adm-eyebrow {
+  color: var(--adm-brand) !important;
+}
+
+/* Class-less chips and rows (spans, strongs, footers) and Bootstrap light utilities. No !important here, so inline
+   colours (legend dots, chart bars) still win. */
+[data-admin-theme="dark"] .admin-platform-content :is(span, strong, footer):not([class]) {
+  border-color: var(--adm-border);
+  background-color: var(--adm-surface-alt);
+}
+
+[data-admin-theme="dark"] .admin-platform-content :is(.bg-light, .bg-white, .bg-body-tertiary) {
+  border-color: var(--adm-border) !important;
+  background-color: var(--adm-surface-alt) !important;
+  color: var(--adm-text) !important;
+}
+
+/* Design-system pieces that use fixed colours. */
+[data-admin-theme="dark"] .adm-state {
+  background: var(--adm-surface-alt) !important;
+}

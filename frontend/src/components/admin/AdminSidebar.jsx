@@ -7,6 +7,7 @@ import {
   BsChevronDown,
   BsChevronRight,
   BsMoon,
+  BsSun,
   BsXLg
 } from "react-icons/bs";
 import {
@@ -185,18 +186,18 @@ const SidebarSection = ({ section, pathname, collapsed, onNavigate, openSections
   );
 };
 
-const SidebarFooter = ({ collapsed, onLogout }) => (
+const SidebarFooter = ({ collapsed, onLogout, theme = "light", onToggleTheme }) => (
   <footer className="admin-platform-sidebar-footer">
     <button
       type="button"
       className="admin-platform-sidebar-footer-action"
-      aria-label="Dark mode preference is not configured"
-      aria-disabled="true"
-      data-tooltip="Dark Mode"
-      title="Dark mode will follow the admin theme system when it is configured."
+      aria-pressed={theme === "dark"}
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      data-tooltip={theme === "dark" ? "Light Mode" : "Dark Mode"}
+      onClick={onToggleTheme}
     >
-      <BsMoon aria-hidden="true" />
-      <span>Dark Mode</span>
+      {theme === "dark" ? <BsSun aria-hidden="true" /> : <BsMoon aria-hidden="true" />}
+      <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
     </button>
     <button
       type="button"
@@ -211,7 +212,7 @@ const SidebarFooter = ({ collapsed, onLogout }) => (
   </footer>
 );
 
-const AdminSidebar = ({ user, collapsed, mobileOpen, onNavigate, onClose, onLogout }) => {
+const AdminSidebar = ({ user, collapsed, mobileOpen, onNavigate, onClose, onLogout, theme, onToggleTheme }) => {
   const location = useLocation();
   const navigation = useMemo(() => filterAdminNavigation(undefined, user), [user]);
   const [openSections, setOpenSections] = useState(() => ({
@@ -280,7 +281,7 @@ const AdminSidebar = ({ user, collapsed, mobileOpen, onNavigate, onClose, onLogo
         ))}
       </nav>
 
-      <SidebarFooter collapsed={collapsed} onLogout={onLogout} />
+      <SidebarFooter collapsed={collapsed} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme} />
     </aside>
   );
 };
