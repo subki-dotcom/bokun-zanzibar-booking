@@ -38,7 +38,7 @@ const channelName = (channel) =>
 const channelCode = (channel) => (channel && typeof channel === 'object' ? channel.code || '' : String(channel || ''));
 const cash = (v, c) =>
   v == null || !c
-    ? 'Unavailable'
+    ? 'Not available'
     : formatAdminMoney(v, c);
 const Badge = ({ value }) => (
   <span className={`br-badge ${String(value || 'unknown').toLowerCase()}`}>{label(value)}</span>
@@ -480,7 +480,7 @@ export default function AdminBookingReconciliationPage() {
                         </div>
                         <div>
                           <dt>Commission rate</dt>
-                          <dd>{bokunPreview.preview.evidence.commissionPercentage || 'Unavailable'}%</dd>
+                          <dd>{bokunPreview.preview.evidence.commissionPercentage ? `${bokunPreview.preview.evidence.commissionPercentage}%` : 'Not available'}</dd>
                         </div>
                         <div>
                           <dt>Expected seller invoice</dt>

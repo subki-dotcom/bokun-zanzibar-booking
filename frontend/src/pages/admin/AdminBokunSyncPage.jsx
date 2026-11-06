@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useToastMessage } from "../../components/admin/ui/feedback";
 import { formatLabel } from "../../utils/formatLabel";
-import { PageHeader } from "../../components/admin/ui";
+import { PageHeader, RelativeTime } from "../../components/admin/ui";
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -150,6 +151,7 @@ const AdminBokunSyncPage = () => {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  useToastMessage(notice, setNotice);
 
   const summary = useMemo(() => summarizeResult(result), [result]);
   const isSingle = mode === "single-booking";
@@ -201,7 +203,7 @@ const AdminBokunSyncPage = () => {
         ? await resyncBokunBooking(form.reference.trim(), { dryRun })
         : await importConfirmedBokunBookings(buildBulkPayload(dryRun));
       setResult(nextResult);
-      setNotice(dryRun ? "Dry-run completed. No database records were written." : "Bokun sync completed.");
+      setNotice(dryRun ? "Test run finished. Nothing was saved." : "Bokun sync completed.");
       loadSyncStatus({ silent: true });
     } catch (err) {
       setError(err.message || "Bokun sync failed");
@@ -228,7 +230,6 @@ const AdminBokunSyncPage = () => {
       />
 
       <ErrorAlert error={error} />
-      {notice ? <Alert variant="success">{notice}</Alert> : null}
       <Alert variant={statusVariant} className="d-flex flex-wrap justify-content-between align-items-start gap-3">
         <div>
           <strong className="d-block">{statusLoading ? "Checking Bokun status" : dataModeLabel(dataMode)}</strong>
@@ -250,7 +251,7 @@ const AdminBokunSyncPage = () => {
           <AdminMetricCard label="Sync Window" value={`${importState.defaults?.lookbackDays || 0} days`} detail={`${importState.defaults?.pageSize || 0} per page, ${importState.defaults?.maxPages || 0} pages`} icon={BsJournalCheck} />
         </Col>
         <Col md={6} xl={3}>
-          <AdminMetricCard label="Last Sync" value={formatDateTime(worker.lastSuccessAt)} detail={worker.lastError || "No worker error reported"} icon={BsCheckCircle} status={worker.consecutiveFailures ? "WARNING" : ""} />
+          <AdminMetricCard label="Last Sync" value={<RelativeTime value={worker.lastSuccessAt} />} detail={worker.lastError || "No errors reported"} icon={BsCheckCircle} status={worker.consecutiveFailures ? "WARNING" : ""} />
         </Col>
       </Row>
 

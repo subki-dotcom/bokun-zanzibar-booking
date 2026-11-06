@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useToastMessage } from "../../components/admin/ui/feedback";
 import { PageHeader } from "../../components/admin/ui";
 import { Button, Form, Modal, Spinner } from "react-bootstrap";
 import {
@@ -493,6 +494,7 @@ const AdminChartOfAccountsPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
+  useToastMessage(actionMessage, setActionMessage);
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
@@ -707,7 +709,6 @@ const AdminChartOfAccountsPage = () => {
       />
 
       <ErrorAlert error={error} />
-      {actionMessage ? <div className="alert alert-success chart-accounts-message">{actionMessage}</div> : null}
 
       <section className="coa-health-strip" aria-label="Accounting health">
         <span className={`coa-health-dot ${String(healthStatus).toLowerCase()}`} />

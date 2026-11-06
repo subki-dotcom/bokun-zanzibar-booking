@@ -13,7 +13,7 @@ import {
 import ErrorAlert from '../../components/common/ErrorAlert';
 import Loader from '../../components/common/Loader';
 import ListingPagination from '../../components/tours/listing/ListingPagination';
-import { formatCurrency } from '../../utils/adminFormat';
+import { formatAdminDate, formatCurrency } from '../../utils/adminFormat';
 
 const label = (value = "") => formatLabel(value);
 const variant = (value = '') => {
@@ -24,8 +24,9 @@ const variant = (value = '') => {
   if (['AWAITING_SETTLEMENT_DATA', 'AWAITING_EVIDENCE'].includes(code)) return 'secondary';
   return 'warning';
 };
+// Amounts not recorded yet (e.g. an OTA payout before the statement arrives) read "Not available", not "-".
 const money = (amount, currency) =>
-  amount == null ? '-' : formatCurrency(amount, currency || 'USD');
+  amount == null ? <span className="adm-na" title="Not recorded for this booking yet.">Not available</span> : formatCurrency(amount, currency || 'USD');
 const defaultFilters = { page: 1, limit: 10, search: '', fromDate: '', toDate: '', channel: '', paymentStatus: '', settlementStatus: '', reconciliationStatus: '', currency: '', sort: 'bookingDate', order: 'desc' };
 
 const FinancialTotals = ({ summary }) => (
@@ -365,7 +366,7 @@ const AdminPaymentsControlCenter = () => {
                       <tr key={row.id}>
                         <td>
                           <strong>{row.bookingReference}</strong>
-                          <small>{row.travelDate || row.product || '-'}</small>
+                          <small>{row.travelDate ? formatAdminDate(row.travelDate) : row.product || '-'}</small>
                         </td>
                         <td>{row.customer?.name || 'Guest'}</td>
                         <td>

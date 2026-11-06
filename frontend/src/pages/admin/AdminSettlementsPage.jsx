@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useToastMessage } from "../../components/admin/ui/feedback";
 import { Alert, Button, Form, Offcanvas } from "react-bootstrap";
 import { BsArrowClockwise, BsCashCoin, BsCloudArrowUp, BsExclamationTriangle, BsInboxes, BsPlusLg, BsReceipt } from "react-icons/bs";
 import { Link } from "react-router-dom";
@@ -19,6 +20,7 @@ export default function AdminSettlementsPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [notice, setNotice] = useState("");
+  useToastMessage(notice, setNotice);
 
   const load = async () => {
     setState((current) => ({ ...current, loading: true, error: "" }));
@@ -95,7 +97,6 @@ export default function AdminSettlementsPage() {
         }
       />
 
-      {notice ? <Alert variant="success" className="mb-0" dismissible onClose={() => setNotice("")}>{notice}</Alert> : null}
 
       <StatGrid columns={4}>
         <StatCard label="Records" value={state.data?.total ?? 0} icon={BsInboxes} loading={state.loading} />

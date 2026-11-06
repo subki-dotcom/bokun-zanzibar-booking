@@ -46,3 +46,19 @@ export const formatDate = (value, pattern = "MMM D, YYYY") => {
   if (!value) return "—";
   return /[Hh]/.test(String(pattern)) ? formatAdminDateTime(value) : formatAdminDate(value);
 };
+
+// Short relative time for recent events: "just now", "5m ago", "3h ago", "13d ago", "in 2d". Older than ~11 months
+// falls back to the full date. Pair it with the full date in a tooltip (see <RelativeTime> in components/admin/ui).
+export const formatRelativeTime = (value, now = Date.now()) => {
+  const date = toDate(value);
+  if (!date) return "—";
+  const seconds = Math.round((date.getTime() - now) / 1000);
+  const abs = Math.abs(seconds);
+  const say = (amount, unit) => (seconds < 0 ? `${amount}${unit} ago` : `in ${amount}${unit}`);
+  if (abs < 45) return "just now";
+  if (abs < 3600) return say(Math.max(1, Math.round(abs / 60)), "m");
+  if (abs < 86400) return say(Math.round(abs / 3600), "h");
+  if (abs < 86400 * 45) return say(Math.round(abs / 86400), "d");
+  if (abs < 86400 * 330) return say(Math.round(abs / (86400 * 30)), "mo");
+  return formatAdminDate(date);
+};

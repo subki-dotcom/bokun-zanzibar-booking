@@ -1,4 +1,5 @@
 import { PaymentTruthBadge, SettlementBadge } from '../../components/invoice/BookingPaymentState';
+import { confirmAction, useToastMessage } from "../../components/admin/ui/feedback";
 import { formatLabel } from "../../utils/formatLabel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -406,15 +407,15 @@ const BookingsTable = ({ bookings, loading, openActionId, onToggleAction, onCanc
                   </Link>
                 </td>
                 <td className="admin-bookings-product-cell">
-                  <strong>{booking.productTitle || "-"}</strong>
-                  {booking.optionTitle ? <small>{booking.optionTitle}</small> : null}
+                  <strong title={booking.productTitle || undefined}>{booking.productTitle || "-"}</strong>
+                  {booking.optionTitle ? <small title={booking.optionTitle}>{booking.optionTitle}</small> : null}
                 </td>
                 <td className="admin-bookings-date-cell">
                   <strong>{dateParts.date}</strong>
                   {dateParts.time ? <small>{dateParts.time}</small> : null}
                 </td>
                 <td className="admin-bookings-customer-cell">
-                  <strong>{getCustomerName(booking)}</strong>
+                  <strong title={getCustomerName(booking)}>{getCustomerName(booking)}</strong>
                   {getCustomerContact(booking) ? <small>{getCustomerContact(booking)}</small> : null}
                 </td>
                 <td><Badge value={booking.bookingStatus} /></td>
@@ -540,6 +541,7 @@ const AdminBookingsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  useToastMessage(notice, setNotice);
   const [openActionId, setOpenActionId] = useState("");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [actionBusyId, setActionBusyId] = useState("");
@@ -629,7 +631,7 @@ const AdminBookingsPage = () => {
   };
 
   const handleCancel = async (booking) => {
-    const ok = window.confirm(`Request cancellation for booking ${booking.bookingReference}?`);
+    const ok = await confirmAction({ title: `Request cancellation for booking ${booking.bookingReference}?`, confirmLabel: "Request cancellation" });
     if (!ok) return;
 
     setError("");
@@ -733,7 +735,6 @@ const AdminBookingsPage = () => {
         }
       />
 
-      {notice ? <div className="admin-bookings-notice">{notice}</div> : null}
 
       <StatGrid columns={3}>
         {metrics.map((metric) => <MetricCard key={metric.label} {...metric} loading={loading} />)}

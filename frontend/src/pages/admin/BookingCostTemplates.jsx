@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { confirmAction } from "../../components/admin/ui/feedback";
 import { formatLabel } from "../../utils/formatLabel";
 import { Alert, Badge, Button, ButtonGroup, Card, Col, Form, Modal, Row, Table } from "react-bootstrap";
-import { PageHeader } from "../../components/admin/ui";
+import { PageHeader, RelativeTime } from "../../components/admin/ui";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   BsArchive,
@@ -257,7 +258,7 @@ const CostTemplateTable = ({ items, onArchive }) => (
               <td>{item.currency || "USD"}</td>
               <td><StatusPill value={item.costStatus === "missing_cost" ? "missing_cost" : item.templateStatus} /></td>
               <td className="text-center">{item.costLineCount || 0}</td>
-              <td>{formatDateTime(item.lastUpdatedAt)}</td>
+              <td><RelativeTime value={item.lastUpdatedAt} /></td>
               <td>
                 <div className="cost-template-row-actions">
                   {item.templateId ? (
@@ -371,7 +372,7 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
   const reset = () => setFilters((current) => ({ ...defaultDashboardFilters(), limit: current.limit }));
 
   const archive = async (templateId) => {
-    if (!templateId || !window.confirm("Archive this product cost template?")) return;
+    if (!templateId || !(await confirmAction({ title: "Archive this product cost template?", confirmLabel: "Archive" }))) return;
     try {
       await archiveBookingAccountingCostTemplate(templateId, { reason: "Archived from Booking Accounting cost templates dashboard." });
       await load();

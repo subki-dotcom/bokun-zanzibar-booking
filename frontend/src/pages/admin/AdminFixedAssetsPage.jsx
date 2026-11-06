@@ -28,7 +28,7 @@ const numericValue = (v) => {
 };
 const money = (v, c) =>
   v == null || !c
-    ? 'Unavailable'
+    ? 'Not available'
     : formatAdminMoney(numericValue(v), c);
 const date = (v) =>
   v

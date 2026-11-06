@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import AdminTopBar from "../../components/admin/AdminTopBar";
+import { AdminFeedbackHost } from "../../components/admin/ui/feedback";
 import "../../components/admin/ui/adminUi.css";
 import "../../components/admin/ui/admin-theme.css";
 import "../../components/admin/ui/adminDark.css";
@@ -163,6 +164,7 @@ const AdminLayout = () => {
           <Outlet />
         </main>
       </div>
+      <AdminFeedbackHost />
     </div>
   );
 };

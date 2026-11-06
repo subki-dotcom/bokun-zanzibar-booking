@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { confirmAction, useToastMessage } from "../../components/admin/ui/feedback";
 import { Alert, Button } from "react-bootstrap";
 import { BsArrowClockwise, BsExclamationTriangle, BsHourglassSplit, BsListCheck, BsShieldCheck, BsTrash } from "react-icons/bs";
 import { fetchPendingFinalizations, reconcileBookingFinalizations, retryBookingFinalization } from "../../api/adminApi";
@@ -12,6 +13,7 @@ const AdminRecoveryPage = () => {
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  useToastMessage(notice, setNotice);
 
   const load = async ({ force = false } = {}) => {
     setError("");
@@ -66,7 +68,7 @@ const AdminRecoveryPage = () => {
   };
 
   const cancel = async (bookingId, reference) => {
-    const ok = window.confirm(`Cancel booking ${reference}? This will also request Bokun cancellation if it has a Bokun ID.`);
+    const ok = await confirmAction({ title: `Cancel booking ${reference}?`, message: "This also requests the cancellation in Bókun when the booking has a Bókun ID.", confirmLabel: "Cancel booking", cancelLabel: "Keep booking" });
     if (!ok) return;
 
     setBusyId(bookingId);
@@ -120,7 +122,6 @@ const AdminRecoveryPage = () => {
         }
       />
 
-      {notice ? <Alert variant="success" className="mb-0">{notice}</Alert> : null}
 
       <StatGrid columns={3}>
         <StatCard label="In the queue" value={stats.total} icon={BsListCheck} loading={loading} />

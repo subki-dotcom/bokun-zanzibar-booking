@@ -1,4 +1,5 @@
 import BookingPaymentOverview from '../../components/invoice/BookingPaymentOverview';
+import { confirmAction } from "../../components/admin/ui/feedback";
 import { formatLabel } from "../../utils/formatLabel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { newBookingExpenseForm, bookingExpensePayload } from "./bookingExpenseForm";
@@ -1279,7 +1280,7 @@ const AdminBookingAccountingPage = () => {
   }, []);
 
   const voidExpense = useCallback(async (item) => {
-    if (!window.confirm(`Void booking expense ${item.expenseReference || ""}?`)) return;
+    if (!(await confirmAction({ title: `Void booking expense ${item.expenseReference || ""}?`, message: "The expense stays in the records as voided.", confirmLabel: "Void expense" }))) return;
     try {
       await voidBookingAccountingExpense(item.id, "Voided from Booking Accounting expenses");
       setSelectedExpense(null);

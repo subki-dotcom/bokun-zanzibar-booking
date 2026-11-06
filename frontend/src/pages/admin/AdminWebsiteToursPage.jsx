@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { confirmAction } from "../../components/admin/ui/feedback";
 import { Button, Form } from "react-bootstrap";
 import { BsGrid3X3Gap } from "react-icons/bs";
 import { fetchAdminWebsiteProducts, updateAdminWebsiteProductFeatured, updateAdminWebsiteProductVisibility } from "../../api/toursApi";
@@ -54,7 +55,7 @@ const AdminWebsiteToursPage = () => {
 
   const toggle = async (product) => {
     const hidden = !product.hiddenFromPublic;
-    if (hidden && !window.confirm(`Hide "${product.title}" from the website? Its page stays reachable by link.`)) return;
+    if (hidden && !(await confirmAction({ title: `Hide "${product.title}" from the website?`, message: "Its page stays reachable by link.", confirmLabel: "Hide tour" }))) return;
     setSavingId(product.bokunProductId);
     setError("");
     try {

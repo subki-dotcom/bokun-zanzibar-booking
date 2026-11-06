@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { formatLabel } from "../../utils/formatLabel";
-import { PageHeader } from "../../components/admin/ui";
+import { PageHeader, RelativeTime } from "../../components/admin/ui";
 import { Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsJournalCheck, BsShieldCheck } from "react-icons/bs";
 import {
@@ -81,7 +81,7 @@ const AdminAuditControlPage = () => {
           <AdminMetricCard label="Financial Changes" value={summary?.totalFinancialChanges || 0} detail="Money-affecting audit evidence" icon={BsShieldCheck} />
         </Col>
         <Col md={4}>
-          <AdminMetricCard label="Latest Financial Change" value={summary?.latestFinancialChangeAt ? formatDateTime(summary.latestFinancialChangeAt) : "-"} detail="Sanitized payloads" icon={BsShieldCheck} />
+          <AdminMetricCard label="Latest Financial Change" value={<RelativeTime value={summary?.latestFinancialChangeAt} />} detail="Sensitive details hidden" icon={BsShieldCheck} />
         </Col>
       </Row>
 
@@ -128,7 +128,7 @@ const AdminAuditControlPage = () => {
                       </td>
                       <td>{item.reference || item.entity?.id || "-"}</td>
                       <td>{changedFields(item)}</td>
-                      <td>{formatDateTime(item.timestamp)}</td>
+                      <td><RelativeTime value={item.timestamp} /></td>
                     </tr>
                   )) : (
                     <tr><td colSpan={4} className="text-center text-muted py-4">No financial change records found.</td></tr>
@@ -160,7 +160,7 @@ const AdminAuditControlPage = () => {
                         <small className="text-muted">{item.reference || item.entity?.id}</small>
                       </td>
                       <td>{actorLabel(item.actor)}</td>
-                      <td>{formatDateTime(item.timestamp)}</td>
+                      <td><RelativeTime value={item.timestamp} /></td>
                     </tr>
                   )) : (
                     <tr><td colSpan={4} className="text-center text-muted py-4">No audit logs found.</td></tr>

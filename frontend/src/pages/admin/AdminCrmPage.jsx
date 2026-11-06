@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useToastMessage } from "../../components/admin/ui/feedback";
 import { formatAdminMoney, formatAdminNumber } from "../../utils/adminFormat";
 import { formatLabel } from "../../utils/formatLabel";
 import { Button, Card, Col, Form, Row, Table, Offcanvas } from "react-bootstrap";
@@ -45,7 +46,7 @@ import {
 } from "../../api/adminApi";
 import { AdminMetricCard, StatusBadge, formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { AdminPage, FilterBar, PageHeader, StatCard, StatGrid, Truncate } from "../../components/admin/ui";
+import { AdminPage, FilterBar, PageHeader, StatCard, StatGrid, Truncate, RelativeTime } from "../../components/admin/ui";
 import Loader from "../../components/common/Loader";
 
 const modeFromPath = (pathname = "") => {
@@ -335,6 +336,7 @@ const AdminCrmPage = () => {
   const [runningCrmImport, setRunningCrmImport] = useState(false);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
+  useToastMessage(actionMessage, setActionMessage);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -1081,7 +1083,6 @@ const AdminCrmPage = () => {
       />
 
       <ErrorAlert error={error} />
-      {actionMessage ? <div className="alert alert-success mb-0">{actionMessage}</div> : null}
 
       <StatGrid columns={mode === "dashboard" ? 4 : visibleStats.length >= 3 ? 3 : 4}>
         {visibleStats.map(({ key, ...card }) => <StatCard key={key} {...card} />)}
@@ -1120,7 +1121,7 @@ const AdminCrmPage = () => {
                         </td>
                         <td><StatusBadge value={alert.severity} /></td>
                         <td>{alert.assigneeLabel || alert.assignedTo?.name || alert.assignedTo?.email || alert.assignedTo?.id || "Unassigned"}</td>
-                        <td>{formatDateTime(alert.dueAt || alert.occurredAt || alert.createdAt)}</td>
+                        <td><RelativeTime value={alert.dueAt || alert.occurredAt || alert.createdAt} /></td>
                         <td>
                           {alert.action?.path ? (
                             <Button size="sm" variant="outline-primary" href={alert.action.path}>
@@ -1162,7 +1163,7 @@ const AdminCrmPage = () => {
                           <small className="d-block text-muted">{notification.delivery?.mode || "IN_APP_DERIVED"}</small>
                         </td>
                         <td>{notification.recipientLabel || notification.recipient?.name || notification.recipient?.email || notification.recipient?.id || "Unassigned"}</td>
-                        <td>{formatDateTime(notification.occurredAt || notification.createdAt)}</td>
+                        <td><RelativeTime value={notification.occurredAt || notification.createdAt} /></td>
                       </tr>
                     )) : (
                       <tr>
@@ -1915,7 +1916,7 @@ const AdminCrmPage = () => {
                           <StatusBadge value={opportunity.source} />
                           <small className="d-block text-muted">{opportunity.assignedTo?.name || opportunity.assignedTo?.email || opportunity.assignedTo?.id || "Unassigned"}</small>
                         </td>
-                        <td>{formatDateTime(opportunity.lostAt || opportunity.stageChangedAt || opportunity.updatedAt)}</td>
+                        <td><RelativeTime value={opportunity.lostAt || opportunity.stageChangedAt || opportunity.updatedAt} /></td>
                         <td>
                           <Button size="sm" variant="outline-primary" onClick={() => changeOpportunityStage(opportunity, "NEGOTIATION")}>
                             Reopen
@@ -2024,7 +2025,7 @@ const AdminCrmPage = () => {
                             {leadStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                           </Form.Select>
                         </td>
-                        <td>{formatDateTime(lead.nextFollowUpAt)}</td>
+                        <td><RelativeTime value={lead.nextFollowUpAt} /></td>
                       </tr>
                     )) : (
                       <tr>
@@ -2503,7 +2504,7 @@ const AdminCrmPage = () => {
                           <StatusBadge value={followUp.type} />
                           {followUp.overdue ? <small className="d-block text-danger mt-1">Overdue</small> : null}
                         </td>
-                        <td>{formatDateTime(followUp.dueAt)}</td>
+                        <td><RelativeTime value={followUp.dueAt} /></td>
                         <td><StatusBadge value={followUp.priority} /></td>
                         <td>
                           <Form.Select
@@ -2614,7 +2615,7 @@ const AdminCrmPage = () => {
                           <small className="text-muted">{task.description || task.outcome || "-"}</small>
                         </td>
                         <td>
-                          {formatDateTime(task.dueDate)}
+                          <RelativeTime value={task.dueDate} />
                           {task.overdue ? <small className="d-block text-danger mt-1">Overdue</small> : null}
                         </td>
                         <td><StatusBadge value={task.priority} /></td>
@@ -2859,7 +2860,7 @@ const AdminCrmPage = () => {
                             {b2bPartnerStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                           </Form.Select>
                         </td>
-                        <td>{formatDateTime(partner.updatedAt || partner.createdAt)}</td>
+                        <td><RelativeTime value={partner.updatedAt || partner.createdAt} /></td>
                       </tr>
                     )) : (
                       <tr>
@@ -2920,7 +2921,7 @@ const AdminCrmPage = () => {
                         <td><StatusBadge value={customer.lifecycleStage} /></td>
                         <td>{customer.segments?.length ? customer.segments.join(", ") : "-"}</td>
                         <td><StatusBadge value={customer.deduplicationStatus} /></td>
-                        <td>{formatDateTime(customer.updatedAt)}</td>
+                        <td><RelativeTime value={customer.updatedAt} /></td>
                         <td>
                           <Button
                             size="sm"
@@ -3072,7 +3073,7 @@ const AdminCrmPage = () => {
                   <tbody>
                     {timelineItems.length ? timelineItems.map((event) => (
                       <tr key={event.id || event._id}>
-                        <td>{formatDateTime(event.occurredAt || event.createdAt)}</td>
+                        <td><RelativeTime value={event.occurredAt || event.createdAt} /></td>
                         <td><StatusBadge value={event.eventType} /></td>
                         <td>
                           {event.communication?.channel ? (
@@ -3136,7 +3137,7 @@ const AdminCrmPage = () => {
                         <td>{duplicateName(candidate.duplicateCustomerId)}</td>
                         <td>{candidate.matchFields?.length ? candidate.matchFields.join(", ") : "-"}</td>
                         <td><StatusBadge value={candidate.status} /></td>
-                        <td>{formatDateTime(candidate.createdAt)}</td>
+                        <td><RelativeTime value={candidate.createdAt} /></td>
                       </tr>
                     )) : (
                       <tr>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { formatLabel } from "../../utils/formatLabel";
-import { PageHeader } from "../../components/admin/ui";
+import { PageHeader, RelativeTime } from "../../components/admin/ui";
 import { Alert, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsBell, BsExclamationTriangle, BsPlayCircle } from "react-icons/bs";
 import {
@@ -149,7 +149,7 @@ const AdminOpsControlPage = () => {
                       </td>
                       <td><StatusBadge value={alert.severity} /></td>
                       <td><StatusBadge value={alert.state} /></td>
-                      <td>{formatDateTime(alert.lastSeenAt)}</td>
+                      <td><RelativeTime value={alert.lastSeenAt} /></td>
                       <td>
                         <div className="d-flex flex-wrap gap-2">
                           <Button size="sm" variant="outline-secondary" disabled={Boolean(busy)} onClick={() => runAction(alert.alertKey, () => acknowledgeSystemAlert(alert.alertKey), "Alert acknowledged.")}>Ack</Button>

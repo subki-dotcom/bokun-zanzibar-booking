@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useToastMessage } from "../../components/admin/ui/feedback";
 import { PageHeader } from "../../components/admin/ui";
 import { Button, Form, Modal, Spinner } from "react-bootstrap";
 import {
@@ -317,6 +318,7 @@ const AdminJournalEntriesPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  useToastMessage(message, setMessage);
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
@@ -483,7 +485,6 @@ const AdminJournalEntriesPage = () => {
       />
 
       <ErrorAlert error={error} />
-      {message ? <div className="alert alert-success journal-message">{message}</div> : null}
 
       {loading ? <Skeleton /> : (
         <div className="journal-kpi-grid">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AdminPage, DataTable, EmptyState, PageHeader, SectionCard, StatusBadge } from "../../components/admin/ui";
+import { AdminPage, DataTable, EmptyState, PageHeader, SectionCard, StatusBadge, RelativeTime } from "../../components/admin/ui";
 import { formatAdminDateTime } from "../../utils/adminFormat";
 import { formatLabel } from "../../utils/formatLabel";
 import { fetchDashboardSummary } from "../../api/adminApi";
@@ -28,7 +28,7 @@ const SyncLogsPage = () => {
     { key: "operation", header: "Operation", render: (log) => <span title={log.operation}>{formatLabel(log.operation)}</span> },
     { key: "status", header: "Status", render: (log) => <StatusBadge value={log.status === "started" ? "in_progress" : log.status} label={log.status === "started" ? "Running" : formatLabel(log.status)} /> },
     { key: "syncedCount", header: "Synced", align: "end", render: (log) => log.syncedCount ?? 0 },
-    { key: "startedAt", header: "Started", render: (log) => formatAdminDateTime(log.startedAt) },
+    { key: "startedAt", header: "Started", render: (log) => <RelativeTime value={log.startedAt} /> },
     { key: "completedAt", header: "Completed", render: (log) => (log.completedAt ? formatAdminDateTime(log.completedAt) : "—") }
   ];
 

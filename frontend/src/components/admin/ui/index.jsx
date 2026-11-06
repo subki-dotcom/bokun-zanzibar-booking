@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Dropdown } from "react-bootstrap";
 import { BsArrowClockwise, BsChevronLeft, BsChevronRight, BsExclamationTriangle, BsFunnel, BsInbox, BsSearch, BsThreeDots } from "react-icons/bs";
 import { formatLabel, rawLabelTitle } from "../../../utils/formatLabel";
+import { formatAdminDateTime, formatRelativeTime } from "../../../utils/adminFormat";
 import { statusTone } from "./statusTone";
 import "./adminUi.css";
 
@@ -49,6 +50,28 @@ export const StatusBadge = ({ value = "", label = "", tone = "" }) => {
   );
 };
 
+// Figures: negative amounts ("USD -120.00", "-3") in red; "Not available" / "Unavailable" / "Unknown" muted with a
+// tooltip saying why. Anything else is returned unchanged.
+const NOT_AVAILABLE = /^(not available|unavailable|unknown)$/i;
+export const decorateFigure = (value, reason = "Not recorded for this item yet.") => {
+  if (typeof value !== "string") return value;
+  if (NOT_AVAILABLE.test(value.trim())) return <span className="adm-na" title={reason}>Not available</span>;
+  if (/^(?:[A-Z]{3}\s)?-\s?[\d.,]/.test(value.trim())) return <span className="adm-negative">{value}</span>;
+  return value;
+};
+
+// "13d ago" with the full date and time on hover.
+export const RelativeTime = ({ value }) => {
+  if (!value) return "—";
+  const full = formatAdminDateTime(value);
+  if (full === "—") return "—";
+  return (
+    <time className="adm-relative-time" dateTime={new Date(value).toISOString()} title={full}>
+      {formatRelativeTime(value)}
+    </time>
+  );
+};
+
 // trend: { value: "12%", direction: "up" | "down", good: true | false } (good decides green or red).
 export const StatCard = ({ label, value, helper = "", icon: Icon = null, status = "", tone = "", loading = false, trend = null }) => (
   <section className={cx("adm-stat", tone && `is-${tone}`)} aria-busy={loading || undefined}>
@@ -60,7 +83,7 @@ export const StatCard = ({ label, value, helper = "", icon: Icon = null, status 
         </span>
       ) : null}
     </div>
-    <strong className="adm-stat-value">{loading ? <span className="adm-skeleton-line is-value" /> : value}</strong>
+    <strong className="adm-stat-value">{loading ? <span className="adm-skeleton-line is-value" /> : decorateFigure(value)}</strong>
     {trend && !loading ? (
       <span className={cx("adm-stat-trend", trend.good === false ? "is-bad" : trend.good ? "is-good" : "")}>
         {trend.direction === "down" ? "▼" : "▲"} {trend.value}
@@ -246,7 +269,10 @@ export const DataTable = ({
                       column.hideOnMobile && "adm-hide-mobile"
                     )}
                   >
-                    {column.render ? column.render(row) : row[column.key] ?? "—"}
+                    {(() => {
+                      const content = column.render ? column.render(row) : row[column.key] ?? "—";
+                      return column.money || column.align === "end" ? decorateFigure(content) : content;
+                    })()}
                   </td>
                 ))}
               </tr>

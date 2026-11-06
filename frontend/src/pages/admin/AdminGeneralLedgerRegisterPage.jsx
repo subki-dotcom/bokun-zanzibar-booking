@@ -512,18 +512,18 @@ const AdminGeneralLedgerRegisterPage = () => {
             <footer className="gl-pagination">
               <span>Showing {number(pagination.from || 0)} to {number(pagination.to || 0)} of {number(pagination.total || 0)} transactions</span>
               <div>
-                <Button variant="outline-secondary" disabled={!pagination.hasPrevious} onClick={() => updateQuery(setSearchParams, { page: Number(filters.page || 1) - 1 })}>
+                <Button variant="outline-secondary" disabled={!pagination.hasPrevious} aria-label="Previous page" onClick={() => updateQuery(setSearchParams, { page: Number(filters.page || 1) - 1 })}>
                   <BsChevronLeft />
                 </Button>
                 <strong>{pagination.page || 1}</strong>
-                <Button variant="outline-secondary" disabled={!pagination.hasNext} onClick={() => updateQuery(setSearchParams, { page: Number(filters.page || 1) + 1 })}>
+                <Button variant="outline-secondary" disabled={!pagination.hasNext} aria-label="Next page" onClick={() => updateQuery(setSearchParams, { page: Number(filters.page || 1) + 1 })}>
                   <BsChevronRight />
                 </Button>
                 <Form.Select value={filters.limit} onChange={(event) => updateQuery(setSearchParams, { limit: event.target.value, page: 1 })} aria-label="Rows per page">
                   {LIMITS.map((limit) => <option key={limit} value={limit}>{limit} / page</option>)}
                 </Form.Select>
-                <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-                  {refreshing ? <Spinner size="sm" /> : <BsArrowClockwise />}
+                <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing} aria-label="Refresh ledger">
+                  {refreshing ? <Spinner size="sm" /> : <BsArrowClockwise aria-hidden="true" />}
                 </Button>
               </div>
             </footer>

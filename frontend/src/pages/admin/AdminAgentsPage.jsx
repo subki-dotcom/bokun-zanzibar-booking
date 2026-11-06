@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { confirmAction } from "../../components/admin/ui/feedback";
 import { Form } from "react-bootstrap";
 import { BsPeople } from "react-icons/bs";
 import {
@@ -127,8 +128,8 @@ const AdminAgentsPage = () => {
               label: agent.isActive ? "Suspend account" : "Activate account",
               danger: agent.isActive,
               disabled: savingId === agent._id,
-              onClick: () => {
-                if (agent.isActive && !window.confirm(`Suspend ${agent.companyName}? They will not be able to sign in.`)) return;
+              onClick: async () => {
+                if (agent.isActive && !(await confirmAction({ title: `Suspend ${agent.companyName}?`, message: "They will not be able to sign in.", confirmLabel: "Suspend" }))) return;
                 handleStatusChange(agent, "isActive", agent.isActive ? "suspended" : "active");
               }
             },

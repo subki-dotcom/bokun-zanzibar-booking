@@ -7,7 +7,7 @@ import { Link, useParams } from "react-router-dom";
 import { allocateSettlement, fetchSettlementDetail, reconcileSettlement, reverseSettlementAllocation } from "../../api/adminApi";
 
 const label = (value = "") => formatLabel(value);
-const money = (value, currency) => value == null || !currency ? "Unknown" : formatAdminMoney(value, currency);
+const money = (value, currency) => value == null || !currency ? "Not available" : formatAdminMoney(value, currency);
 
 export default function AdminSettlementDetailPage() {
   const { settlementId } = useParams();
