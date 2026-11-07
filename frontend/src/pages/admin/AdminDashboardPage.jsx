@@ -1,20 +1,19 @@
 import { PaymentTruthBadge } from '../../components/invoice/BookingPaymentState';
+import { formatLabel } from "../../utils/formatLabel";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BsArrowRepeat,
   BsBell,
   BsCalendar2Check,
-  BsCalendar3,
+  BsCalendarEvent,
   BsCashStack,
   BsCloudCheck,
-  BsDownload,
+  BsCreditCard,
   BsExclamationTriangle,
-  BsGeoAlt,
+  BsHourglassSplit,
   BsInfoCircle,
-  BsPersonCheck,
-  BsThreeDotsVertical,
-  BsTruck
+  BsThreeDotsVertical
 } from "react-icons/bs";
 import {
   fetchBokunSyncStatus,
@@ -23,18 +22,30 @@ import {
   fetchOperationalAlerts,
   fetchOperationsOverview
 } from "../../api/adminApi";
-import { fetchRecentBookings } from "../../api/bookingsApi";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { fetchAdminBookings, fetchRecentBookings } from "../../api/bookingsApi";
+import {
+  AdminPage,
+  EmptyState as UiEmptyState,
+  ErrorState,
+  LoadingSkeleton,
+  PageHeader,
+  SectionCard,
+  StatCard,
+  StatGrid,
+  StatusBadge as UiStatusBadge
+} from "../../components/admin/ui";
+import { formatCurrency, formatDate } from "../../utils/adminFormat";
+import { adminAlertCount, bokunSyncState } from "../../utils/adminStatus";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 
 const CHANNEL_COLORS = ["#16a085", "#2f80ed", "#6b7280", "#f9735b", "#a855f7", "#94a3b8"];
 const STATUS_COLORS = {
-  confirmed: "#16a085",
-  pending: "#f59e0b",
-  cancelled: "#ef4444",
-  completed: "#64748b",
-  failed: "#ef4444",
+  confirmed: "#0e6b57",
+  pending: "#d97706",
+  cancelled: "#94a3b8",
+  completed: "#475569",
+  failed: "#b42318",
   refunded: "#0f766e"
 };
 
@@ -79,12 +90,7 @@ const requestDashboardWidget = async (key, request, fallbackMessage) => {
   }
 };
 
-const titleize = (value = "") =>
-  String(value || "unknown")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+const titleize = (value = "") => formatLabel(value);
 
 const formatCompactCurrency = (amount = 0, currency = "USD") => {
   const numericAmount = Number(amount || 0);
@@ -119,14 +125,6 @@ const formatRelativeTime = (value) => {
 
 const normalizeStatus = (value = "") => String(value || "unknown").toLowerCase();
 
-const getStatusTone = (value = "") => {
-  const status = normalizeStatus(value);
-  if (["confirmed", "paid", "completed", "refunded"].includes(status)) return "success";
-  if (["pending", "processing", "supplier_pending", "edit_requested"].includes(status)) return "warning";
-  if (["cancelled", "failed", "rejected"].includes(status)) return "danger";
-  return "neutral";
-};
-
 const getBookingCustomerName = (booking = {}) => {
   const customer = booking.customer || {};
   return [customer.firstName, customer.lastName].filter(Boolean).join(" ") || customer.email || "-";
@@ -148,19 +146,29 @@ const getBookingSourceLabel = (source) => CHANNEL_LABELS[source] || CHANNEL_LABE
 const normalizeBreakdownRows = (rows = [], type = "channel") => {
   const total = rows.reduce((sum, row) => sum + Number(row.count || row.bookings || 0), 0);
 
-  return rows.slice(0, 6).map((row, index) => {
+  // Rows with the same label are one row (e.g. "DIRECT_WEBSITE" and "direct_website" are both "Direct Website").
+  const merged = new Map();
+  for (const row of rows) {
     const key = row._id || "unknown";
-    const count = Number(row.count || row.bookings || 0);
     const normalizedStatus = normalizeStatus(key);
-    return {
-      id: key,
-      label: type === "status" ? titleize(normalizedStatus) : getBookingSourceLabel(key),
-      count,
-      percent: total > 0 ? Math.round((count / total) * 100) : 0,
-      sales: Number(row.sales || 0),
-      color: type === "status" ? STATUS_COLORS[normalizedStatus] || "#94a3b8" : CHANNEL_COLORS[index % CHANNEL_COLORS.length]
-    };
-  });
+    const label = type === "status" ? titleize(normalizedStatus) : getBookingSourceLabel(key);
+    const current = merged.get(label) || { id: key, label, normalizedStatus, count: 0, sales: 0 };
+    current.count += Number(row.count || row.bookings || 0);
+    current.sales += Number(row.sales || 0);
+    merged.set(label, current);
+  }
+
+  return [...merged.values()]
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 6)
+    .map((row, index) => ({
+      id: row.id,
+      label: row.label,
+      count: row.count,
+      percent: total > 0 ? Math.round((row.count / total) * 100) : 0,
+      sales: row.sales,
+      color: type === "status" ? STATUS_COLORS[row.normalizedStatus] || "#94a3b8" : CHANNEL_COLORS[index % CHANNEL_COLORS.length]
+    }));
 };
 
 const buildDonutGradient = (rows = []) => {
@@ -178,60 +186,21 @@ const buildDonutGradient = (rows = []) => {
   return `conic-gradient(${stops.join(", ")})`;
 };
 
-const DashboardCard = ({ children, className = "" }) => (
-  <section className={`admin-dashboard-card ${className}`.trim()}>{children}</section>
-);
+const EmptyState = ({ message }) => <UiEmptyState title={message} />;
 
-const CardHeader = ({ title, detail, action }) => (
-  <div className="admin-dashboard-card-header">
-    <div>
-      <h2>{title}</h2>
-      {detail ? <p>{detail}</p> : null}
-    </div>
-    {action}
-  </div>
-);
+const WidgetError = ({ message, onRetry }) => <ErrorState message={message} onRetry={onRetry} />;
 
-const EmptyState = ({ message }) => (
-  <div className="admin-dashboard-empty-state">
-    <BsInfoCircle aria-hidden="true" />
-    <span>{message}</span>
-  </div>
-);
+const SkeletonBlock = ({ rows = 3 }) => <LoadingSkeleton rows={rows} />;
 
-const WidgetError = ({ message, onRetry }) => (
-  <div className="admin-dashboard-widget-error" role="alert">
-    <BsExclamationTriangle aria-hidden="true" />
-    <div>
-      <strong>Unable to load this widget.</strong>
-      <span>{message}</span>
-    </div>
-    <button type="button" onClick={onRetry}>Retry</button>
-  </div>
-);
+const StatusBadge = ({ value }) => <UiStatusBadge value={value} />;
 
-const SkeletonBlock = ({ rows = 3, className = "" }) => (
-  <div className={`admin-dashboard-skeleton ${className}`.trim()} aria-hidden="true">
-    {Array.from({ length: rows }).map((_, index) => <span key={index} />)}
-  </div>
-);
+// "2026-11-05" in Zanzibar time, and the same date 7 days later (travel dates are plain calendar days).
+const zanzibarDay = (offsetDays = 0) =>
+  new Date(Date.now() + offsetDays * 86400000).toLocaleDateString("en-CA", { timeZone: "Africa/Dar_es_Salaam" });
 
-const KpiCard = ({ icon: Icon, label, value, detail, tone = "teal" }) => (
-  <DashboardCard className={`admin-dashboard-kpi-card is-${tone}`}>
-    <div className="admin-dashboard-kpi-icon">
-      <Icon aria-hidden="true" />
-    </div>
-    <div className="admin-dashboard-kpi-copy">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {detail ? <small>{detail}</small> : null}
-    </div>
-  </DashboardCard>
-);
-
-const StatusBadge = ({ value }) => {
-  const tone = getStatusTone(value);
-  return <span className={`admin-dashboard-status-badge is-${tone}`}>{titleize(value)}</span>;
+const fetchUpcomingTours = async () => {
+  const result = await fetchAdminBookings({ status: "confirmed", from: zanzibarDay(0), to: zanzibarDay(7), page: 1, limit: 1 });
+  return { total: Number(result?.pagination?.total || 0) };
 };
 
 const RecentBookingsWidget = ({ bookings, loading, error, onRetry }) => {
@@ -424,7 +393,8 @@ const AdminDashboardPage = () => {
       requestDashboardWidget("monthlySales", fetchMonthlySalesReport, "Failed to load monthly sales"),
       requestDashboardWidget("operationalAlerts", fetchOperationalAlerts, "Failed to load operational alerts"),
       requestDashboardWidget("operationsOverview", fetchOperationsOverview, "Failed to load operations overview"),
-      requestDashboardWidget("bokunSyncStatus", fetchBokunSyncStatus, "Failed to load sync status")
+      requestDashboardWidget("bokunSyncStatus", fetchBokunSyncStatus, "Failed to load sync status"),
+      requestDashboardWidget("upcomingTours", fetchUpcomingTours, "Failed to load upcoming tours")
     ]);
 
     const nextData = {};
@@ -453,106 +423,88 @@ const AdminDashboardPage = () => {
   const operationsOverview = dashboardData.operationsOverview || {};
   const queue = operationsOverview.queue || {};
   const operationalAlerts = dashboardData.operationalAlerts?.alerts || [];
-  const unreadAlerts =
-    Number(dashboardData.operationalAlerts?.counts?.paidPendingSupplier || 0) +
-    Number(dashboardData.operationalAlerts?.counts?.failedPayments || 0) +
-    Number(dashboardData.operationalAlerts?.counts?.failedEmailDeliveries || 0) +
-    Number(queue.retriableFinalizations || 0) +
-    Number(queue.openBookingRequests || 0);
+  // Same count as the top bar (utils/adminStatus.js).
+  const unreadAlerts = adminAlertCount({ operationalAlerts: dashboardData.operationalAlerts, operationsOverview });
 
   const sourceRows = useMemo(() => normalizeBreakdownRows(summary.sourceBreakdown || [], "channel"), [summary.sourceBreakdown]);
   const statusRows = useMemo(() => normalizeBreakdownRows(summary.bookingStatusBreakdown || [], "status"), [summary.bookingStatusBreakdown]);
   const sourceTotal = sourceRows.reduce((sum, row) => sum + row.count, 0);
   const statusTotal = statusRows.reduce((sum, row) => sum + row.count, 0);
 
-  const fleet = operationsOverview.fleet || {};
-  const trips = operationsOverview.trips || {};
-  const activeVehicles = fleet.activeVehicles ?? null;
-  const activeDrivers = fleet.activeDrivers ?? null;
-  const onTripNow = trips.onTripNow ?? null;
+  const pendingBookings = statusRows.find((row) => row.label === "Pending")?.count ?? null;
+  const upcomingTours = dashboardData.upcomingTours?.total ?? null;
   const bokunStatus = dashboardData.bokunSyncStatus;
-  const bokunMode = bokunStatus?.integration?.dataMode || "unknown";
   const bokunWorker = bokunStatus?.confirmedBookingImport?.worker || {};
-  const bokunReady = Boolean(bokunStatus?.confirmedBookingImport?.ready);
   const latestBokunSync = queue.latestBokunSync;
+  // Same Bókun state as the top bar (utils/adminStatus.js).
+  const bokunSync = bokunSyncState(bokunStatus);
 
+  const summaryMissing = Boolean(widgetErrors.summary && !summary.kpis);
   const metricCards = [
     {
       id: "total-bookings",
-      label: "Total Bookings",
-      value: widgetErrors.summary && !summary.kpis ? "--" : numberFormatter.format(kpis.totalBookings || 0),
-      detail: `${numberFormatter.format(kpis.confirmedBookings || 0)} confirmed`,
-      icon: BsCalendar2Check,
-      tone: "blue"
+      label: "Total bookings",
+      value: summaryMissing ? "—" : numberFormatter.format(kpis.totalBookings || 0),
+      helper: `${numberFormatter.format(kpis.confirmedBookings || 0)} confirmed`,
+      icon: BsCalendar2Check
     },
     {
       id: "gross-revenue",
-      label: "Gross Revenue",
-      value: widgetErrors.summary && !summary.kpis ? "--" : formatCurrency(kpis.totalSales || 0, "USD"),
-      detail: "Reported gross sales",
-      icon: BsCashStack,
-      tone: "teal"
+      label: "Gross revenue",
+      value: summaryMissing ? "—" : formatCurrency(kpis.totalSales || 0, "USD"),
+      helper: "Reported gross sales",
+      icon: BsCashStack
     },
     {
-      id: "active-vehicles",
-      label: "Active Vehicles",
-      value: activeVehicles == null ? "--" : numberFormatter.format(activeVehicles),
-      detail: activeVehicles == null ? "Fleet KPI unavailable" : "Ready for dispatch",
-      icon: BsTruck,
-      tone: "purple"
+      id: "upcoming-tours",
+      label: "Tours in the next 7 days",
+      value: upcomingTours == null ? "—" : numberFormatter.format(upcomingTours),
+      helper: "Confirmed bookings by travel date",
+      icon: BsCalendarEvent
     },
     {
-      id: "active-drivers",
-      label: "Active Drivers",
-      value: activeDrivers == null ? "--" : numberFormatter.format(activeDrivers),
-      detail: activeDrivers == null ? "Driver KPI unavailable" : "Available to assign",
-      icon: BsPersonCheck,
-      tone: "orange"
+      id: "waiting-supplier",
+      label: "Waiting for supplier",
+      value: numberFormatter.format(Number(queue.paidPendingSupplier || 0)),
+      helper: "Paid, not yet confirmed in Bókun",
+      icon: BsHourglassSplit,
+      status: Number(queue.paidPendingSupplier || 0) > 0 ? "pending" : ""
     },
     {
-      id: "on-trip-now",
-      label: "On Trip Now",
-      value: onTripNow == null ? "--" : numberFormatter.format(onTripNow),
-      detail: onTripNow == null ? "Live trips unavailable" : "Live trips",
-      icon: BsGeoAlt,
-      tone: "blue"
+      id: "awaiting-payment",
+      label: "Awaiting payment",
+      value: pendingBookings == null ? "—" : numberFormatter.format(pendingBookings),
+      helper: "Bookings still pending",
+      icon: BsCreditCard
     },
     {
-      id: "unread-alerts",
-      label: "Unread Alerts",
+      id: "open-alerts",
+      label: "Open alerts",
       value: numberFormatter.format(unreadAlerts),
-      detail: unreadAlerts > 0 ? "Requires attention" : "No open alerts",
+      helper: unreadAlerts > 0 ? "Needs attention" : "Nothing open",
       icon: BsBell,
-      tone: unreadAlerts > 0 ? "red" : "teal"
+      status: unreadAlerts > 0 ? "warning" : ""
     }
   ];
 
-  return (
-    <div className="admin-main-dashboard">
-      <div className="admin-dashboard-page-head">
-        <div>
-          <span className="admin-dashboard-eyebrow">Business Platform</span>
-          <h1>Dashboard</h1>
-        </div>
-        <div className="admin-dashboard-toolbar" aria-label="Dashboard controls">
-          <button type="button" className="admin-dashboard-toolbar-button" disabled title="Date range filtering is not enabled for this dashboard yet">
-            <BsCalendar3 aria-hidden="true" />
-            This month
-          </button>
-          <button type="button" className="admin-dashboard-toolbar-button" onClick={() => loadDashboard({ silent: true })} disabled={refreshing}>
-            <BsArrowRepeat aria-hidden="true" />
-            {refreshing ? "Refreshing" : "Refresh"}
-          </button>
-          <button type="button" className="admin-dashboard-toolbar-button" disabled title="Export is available in Report Center">
-            <BsDownload aria-hidden="true" />
-            Export
-          </button>
-        </div>
-      </div>
+  const retry = () => loadDashboard({ silent: true });
 
-      <div className={`admin-dashboard-sync-strip is-${bokunReady ? "healthy" : bokunMode === "mock" ? "warning" : "muted"}`}>
+  return (
+    <AdminPage className="admin-main-dashboard">
+      <PageHeader
+        eyebrow="Overview"
+        title="Dashboard"
+        description="Bookings, sales and what needs your attention today."
+        actions={
+          <button type="button" className="btn btn-outline-secondary" onClick={retry} disabled={refreshing}>
+            <BsArrowRepeat aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
+          </button>
+        }
+      />
+
+      <div className={`admin-dashboard-sync-strip is-${bokunSync.status === "unknown" ? "muted" : bokunSync.status === "critical" ? "warning" : bokunSync.status}`} title={bokunSync.detail}>
         <span><BsCloudCheck aria-label="Synchronization" /></span>
-        <strong>{bokunMode === "live" ? "Live API" : titleize(bokunMode)}</strong>
+        <strong>{bokunSync.label}</strong>
         <small>
           {bokunWorker.lastSuccessAt
             ? `Last import ${formatRelativeTime(bokunWorker.lastSuccessAt)}`
@@ -563,106 +515,52 @@ const AdminDashboardPage = () => {
         <Link to="/admin/operations/bokun-sync/confirmed-import">Manage sync</Link>
       </div>
 
-      <div className="admin-dashboard-kpi-grid">
-        {loading ? (
-          Array.from({ length: 6 }).map((_, index) => (
-            <DashboardCard key={index} className="admin-dashboard-kpi-card">
-              <SkeletonBlock rows={3} />
-            </DashboardCard>
-          ))
-        ) : metricCards.map((card) => (
-          <KpiCard key={card.id} {...card} />
-        ))}
-      </div>
+      <StatGrid columns={3}>
+        {metricCards.map(({ id, ...card }) => <StatCard key={id} {...card} loading={loading} />)}
+      </StatGrid>
 
       <div className="admin-dashboard-primary-grid">
-        <DashboardCard className="admin-dashboard-recent-card">
-          <CardHeader
-            title="Recent Bookings"
-            action={<Link className="admin-dashboard-link" to="/admin/operations/bookings">View all</Link>}
-          />
-          <RecentBookingsWidget
-            bookings={dashboardData.recentBookings || []}
-            loading={loading}
-            error={widgetErrors.recentBookings}
-            onRetry={() => loadDashboard({ silent: true })}
-          />
-        </DashboardCard>
+        <SectionCard
+  
+          title="Recent bookings"
+          actions={<Link className="admin-dashboard-link" to="/admin/operations/bookings">View all</Link>}
+        >
+          <RecentBookingsWidget bookings={dashboardData.recentBookings || []} loading={loading} error={widgetErrors.recentBookings} onRetry={retry} />
+        </SectionCard>
 
         <div className="admin-dashboard-side-stack">
-          <DashboardCard>
-            <CardHeader title="Monthly Sales (USD)" detail="Latest available reporting months" />
-            <MonthlySalesWidget
-              rows={dashboardData.monthlySales || []}
-              loading={loading}
-              error={widgetErrors.monthlySales}
-              onRetry={() => loadDashboard({ silent: true })}
-            />
-          </DashboardCard>
+          <SectionCard title="Monthly sales (USD)" description="Latest reporting months">
+            <MonthlySalesWidget rows={dashboardData.monthlySales || []} loading={loading} error={widgetErrors.monthlySales} onRetry={retry} />
+          </SectionCard>
 
-          <DashboardCard>
-            <CardHeader
-              title="Operational Alerts"
-              detail={`${numberFormatter.format(unreadAlerts)} open`}
-              action={<Link className="admin-dashboard-link" to="/admin/operations/recovery">View all</Link>}
-            />
-            <OperationalAlertsWidget
-              alerts={operationalAlerts}
-              loading={loading}
-              error={widgetErrors.operationalAlerts}
-              onRetry={() => loadDashboard({ silent: true })}
-            />
-          </DashboardCard>
+          <SectionCard
+            title="Operational alerts"
+            description={`${numberFormatter.format(unreadAlerts)} open`}
+            actions={<Link className="admin-dashboard-link" to="/admin/operations/recovery">View all</Link>}
+          >
+            <OperationalAlertsWidget alerts={operationalAlerts} loading={loading} error={widgetErrors.operationalAlerts} onRetry={retry} />
+          </SectionCard>
         </div>
       </div>
 
       <div className="admin-dashboard-bottom-grid">
-        <DashboardCard>
-          <CardHeader title="Booking Source Breakdown" />
-          {loading ? (
-            <SkeletonBlock rows={5} />
-          ) : widgetErrors.summary ? (
-            <WidgetError message={widgetErrors.summary} onRetry={() => loadDashboard({ silent: true })} />
-          ) : (
-            <DonutSummaryWidget
-              rows={sourceRows}
-              total={sourceTotal}
-              centerLabel="Total"
-              emptyMessage="No channel data available."
-            />
+        <SectionCard title="Booking sources">
+          {loading ? <SkeletonBlock rows={5} /> : widgetErrors.summary ? <WidgetError message={widgetErrors.summary} onRetry={retry} /> : (
+            <DonutSummaryWidget rows={sourceRows} total={sourceTotal} centerLabel="Total" emptyMessage="No channel data available." />
           )}
-        </DashboardCard>
+        </SectionCard>
 
-        <DashboardCard>
-          <CardHeader
-            title="Top Products"
-            action={<Link className="admin-dashboard-link" to="/admin/business-intelligence">View all</Link>}
-          />
-          <TopProductsWidget
-            products={summary.topProducts || []}
-            loading={loading}
-            error={widgetErrors.summary}
-            onRetry={() => loadDashboard({ silent: true })}
-          />
-        </DashboardCard>
+        <SectionCard title="Top products" actions={<Link className="admin-dashboard-link" to="/admin/business-intelligence">View all</Link>}>
+          <TopProductsWidget products={summary.topProducts || []} loading={loading} error={widgetErrors.summary} onRetry={retry} />
+        </SectionCard>
 
-        <DashboardCard>
-          <CardHeader title="Booking Status Overview" />
-          {loading ? (
-            <SkeletonBlock rows={5} />
-          ) : widgetErrors.summary ? (
-            <WidgetError message={widgetErrors.summary} onRetry={() => loadDashboard({ silent: true })} />
-          ) : (
-            <DonutSummaryWidget
-              rows={statusRows}
-              total={statusTotal}
-              centerLabel="Total"
-              emptyMessage="No booking status data available."
-            />
+        <SectionCard title="Booking status">
+          {loading ? <SkeletonBlock rows={5} /> : widgetErrors.summary ? <WidgetError message={widgetErrors.summary} onRetry={retry} /> : (
+            <DonutSummaryWidget rows={statusRows} total={statusTotal} centerLabel="Total" emptyMessage="No booking status data available." />
           )}
-        </DashboardCard>
+        </SectionCard>
       </div>
-    </div>
+    </AdminPage>
   );
 };
 

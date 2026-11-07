@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatAdminDateTime } from "../../utils/adminFormat";
+import { formatLabel } from "../../utils/formatLabel";
+import { PageHeader } from "../../components/admin/ui";
 import { Badge, Button, Card, Col, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsCheckCircle, BsExclamationTriangle, BsHeartPulse, BsXCircle } from "react-icons/bs";
 import { fetchSystemHealthSummary } from "../../api/adminApi";
@@ -23,20 +26,9 @@ const statusIcon = (status = "") => {
   return BsExclamationTriangle;
 };
 
-const formatStatus = (value = "") => String(value || "-").replaceAll("_", " ");
+const formatStatus = (value = "") => formatLabel(value);
 
-const formatDate = (value = "") => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-};
+const formatDate = (value = "") => (value ? formatAdminDateTime(value) : "-");
 
 const KpiCard = ({ label, value, detail, status }) => {
   const Icon = statusIcon(status);
@@ -98,16 +90,18 @@ const AdminSystemHealthPage = () => {
 
   return (
     <div className="admin-system-health-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Monitoring</span>
-          <h2>System Health</h2>
-          <p>Runtime readiness, integration configuration, worker status, and safe observability checks.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Control & System"
+        title="System Health"
+        description="Runtime readiness, integration configuration, worker status, and safe observability checks."
+        actions={
+          <>
+            <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+              <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
 

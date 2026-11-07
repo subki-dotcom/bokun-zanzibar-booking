@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { confirmAction, useToastMessage } from "../../components/admin/ui/feedback";
+import { formatLabel } from "../../utils/formatLabel";
 import { Alert, Badge, Button, Card, Col, Form, Row } from "react-bootstrap";
 import { BsArrowLeft, BsArrowRepeat, BsCheck2Circle, BsEnvelope, BsExclamationTriangle, BsXCircle } from "react-icons/bs";
 import { Link, useParams } from "react-router-dom";
@@ -17,10 +19,10 @@ import {
 } from "../../api/bookingRequestsApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/adminFormat";
 import { cancellationDisplayText, formatCancellationDeadline, hasKnownRefundAmount } from "../../utils/cancellationPolicy";
 
-const label = (value = "") => String(value || "-").replaceAll("_", " ");
+const label = (value = "") => formatLabel(value);
 const statusVariant = (value = "") => (["completed", "approved", "synced", "refunded", "partially_refunded", "paid", "eligible"].includes(value) ? "success" : ["rejected", "failed", "cancelled", "unavailable"].includes(value) ? "danger" : "warning");
 const travelerLabel = (pax = {}) => `Adults ${pax.adults || 0}, Children ${pax.children || 0}, Infants ${pax.infants || 0}`;
 const providerLabel = (value = "") => ({ paypal: "PayPal", pesapal: "Pesapal", dpo: "DPO Pay", manual_bank_transfer: "Manual bank transfer", cash: "Cash", other: "Other" }[String(value || "").toLowerCase()] || value || "-");
@@ -147,6 +149,7 @@ const AdminBookingRequestDetailsPage = () => {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  useToastMessage(notice, setNotice);
   const [decision, setDecision] = useState({ customerFacingReason: "", internalNote: "", overrideAmount: "", overrideReason: "", refundAmount: "", paymentProvider: "other" });
   const [refundStatus, setRefundStatus] = useState("processing");
   const [refundReference, setRefundReference] = useState("");
@@ -230,7 +233,6 @@ const AdminBookingRequestDetailsPage = () => {
         <div className="d-flex gap-2 flex-wrap"><Badge bg={statusVariant(request.status)}>{label(request.status)}</Badge><Badge bg={statusVariant(request.bokunSync?.status)}>{label(request.bokunSync?.status)}</Badge></div>
       </div>
       <ErrorAlert error={error} />
-      {notice ? <Alert variant="success">{notice}</Alert> : null}
 
       <Row className="g-3 align-items-start">
         <Col xl={8}>
@@ -263,8 +265,8 @@ const AdminBookingRequestDetailsPage = () => {
                   className="w-100 mt-3"
                   variant="success"
                   disabled={Boolean(busy) || !refundCanProcess}
-                  onClick={() => {
-                    if (!window.confirm(`Process refund of ${formatCurrency(refund.amount, refund.currency || currency)} via ${resolvedRefundProviderLabel}?`)) return;
+                  onClick={async () => {
+                    if (!(await confirmAction({ title: "Process refund?", message: `Refund ${formatCurrency(refund.amount, refund.currency || currency)} via ${resolvedRefundProviderLabel}.`, confirmLabel: "Process refund" }))) return;
                     run("process-refund", () => processBookingRequestRefund(refund._id, { notes: refundNotes }), "Refund processing updated.");
                   }}
                 >

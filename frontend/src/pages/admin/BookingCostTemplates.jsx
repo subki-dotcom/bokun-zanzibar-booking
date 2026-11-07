@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { confirmAction } from "../../components/admin/ui/feedback";
+import { formatLabel } from "../../utils/formatLabel";
 import { Alert, Badge, Button, ButtonGroup, Card, Col, Form, Modal, Row, Table } from "react-bootstrap";
+import { PageHeader, RelativeTime } from "../../components/admin/ui";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   BsArchive,
@@ -29,7 +32,7 @@ import {
 import { AdminMetricCard, StatusBadge, formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
 const safeNumber = (value) => {
@@ -37,10 +40,7 @@ const safeNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 const money = (value, currency = "USD") => formatCurrency(safeNumber(value), currency || "USD");
-const label = (value = "") =>
-  String(value || "-")
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (match) => match.toUpperCase());
+const label = (value = "") => formatLabel(value);
 const todayInput = () => new Date().toISOString().slice(0, 10);
 
 const COMMON_COST_CATEGORIES = [
@@ -258,7 +258,7 @@ const CostTemplateTable = ({ items, onArchive }) => (
               <td>{item.currency || "USD"}</td>
               <td><StatusPill value={item.costStatus === "missing_cost" ? "missing_cost" : item.templateStatus} /></td>
               <td className="text-center">{item.costLineCount || 0}</td>
-              <td>{formatDateTime(item.lastUpdatedAt)}</td>
+              <td><RelativeTime value={item.lastUpdatedAt} /></td>
               <td>
                 <div className="cost-template-row-actions">
                   {item.templateId ? (
@@ -372,7 +372,7 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
   const reset = () => setFilters((current) => ({ ...defaultDashboardFilters(), limit: current.limit }));
 
   const archive = async (templateId) => {
-    if (!templateId || !window.confirm("Archive this product cost template?")) return;
+    if (!templateId || !(await confirmAction({ title: "Archive this product cost template?", confirmLabel: "Archive" }))) return;
     try {
       await archiveBookingAccountingCostTemplate(templateId, { reason: "Archived from Booking Accounting cost templates dashboard." });
       await load();
@@ -434,12 +434,11 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
 
   return (
     <div className="booking-cost-template-module">
-      <div className="admin-platform-page-header cost-template-page-title">
-        <div>
-          <span className="admin-platform-eyebrow">Booking Accounting / Cost Templates</span>
-          <h2>Costed Products</h2>
-          <p>Products and options from Bokun with internal cost templates configured here.</p>
-        </div>
+      <PageHeader
+        eyebrow="Booking Accounting"
+        title="Cost Templates"
+        description="Expected costs per Bókun product and option, used to estimate profit until real expenses are recorded."
+        actions={
         <div className="d-flex flex-wrap gap-2">
           <Button variant="outline-primary" onClick={syncProducts} disabled={syncingProducts}>
             <BsArrowRepeat /> {syncingProducts ? "Syncing Bokun" : "Sync Bokun Products"}
@@ -448,10 +447,11 @@ export const CostTemplatesDashboard = ({ initialData = null }) => {
             <BsArrowRepeat /> Refresh Data
           </Button>
           <Button as={Link} to="/admin/booking-accounting/cost-templates/new" variant="primary">
-            <BsPlus /> New Template
+            <BsPlus aria-hidden="true" /> New template
           </Button>
         </div>
-      </div>
+        }
+      />
 
       <ErrorAlert error={error} />
       {syncResult ? (
@@ -594,7 +594,7 @@ const CostLineModal = ({ show, onHide, onSave, basisTypes = [], line }) => {
           <Col md={6}>
             <Form.Label>Cost Category</Form.Label>
             <Form.Select value={draft.category} onChange={(event) => patch({ category: event.target.value })}>
-              {COMMON_COST_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+              {COMMON_COST_CATEGORIES.map((category) => <option key={category} value={category}>{formatLabel(category)}</option>)}
             </Form.Select>
           </Col>
           <Col md={6}>

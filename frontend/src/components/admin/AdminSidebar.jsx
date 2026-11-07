@@ -6,7 +6,7 @@ import {
   BsBoxArrowRight,
   BsChevronDown,
   BsChevronRight,
-  BsMoon,
+
   BsXLg
 } from "react-icons/bs";
 import {
@@ -148,38 +148,45 @@ const SidebarItem = ({ item, depth = 0, pathname, collapsed, onNavigate, openSec
   );
 };
 
-const SidebarSection = ({ section, pathname, collapsed, onNavigate, openSections, onToggleSection }) => (
-  <section className="admin-platform-nav-section" aria-label={section.label}>
-    <div className="admin-platform-nav-section-label">{section.label}</div>
-    <div className="admin-platform-nav-section-items">
-      {(section.children || []).map((item) => (
-        <SidebarItem
-          key={item.id}
-          item={item}
-          pathname={pathname}
-          collapsed={collapsed}
-          onNavigate={onNavigate}
-          openSections={openSections}
-          onToggleSection={onToggleSection}
-        />
-      ))}
-    </div>
-  </section>
-);
+// A section with one page (Dashboard, Settings) is always shown; the others fold to their title (accordion).
+const SidebarSection = ({ section, pathname, collapsed, onNavigate, openSections, onToggleSection, open, onToggle }) => {
+  const foldable = (section.children || []).length > 1;
+  const itemsId = `admin-nav-section-${section.id}`;
+  return (
+    <section className={`admin-platform-nav-section ${foldable && !open ? "is-closed" : ""}`} aria-label={section.label}>
+      {foldable ? (
+        <button
+          type="button"
+          className="admin-platform-nav-section-label admin-platform-nav-section-toggle"
+          aria-expanded={open}
+          aria-controls={itemsId}
+          onClick={onToggle}
+        >
+          <span>{section.label}</span>
+          {open ? <BsChevronDown aria-hidden="true" /> : <BsChevronRight aria-hidden="true" />}
+        </button>
+      ) : (
+        <div className="admin-platform-nav-section-label">{section.label}</div>
+      )}
+      <div className="admin-platform-nav-section-items" id={itemsId}>
+        {(section.children || []).map((item) => (
+          <SidebarItem
+            key={item.id}
+            item={item}
+            pathname={pathname}
+            collapsed={collapsed}
+            onNavigate={onNavigate}
+            openSections={openSections}
+            onToggleSection={onToggleSection}
+          />
+        ))}
+      </div>
+    </section>
+  );
+};
 
 const SidebarFooter = ({ collapsed, onLogout }) => (
   <footer className="admin-platform-sidebar-footer">
-    <button
-      type="button"
-      className="admin-platform-sidebar-footer-action"
-      aria-label="Dark mode preference is not configured"
-      aria-disabled="true"
-      data-tooltip="Dark Mode"
-      title="Dark mode will follow the admin theme system when it is configured."
-    >
-      <BsMoon aria-hidden="true" />
-      <span>Dark Mode</span>
-    </button>
     <button
       type="button"
       className="admin-platform-sidebar-footer-action"
@@ -225,6 +232,17 @@ const AdminSidebar = ({ user, collapsed, mobileOpen, onNavigate, onClose, onLogo
     });
   };
 
+  // Accordion: the section of the current page is open; opening another one closes it.
+  const activeSectionId = useMemo(
+    () => navigation.find((section) => hasActiveAdminChild(section, location.pathname))?.id || "",
+    [navigation, location.pathname]
+  );
+  const [openSectionId, setOpenSectionId] = useState(activeSectionId);
+  useEffect(() => {
+    setOpenSectionId(activeSectionId);
+  }, [activeSectionId]);
+  const toggleNavSection = (id) => setOpenSectionId((current) => (current === id ? "" : id));
+
   return (
     <aside
       id="admin-platform-sidebar"
@@ -245,6 +263,8 @@ const AdminSidebar = ({ user, collapsed, mobileOpen, onNavigate, onClose, onLogo
             onNavigate={onNavigate}
             openSections={openSections}
             onToggleSection={toggleSection}
+            open={openSectionId === section.id}
+            onToggle={() => toggleNavSection(section.id)}
           />
         ))}
       </nav>

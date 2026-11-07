@@ -290,6 +290,17 @@ export const createDisasterRecoveryRestorePlan = async (payload = {}) => {
   return response.data.data;
 };
 
+// Settings: server setup (no secrets) and a test email to the signed-in admin.
+export const fetchAdminSettings = async () => {
+  const response = await axiosClient.get("/admin/settings");
+  return response.data.data;
+};
+
+export const sendSettingsTestEmail = async () => {
+  const response = await axiosClient.post("/admin/settings/test-email");
+  return response.data.data;
+};
+
 export const fetchSystemHealthSummary = async () => {
   const response = await axiosClient.get("/admin/system-health/summary");
   return response.data.data;

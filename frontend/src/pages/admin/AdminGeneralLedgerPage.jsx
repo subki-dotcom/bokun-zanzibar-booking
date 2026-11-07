@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useToastMessage } from "../../components/admin/ui/feedback";
 import { Button, Card, Col, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsCloudCheck, BsJournalCheck } from "react-icons/bs";
 import { useLocation } from "react-router-dom";
@@ -20,7 +21,7 @@ import {
 import { AdminMetricCard, StatusBadge, formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Loader from "../../components/common/Loader";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 
 const money = (value, currency = "USD") => formatCurrency(value || 0, currency || "USD");
 
@@ -77,6 +78,7 @@ const AdminGeneralLedgerPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
+  useToastMessage(actionMessage, setActionMessage);
 
   const load = async ({ silent = false } = {}) => {
     if (silent) setRefreshing(true);
@@ -177,7 +179,6 @@ const AdminGeneralLedgerPage = () => {
       </div>
 
       <ErrorAlert error={error} />
-      {actionMessage ? <div className="alert alert-success">{actionMessage}</div> : null}
 
       <Row className="g-3">
         <Col md={6} xl={3}>

@@ -415,15 +415,7 @@ export const adminNavigation = [
         permissions: [ADMIN_PERMISSIONS.SERVICE_COMPLETION_VIEW],
         status: "active"
       },
-      {
-        id: "gl-posting-preview",
-        label: "GL Posting Preview",
-        path: "/admin/business-accounting/gl-posting-preview",
-        icon: BsJournalCheck,
-        roles: ADMIN_ROLES.MANAGE,
-        permissions: [ADMIN_PERMISSIONS.GL_PREVIEW_POSTING],
-        status: "active"
-      },
+
       {
         id: "gl-chart-of-accounts",
         label: "Chart of Accounts",
@@ -565,15 +557,6 @@ export const adminNavigation = [
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.REPORT_CENTER_READ],
         status: "active"
-      },
-      {
-        id: "performance-review",
-        label: "Performance",
-        path: "/admin/performance-review",
-        icon: BsSpeedometer2,
-        roles: ADMIN_ROLES.MANAGE,
-        permissions: [ADMIN_PERMISSIONS.PERFORMANCE_REVIEW_READ],
-        status: "active"
       }
     ]
   },
@@ -584,7 +567,7 @@ export const adminNavigation = [
     children: [
       {
         id: "bokun-import",
-        label: "Bokun Integration",
+        label: "Bókun Integration",
         path: "/admin/operations/bokun-sync/confirmed-import",
         icon: BsCloudCheck,
         roles: ADMIN_ROLES.ALL,
@@ -597,28 +580,12 @@ export const adminNavigation = [
         icon: BsArrowRepeat,
         roles: ADMIN_ROLES.ALL,
         status: "active"
-      },
-      {
-        id: "bokun-single-sync",
-        label: "Manual Lookup",
-        path: "/admin/operations/bokun-sync/single-booking",
-        icon: BsJournalCheck,
-        roles: ADMIN_ROLES.ALL,
-        status: "active"
-      },
-      {
-        id: "bokun-sync-logs",
-        label: "Sync Logs",
-        path: "/admin/operations/bokun-sync/sync-logs",
-        icon: BsFileEarmarkText,
-        roles: ADMIN_ROLES.ALL,
-        status: "active"
       }
     ]
   },
   {
     id: "control-system",
-    label: "Control & System",
+    label: "Control",
     roles: ADMIN_ROLES.MANAGE,
     children: [
       {
@@ -628,6 +595,61 @@ export const adminNavigation = [
         icon: BsShieldCheck,
         roles: ADMIN_ROLES.MANAGE,
         permissions: [ADMIN_PERMISSIONS.AUDIT_CONTROL_READ],
+        status: "active"
+      }
+    ]
+  },
+  {
+    // Developer and maintenance pages: super_admin only, folded by default. Every page keeps its URL and its own
+    // role / permission check; only its place in the menu changed.
+    id: "advanced-system",
+    label: "Advanced / System",
+    roles: ["super_admin"],
+    advanced: true,
+    children: [
+      {
+        id: "performance-review",
+        label: "Performance",
+        path: "/admin/performance-review",
+        icon: BsSpeedometer2,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.PERFORMANCE_REVIEW_READ],
+        status: "active"
+      },
+      {
+        id: "production-readiness",
+        label: "Production Readiness",
+        path: "/admin/production-readiness",
+        icon: BsClipboard2Check,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.PRODUCTION_READINESS_READ],
+        status: "active"
+      },
+      {
+        id: "gl-posting-preview",
+        label: "GL Posting Preview",
+        path: "/admin/business-accounting/gl-posting-preview",
+        icon: BsJournalCheck,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.GL_PREVIEW_POSTING],
+        status: "active"
+      },
+      {
+        id: "disaster-recovery",
+        label: "Disaster Recovery",
+        path: "/admin/disaster-recovery",
+        icon: BsCloudCheck,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.DISASTER_RECOVERY_READ],
+        status: "active"
+      },
+      {
+        id: "system-health",
+        label: "System Health",
+        path: "/admin/system-health",
+        icon: BsActivity,
+        roles: ADMIN_ROLES.MANAGE,
+        permissions: [ADMIN_PERMISSIONS.SYSTEM_HEALTH_READ],
         status: "active"
       },
       {
@@ -649,30 +671,19 @@ export const adminNavigation = [
         status: "active"
       },
       {
-        id: "system-health",
-        label: "System Health",
-        path: "/admin/system-health",
-        icon: BsActivity,
-        roles: ADMIN_ROLES.MANAGE,
-        permissions: [ADMIN_PERMISSIONS.SYSTEM_HEALTH_READ],
+        id: "bokun-sync-logs",
+        label: "Sync Logs",
+        path: "/admin/operations/bokun-sync/sync-logs",
+        icon: BsFileEarmarkText,
+        roles: ADMIN_ROLES.ALL,
         status: "active"
       },
       {
-        id: "disaster-recovery",
-        label: "Disaster Recovery",
-        path: "/admin/disaster-recovery",
-        icon: BsCloudCheck,
-        roles: ADMIN_ROLES.MANAGE,
-        permissions: [ADMIN_PERMISSIONS.DISASTER_RECOVERY_READ],
-        status: "active"
-      },
-      {
-        id: "production-readiness",
-        label: "Production Readiness",
-        path: "/admin/production-readiness",
-        icon: BsClipboard2Check,
-        roles: ADMIN_ROLES.MANAGE,
-        permissions: [ADMIN_PERMISSIONS.PRODUCTION_READINESS_READ],
+        id: "bokun-single-sync",
+        label: "Manual Lookup",
+        path: "/admin/operations/bokun-sync/single-booking",
+        icon: BsJournalCheck,
+        roles: ADMIN_ROLES.ALL,
         status: "active"
       }
     ]
@@ -684,11 +695,11 @@ export const adminNavigation = [
     children: [
       {
         id: "settings",
-        label: "System Settings",
+        label: "Settings",
         path: "/admin/settings",
         icon: BsGear,
         roles: ADMIN_ROLES.MANAGE,
-        status: "planned"
+        status: "active"
       }
     ]
   }
@@ -756,11 +767,35 @@ export const getAdminRouteMeta = (pathname = "") => {
   };
 };
 
+// How well an item matches the current URL: the length of its path when the URL is that path or a page below it
+// (or starts with its matchPrefix), else 0.
+const matchLength = (item, pathname = "") => {
+  if (!item.path && !item.matchPrefix) return 0;
+  if (item.path === pathname) return item.path.length + 1;
+  if (item.path && item.path !== "/admin" && pathname.startsWith(`${item.path}/`)) return item.path.length;
+  if (item.matchPrefix && pathname.startsWith(item.matchPrefix)) return item.matchPrefix.length;
+  return 0;
+};
+
+// The one menu item for a URL: the most specific match. "/admin/crm/leads" lights up Leads only, not also
+// CRM Dashboard ("/admin/crm"); "/admin/business-accounting/settlements/import" lights up Import Settlements only.
+export const activeAdminNavItemId = (pathname = "", items = adminNavigationItems) => {
+  let best = null;
+  let bestLength = 0;
+  for (const item of items) {
+    const length = matchLength(item, pathname);
+    if (length > bestLength) {
+      best = item;
+      bestLength = length;
+    }
+  }
+  return best?.id || "";
+};
+
 export const isAdminNavItemActive = (item, pathname = "") => {
-  if (!item.path && !item.matchPrefix) return false;
-  if (item.path === pathname) return true;
-  if (item.path && item.path !== "/admin" && pathname.startsWith(`${item.path}/`)) return true;
-  return Boolean(item.matchPrefix && pathname.startsWith(item.matchPrefix));
+  if (!matchLength(item, pathname)) return false;
+  const known = adminNavigationItems.some((navItem) => navItem.id === item.id);
+  return known ? activeAdminNavItemId(pathname) === item.id : true;
 };
 
 export const hasActiveAdminChild = (item, pathname = "") => {

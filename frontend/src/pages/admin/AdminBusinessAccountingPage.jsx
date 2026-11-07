@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
+import { PageHeader } from "../../components/admin/ui";
 import { Button } from "react-bootstrap";
 import {
   BsArrowClockwise,
@@ -16,7 +18,7 @@ import {
 } from "react-icons/bs";
 import { fetchBusinessAccountingFoundation } from "../../api/adminApi";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/adminFormat";
 
 const PERIOD_OPTIONS = [
   { value: "today", label: "Today" },
@@ -45,11 +47,7 @@ const KPI_LABELS = {
 
 const money = (value, currency = "USD") => formatCurrency(value || 0, currency || "USD");
 
-const prettyLabel = (value = "") =>
-  String(value || "")
-    .replace(/[_-]+/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+const prettyLabel = (value = "") => formatLabel(value);
 
 const changeText = (value) => {
   if (value === null || value === undefined) return "New activity";
@@ -263,7 +261,7 @@ const AuthoritativeFactsSummary = ({ facts }) => {
         <table className="table table-sm align-middle mb-0">
           <thead><tr><th>Currency</th><th className="text-end">Bookings</th><th className="text-end">Gross revenue</th><th className="text-end">Collected</th><th className="text-end">OTA payout</th><th className="text-end">Refunds</th><th className="text-end">Direct costs</th><th>Evidence</th></tr></thead>
           <tbody>{items.map((item) => {
-            const payout = item.otaPayoutsReceived === null ? "Awaiting evidence" : money(item.otaPayoutsReceived, item.currency);
+            const payout = item.otaPayoutsReceived === null ? "Not received yet" : money(item.otaPayoutsReceived, item.currency);
             const pending = (item.evidence?.unknownOtaPayoutBookings || 0) + (item.evidence?.unknownCommissionBookings || 0);
             return <tr key={item.currency}>
               <td><strong>{item.currency}</strong></td>
@@ -404,51 +402,48 @@ const AdminBusinessAccountingPage = () => {
 
   return (
     <div className="management-accounting-page">
-      <div className="management-accounting-header">
-        <div>
-          <div className="management-accounting-breadcrumb">
-            <BsBank aria-hidden="true" />
-            <span>Business Accounting</span>
-            <span>/</span>
-            <strong>Management Accounting</strong>
-          </div>
-          <h1>Management Accounting</h1>
-          <p>Company-wide contribution, income, and expense evidence without duplicating booking accounting revenue.</p>
-        </div>
-
-        <div className="management-accounting-actions">
-          <label>
-            <BsCalendar3 aria-hidden="true" />
-            <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Accounting period">
-              {PERIOD_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
-          {period === "custom" ? (
-            <>
-              <input
-                type="date"
-                value={customRange.fromDate}
-                aria-label="Custom range start"
-                onChange={(event) => setCustomRange((current) => ({ ...current, fromDate: event.target.value }))}
-              />
-              <input
-                type="date"
-                value={customRange.toDate}
-                aria-label="Custom range end"
-                onChange={(event) => setCustomRange((current) => ({ ...current, toDate: event.target.value }))}
-              />
-            </>
-          ) : null}
-          <Button type="button" variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing || loading}>
-            <BsArrowClockwise aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
-          </Button>
-          <Button type="button" variant="outline-secondary" onClick={() => downloadCsv(foundation)} disabled={!foundation || loading}>
-            <BsDownload aria-hidden="true" /> Export
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="Management Accounting"
+        description="Company income and expenses, and what bookings contribute, without counting booking revenue twice."
+        actions={
+          <>
+    
+            <div className="management-accounting-actions">
+              <label>
+                <BsCalendar3 aria-hidden="true" />
+                <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Accounting period">
+                  {PERIOD_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              {period === "custom" ? (
+                <>
+                  <input
+                    type="date"
+                    value={customRange.fromDate}
+                    aria-label="Custom range start"
+                    onChange={(event) => setCustomRange((current) => ({ ...current, fromDate: event.target.value }))}
+                  />
+                  <input
+                    type="date"
+                    value={customRange.toDate}
+                    aria-label="Custom range end"
+                    onChange={(event) => setCustomRange((current) => ({ ...current, toDate: event.target.value }))}
+                  />
+                </>
+              ) : null}
+              <Button type="button" variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing || loading}>
+                <BsArrowClockwise aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
+              </Button>
+              <Button type="button" variant="outline-secondary" onClick={() => downloadCsv(foundation)} disabled={!foundation || loading}>
+                <BsDownload aria-hidden="true" /> Export
+              </Button>
+            </div>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
 

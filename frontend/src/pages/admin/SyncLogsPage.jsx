@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Card, Table } from "react-bootstrap";
+import { AdminPage, DataTable, EmptyState, PageHeader, SectionCard, StatusBadge, RelativeTime } from "../../components/admin/ui";
+import { formatAdminDateTime } from "../../utils/adminFormat";
+import { formatLabel } from "../../utils/formatLabel";
 import { fetchDashboardSummary } from "../../api/adminApi";
-import Loader from "../../components/common/Loader";
-import ErrorAlert from "../../components/common/ErrorAlert";
-import { formatDate } from "../../utils/formatters";
 
 const SyncLogsPage = () => {
   const [logs, setLogs] = useState([]);
@@ -25,42 +24,30 @@ const SyncLogsPage = () => {
     load();
   }, []);
 
-  return (
-    <>
-      <h2 className="mb-1">Sync Logs</h2>
-      <p className="section-subtitle mb-4">Track product sync runs and webhook/polling readiness events.</p>
-      <ErrorAlert error={error} />
-      {loading ? <Loader message="Loading sync logs..." /> : null}
+  const columns = [
+    { key: "operation", header: "Operation", render: (log) => <span title={log.operation}>{formatLabel(log.operation)}</span> },
+    { key: "status", header: "Status", render: (log) => <StatusBadge value={log.status === "started" ? "in_progress" : log.status} label={log.status === "started" ? "Running" : formatLabel(log.status)} /> },
+    { key: "syncedCount", header: "Synced", align: "end", render: (log) => log.syncedCount ?? 0 },
+    { key: "startedAt", header: "Started", render: (log) => <RelativeTime value={log.startedAt} /> },
+    { key: "completedAt", header: "Completed", render: (log) => (log.completedAt ? formatAdminDateTime(log.completedAt) : "—") }
+  ];
 
-      {!loading ? (
-        <Card className="surface-card">
-          <Card.Body>
-            <Table responsive hover>
-              <thead>
-                <tr>
-                  <th>Operation</th>
-                  <th>Status</th>
-                  <th>Synced Count</th>
-                  <th>Started</th>
-                  <th>Completed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((log) => (
-                  <tr key={log._id}>
-                    <td>{log.operation}</td>
-                    <td>{log.status}</td>
-                    <td>{log.syncedCount}</td>
-                    <td>{formatDate(log.startedAt, "YYYY-MM-DD HH:mm")}</td>
-                    <td>{formatDate(log.completedAt, "YYYY-MM-DD HH:mm")}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </Card.Body>
-        </Card>
-      ) : null}
-    </>
+  return (
+    <AdminPage>
+      <PageHeader eyebrow="Integrations" title="Sync Logs" description="Every Bókun import, product sync and webhook run, newest first. Kept for 7 days." />
+      <SectionCard>
+        <DataTable
+          columns={columns}
+          rows={logs}
+          rowKey={(log) => log._id}
+          loading={loading}
+          error={error}
+          pageSize={50}
+          caption="Sync logs"
+          empty={<EmptyState title="No sync runs yet" message="Runs appear here as soon as the scheduled Bókun import or a manual sync runs." />}
+        />
+      </SectionCard>
+    </AdminPage>
   );
 };
 

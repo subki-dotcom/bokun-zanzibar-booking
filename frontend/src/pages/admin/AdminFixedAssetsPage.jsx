@@ -1,4 +1,7 @@
 import Loader from "../../components/common/Loader";
+import { formatAdminMoney } from "../../utils/adminFormat";
+import { formatLabel } from "../../utils/formatLabel";
+import { PageHeader } from "../../components/admin/ui";
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Form, Modal } from 'react-bootstrap';
 import {
@@ -25,23 +28,15 @@ const numericValue = (v) => {
 };
 const money = (v, c) =>
   v == null || !c
-    ? 'Unavailable'
-    : new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: c,
-        maximumFractionDigits: 2,
-      }).format(numericValue(v));
+    ? 'Not available'
+    : formatAdminMoney(numericValue(v), c);
 const date = (v) =>
   v
     ? new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(
         new Date(v)
       )
     : '—';
-const label = (v) =>
-  String(v || '')
-    .toLowerCase()
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+const label = (value = "") => formatLabel(value);
 const Kpi = ({ title, value, note, icon: Icon, tone = '' }) => (
   <article className={`fa-kpi ${tone}`}>
     <i>
@@ -218,33 +213,33 @@ export default function AdminFixedAssetsPage() {
   };
   return (
     <main className="fa-page">
-      <header className="fa-header">
-        <div>
-          <nav>
-            Business Accounting / Assets / <strong>Fixed Assets</strong>
-          </nav>
-          <h1>Fixed Assets</h1>
-          <p>Manage fixed assets, depreciation, useful life, book value, and asset history.</p>
-        </div>
-        <div>
-          <Button onClick={openAdd}>
-            + Add Asset
-          </Button>
-          <Button
-            variant="outline-secondary"
-            disabled
-            title="Validated import workflow is not available"
-          >
-            Import
-          </Button>
-          <Button variant="outline-secondary" onClick={download} disabled={!d.items?.length}>
-            <BsDownload /> Export
-          </Button>
-          <Button variant="outline-secondary" onClick={load}>
-            <BsArrowClockwise /> Refresh
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="Assets"
+        description="Manage fixed assets, depreciation, useful life, book value, and asset history."
+        actions={
+          <>
+            <div>
+              <Button onClick={openAdd}>
+                + Add Asset
+              </Button>
+              <Button
+                variant="outline-secondary"
+                disabled
+                title="Validated import workflow is not available"
+              >
+                Import
+              </Button>
+              <Button variant="outline-secondary" onClick={download} disabled={!d.items?.length}>
+                <BsDownload /> Export
+              </Button>
+              <Button variant="outline-secondary" onClick={load}>
+                <BsArrowClockwise /> Refresh
+              </Button>
+            </div>
+          </>
+        }
+      />
       {state.error ? (
         <div className="fa-error" role="alert">
           {state.error}
@@ -352,7 +347,7 @@ export default function AdminFixedAssetsPage() {
                 >
                   <option value="all">All Statuses</option>
                   {[...new Set((d.items || []).map((r) => r.status))].map((v) => (
-                    <option key={v}>{v}</option>
+                    <option key={v} value={v}>{formatLabel(v)}</option>
                   ))}
                 </Form.Select>
               </div>

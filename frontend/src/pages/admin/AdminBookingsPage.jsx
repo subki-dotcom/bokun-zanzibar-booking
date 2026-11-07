@@ -1,4 +1,6 @@
 import { PaymentTruthBadge, SettlementBadge } from '../../components/invoice/BookingPaymentState';
+import { confirmAction, useToastMessage } from "../../components/admin/ui/feedback";
+import { formatLabel } from "../../utils/formatLabel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
@@ -22,7 +24,8 @@ import {
   BsXCircle
 } from "react-icons/bs";
 import { adminCancelBooking, fetchAdminBookings } from "../../api/bookingsApi";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/adminFormat";
+import { AdminPage, PageHeader, SectionCard, StatCard, StatGrid } from "../../components/admin/ui";
 
 const BOOKING_STATUSES = [
   { value: "all", label: "All Statuses" },
@@ -74,12 +77,7 @@ const defaultLimit = () => {
   return 20;
 };
 
-const titleize = (value = "") =>
-  String(value || "unknown")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+const titleize = (value = "") => formatLabel(value);
 
 const readQuery = (searchParams) => {
   const limit = Number(searchParams.get("limit") || defaultLimit());
@@ -228,15 +226,8 @@ const PageAction = ({ as: Component = "button", children, className = "", ...pro
   <Component className={`admin-bookings-action ${className}`.trim()} {...props}>{children}</Component>
 );
 
-const MetricCard = ({ icon: Icon, label, value, detail, tone = "teal" }) => (
-  <section className={`admin-bookings-card admin-bookings-metric is-${tone}`}>
-    <span className="admin-bookings-metric-icon"><Icon aria-hidden="true" /></span>
-    <div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{detail}</small>
-    </div>
-  </section>
+const MetricCard = ({ icon, label, value, detail, loading = false }) => (
+  <StatCard label={label} value={value} helper={detail} icon={icon} loading={loading} />
 );
 
 const Skeleton = ({ rows = 3, className = "" }) => (
@@ -416,15 +407,15 @@ const BookingsTable = ({ bookings, loading, openActionId, onToggleAction, onCanc
                   </Link>
                 </td>
                 <td className="admin-bookings-product-cell">
-                  <strong>{booking.productTitle || "-"}</strong>
-                  {booking.optionTitle ? <small>{booking.optionTitle}</small> : null}
+                  <strong title={booking.productTitle || undefined}>{booking.productTitle || "-"}</strong>
+                  {booking.optionTitle ? <small title={booking.optionTitle}>{booking.optionTitle}</small> : null}
                 </td>
                 <td className="admin-bookings-date-cell">
                   <strong>{dateParts.date}</strong>
                   {dateParts.time ? <small>{dateParts.time}</small> : null}
                 </td>
                 <td className="admin-bookings-customer-cell">
-                  <strong>{getCustomerName(booking)}</strong>
+                  <strong title={getCustomerName(booking)}>{getCustomerName(booking)}</strong>
                   {getCustomerContact(booking) ? <small>{getCustomerContact(booking)}</small> : null}
                 </td>
                 <td><Badge value={booking.bookingStatus} /></td>
@@ -550,6 +541,7 @@ const AdminBookingsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  useToastMessage(notice, setNotice);
   const [openActionId, setOpenActionId] = useState("");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [actionBusyId, setActionBusyId] = useState("");
@@ -639,7 +631,7 @@ const AdminBookingsPage = () => {
   };
 
   const handleCancel = async (booking) => {
-    const ok = window.confirm(`Request cancellation for booking ${booking.bookingReference}?`);
+    const ok = await confirmAction({ title: `Request cancellation for booking ${booking.bookingReference}?`, confirmLabel: "Request cancellation" });
     if (!ok) return;
 
     setError("");
@@ -716,13 +708,12 @@ const AdminBookingsPage = () => {
   ];
 
   return (
-    <div className="admin-bookings-page">
-      <div className="admin-bookings-page-head">
-        <div>
-          <span>Operations / Bookings</span>
-          <h1>Bookings</h1>
-          <p>Manage all bookings and reservations</p>
-        </div>
+    <AdminPage className="admin-bookings-page">
+      <PageHeader
+        eyebrow="Operations"
+        title="Bookings"
+        description="Every booking from the website, Bókun and partners, with its payment and supplier status."
+        actions={
         <div className="admin-bookings-actions">
           <PageAction as={Link} to="/admin/operations/bokun-sync/confirmed-import">
             <BsArrowClockwise aria-hidden="true" />
@@ -741,34 +732,24 @@ const AdminBookingsPage = () => {
             New Booking
           </PageAction>
         </div>
-      </div>
+        }
+      />
 
-      {notice ? <div className="admin-bookings-notice">{notice}</div> : null}
 
-      <div className="admin-bookings-metric-grid">
-        {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
-      </div>
+      <StatGrid columns={3}>
+        {metrics.map((metric) => <MetricCard key={metric.label} {...metric} loading={loading} />)}
+      </StatGrid>
 
       <div className="admin-bookings-chart-grid">
-        <section className="admin-bookings-card admin-bookings-chart-card">
-          <div className="admin-bookings-card-head">
-            <h2>Bookings Trend</h2>
-            <span>Last 7 travel dates</span>
-          </div>
+        <SectionCard title="Bookings trend" description="Last 7 travel dates">
           <TrendChart rows={summary.trend || []} loading={loading} />
-        </section>
-        <section className="admin-bookings-card admin-bookings-chart-card">
-          <div className="admin-bookings-card-head">
-            <h2>Bookings by Source</h2>
-          </div>
+        </SectionCard>
+        <SectionCard title="Bookings by source">
           <DonutChart rows={sourceRows} total={sourceTotal} loading={loading} emptyMessage="No source data available." />
-        </section>
-        <section className="admin-bookings-card admin-bookings-chart-card">
-          <div className="admin-bookings-card-head">
-            <h2>Legacy Payment Status</h2>
-          </div>
+        </SectionCard>
+        <SectionCard title="Payment status" description="Recorded on the booking">
           <DonutChart rows={paymentRows} total={paymentTotal} loading={loading} emptyMessage="No payment data available." />
-        </section>
+        </SectionCard>
       </div>
 
       <section className="admin-bookings-filter-card">
@@ -844,7 +825,7 @@ const AdminBookingsPage = () => {
           </>
         )}
       </section>
-    </div>
+    </AdminPage>
   );
 };
 

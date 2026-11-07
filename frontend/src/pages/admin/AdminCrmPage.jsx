@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Card, Col, Form, Row, Table } from "react-bootstrap";
+import { useToastMessage } from "../../components/admin/ui/feedback";
+import { formatAdminMoney, formatAdminNumber } from "../../utils/adminFormat";
+import { formatLabel } from "../../utils/formatLabel";
+import { Button, Card, Col, Form, Row, Table, Offcanvas } from "react-bootstrap";
 import { BsArchive, BsArrowClockwise, BsBarChartLine, BsBell, BsClipboard2Check, BsDownload, BsExclamationTriangle, BsGraphUpArrow, BsJournalCheck, BsPeople, BsReceipt, BsShieldCheck } from "react-icons/bs";
 import { useLocation } from "react-router-dom";
 import {
@@ -43,6 +46,7 @@ import {
 } from "../../api/adminApi";
 import { AdminMetricCard, StatusBadge, formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
+import { AdminPage, FilterBar, PageHeader, StatCard, StatGrid, Truncate, RelativeTime } from "../../components/admin/ui";
 import Loader from "../../components/common/Loader";
 
 const modeFromPath = (pathname = "") => {
@@ -163,21 +167,15 @@ const duplicateName = (customer = {}) =>
   customer?.fullName || customer?.email || customer?.crmCustomerNumber || customer?._id || "-";
 
 const leadName = (lead = {}) => lead.fullName || [lead.firstName, lead.lastName].filter(Boolean).join(" ") || "-";
-const formatMoney = (amount = 0, currency = "USD") => {
-  try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "USD" }).format(Number(amount || 0));
-  } catch (_error) {
-    return `${currency || "USD"} ${Number(amount || 0).toFixed(2)}`;
-  }
-};
+const formatMoney = (amount = 0, currency = "USD") => formatAdminMoney(Number(amount || 0), currency || "USD");
 const formatReportCell = (value, type = "text", currency = "USD") => {
   if (value === null || value === undefined || value === "") return "-";
   if (type === "money") return formatMoney(value, currency);
   if (type === "percent") return `${Number(value || 0).toFixed(2)}%`;
   if (type === "boolean") return value ? "Yes" : "No";
-  if (type === "number") return Number(value || 0).toLocaleString();
+  if (type === "number") return formatAdminNumber(Number(value || 0));
   if (typeof value === "object") return JSON.stringify(value);
-  return String(value).replaceAll("_", " ");
+  return formatLabel(value);
 };
 const toIsoDateTime = (value = "") => {
   if (!value) return "";
@@ -314,6 +312,9 @@ const AdminCrmPage = () => {
   const [selectedCrmReportType, setSelectedCrmReportType] = useState("");
   const [crmReportResult, setCrmReportResult] = useState(null);
   const [crmReportFormat, setCrmReportFormat] = useState("CSV");
+  const [showLeadForm, setShowLeadForm] = useState(false);
+  // Which intake drawer is open on the Opportunities / Quotes / Follow-ups / Tasks / B2B pages.
+  const [crmDrawer, setCrmDrawer] = useState("");
   const [leadForm, setLeadForm] = useState(emptyLeadForm);
   const [opportunityForm, setOpportunityForm] = useState(emptyOpportunityForm);
   const [quoteForm, setQuoteForm] = useState(emptyQuoteForm);
@@ -335,6 +336,7 @@ const AdminCrmPage = () => {
   const [runningCrmImport, setRunningCrmImport] = useState(false);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
+  useToastMessage(actionMessage, setActionMessage);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -546,6 +548,7 @@ const AdminCrmPage = () => {
     setCrmImportForm((prev) => ({ ...prev, [field]: value }));
   };
 
+
   const submitLead = async (event) => {
     event.preventDefault();
     setSavingLead(true);
@@ -559,6 +562,7 @@ const AdminCrmPage = () => {
         phone: leadForm.phone || ""
       });
       setLeadForm(emptyLeadForm);
+      setShowLeadForm(false);
       await load({ silent: true });
       setActionMessage(result.action === "existing" ? "Existing lead matched." : "Lead saved.");
     } catch (err) {
@@ -601,6 +605,7 @@ const AdminCrmPage = () => {
       }
       const result = await createCrmOpportunity(payload);
       setOpportunityForm(emptyOpportunityForm);
+      setCrmDrawer("");
       await load({ silent: true });
       setActionMessage(result.action === "existing" ? "Existing opportunity matched." : "Opportunity saved.");
     } catch (err) {
@@ -651,6 +656,7 @@ const AdminCrmPage = () => {
       };
       const result = await createCrmQuote(payload);
       setQuoteForm(emptyQuoteForm);
+      setCrmDrawer("");
       await load({ silent: true });
       setActionMessage(`Quote ${result.quote?.quoteNumber || ""} saved.`);
     } catch (err) {
@@ -732,6 +738,7 @@ const AdminCrmPage = () => {
       };
       const result = await createCrmFollowUp(payload);
       setFollowUpForm(emptyFollowUpForm);
+      setCrmDrawer("");
       await load({ silent: true });
       setActionMessage(`Follow-up ${result.followUp?.type || ""} saved.`);
     } catch (err) {
@@ -779,6 +786,7 @@ const AdminCrmPage = () => {
       };
       const result = await createCrmTask(payload);
       setTaskForm(emptyTaskForm);
+      setCrmDrawer("");
       await load({ silent: true });
       setActionMessage(`Task ${result.task?.title || ""} saved.`);
     } catch (err) {
@@ -854,6 +862,7 @@ const AdminCrmPage = () => {
       };
       const result = await createCrmB2BPartner(payload);
       setB2BPartnerForm(emptyB2BPartnerForm);
+      setCrmDrawer("");
       await load({ silent: true });
       setActionMessage(result.action === "existing" ? "Existing B2B partner matched." : "B2B partner saved.");
     } catch (err) {
@@ -940,196 +949,144 @@ const AdminCrmPage = () => {
     }
   };
 
+  // Title, short description and the stats that matter on each CRM page. The full set of KPIs is on the CRM
+  // Dashboard only; the other pages show the one to three numbers about what they list.
+  const pageMeta = {
+    dashboard: ["CRM Dashboard", "Customers, leads, opportunities and follow-ups at a glance."],
+    customers: ["Customers", "One record per customer, from bookings and enquiries."],
+    leads: ["Leads", "People who enquired but have not booked yet."],
+    opportunities: ["Opportunities", "Possible sales you are working on, with their value and stage."],
+    pipeline: ["Sales Pipeline", "Opportunities by stage."],
+    quotes: ["Quotes", "Prices sent to customers and their answers."],
+    followUps: ["Follow-ups", "Calls and messages planned for customers."],
+    tasks: ["Tasks", "To-dos for the team."],
+    conversations: ["Conversations", "Messages and calls logged for a customer."],
+    duplicates: ["Duplicate Review", "Customer records that may be the same person."],
+    b2bAgents: ["Agents / B2B", "Partners who sell your tours."],
+    lostOpportunities: ["Lost Opportunities", "Sales that did not happen, and why."],
+    reports: ["CRM Reports", "Run and export CRM reports."],
+    controls: ["CRM Controls", "Data quality, audit coverage and permissions for CRM."],
+    imports: ["CRM Imports", "Bring customers, leads or partners in from a CSV file."]
+  };
+  const [pageTitle, pageDescription] = pageMeta[mode] || pageMeta.dashboard;
+
+  const stat = {
+    customers: { label: "Customers", value: metrics.customerCount || 0, helper: "Customer records", icon: BsPeople },
+    duplicates: {
+      label: "Possible duplicates",
+      value: metrics.possibleDuplicateCount || 0,
+      helper: `${metrics.openDuplicateCount || 0} open to review`,
+      icon: BsShieldCheck,
+      status: (metrics.openDuplicateCount || 0) > 0 ? "warning" : ""
+    },
+    leads: { label: "Leads", value: metrics.leadCount || 0, helper: `${metrics.newLeadCount || 0} new, ${metrics.qualifiedLeadCount || 0} qualified`, icon: BsClipboard2Check },
+    opportunities: { label: "Open opportunities", value: metrics.openOpportunityCount || 0, helper: `${metrics.wonOpportunityCount || 0} won, ${metrics.lostOpportunityCount || 0} lost`, icon: BsGraphUpArrow },
+    pipeline: { label: "Weighted pipeline", value: formatMoney(metrics.weightedPipelineValue || 0), helper: `${formatMoney(metrics.openPipelineValue || 0)} open forecast`, icon: BsGraphUpArrow },
+    quotes: { label: "Quotes", value: metrics.quoteCount || 0, helper: `${metrics.sentQuoteCount || 0} sent, ${metrics.acceptedQuoteCount || 0} accepted`, icon: BsReceipt },
+    followUps: {
+      label: "Follow-ups due",
+      value: metrics.followUpsDueCount || 0,
+      helper: `${metrics.pendingFollowUpCount || 0} pending, ${metrics.missedFollowUpCount || 0} missed`,
+      icon: BsBell,
+      status: (metrics.followUpsDueCount || 0) > 0 ? "due" : ""
+    },
+    tasks: { label: "Open tasks", value: metrics.openTaskCount || 0, helper: `${metrics.tasksDueCount || 0} due now`, icon: BsJournalCheck, status: (metrics.tasksDueCount || 0) > 0 ? "due" : "" },
+    b2b: { label: "B2B partners", value: metrics.b2bPartnerCount || 0, helper: `${metrics.activeB2BPartnerCount || 0} active, ${metrics.openB2BPartnerCount || 0} in pipeline`, icon: BsPeople },
+    alerts: {
+      label: "CRM alerts",
+      value: crmAlertSummary.total || 0,
+      helper: `${crmNotificationSummary.total || 0} in-app notifications`,
+      icon: BsExclamationTriangle,
+      status: (crmAlertSummary.total || 0) > 0 ? "warning" : ""
+    },
+    forecast: { label: "CRM forecast", value: formatMoney(analyticsTotals.weightedPipelineValue || 0), helper: `${analyticsTotals.openOpportunityCount || 0} open opportunities`, icon: BsBarChartLine },
+    dataIssues: {
+      label: "CRM data issues",
+      value: crmControls?.dataQuality?.totalDetected || 0,
+      helper: `${crmControlIssues.length} shown below`,
+      icon: BsShieldCheck,
+      status: (crmControls?.dataQuality?.totalDetected || 0) > 0 ? "warning" : ""
+    },
+    audit: { label: "Audit coverage", value: crmControls?.auditCoverage?.totalRequirements || 0, helper: `${crmControls?.auditCoverage?.observed || 0} seen in the audit log`, icon: BsArchive },
+    permissions: {
+      label: "CRM permissions",
+      value: `${crmControls?.permissions?.declaredCount || 0}/${crmControls?.permissions?.requiredCount || 0}`,
+      helper: "Required permissions declared",
+      icon: BsShieldCheck,
+      status: crmControls?.permissions?.staffSensitiveAccessDenied ? "" : "failed"
+    },
+    lostForecast: { label: "Lost value", value: formatMoney(lostOpportunityValue), helper: `${lostOpportunityItems.length} lost opportunities`, icon: BsArchive },
+    timeline: { label: "Timeline events", value: timelineItems.length, helper: selectedCustomer ? customerName(selectedCustomer) : "Select a customer", icon: BsArchive }
+  };
+  const statsByMode = {
+    dashboard: ["customers", "leads", "opportunities", "pipeline", "quotes", "followUps", "tasks", "b2b", "duplicates", "alerts"],
+    customers: ["customers", "duplicates"],
+    leads: ["leads", "opportunities"],
+    opportunities: ["opportunities", "pipeline", "quotes"],
+    pipeline: ["opportunities", "pipeline"],
+    quotes: ["quotes", "opportunities"],
+    followUps: ["followUps", "tasks"],
+    tasks: ["tasks", "followUps"],
+    conversations: ["timeline", "customers"],
+    duplicates: ["duplicates", "customers"],
+    b2bAgents: ["b2b"],
+    lostOpportunities: ["lostForecast", "opportunities"],
+    reports: ["forecast", "opportunities", "leads"],
+    controls: ["dataIssues", "audit", "permissions"],
+    imports: ["customers", "leads", "b2b"]
+  };
+  const visibleStats = (statsByMode[mode] || statsByMode.dashboard).map((key) => ({ key, ...stat[key] }));
+
   return (
-    <div className="admin-crm-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Customer Lifecycle</span>
-          <h2>
-            {mode === "pipeline"
-              ? "Sales Pipeline"
-              : mode === "opportunities"
-                ? "Opportunities"
-              : mode === "lostOpportunities"
-                ? "Lost Opportunities"
-              : mode === "conversations"
-                ? "Conversations"
-              : mode === "quotes"
-                ? "Quotes"
-                : mode === "b2bAgents"
-                  ? "B2B / Agents"
-                : mode === "controls"
-                  ? "CRM Controls"
-                : mode === "imports"
-                  ? "CRM Imports"
-                : mode === "reports"
-                  ? "CRM Reports"
-                : mode === "followUps"
-                  ? "Follow-ups"
-                : mode === "tasks"
-                  ? "Tasks"
-                : mode === "leads"
-                ? "Leads"
-                : mode === "duplicates"
-                  ? "Duplicate Review"
-                  : mode === "customers"
-                    ? "Customer Master"
-                    : "CRM"}
-          </h2>
-          <p>Bokun remains booking truth while CRM owns pre-booking customer lifecycle data.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+    <AdminPage className="admin-crm-page">
+      <PageHeader
+        eyebrow="CRM"
+        title={pageTitle}
+        description={pageDescription}
+        actions={
+          <>
+            <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+              <BsArrowClockwise aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+            {mode === "leads" ? (
+              <Button variant="primary" onClick={() => setShowLeadForm(true)}>
+                <BsClipboard2Check aria-hidden="true" /> Add lead
+              </Button>
+            ) : null}
+            {mode === "opportunities" ? (
+              <Button variant="primary" onClick={() => setCrmDrawer("opportunities")}>
+                <BsGraphUpArrow aria-hidden="true" /> Add opportunity
+              </Button>
+            ) : null}
+            {mode === "quotes" ? (
+              <Button variant="primary" onClick={() => setCrmDrawer("quotes")}>
+                <BsReceipt aria-hidden="true" /> New quote
+              </Button>
+            ) : null}
+            {mode === "followUps" ? (
+              <Button variant="primary" onClick={() => setCrmDrawer("followUps")}>
+                <BsBell aria-hidden="true" /> Schedule follow-up
+              </Button>
+            ) : null}
+            {mode === "tasks" ? (
+              <Button variant="primary" onClick={() => setCrmDrawer("tasks")}>
+                <BsJournalCheck aria-hidden="true" /> New task
+              </Button>
+            ) : null}
+            {mode === "b2bAgents" ? (
+              <Button variant="primary" onClick={() => setCrmDrawer("b2bAgents")}>
+                <BsPeople aria-hidden="true" /> Add partner
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
-      {actionMessage ? <div className="alert alert-success">{actionMessage}</div> : null}
 
-      <Row className="g-3">
-        <Col md={6} xl={3}>
-          <AdminMetricCard label="Customers" value={metrics.customerCount || 0} detail="Customer master records" icon={BsPeople} />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Possible Duplicates"
-            value={metrics.possibleDuplicateCount || 0}
-            detail={`${metrics.openDuplicateCount || 0} open review items`}
-            icon={BsShieldCheck}
-            status={(metrics.openDuplicateCount || 0) > 0 ? "warn" : "pass"}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Leads"
-            value={metrics.leadCount || 0}
-            detail={`${metrics.newLeadCount || 0} new, ${metrics.qualifiedLeadCount || 0} qualified`}
-            icon={BsClipboard2Check}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Open Opportunities"
-            value={metrics.openOpportunityCount || 0}
-            detail={`${metrics.wonOpportunityCount || 0} won, ${metrics.lostOpportunityCount || 0} lost`}
-            icon={BsGraphUpArrow}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Weighted Pipeline"
-            value={formatMoney(metrics.weightedPipelineValue || 0)}
-            detail={`${formatMoney(metrics.openPipelineValue || 0)} open forecast`}
-            icon={BsGraphUpArrow}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Quotes"
-            value={metrics.quoteCount || 0}
-            detail={`${metrics.sentQuoteCount || 0} sent, ${metrics.acceptedQuoteCount || 0} accepted`}
-            icon={BsReceipt}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Follow-ups Due"
-            value={metrics.followUpsDueCount || 0}
-            detail={`${metrics.pendingFollowUpCount || 0} pending, ${metrics.missedFollowUpCount || 0} missed`}
-            icon={BsBell}
-            status={(metrics.followUpsDueCount || 0) > 0 ? "warn" : "pass"}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Open Tasks"
-            value={metrics.openTaskCount || 0}
-            detail={`${metrics.tasksDueCount || 0} due now`}
-            icon={BsJournalCheck}
-            status={(metrics.tasksDueCount || 0) > 0 ? "warn" : "pass"}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="B2B Partners"
-            value={metrics.b2bPartnerCount || 0}
-            detail={`${metrics.activeB2BPartnerCount || 0} active, ${metrics.openB2BPartnerCount || 0} in pipeline`}
-            icon={BsPeople}
-          />
-        </Col>
-        {mode === "dashboard" ? (
-          <Col md={6} xl={3}>
-            <AdminMetricCard
-              label="CRM Alerts"
-              value={crmAlertSummary.total || 0}
-              detail={`${crmNotificationSummary.total || 0} in-app notifications`}
-              icon={BsExclamationTriangle}
-              status={(crmAlertSummary.total || 0) > 0 ? "warn" : "pass"}
-            />
-          </Col>
-        ) : null}
-        {mode === "reports" ? (
-          <Col md={6} xl={3}>
-            <AdminMetricCard
-              label="CRM Forecast"
-              value={formatMoney(analyticsTotals.weightedPipelineValue || 0)}
-              detail={`${analyticsTotals.openOpportunityCount || 0} open opportunities`}
-              icon={BsBarChartLine}
-            />
-          </Col>
-        ) : null}
-        {mode === "controls" ? (
-          <>
-            <Col md={6} xl={3}>
-              <AdminMetricCard
-                label="CRM Data Issues"
-                value={crmControls?.dataQuality?.totalDetected || 0}
-                detail={`${crmControlIssues.length} shown in this view`}
-                icon={BsShieldCheck}
-                status={(crmControls?.dataQuality?.totalDetected || 0) > 0 ? "warn" : "pass"}
-              />
-            </Col>
-            <Col md={6} xl={3}>
-              <AdminMetricCard
-                label="Audit Coverage"
-                value={crmControls?.auditCoverage?.totalRequirements || 0}
-                detail={`${crmControls?.auditCoverage?.observed || 0} observed from AuditLog`}
-                icon={BsArchive}
-              />
-            </Col>
-            <Col md={6} xl={3}>
-              <AdminMetricCard
-                label="CRM Permissions"
-                value={`${crmControls?.permissions?.declaredCount || 0}/${crmControls?.permissions?.requiredCount || 0}`}
-                detail="Required CRM permissions declared"
-                icon={BsShieldCheck}
-                status={crmControls?.permissions?.staffSensitiveAccessDenied ? "pass" : "fail"}
-              />
-            </Col>
-          </>
-        ) : null}
-        {mode === "lostOpportunities" ? (
-          <Col md={6} xl={3}>
-            <AdminMetricCard
-              label="Lost Forecast"
-              value={formatMoney(lostOpportunityValue)}
-              detail={`${lostOpportunityItems.length} lost opportunities`}
-              icon={BsArchive}
-              status={lostOpportunityItems.length ? "warn" : "pass"}
-            />
-          </Col>
-        ) : null}
-        {mode === "conversations" ? (
-          <Col md={6} xl={3}>
-            <AdminMetricCard
-              label="Timeline Events"
-              value={timelineItems.length}
-              detail={selectedCustomer ? customerName(selectedCustomer) : "Select a customer"}
-              icon={BsArchive}
-            />
-          </Col>
-        ) : null}
-      </Row>
+      <StatGrid columns={mode === "dashboard" ? 4 : visibleStats.length >= 3 ? 3 : 4}>
+        {visibleStats.map(({ key, ...card }) => <StatCard key={key} {...card} />)}
+      </StatGrid>
 
       {mode === "dashboard" ? (
         <Row className="g-4 mt-1">
@@ -1159,12 +1116,12 @@ const AdminCrmPage = () => {
                     {crmAlertItems.length ? crmAlertItems.map((alert) => (
                       <tr key={alert.alertKey}>
                         <td>
-                          <strong className="d-block">{alert.title || alert.type?.replaceAll("_", " ")}</strong>
+                          <strong className="d-block">{alert.title || formatLabel(alert.type)}</strong>
                           <small className="text-muted">{alert.message || alert.reference || "-"}</small>
                         </td>
                         <td><StatusBadge value={alert.severity} /></td>
                         <td>{alert.assigneeLabel || alert.assignedTo?.name || alert.assignedTo?.email || alert.assignedTo?.id || "Unassigned"}</td>
-                        <td>{formatDateTime(alert.dueAt || alert.occurredAt || alert.createdAt)}</td>
+                        <td><RelativeTime value={alert.dueAt || alert.occurredAt || alert.createdAt} /></td>
                         <td>
                           {alert.action?.path ? (
                             <Button size="sm" variant="outline-primary" href={alert.action.path}>
@@ -1201,12 +1158,12 @@ const AdminCrmPage = () => {
                     {crmNotificationItems.length ? crmNotificationItems.map((notification) => (
                       <tr key={notification.notificationKey}>
                         <td>
-                          <strong className="d-block">{notification.title || notification.type?.replaceAll("_", " ")}</strong>
+                          <strong className="d-block">{notification.title || formatLabel(notification.type)}</strong>
                           <small className="text-muted">{notification.message || notification.reference || "-"}</small>
                           <small className="d-block text-muted">{notification.delivery?.mode || "IN_APP_DERIVED"}</small>
                         </td>
                         <td>{notification.recipientLabel || notification.recipient?.name || notification.recipient?.email || notification.recipient?.id || "Unassigned"}</td>
-                        <td>{formatDateTime(notification.occurredAt || notification.createdAt)}</td>
+                        <td><RelativeTime value={notification.occurredAt || notification.createdAt} /></td>
                       </tr>
                     )) : (
                       <tr>
@@ -1221,7 +1178,7 @@ const AdminCrmPage = () => {
           <Col xs={12}>
             <Card className="surface-card">
               <Card.Body>
-                <h5 className="mb-2">Notification Delivery Guardrail</h5>
+                <h5 className="mb-2">How notifications are sent</h5>
                 <p className="mb-0 text-muted">
                   These are CRM in-app notifications derived from records already in the system. External email, SMS, WhatsApp, or provider delivery is not claimed here.
                 </p>
@@ -1245,7 +1202,7 @@ const AdminCrmPage = () => {
                       onChange={(event) => updateCrmImportForm("importType", event.target.value)}
                     >
                       {crmImportTypes.map((type) => (
-                        <option key={type} value={type}>{type.replaceAll("_", " ")}</option>
+                        <option key={type} value={type}>{formatLabel(type)}</option>
                       ))}
                     </Form.Select>
                   </Form.Group>
@@ -1427,7 +1384,7 @@ const AdminCrmPage = () => {
                     {crmControlIssues.length ? crmControlIssues.map((issue) => (
                       <tr key={issue.issueKey}>
                         <td>
-                          <strong className="d-block">{String(issue.code || "").replaceAll("_", " ")}</strong>
+                          <strong className="d-block">{formatLabel(issue.code)}</strong>
                           <small className="text-muted">{issue.message}</small>
                         </td>
                         <td><StatusBadge value={issue.severity} /></td>
@@ -1548,7 +1505,7 @@ const AdminCrmPage = () => {
           <Col xl={5}>
             <Card className="surface-card h-100">
               <Card.Body>
-                <h5 className="mb-3">Privacy & Duplicate Guardrails</h5>
+                <h5 className="mb-3">Privacy and duplicates</h5>
                 <div className="d-flex flex-column gap-3">
                   {crmControlPrivacyEntries.map(([key, value]) => (
                     <div key={key} className="border-bottom pb-2">
@@ -1612,13 +1569,14 @@ const AdminCrmPage = () => {
           <Col xs={12}>
             <Card className="surface-card">
               <Card.Body>
-                <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-                  <div>
-                    <h5 className="mb-1">{selectedCrmReport?.title || "CRM Report"}</h5>
-                    <small className="text-muted">{selectedCrmReport?.description || "Select a CRM report."}</small>
-                  </div>
-                  <div className="d-flex flex-wrap gap-2">
+                <div className="mb-3">
+                  <h5 className="mb-1">{selectedCrmReport?.title || "CRM Report"}</h5>
+                  <small className="text-muted">{selectedCrmReport?.description || "Select a CRM report."}</small>
+                </div>
+                <div className="mb-3">
+                  <FilterBar>
                     <Form.Select
+                      size="sm"
                       aria-label="CRM report"
                       value={selectedCrmReportType}
                       onChange={(event) => runSelectedCrmReport(event.target.value)}
@@ -1628,23 +1586,24 @@ const AdminCrmPage = () => {
                         <option key={report.type} value={report.type}>{report.title}</option>
                       ))}
                     </Form.Select>
-                    <Button variant="outline-dark" onClick={() => runSelectedCrmReport()} disabled={runningCrmReport || !selectedCrmReportType}>
+                    <Button size="sm" variant="primary" onClick={() => runSelectedCrmReport()} disabled={runningCrmReport || !selectedCrmReportType}>
                       Run
                     </Button>
                     <Form.Select
+                      size="sm"
                       aria-label="CRM report export format"
                       value={crmReportFormat}
                       onChange={(event) => setCrmReportFormat(event.target.value)}
                       disabled={runningCrmReport}
                     >
                       {(selectedCrmReport?.supportedExports || ["CSV"]).map((format) => (
-                        <option key={format} value={format}>{format}</option>
+                        <option key={format} value={format}>{formatLabel(format)}</option>
                       ))}
                     </Form.Select>
-                    <Button className="premium-btn text-white" onClick={exportSelectedCrmReport} disabled={runningCrmReport || !selectedCrmReportType}>
-                      <BsDownload /> Export
+                    <Button size="sm" variant="outline-primary" onClick={exportSelectedCrmReport} disabled={runningCrmReport || !selectedCrmReportType}>
+                      <BsDownload aria-hidden="true" /> Export
                     </Button>
-                  </div>
+                  </FilterBar>
                 </div>
                 <Table responsive hover className="align-middle mb-0">
                   <thead>
@@ -1876,7 +1835,7 @@ const AdminCrmPage = () => {
             <Col xs={12}>
               <Card className="surface-card">
                 <Card.Body>
-                  <h5 className="mb-3">Analytics Guardrails</h5>
+                  <h5 className="mb-3">How to read these numbers</h5>
                   <div className="d-flex flex-column gap-2">
                     {analyticsLimitations.map((item) => (
                       <div key={item} className="text-muted">{item}</div>
@@ -1957,7 +1916,7 @@ const AdminCrmPage = () => {
                           <StatusBadge value={opportunity.source} />
                           <small className="d-block text-muted">{opportunity.assignedTo?.name || opportunity.assignedTo?.email || opportunity.assignedTo?.id || "Unassigned"}</small>
                         </td>
-                        <td>{formatDateTime(opportunity.lostAt || opportunity.stageChangedAt || opportunity.updatedAt)}</td>
+                        <td><RelativeTime value={opportunity.lostAt || opportunity.stageChangedAt || opportunity.updatedAt} /></td>
                         <td>
                           <Button size="sm" variant="outline-primary" onClick={() => changeOpportunityStage(opportunity, "NEGOTIATION")}>
                             Reopen
@@ -1979,38 +1938,40 @@ const AdminCrmPage = () => {
 
       {mode === "leads" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">Lead Intake</h5>
+          <Offcanvas show={showLeadForm} onHide={() => setShowLeadForm(false)} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>Add lead</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitLead}>
                   <Row className="g-3">
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>First name</Form.Label>
                       <Form.Control value={leadForm.firstName} onChange={(event) => updateLeadForm("firstName", event.target.value)} required />
                     </Col>
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>Last name</Form.Label>
                       <Form.Control value={leadForm.lastName} onChange={(event) => updateLeadForm("lastName", event.target.value)} required />
                     </Col>
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>Email</Form.Label>
                       <Form.Control type="email" value={leadForm.email} onChange={(event) => updateLeadForm("email", event.target.value)} />
                     </Col>
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>Phone or WhatsApp</Form.Label>
                       <Form.Control value={leadForm.phone} onChange={(event) => updateLeadForm("phone", event.target.value)} />
                     </Col>
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>Source</Form.Label>
                       <Form.Select value={leadForm.source} onChange={(event) => updateLeadForm("source", event.target.value)}>
-                        {leadSources.map((source) => <option key={source} value={source}>{source.replaceAll("_", " ")}</option>)}
+                        {leadSources.map((source) => <option key={source} value={source}>{formatLabel(source)}</option>)}
                       </Form.Select>
                     </Col>
-                    <Col md={6} xl={12}>
+                    <Col xs={12}>
                       <Form.Label>Status</Form.Label>
                       <Form.Select value={leadForm.status} onChange={(event) => updateLeadForm("status", event.target.value)}>
-                        {leadStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                        {leadStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col xs={12}>
@@ -2018,16 +1979,18 @@ const AdminCrmPage = () => {
                       <Form.Control as="textarea" rows={3} value={leadForm.notes} onChange={(event) => updateLeadForm("notes", event.target.value)} />
                     </Col>
                     <Col xs={12}>
-                      <Button type="submit" disabled={savingLead}>
-                        <BsClipboard2Check /> {savingLead ? "Saving" : "Save Lead"}
-                      </Button>
+                      <div className="d-flex justify-content-end gap-2">
+                        <Button variant="outline-secondary" onClick={() => setShowLeadForm(false)}>Cancel</Button>
+                        <Button type="submit" disabled={savingLead}>
+                          <BsClipboard2Check aria-hidden="true" /> {savingLead ? "Saving" : "Save lead"}
+                        </Button>
+                      </div>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card h-100">
               <Card.Body>
                 <h5 className="mb-3">Lead Pipeline</h5>
@@ -2059,10 +2022,10 @@ const AdminCrmPage = () => {
                             value={lead.status || "NEW"}
                             onChange={(event) => changeLeadStatus(lead, event.target.value)}
                           >
-                            {leadStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                            {leadStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                           </Form.Select>
                         </td>
-                        <td>{formatDateTime(lead.nextFollowUpAt)}</td>
+                        <td><RelativeTime value={lead.nextFollowUpAt} /></td>
                       </tr>
                     )) : (
                       <tr>
@@ -2079,10 +2042,12 @@ const AdminCrmPage = () => {
 
       {mode === "opportunities" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">Opportunity Intake</h5>
+          <Offcanvas show={crmDrawer === "opportunities"} onHide={() => setCrmDrawer("")} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>Add opportunity</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitOpportunity}>
                   <Row className="g-3">
                     <Col xs={12}>
@@ -2110,7 +2075,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Stage</Form.Label>
                       <Form.Select value={opportunityForm.stage} onChange={(event) => updateOpportunityForm("stage", event.target.value)}>
-                        {opportunityStages.map((stage) => <option key={stage} value={stage}>{stage.replaceAll("_", " ")}</option>)}
+                        {opportunityStages.map((stage) => <option key={stage} value={stage}>{formatLabel(stage)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2134,14 +2099,14 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Source</Form.Label>
                       <Form.Select value={opportunityForm.source} onChange={(event) => updateOpportunityForm("source", event.target.value)}>
-                        {leadSources.map((source) => <option key={source} value={source}>{source.replaceAll("_", " ")}</option>)}
+                        {leadSources.map((source) => <option key={source} value={source}>{formatLabel(source)}</option>)}
                       </Form.Select>
                     </Col>
                     {opportunityForm.stage === "LOST" ? (
                       <Col xs={12}>
                         <Form.Label>Lost reason</Form.Label>
                         <Form.Select value={opportunityForm.lostReason} onChange={(event) => updateOpportunityForm("lostReason", event.target.value)}>
-                          {lostReasons.map((reason) => <option key={reason} value={reason}>{reason.replaceAll("_", " ")}</option>)}
+                          {lostReasons.map((reason) => <option key={reason} value={reason}>{formatLabel(reason)}</option>)}
                         </Form.Select>
                       </Col>
                     ) : null}
@@ -2158,17 +2123,17 @@ const AdminCrmPage = () => {
                       <Form.Label>Notes</Form.Label>
                       <Form.Control as="textarea" rows={3} value={opportunityForm.notes} onChange={(event) => updateOpportunityForm("notes", event.target.value)} />
                     </Col>
-                    <Col xs={12}>
+                    <Col xs={12} className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setCrmDrawer("")}>Cancel</Button>
                       <Button type="submit" disabled={savingOpportunity}>
                         <BsGraphUpArrow /> {savingOpportunity ? "Saving" : "Save Opportunity"}
                       </Button>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card h-100">
               <Card.Body>
                 <h5 className="mb-3">Opportunity Pipeline</h5>
@@ -2203,7 +2168,7 @@ const AdminCrmPage = () => {
                           >
                             {opportunityStages
                               .filter((stage) => !["WON", "LOST"].includes(stage) || stage === opportunity.stage)
-                              .map((stage) => <option key={stage} value={stage}>{stage.replaceAll("_", " ")}</option>)}
+                              .map((stage) => <option key={stage} value={stage}>{formatLabel(stage)}</option>)}
                           </Form.Select>
                         </td>
                         <td>{formatDateTime(opportunity.expectedCloseDate)}</td>
@@ -2223,10 +2188,12 @@ const AdminCrmPage = () => {
 
       {mode === "quotes" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">Quote Builder</h5>
+          <Offcanvas show={crmDrawer === "quotes"} onHide={() => setCrmDrawer("")} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>New quote</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitQuote}>
                   <Row className="g-3">
                     <Col md={6} xl={12}>
@@ -2256,7 +2223,7 @@ const AdminCrmPage = () => {
                     <Col xs={12}>
                       <Form.Label>Line item type</Form.Label>
                       <Form.Select value={quoteForm.itemType} onChange={(event) => updateQuoteForm("itemType", event.target.value)}>
-                        {quoteLineItemTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
+                        {quoteLineItemTypes.map((type) => <option key={type} value={type}>{formatLabel(type)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col xs={12}>
@@ -2324,17 +2291,17 @@ const AdminCrmPage = () => {
                       <Form.Label>Terms</Form.Label>
                       <Form.Control as="textarea" rows={2} value={quoteForm.terms} onChange={(event) => updateQuoteForm("terms", event.target.value)} />
                     </Col>
-                    <Col xs={12}>
+                    <Col xs={12} className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setCrmDrawer("")}>Cancel</Button>
                       <Button type="submit" disabled={savingQuote}>
                         <BsReceipt /> {savingQuote ? "Saving" : "Save Quote"}
                       </Button>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card h-100">
               <Card.Body>
                 <h5 className="mb-3">Quote Register</h5>
@@ -2448,7 +2415,7 @@ const AdminCrmPage = () => {
           <Col xs={12}>
             <Card className="surface-card">
               <Card.Body>
-                <h5 className="mb-2">Quote Revenue Guardrail</h5>
+                <h5 className="mb-2">Quotes are not revenue</h5>
                 <p className="mb-0 text-muted">
                   Quote value is sales forecast only. Actual revenue remains sourced from booking accounting after Bokun confirms the booking.
                 </p>
@@ -2460,10 +2427,12 @@ const AdminCrmPage = () => {
 
       {mode === "followUps" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">Schedule Follow-up</h5>
+          <Offcanvas show={crmDrawer === "followUps"} onHide={() => setCrmDrawer("")} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>Schedule follow-up</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitFollowUp}>
                   <Row className="g-3">
                     <Col xs={12}>
@@ -2481,7 +2450,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Type</Form.Label>
                       <Form.Select value={followUpForm.type} onChange={(event) => updateFollowUpForm("type", event.target.value)}>
-                        {followUpTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
+                        {followUpTypes.map((type) => <option key={type} value={type}>{formatLabel(type)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2496,24 +2465,24 @@ const AdminCrmPage = () => {
                     <Col xs={12}>
                       <Form.Label>Priority</Form.Label>
                       <Form.Select value={followUpForm.priority} onChange={(event) => updateFollowUpForm("priority", event.target.value)}>
-                        {crmPriorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+                        {crmPriorities.map((priority) => <option key={priority} value={priority}>{formatLabel(priority)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col xs={12}>
                       <Form.Label>Notes</Form.Label>
                       <Form.Control as="textarea" rows={3} value={followUpForm.notes} onChange={(event) => updateFollowUpForm("notes", event.target.value)} />
                     </Col>
-                    <Col xs={12}>
+                    <Col xs={12} className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setCrmDrawer("")}>Cancel</Button>
                       <Button type="submit" disabled={savingFollowUp}>
                         <BsBell /> {savingFollowUp ? "Saving" : "Save Follow-up"}
                       </Button>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card h-100">
               <Card.Body>
                 <h5 className="mb-3">Follow-up Queue</h5>
@@ -2535,7 +2504,7 @@ const AdminCrmPage = () => {
                           <StatusBadge value={followUp.type} />
                           {followUp.overdue ? <small className="d-block text-danger mt-1">Overdue</small> : null}
                         </td>
-                        <td>{formatDateTime(followUp.dueAt)}</td>
+                        <td><RelativeTime value={followUp.dueAt} /></td>
                         <td><StatusBadge value={followUp.priority} /></td>
                         <td>
                           <Form.Select
@@ -2544,7 +2513,7 @@ const AdminCrmPage = () => {
                             onChange={(event) => changeFollowUpStatus(followUp, event.target.value)}
                             disabled={followUp.status === "COMPLETED"}
                           >
-                            {followUpStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                            {followUpStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                           </Form.Select>
                         </td>
                         <td>{followUp.notes || followUp.outcome || "-"}</td>
@@ -2573,10 +2542,12 @@ const AdminCrmPage = () => {
 
       {mode === "tasks" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">Create Task</h5>
+          <Offcanvas show={crmDrawer === "tasks"} onHide={() => setCrmDrawer("")} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>New task</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitTask}>
                   <Row className="g-3">
                     <Col xs={12}>
@@ -2586,7 +2557,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Related entity</Form.Label>
                       <Form.Select value={taskForm.relatedEntityType} onChange={(event) => updateTaskForm("relatedEntityType", event.target.value)}>
-                        {taskRelatedEntityTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
+                        {taskRelatedEntityTypes.map((type) => <option key={type} value={type}>{formatLabel(type)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2604,24 +2575,24 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Priority</Form.Label>
                       <Form.Select value={taskForm.priority} onChange={(event) => updateTaskForm("priority", event.target.value)}>
-                        {crmPriorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+                        {crmPriorities.map((priority) => <option key={priority} value={priority}>{formatLabel(priority)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col xs={12}>
                       <Form.Label>Description</Form.Label>
                       <Form.Control as="textarea" rows={3} value={taskForm.description} onChange={(event) => updateTaskForm("description", event.target.value)} />
                     </Col>
-                    <Col xs={12}>
+                    <Col xs={12} className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setCrmDrawer("")}>Cancel</Button>
                       <Button type="submit" disabled={savingTask}>
                         <BsJournalCheck /> {savingTask ? "Saving" : "Save Task"}
                       </Button>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card h-100">
               <Card.Body>
                 <h5 className="mb-3">Sales Task Queue</h5>
@@ -2644,7 +2615,7 @@ const AdminCrmPage = () => {
                           <small className="text-muted">{task.description || task.outcome || "-"}</small>
                         </td>
                         <td>
-                          {formatDateTime(task.dueDate)}
+                          <RelativeTime value={task.dueDate} />
                           {task.overdue ? <small className="d-block text-danger mt-1">Overdue</small> : null}
                         </td>
                         <td><StatusBadge value={task.priority} /></td>
@@ -2655,7 +2626,7 @@ const AdminCrmPage = () => {
                             onChange={(event) => changeTaskStatus(task, event.target.value)}
                             disabled={task.status === "DONE"}
                           >
-                            {taskStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                            {taskStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                           </Form.Select>
                         </td>
                         <td>
@@ -2719,7 +2690,7 @@ const AdminCrmPage = () => {
                         >
                           {opportunityStages
                             .filter((stage) => !["WON", "LOST"].includes(stage) || stage === opportunity.stage)
-                            .map((stage) => <option key={stage} value={stage}>{stage.replaceAll("_", " ")}</option>)}
+                            .map((stage) => <option key={stage} value={stage}>{formatLabel(stage)}</option>)}
                         </Form.Select>
                       </div>
                     )) : (
@@ -2739,7 +2710,7 @@ const AdminCrmPage = () => {
           <Col xs={12}>
             <Card className="surface-card">
               <Card.Body>
-                <h5 className="mb-2">Pipeline Forecast Guardrail</h5>
+                <h5 className="mb-2">Forecasts are estimates</h5>
                 <p className="mb-0 text-muted">
                   Pipeline value is forecast only. Actual revenue and profit remain sourced from Booking Accounting after Bokun confirms the booking.
                 </p>
@@ -2751,16 +2722,18 @@ const AdminCrmPage = () => {
 
       {mode === "b2bAgents" ? (
         <Row className="g-4 mt-1">
-          <Col xl={4}>
-            <Card className="surface-card h-100">
-              <Card.Body>
-                <h5 className="mb-3">B2B / Agent Intake</h5>
+          <Offcanvas show={crmDrawer === "b2bAgents"} onHide={() => setCrmDrawer("")} placement="end" className="adm-drawer">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>Add partner</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                {error ? <div className="alert alert-danger">{error}</div> : null}
                 <Form onSubmit={submitB2BPartner}>
                   <Row className="g-3">
                     <Col md={6} xl={12}>
                       <Form.Label>Partner type</Form.Label>
                       <Form.Select value={b2bPartnerForm.partnerType} onChange={(event) => updateB2BPartnerForm("partnerType", event.target.value)}>
-                        {b2bPartnerTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
+                        {b2bPartnerTypes.map((type) => <option key={type} value={type}>{formatLabel(type)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2786,7 +2759,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Status</Form.Label>
                       <Form.Select value={b2bPartnerForm.status} onChange={(event) => updateB2BPartnerForm("status", event.target.value)}>
-                        {b2bPartnerStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                        {b2bPartnerStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2795,7 +2768,7 @@ const AdminCrmPage = () => {
                         value={b2bPartnerForm.commissionModel}
                         onChange={(event) => updateB2BPartnerForm("commissionModel", event.target.value)}
                       >
-                        {b2bCommissionModels.map((model) => <option key={model} value={model}>{model.replaceAll("_", " ")}</option>)}
+                        {b2bCommissionModels.map((model) => <option key={model} value={model}>{formatLabel(model)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2812,7 +2785,7 @@ const AdminCrmPage = () => {
                     <Col md={6} xl={12}>
                       <Form.Label>Net rate model</Form.Label>
                       <Form.Select value={b2bPartnerForm.netRateModel} onChange={(event) => updateB2BPartnerForm("netRateModel", event.target.value)}>
-                        {b2bNetRateModels.map((model) => <option key={model} value={model}>{model.replaceAll("_", " ")}</option>)}
+                        {b2bNetRateModels.map((model) => <option key={model} value={model}>{formatLabel(model)}</option>)}
                       </Form.Select>
                     </Col>
                     <Col md={6} xl={12}>
@@ -2837,17 +2810,17 @@ const AdminCrmPage = () => {
                       <Form.Label>Notes</Form.Label>
                       <Form.Control as="textarea" rows={3} value={b2bPartnerForm.notes} onChange={(event) => updateB2BPartnerForm("notes", event.target.value)} />
                     </Col>
-                    <Col xs={12}>
+                    <Col xs={12} className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setCrmDrawer("")}>Cancel</Button>
                       <Button type="submit" disabled={savingB2BPartner}>
                         <BsPeople /> {savingB2BPartner ? "Saving" : "Save Partner"}
                       </Button>
                     </Col>
                   </Row>
                 </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xl={8}>
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12}>
             <Card className="surface-card">
               <Card.Body>
                 <h5 className="mb-3">B2B Partner Pipeline</h5>
@@ -2866,14 +2839,14 @@ const AdminCrmPage = () => {
                       <tr key={partner.id || partner._id}>
                         <td>
                           <strong className="d-block">{partner.companyName}</strong>
-                          <small className="text-muted">{partner.partnerNumber || partner.partnerType?.replaceAll("_", " ")}</small>
+                          <small className="text-muted">{partner.partnerNumber || formatLabel(partner.partnerType)}</small>
                         </td>
                         <td>
                           <span className="d-block">{partner.contactPerson || "-"}</span>
                           <small className="text-muted">{partner.email || partner.phone || "-"}</small>
                         </td>
                         <td>
-                          <span className="d-block">{partner.commissionModel?.replaceAll("_", " ") || "NONE"}</span>
+                          <span className="d-block">{formatLabel(partner.commissionModel) || "NONE"}</span>
                           <small className="text-muted">
                             {partner.creditLimit ? `${formatMoney(partner.creditLimit, partner.currency)} credit` : "No accounting posting"}
                           </small>
@@ -2884,10 +2857,10 @@ const AdminCrmPage = () => {
                             value={partner.status || "PROSPECT"}
                             onChange={(event) => changeB2BPartnerStatus(partner, event.target.value)}
                           >
-                            {b2bPartnerStatuses.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                            {b2bPartnerStatuses.map((status) => <option key={status} value={status}>{formatLabel(status)}</option>)}
                           </Form.Select>
                         </td>
-                        <td>{formatDateTime(partner.updatedAt || partner.createdAt)}</td>
+                        <td><RelativeTime value={partner.updatedAt || partner.createdAt} /></td>
                       </tr>
                     )) : (
                       <tr>
@@ -2942,13 +2915,13 @@ const AdminCrmPage = () => {
                           <small className="text-muted">{customer.crmCustomerNumber || customer.id}</small>
                         </td>
                         <td>
-                          <span className="d-block">{customer.email || "-"}</span>
+                          <span className="d-block"><Truncate value={customer.email} max={32} /></span>
                           <small className="text-muted">{customer.phone || customer.whatsappNumber || "-"}</small>
                         </td>
                         <td><StatusBadge value={customer.lifecycleStage} /></td>
                         <td>{customer.segments?.length ? customer.segments.join(", ") : "-"}</td>
                         <td><StatusBadge value={customer.deduplicationStatus} /></td>
-                        <td>{formatDateTime(customer.updatedAt)}</td>
+                        <td><RelativeTime value={customer.updatedAt} /></td>
                         <td>
                           <Button
                             size="sm"
@@ -3002,7 +2975,7 @@ const AdminCrmPage = () => {
                           onChange={(event) => updateCommunicationForm("channel", event.target.value)}
                         >
                           {communicationChannels.map((channel) => (
-                            <option key={channel} value={channel}>{channel.replaceAll("_", " ")}</option>
+                            <option key={channel} value={channel}>{formatLabel(channel)}</option>
                           ))}
                         </Form.Select>
                       </Form.Group>
@@ -3015,7 +2988,7 @@ const AdminCrmPage = () => {
                           onChange={(event) => updateCommunicationForm("direction", event.target.value)}
                         >
                           {communicationDirections.map((direction) => (
-                            <option key={direction} value={direction}>{direction.replaceAll("_", " ")}</option>
+                            <option key={direction} value={direction}>{formatLabel(direction)}</option>
                           ))}
                         </Form.Select>
                       </Form.Group>
@@ -3100,13 +3073,13 @@ const AdminCrmPage = () => {
                   <tbody>
                     {timelineItems.length ? timelineItems.map((event) => (
                       <tr key={event.id || event._id}>
-                        <td>{formatDateTime(event.occurredAt || event.createdAt)}</td>
+                        <td><RelativeTime value={event.occurredAt || event.createdAt} /></td>
                         <td><StatusBadge value={event.eventType} /></td>
                         <td>
                           {event.communication?.channel ? (
                             <>
-                              <span className="d-block">{event.communication.channel.replaceAll("_", " ")}</span>
-                              <small className="text-muted">{event.communication.status?.replaceAll("_", " ")}</small>
+                              <span className="d-block">{formatLabel(event.communication.channel)}</span>
+                              <small className="text-muted">{formatLabel(event.communication.status)}</small>
                             </>
                           ) : "-"}
                         </td>
@@ -3164,7 +3137,7 @@ const AdminCrmPage = () => {
                         <td>{duplicateName(candidate.duplicateCustomerId)}</td>
                         <td>{candidate.matchFields?.length ? candidate.matchFields.join(", ") : "-"}</td>
                         <td><StatusBadge value={candidate.status} /></td>
-                        <td>{formatDateTime(candidate.createdAt)}</td>
+                        <td><RelativeTime value={candidate.createdAt} /></td>
                       </tr>
                     )) : (
                       <tr>
@@ -3178,22 +3151,7 @@ const AdminCrmPage = () => {
           </Col>
         </Row>
       ) : null}
-
-      <Row className="g-4 mt-1">
-        <Col>
-          <Card className="surface-card">
-            <Card.Body>
-              <h5 className="mb-3">Enabled CRM Foundation</h5>
-              <div className="d-flex flex-wrap gap-2">
-                {(dashboard?.enabledModules || []).map((item) => (
-                  <StatusBadge key={item} value={item} />
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </div>
+    </AdminPage>
   );
 };
 

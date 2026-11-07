@@ -40,7 +40,7 @@ export const BOOKING_ACCOUNTING_VIEW_CONFIG = {
     subtitle: "Review the current cost rules and estimated booking cost."
   },
   profitability: {
-    title: "Booking Profitability",
+    title: "Profitability",
     eyebrow: "Booking Accounting",
     subtitle: "Revenue, refunds, provider fees, direct costs, gross profit and margin by booking."
   },

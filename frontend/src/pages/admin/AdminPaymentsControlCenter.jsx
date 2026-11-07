@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { formatLabel } from "../../utils/formatLabel";
 import { Badge, Button, Card, Form, Offcanvas, Table } from 'react-bootstrap';
+import { PageHeader } from '../../components/admin/ui';
 import { BsArrowClockwise, BsCreditCard2Front, BsEye, BsShieldCheck } from 'react-icons/bs';
 import {
   fetchPaymentReconciliation,
@@ -11,12 +13,9 @@ import {
 import ErrorAlert from '../../components/common/ErrorAlert';
 import Loader from '../../components/common/Loader';
 import ListingPagination from '../../components/tours/listing/ListingPagination';
-import { formatCurrency } from '../../utils/formatters';
+import { formatAdminDate, formatCurrency } from '../../utils/adminFormat';
 
-const label = (value = '') =>
-  String(value || 'Unknown')
-    .replaceAll('_', ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+const label = (value = "") => formatLabel(value);
 const variant = (value = '') => {
   const code = String(value).toUpperCase();
   if (['PAID', 'MATCHED', 'VERIFIED', 'RECEIVED', 'RECONCILED', 'NOT_APPLICABLE'].includes(code))
@@ -25,8 +24,9 @@ const variant = (value = '') => {
   if (['AWAITING_SETTLEMENT_DATA', 'AWAITING_EVIDENCE'].includes(code)) return 'secondary';
   return 'warning';
 };
+// Amounts not recorded yet (e.g. an OTA payout before the statement arrives) read "Not available", not "-".
 const money = (amount, currency) =>
-  amount == null ? '-' : formatCurrency(amount, currency || 'USD');
+  amount == null ? <span className="adm-na" title="Not recorded for this booking yet.">Not available</span> : formatCurrency(amount, currency || 'USD');
 const defaultFilters = { page: 1, limit: 10, search: '', fromDate: '', toDate: '', channel: '', paymentStatus: '', settlementStatus: '', reconciliationStatus: '', currency: '', sort: 'bookingDate', order: 'desc' };
 
 const FinancialTotals = ({ summary }) => (
@@ -205,17 +205,16 @@ const AdminPaymentsControlCenter = () => {
   };
   return (
     <main className="admin-payments-page">
-      <header className="admin-recovery-head">
-        <div>
-          <h2>Payments</h2>
-          <p className="section-subtitle">
-            Guest payment and OTA payout evidence are tracked separately for each booking.
-          </p>
-        </div>
-        <Button className="premium-btn text-white" onClick={() => load()} disabled={state.loading}>
-          <BsArrowClockwise /> Refresh
-        </Button>
-      </header>
+      <PageHeader
+        eyebrow="Booking Accounting"
+        title="Payments"
+        description="What guests paid, and what OTAs paid out to you, tracked separately for each booking."
+        actions={
+          <Button variant="outline-secondary" onClick={() => load()} disabled={state.loading}>
+            <BsArrowClockwise aria-hidden="true" /> Refresh
+          </Button>
+        }
+      />
       <ErrorAlert error={state.error} />
       {state.loading ? (
         <Loader message="Loading financial control center..." />
@@ -254,10 +253,10 @@ const AdminPaymentsControlCenter = () => {
                     onChange={(event) => update({ paymentStatus: event.target.value })}
                   >
                     <option value="">All states</option>
-                    <option>PAID</option>
-                    <option>PARTIALLY_PAID</option>
-                    <option>UNPAID</option>
-                    <option>REFUNDED</option>
+                    <option value="PAID">{formatLabel("PAID")}</option>
+                    <option value="PARTIALLY_PAID">{formatLabel("PARTIALLY_PAID")}</option>
+                    <option value="UNPAID">{formatLabel("UNPAID")}</option>
+                    <option value="REFUNDED">{formatLabel("REFUNDED")}</option>
                   </Form.Select>
                 </div>
                 <div className="col-lg-2">
@@ -267,11 +266,11 @@ const AdminPaymentsControlCenter = () => {
                     onChange={(event) => update({ settlementStatus: event.target.value })}
                   >
                     <option value="">All states</option>
-                    <option>AWAITING_SETTLEMENT_DATA</option>
-                    <option>PENDING</option>
-                    <option>PARTIALLY_RECEIVED</option>
-                    <option>RECEIVED</option>
-                    <option>NOT_APPLICABLE</option>
+                    <option value="AWAITING_SETTLEMENT_DATA">{formatLabel("AWAITING_SETTLEMENT_DATA")}</option>
+                    <option value="PENDING">{formatLabel("PENDING")}</option>
+                    <option value="PARTIALLY_RECEIVED">{formatLabel("PARTIALLY_RECEIVED")}</option>
+                    <option value="RECEIVED">{formatLabel("RECEIVED")}</option>
+                    <option value="NOT_APPLICABLE">{formatLabel("NOT_APPLICABLE")}</option>
                   </Form.Select>
                 </div>
                 <div className="col-lg-2">
@@ -281,10 +280,10 @@ const AdminPaymentsControlCenter = () => {
                     onChange={(event) => update({ reconciliationStatus: event.target.value })}
                   >
                     <option value="">All results</option>
-                    <option>MATCHED</option>
-                    <option>PARTIAL</option>
-                    <option>NEEDS_REVIEW</option>
-                    <option>MISMATCH</option>
+                    <option value="MATCHED">{formatLabel("MATCHED")}</option>
+                    <option value="PARTIAL">{formatLabel("PARTIAL")}</option>
+                    <option value="NEEDS_REVIEW">{formatLabel("NEEDS_REVIEW")}</option>
+                    <option value="MISMATCH">{formatLabel("MISMATCH")}</option>
                   </Form.Select>
                 </div>
                 <div className="col-lg-1">
@@ -367,7 +366,7 @@ const AdminPaymentsControlCenter = () => {
                       <tr key={row.id}>
                         <td>
                           <strong>{row.bookingReference}</strong>
-                          <small>{row.travelDate || row.product || '-'}</small>
+                          <small>{row.travelDate ? formatAdminDate(row.travelDate) : row.product || '-'}</small>
                         </td>
                         <td>{row.customer?.name || 'Guest'}</td>
                         <td>

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { BsBank, BsCashCoin, BsCheckCircleFill, BsChevronRight, BsExclamationTriangleFill, BsInfoCircleFill, BsPieChartFill, BsWallet2 } from "react-icons/bs";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency } from "../../../utils/adminFormat";
 
 export const balanceMoney = (value, currency) => value == null || !currency ? "Unavailable" : formatCurrency(Number(value), currency);
 const percentage = (amount, total) => Number(total) ? `${(Math.abs(Number(amount || 0)) / Math.abs(Number(total)) * 100).toFixed(1)}%` : "—";

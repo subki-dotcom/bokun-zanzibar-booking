@@ -43,8 +43,12 @@ test("admin sidebar CSS covers desktop expanded, collapsed rail, and mobile draw
   assert.match(styles, /\.admin-platform-shell\s*{[\s\S]*grid-template-columns: var\(--admin-sidebar-expanded\)/);
   assert.match(styles, /\.admin-platform-sidebar\.is-collapsed\s*{[\s\S]*width: var\(--admin-sidebar-collapsed\)/);
   assert.match(styles, /\.admin-platform-sidebar\.is-collapsed \[data-tooltip\]::after/);
-  assert.match(styles, /@media \(max-width: 900px\)[\s\S]*width: min\(340px, 92vw\)/);
-  assert.match(styles, /@media \(max-width: 900px\)[\s\S]*background: var\(--mobile-sidebar-bg\)/);
-  assert.match(styles, /@media \(max-width: 900px\)[\s\S]*\.admin-platform-nav-link\.active[\s\S]*background: #e8f7f5/);
+  // The drawer starts below 992px (admin theme, Phase 5).
+  assert.match(styles, /@media \(max-width: 991\.98px\)[\s\S]*width: min\(340px, 92vw\)/);
+  assert.match(styles, /@media \(max-width: 991\.98px\)[\s\S]*background: var\(--mobile-sidebar-bg\)/);
   assert.match(styles, /@media \(max-width: 360px\)[\s\S]*width: min\(320px, 96vw\)/);
+  const theme = read("src/components/admin/ui/admin-theme.css");
+  assert.match(theme, /--admin-sidebar-expanded: 248px/);
+  assert.match(theme, /--sidebar-bg: #0b1f1a/);
+  assert.match(theme, /@media \(max-width: 991\.98px\)/);
 });

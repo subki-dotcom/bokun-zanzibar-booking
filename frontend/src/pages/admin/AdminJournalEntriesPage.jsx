@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useToastMessage } from "../../components/admin/ui/feedback";
+import { PageHeader } from "../../components/admin/ui";
 import { Button, Form, Modal, Spinner } from "react-bootstrap";
 import {
   BsArrowClockwise,
@@ -27,7 +29,7 @@ import {
 } from "../../api/adminApi";
 import { formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 
 const STATUS_OPTIONS = ["DRAFT", "SUBMITTED", "PENDING_APPROVAL", "APPROVED", "POSTED", "REVERSED", "VOID"];
 const SOURCE_OPTIONS = [
@@ -316,6 +318,7 @@ const AdminJournalEntriesPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  useToastMessage(message, setMessage);
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
@@ -464,23 +467,24 @@ const AdminJournalEntriesPage = () => {
 
   return (
     <div className="journal-entries-page">
-      <div className="journal-page-header">
-        <div>
-          <nav aria-label="Breadcrumb"><span>Business Accounting</span><strong>Journal Entries</strong></nav>
-          <h1>Journal Entries</h1>
-          <p>Record and manage financial transactions using double-entry accounting.</p>
-        </div>
-        <div className="journal-header-actions">
-          <Form.Control type="date" value={query.fromDate} onChange={(event) => updateQuery(setSearchParams, { fromDate: event.target.value, page: 1 })} aria-label="From date" />
-          <Form.Control type="date" value={query.toDate} onChange={(event) => updateQuery(setSearchParams, { toDate: event.target.value, page: 1 })} aria-label="To date" />
-          <Button className="journal-primary-action" onClick={() => setShowForm(true)}><BsPlusLg /> New Journal Entry</Button>
-          <Button variant="outline-secondary" disabled title="Journal import requires a safe import preview service"><BsUpload /> Import</Button>
-          <Button variant="outline-secondary" onClick={exportJournals} disabled={refreshing}><BsDownload /> Export</Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="Journal Entries"
+        description="Record and manage financial transactions using double-entry accounting."
+        actions={
+          <>
+            <div className="journal-header-actions">
+              <Form.Control type="date" value={query.fromDate} onChange={(event) => updateQuery(setSearchParams, { fromDate: event.target.value, page: 1 })} aria-label="From date" />
+              <Form.Control type="date" value={query.toDate} onChange={(event) => updateQuery(setSearchParams, { toDate: event.target.value, page: 1 })} aria-label="To date" />
+              <Button className="journal-primary-action" onClick={() => setShowForm(true)}><BsPlusLg /> New Journal Entry</Button>
+              <Button variant="outline-secondary" disabled title="Journal import requires a safe import preview service"><BsUpload /> Import</Button>
+              <Button variant="outline-secondary" onClick={exportJournals} disabled={refreshing}><BsDownload /> Export</Button>
+            </div>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
-      {message ? <div className="alert alert-success journal-message">{message}</div> : null}
 
       {loading ? <Skeleton /> : (
         <div className="journal-kpi-grid">

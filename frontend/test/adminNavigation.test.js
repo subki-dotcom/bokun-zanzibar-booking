@@ -5,7 +5,8 @@ import {
   ADMIN_PERMISSIONS,
   filterAdminNavigation,
   getAdminRouteMeta,
-  isAdminNavItemActive
+  isAdminNavItemActive,
+  adminNavigationItems
 } from "../src/config/adminNavigation.js";
 
 const findById = (items, id) => {
@@ -96,8 +97,8 @@ test("Bokun Sync navigation does not show planned Soon badges", () => {
   assert.ok(integrations);
   assert.ok(findById(integrations.children || [], "bokun-import"));
   assert.ok(findById(integrations.children || [], "bokun-manual-sync"));
-  assert.ok(findById(integrations.children || [], "bokun-single-sync"));
-  assert.ok(findById(integrations.children || [], "bokun-sync-logs"));
+  // Manual Lookup and Sync Logs moved to the super_admin "Advanced / System" group (routes unchanged).
+  assert.equal(findById(integrations.children || [], "bokun-sync-logs"), null);
 });
 
 test("admin navigation highlights nested routes from their parent path", () => {
@@ -110,4 +111,30 @@ test("admin navigation highlights nested routes from their parent path", () => {
   assert.equal(isAdminNavItemActive(bookings, "/admin/operations/bookings"), true);
   assert.equal(isAdminNavItemActive(bookings, "/admin/operations/bookings/ABC-123/edit"), true);
   assert.equal(isAdminNavItemActive(bookings, "/admin/operations/booking-requests"), false);
+});
+
+test("only the most specific menu item is active for a URL", () => {
+  const activeFor = (pathname) => adminNavigationItems.filter((item) => isAdminNavItemActive(item, pathname)).map((item) => item.id);
+  assert.deepEqual(activeFor("/admin/crm"), ["crm-dashboard"]);
+  assert.deepEqual(activeFor("/admin/crm/leads"), ["crm-leads"]);
+  assert.deepEqual(activeFor("/admin/crm/customers/123"), ["crm-customers"]);
+  assert.deepEqual(activeFor("/admin/business-accounting"), ["management-accounting"]);
+  assert.deepEqual(activeFor("/admin/business-accounting/trial-balance"), ["gl-trial-balance"]);
+  assert.deepEqual(activeFor("/admin/business-accounting/settlements"), ["settlements"]);
+  assert.deepEqual(activeFor("/admin/business-accounting/settlements/import"), ["settlement-import"]);
+  assert.deepEqual(activeFor("/admin/audit-control/data-quality"), ["audit-control-data-quality"]);
+  assert.deepEqual(activeFor("/admin"), ["main-dashboard"]);
+});
+
+test("maintenance pages sit in a super_admin-only Advanced / System group; no page is removed", () => {
+  const ids = ["performance-review", "production-readiness", "gl-posting-preview", "disaster-recovery", "system-health",
+    "audit-control-data-quality", "audit-control-ops-control", "bokun-sync-logs", "bokun-single-sync"];
+  const superAdmin = filterAdminNavigation(undefined, "super_admin");
+  const advanced = findById(superAdmin, "advanced-system");
+  assert.ok(advanced);
+  for (const id of ids) assert.ok(findById(advanced.children, id), id);
+  const admin = filterAdminNavigation(undefined, "admin");
+  assert.equal(findById(admin, "advanced-system"), null, "hidden from admin");
+  assert.ok(findById(admin, "audit-control-logs"), "Audit Trail stays for admins");
+  for (const id of ids) assert.ok(adminNavigationItems.some((item) => item.id === id), `${id} still has a menu entry`);
 });

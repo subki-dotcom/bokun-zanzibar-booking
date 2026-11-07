@@ -28,12 +28,14 @@ test("main admin dashboard includes responsive production dashboard sections", (
   const styles = read("src/app/styles.css");
   const layout = read("src/layouts/admin/AdminLayout.jsx");
 
-  assert.match(source, /admin-dashboard-kpi-grid/);
+  assert.ok(source.includes("<StatGrid columns={3}>"));
+  assert.match(source, /Tours in the next 7 days/);
+  assert.doesNotMatch(source, /Active Vehicles|Active Drivers|On Trip Now/);
   assert.match(source, /RecentBookingsWidget/);
   assert.match(source, /MonthlySalesWidget/);
   assert.match(source, /OperationalAlertsWidget/);
-  assert.match(source, /Booking Source Breakdown/);
-  assert.match(source, /Booking Status Overview/);
+  assert.match(source, /Booking sources/);
+  assert.match(source, /Booking status/);
   assert.match(styles, /\.admin-dashboard-kpi-grid\s*{[\s\S]*grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/);
   assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.admin-dashboard-table-scroll\s*{\s*display: none;/);
   assert.match(styles, /@media \(max-width: 374px\)[\s\S]*\.admin-dashboard-kpi-grid\s*{\s*grid-template-columns: 1fr;/);

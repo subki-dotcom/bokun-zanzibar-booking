@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Button, Form, Spinner } from "react-bootstrap";
 import {
   BsArrowClockwise,
@@ -23,7 +24,7 @@ import {
 } from "../../api/adminApi";
 import { formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/adminFormat";
 
 const SOURCE_OPTIONS = [
   "MANUAL",
@@ -284,40 +285,42 @@ const AdminGeneralLedgerRegisterPage = () => {
 
   return (
     <div className="general-ledger-register-page">
-      <header className="gl-page-header">
-        <div>
-          <nav aria-label="Breadcrumb">Business Accounting / <strong>General Ledger</strong></nav>
-          <h1>General Ledger</h1>
-          <p>View all posted journal transactions and their impact on your accounts.</p>
-        </div>
-        <div className="gl-header-actions">
-          <label>
-            <BsCalendar3 />
-            <input
-              type="date"
-              value={filters.fromDate}
-              onChange={(event) => updateQuery(setSearchParams, { fromDate: event.target.value, page: 1 })}
-              aria-label="From date"
-            />
-            <span>-</span>
-            <input
-              type="date"
-              value={filters.toDate}
-              onChange={(event) => updateQuery(setSearchParams, { toDate: event.target.value, page: 1 })}
-              aria-label="To date"
-            />
-          </label>
-          <Button variant="outline-primary" onClick={exportLedger} disabled={exporting}>
-            {exporting ? <Spinner size="sm" /> : <BsDownload />} Export
-          </Button>
-          <Button
-            variant="outline-secondary"
-            onClick={() => updateQuery(setSearchParams, { view: "account", page: 1 })}
-          >
-            <BsLayers /> View by Account
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="General Ledger"
+        description="View all posted journal transactions and their impact on your accounts."
+        actions={
+          <>
+            <div className="gl-header-actions">
+              <label>
+                <BsCalendar3 />
+                <input
+                  type="date"
+                  value={filters.fromDate}
+                  onChange={(event) => updateQuery(setSearchParams, { fromDate: event.target.value, page: 1 })}
+                  aria-label="From date"
+                />
+                <span>-</span>
+                <input
+                  type="date"
+                  value={filters.toDate}
+                  onChange={(event) => updateQuery(setSearchParams, { toDate: event.target.value, page: 1 })}
+                  aria-label="To date"
+                />
+              </label>
+              <Button variant="outline-primary" onClick={exportLedger} disabled={exporting}>
+                {exporting ? <Spinner size="sm" /> : <BsDownload />} Export
+              </Button>
+              <Button
+                variant="outline-secondary"
+                onClick={() => updateQuery(setSearchParams, { view: "account", page: 1 })}
+              >
+                <BsLayers /> View by Account
+              </Button>
+            </div>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
       {loading ? <Skeleton /> : null}
@@ -509,18 +512,18 @@ const AdminGeneralLedgerRegisterPage = () => {
             <footer className="gl-pagination">
               <span>Showing {number(pagination.from || 0)} to {number(pagination.to || 0)} of {number(pagination.total || 0)} transactions</span>
               <div>
-                <Button variant="outline-secondary" disabled={!pagination.hasPrevious} onClick={() => updateQuery(setSearchParams, { page: Number(filters.page || 1) - 1 })}>
+                <Button variant="outline-secondary" disabled={!pagination.hasPrevious} aria-label="Previous page" onClick={() => updateQuery(setSearchParams, { page: Number(filters.page || 1) - 1 })}>
                   <BsChevronLeft />
                 </Button>
                 <strong>{pagination.page || 1}</strong>
-                <Button variant="outline-secondary" disabled={!pagination.hasNext} onClick={() => updateQuery(setSearchParams, { page: Number(filters.page || 1) + 1 })}>
+                <Button variant="outline-secondary" disabled={!pagination.hasNext} aria-label="Next page" onClick={() => updateQuery(setSearchParams, { page: Number(filters.page || 1) + 1 })}>
                   <BsChevronRight />
                 </Button>
                 <Form.Select value={filters.limit} onChange={(event) => updateQuery(setSearchParams, { limit: event.target.value, page: 1 })} aria-label="Rows per page">
                   {LIMITS.map((limit) => <option key={limit} value={limit}>{limit} / page</option>)}
                 </Form.Select>
-                <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-                  {refreshing ? <Spinner size="sm" /> : <BsArrowClockwise />}
+                <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing} aria-label="Refresh ledger">
+                  {refreshing ? <Spinner size="sm" /> : <BsArrowClockwise aria-hidden="true" />}
                 </Button>
               </div>
             </footer>

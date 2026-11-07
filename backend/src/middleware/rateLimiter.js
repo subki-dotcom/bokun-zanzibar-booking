@@ -151,7 +151,28 @@ const invoiceVerifyLimiter = rateLimit({
   message: limited("INVOICE_VERIFY_RATE_LIMITED", "Too many checks. Please try again in a few minutes.")
 });
 
+// Admin Settings: password changes (guessing the current password) and test emails.
+const passwordChangeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `password:${String(req.auth?.id || resolveClientIp(req))}`,
+  message: limited("PASSWORD_CHANGE_RATE_LIMITED", "Too many attempts. Please try again in 15 minutes.")
+});
+
+const settingsTestEmailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `test-email:${String(req.auth?.id || resolveClientIp(req))}`,
+  message: limited("TEST_EMAIL_RATE_LIMITED", "You can send 5 test emails an hour.")
+});
+
 module.exports = {
+  passwordChangeLimiter,
+  settingsTestEmailLimiter,
   resolveClientIp,
   myBookingInvoiceEmailLimiter,
   invoiceVerifyLimiter,

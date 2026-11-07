@@ -1,4 +1,5 @@
 import Loader from "../../components/common/Loader";
+import { PageHeader } from "../../components/admin/ui";
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Form, Modal, Spinner, Table } from 'react-bootstrap';
 import {
@@ -21,7 +22,7 @@ import {
   previewCustomerInvoicePosting,
 } from '../../api/adminApi';
 import ErrorAlert from '../../components/common/ErrorAlert';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/adminFormat';
 
 const TABS = [
   ['all', 'All Invoices'],
@@ -259,48 +260,48 @@ const AdminAccountsReceivablePage = () => {
 
   return (
     <main className="accounts-receivable-page">
-      <header className="ap-header">
-        <div>
-          <nav>
-            Business Accounting / <strong>Receivables (AR)</strong>
-          </nav>
-          <h1>Accounts Receivable (AR)</h1>
-          <p>Manage customer invoices, payments, and outstanding balances.</p>
-        </div>
-        <div className="ap-header-actions">
-          <label>
-            <BsCalendar3 />
-            <input
-              type="date"
-              value={filters.fromDate}
-              onChange={(event) =>
-                updateQuery(setParams, { fromDate: event.target.value, page: 1 })
-              }
-            />
-            <span>-</span>
-            <input
-              type="date"
-              value={filters.toDate}
-              onChange={(event) => updateQuery(setParams, { toDate: event.target.value, page: 1 })}
-            />
-          </label>
-          <Button variant="outline-primary" onClick={exportCsv}>
-            <BsDownload /> Export CSV
-          </Button>
-          <Button variant="outline-secondary" onClick={() => load(true)} disabled={refreshing}>
-            {refreshing ? <Spinner size="sm" /> : <BsArrowClockwise />} Refresh
-          </Button>
-          <Button
-            disabled
-            title={
-              data?.capabilities?.createStandaloneInvoiceReason ||
-              'Standalone invoicing is unavailable'
-            }
-          >
-            <BsPlusLg /> New Invoice
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="Receivables (AR)"
+        description="Manage customer invoices, payments, and outstanding balances."
+        actions={
+          <>
+            <div className="ap-header-actions">
+              <label>
+                <BsCalendar3 />
+                <input
+                  type="date"
+                  value={filters.fromDate}
+                  onChange={(event) =>
+                    updateQuery(setParams, { fromDate: event.target.value, page: 1 })
+                  }
+                />
+                <span>-</span>
+                <input
+                  type="date"
+                  value={filters.toDate}
+                  onChange={(event) => updateQuery(setParams, { toDate: event.target.value, page: 1 })}
+                />
+              </label>
+              <Button variant="outline-primary" onClick={exportCsv}>
+                <BsDownload /> Export CSV
+              </Button>
+              <Button variant="outline-secondary" onClick={() => load(true)} disabled={refreshing}>
+                {refreshing ? <Spinner size="sm" /> : <BsArrowClockwise />} Refresh
+              </Button>
+              <Button
+                disabled
+                title={
+                  data?.capabilities?.createStandaloneInvoiceReason ||
+                  'Standalone invoicing is unavailable'
+                }
+              >
+                <BsPlusLg /> New Invoice
+              </Button>
+            </div>
+          </>
+        }
+      />
       <ErrorAlert error={error} />
       {loading ? (
         <div className="ap-skeleton">

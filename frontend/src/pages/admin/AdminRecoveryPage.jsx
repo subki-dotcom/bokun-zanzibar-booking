@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, Table } from "react-bootstrap";
-import { BsArrowClockwise, BsExclamationTriangle, BsShieldCheck, BsTrash } from "react-icons/bs";
+import { confirmAction, useToastMessage } from "../../components/admin/ui/feedback";
+import { Alert, Button } from "react-bootstrap";
+import { BsArrowClockwise, BsExclamationTriangle, BsHourglassSplit, BsListCheck, BsShieldCheck, BsTrash } from "react-icons/bs";
 import { fetchPendingFinalizations, reconcileBookingFinalizations, retryBookingFinalization } from "../../api/adminApi";
 import { adminCancelBooking } from "../../api/bookingsApi";
-import ErrorAlert from "../../components/common/ErrorAlert";
-import Loader from "../../components/common/Loader";
-import { formatCurrency } from "../../utils/formatters";
+import { AdminPage, DataTable, EmptyState, PageHeader, SectionCard, StatCard, StatGrid, StatusBadge } from "../../components/admin/ui";
+import { formatAdminDate, formatAdminMoney } from "../../utils/adminFormat";
 
 const AdminRecoveryPage = () => {
   const [items, setItems] = useState([]);
@@ -13,6 +13,7 @@ const AdminRecoveryPage = () => {
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  useToastMessage(notice, setNotice);
 
   const load = async ({ force = false } = {}) => {
     setError("");
@@ -67,7 +68,7 @@ const AdminRecoveryPage = () => {
   };
 
   const cancel = async (bookingId, reference) => {
-    const ok = window.confirm(`Cancel booking ${reference}? This will also request Bokun cancellation if it has a Bokun ID.`);
+    const ok = await confirmAction({ title: `Cancel booking ${reference}?`, message: "This also requests the cancellation in Bókun when the booking has a Bókun ID.", confirmLabel: "Cancel booking", cancelLabel: "Keep booking" });
     if (!ok) return;
 
     setBusyId(bookingId);
@@ -84,84 +85,67 @@ const AdminRecoveryPage = () => {
     }
   };
 
+  const columns = [
+    { key: "reference", header: "Reference", render: (item) => <strong>{item.bookingReference}</strong> },
+    {
+      key: "product",
+      header: "Tour",
+      render: (item) => (
+        <>
+          <span className="d-block">{item.productTitle}</span>
+          <small className="text-muted">{formatAdminDate(item.travelDate)} {item.startTime || ""}</small>
+        </>
+      )
+    },
+    { key: "payment", header: "Payment", render: (item) => <StatusBadge value={item.paymentStatus} /> },
+    {
+      key: "bokun",
+      header: "Bókun",
+      render: (item) => (item.bokunBookingId
+        ? <StatusBadge value="confirmed" label={`Confirmed · ${item.bokunBookingId}`} />
+        : <StatusBadge value="pending" label="Not confirmed yet" />)
+    },
+    { key: "amount", header: "Amount", money: true, render: (item) => formatAdminMoney(item.amount || 0, item.currency || "USD") },
+    { key: "error", header: "Last error", render: (item) => <span className="admin-recovery-error">{item.finalization?.lastError?.message || item.finalization?.status || "—"}</span> },
+  ];
+
   return (
-    <>
-      <div className="admin-recovery-head">
-        <div>
-          <h2>Recovery Center</h2>
-          <p className="section-subtitle">Monitor paid bookings that still need Bókun confirmation or operational intervention.</p>
-        </div>
-        <Button className="premium-btn text-white" onClick={reconcile} disabled={busyId === "reconcile"}>
-          <BsArrowClockwise /> Reconcile Now
-        </Button>
-      </div>
+    <AdminPage>
+      <PageHeader
+        eyebrow="Operations"
+        title="Recovery Center"
+        description="Paid bookings that still need a Bókun confirmation, or a person to step in."
+        actions={
+          <Button variant="primary" onClick={reconcile} disabled={busyId === "reconcile"}>
+            <BsArrowClockwise aria-hidden="true" /> {busyId === "reconcile" ? "Reconciling" : "Reconcile now"}
+          </Button>
+        }
+      />
 
-      <ErrorAlert error={error} />
-      {notice ? <div className="alert alert-success">{notice}</div> : null}
-      {loading ? <Loader message="Loading recovery queue..." /> : null}
 
-      <div className="admin-recovery-stats">
-        <Card className="surface-card"><Card.Body><small>Total Queue</small><strong>{stats.total}</strong></Card.Body></Card>
-        <Card className="surface-card"><Card.Body><small>Paid Pending Bókun</small><strong>{stats.paidPending}</strong></Card.Body></Card>
-        <Card className="surface-card"><Card.Body><small>Failed Finalizations</small><strong>{stats.failed}</strong></Card.Body></Card>
-      </div>
+      <StatGrid columns={3}>
+        <StatCard label="In the queue" value={stats.total} icon={BsListCheck} loading={loading} />
+        <StatCard label="Paid, not confirmed in Bókun" value={stats.paidPending} icon={BsHourglassSplit} loading={loading} status={stats.paidPending ? "pending" : ""} />
+        <StatCard label="Failed confirmations" value={stats.failed} icon={BsExclamationTriangle} loading={loading} status={stats.failed ? "failed" : ""} />
+      </StatGrid>
 
-      {!loading ? (
-        <Card className="surface-card">
-          <Card.Body>
-            <Table responsive hover className="align-middle">
-              <thead>
-                <tr>
-                  <th>Reference</th>
-                  <th>Product</th>
-                  <th>Payment</th>
-                  <th>Bókun</th>
-                  <th>Amount</th>
-                  <th>Last Error</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.length ? items.map((item) => (
-                  <tr key={item.bookingId}>
-                    <td><strong>{item.bookingReference}</strong></td>
-                    <td>{item.productTitle}<br /><small>{item.travelDate} {item.startTime}</small></td>
-                    <td><Badge bg={item.paymentStatus === "paid" ? "success" : "warning"}>{item.paymentStatus}</Badge></td>
-                    <td>
-                      {item.bokunBookingId ? (
-                        <Badge bg="success"><BsShieldCheck /> {item.bokunBookingId}</Badge>
-                      ) : (
-                        <Badge bg="warning">Pending</Badge>
-                      )}
-                    </td>
-                    <td>{formatCurrency(item.amount || 0, item.currency || "USD")}</td>
-                    <td className="admin-recovery-error">
-                      {item.finalization?.lastError?.message || item.finalization?.status || "-"}
-                    </td>
-                    <td>
-                      <div className="admin-recovery-actions">
-                        <Button size="sm" variant="outline-primary" onClick={() => retry(item.bookingId)} disabled={busyId === item.bookingId}>
-                          <BsArrowClockwise /> Retry
-                        </Button>
-                        <Button size="sm" variant="outline-danger" onClick={() => cancel(item.bookingId, item.bookingReference)} disabled={busyId === item.bookingId}>
-                          <BsTrash /> Cancel
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="7" className="text-center py-4">
-                      <BsExclamationTriangle /> No pending recovery items.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-          </Card.Body>
-        </Card>
-      ) : null}
-    </>
+      <SectionCard title="Recovery queue">
+        <DataTable
+          columns={columns}
+          rows={items}
+          rowKey={(item) => item.bookingId}
+          rowActions={(item) => [
+            { label: "Retry Bókun confirmation", icon: BsArrowClockwise, disabled: busyId === item.bookingId, onClick: () => retry(item.bookingId) },
+            { label: "Cancel booking", icon: BsTrash, danger: true, disabled: busyId === item.bookingId, onClick: () => cancel(item.bookingId, item.bookingReference) }
+          ]}
+          loading={loading}
+          error={error}
+          onRetry={() => load({ force: true })}
+          caption="Recovery queue"
+          empty={<EmptyState icon={BsShieldCheck} title="Nothing to recover" message="Every paid booking is confirmed in Bókun." />}
+        />
+      </SectionCard>
+    </AdminPage>
   );
 };
 

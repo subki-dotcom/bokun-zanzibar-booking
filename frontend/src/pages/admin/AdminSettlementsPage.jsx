@@ -1,21 +1,175 @@
-import Loader from "../../components/common/Loader";
 import { useEffect, useState } from "react";
-import { Badge, Button, Card, Form, Table } from "react-bootstrap";
-import { BsArrowClockwise, BsCashCoin } from "react-icons/bs";
+import { useToastMessage } from "../../components/admin/ui/feedback";
+import { Alert, Button, Form, Offcanvas } from "react-bootstrap";
+import { BsArrowClockwise, BsCashCoin, BsCloudArrowUp, BsExclamationTriangle, BsInboxes, BsPlusLg, BsReceipt } from "react-icons/bs";
 import { Link } from "react-router-dom";
 import { createSettlement, fetchSettlements } from "../../api/adminApi";
+import { AdminPage, DataTable, EmptyState, PageHeader, SectionCard, StatCard, StatGrid, StatusBadge } from "../../components/admin/ui";
+import { formatAdminDate, formatAdminMoney } from "../../utils/adminFormat";
+import { formatLabel } from "../../utils/formatLabel";
 
-const label = (value = "") => String(value || "UNKNOWN").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
-const statusVariant = (status = "") => ["RECONCILED", "RECEIVED"].includes(status) ? "success" : ["MISMATCH", "NEEDS_REVIEW"].includes(status) ? "danger" : "warning";
-const money = (value, currency) => value == null || !currency ? "Unavailable" : new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(value));
+const PROVIDERS = ["GETYOURGUIDE", "VIATOR", "PESAPAL", "DPO", "PAYPAL", "BANK", "MANUAL", "OTHER"];
+const emptyForm = () => ({ settlementReference: "", provider: "GETYOURGUIDE", providerSettlementReference: "", receivedAmount: "", receivedCurrency: "USD", settlementDate: "", evidenceSource: "MANUAL_VERIFIED", evidenceReference: "" });
+// Unavailable values are labelled, never shown as a misleading zero.
+const money = (value, currency) => (value == null || !currency ? "Not available" : formatAdminMoney(value, currency));
 
 export default function AdminSettlementsPage() {
   const [state, setState] = useState({ loading: true, error: "", data: null });
-  const [form, setForm] = useState({ settlementReference: "", provider: "GETYOURGUIDE", providerSettlementReference: "", receivedAmount: "", receivedCurrency: "USD", settlementDate: "", evidenceSource: "MANUAL_VERIFIED", evidenceReference: "" });
-  const load = async () => { setState((current) => ({ ...current, loading: true, error: "" })); try { setState({ loading: false, error: "", data: await fetchSettlements({ limit: 100 }) }); } catch (error) { setState({ loading: false, error: error.message || "Unable to load settlements.", data: null }); } };
-  const submit = async (event) => { event.preventDefault(); setState((current) => ({ ...current, error: "" })); try { await createSettlement(form); setForm({ settlementReference: "", provider: "GETYOURGUIDE", providerSettlementReference: "", receivedAmount: "", receivedCurrency: "USD", settlementDate: "", evidenceSource: "MANUAL_VERIFIED", evidenceReference: "" }); await load(); } catch (error) { setState((current) => ({ ...current, error: error.message || "Unable to record settlement evidence." })); } };
-  useEffect(() => { load(); }, []);
+  const [form, setForm] = useState(emptyForm);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [notice, setNotice] = useState("");
+  useToastMessage(notice, setNotice);
+
+  const load = async () => {
+    setState((current) => ({ ...current, loading: true, error: "" }));
+    try {
+      setState({ loading: false, error: "", data: await fetchSettlements({ limit: 100 }) });
+    } catch (error) {
+      setState({ loading: false, error: error.message || "Unable to load settlements.", data: null });
+    }
+  };
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setFormError("");
+    try {
+      await createSettlement(form);
+      setForm(emptyForm());
+      setShowForm(false);
+      setNotice("Settlement evidence recorded.");
+      await load();
+    } catch (error) {
+      setFormError(error.message || "Unable to record settlement evidence.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
   const rows = state.data?.items || [];
-  if (state.loading) return <main className="admin-page-container"><Loader message="Loading settlements..." /></main>;
-  return <main className="admin-page-container"><header className="d-flex justify-content-between align-items-start mb-4"><div><p className="text-muted mb-1">Business Accounting / Evidence</p><h1>Settlements</h1><p className="text-muted">Track provider payouts independently from customer payment.</p></div><div><Link className="btn btn-primary me-2" to="/admin/business-accounting/settlements/import">Import Statement</Link><Button variant="outline-secondary" onClick={load} disabled={state.loading}><BsArrowClockwise /> Refresh</Button></div></header>{state.error ? <div className="alert alert-danger">{state.error}</div> : null}<Card className="mb-4"><Card.Body><h2 className="h5">Record Settlement Evidence</h2><Form onSubmit={submit} className="row g-2"><div className="col-md-3"><Form.Label>Settlement Reference</Form.Label><Form.Control required value={form.settlementReference} onChange={(event) => setForm({ ...form, settlementReference: event.target.value })} /></div><div className="col-md-2"><Form.Label>Provider</Form.Label><Form.Select value={form.provider} onChange={(event) => setForm({ ...form, provider: event.target.value })}>{["GETYOURGUIDE", "VIATOR", "PESAPAL", "DPO", "PAYPAL", "BANK", "MANUAL", "OTHER"].map((value) => <option key={value}>{value}</option>)}</Form.Select></div><div className="col-md-2"><Form.Label>Received Amount</Form.Label><Form.Control type="number" min="0" step="0.01" value={form.receivedAmount} onChange={(event) => setForm({ ...form, receivedAmount: event.target.value })} /></div><div className="col-md-1"><Form.Label>Currency</Form.Label><Form.Control maxLength={3} required value={form.receivedCurrency} onChange={(event) => setForm({ ...form, receivedCurrency: event.target.value.toUpperCase() })} /></div><div className="col-md-2"><Form.Label>Evidence Reference</Form.Label><Form.Control required value={form.evidenceReference} onChange={(event) => setForm({ ...form, evidenceReference: event.target.value })} /></div><div className="col-md-2 d-flex align-items-end"><Button type="submit">Record Evidence</Button></div></Form></Card.Body></Card><div className="row g-3 mb-4"><div className="col-md-3"><Card><Card.Body><small>Records</small><h3>{state.data?.total ?? "-"}</h3></Card.Body></Card></div><div className="col-md-3"><Card><Card.Body><small>Expected</small><h3>{rows.filter((row) => row.expectedNet).length}</h3></Card.Body></Card></div><div className="col-md-3"><Card><Card.Body><small>Received</small><h3>{rows.filter((row) => row.received).length}</h3></Card.Body></Card></div><div className="col-md-3"><Card><Card.Body><small>Needs Review</small><h3>{rows.filter((row) => ["NEEDS_REVIEW", "MISMATCH"].includes(row.status)).length}</h3></Card.Body></Card></div></div><Card><Card.Body><Table responsive hover><thead><tr><th>Settlement Reference</th><th>Provider</th><th>Date</th><th>Currency</th><th>Expected</th><th>Received</th><th>Allocated</th><th>Status</th><th>Evidence</th></tr></thead><tbody>{rows.map((row) => <tr key={row._id}><td><Link to={`/admin/business-accounting/settlements/${row._id}`}><strong>{row.settlementReference}</strong></Link><small className="d-block text-muted">{row.providerSettlementReference || "No provider reference"}</small></td><td>{label(row.provider)}</td><td>{row.settlementDate ? new Date(row.settlementDate).toLocaleDateString() : "-"}</td><td>{row.expectedNet?.currency || row.received?.currency || "Unknown"}</td><td>{money(row.expectedNet?.amount, row.expectedNet?.currency)}</td><td>{money(row.received?.amount, row.received?.currency)}</td><td>{money(row.allocated?.amount, row.allocated?.currency)}</td><td><Badge bg={statusVariant(row.status)}>{label(row.status)}</Badge></td><td>{label(row.evidenceSource)}</td></tr>)}</tbody></Table>{!state.loading && !rows.length ? <div className="text-muted text-center py-4"><BsCashCoin /> No settlement evidence recorded.</div> : null}</Card.Body></Card></main>;
+  const set = (key) => (event) => setForm({ ...form, [key]: key === "receivedCurrency" ? event.target.value.toUpperCase() : event.target.value });
+
+  const columns = [
+    {
+      key: "settlementReference",
+      header: "Settlement reference",
+      render: (row) => (
+        <>
+          <Link to={`/admin/business-accounting/settlements/${row._id}`}>{row.settlementReference}</Link>
+          <small className="d-block text-muted fw-normal">{row.providerSettlementReference || "No provider reference"}</small>
+        </>
+      )
+    },
+    { key: "provider", header: "Provider", render: (row) => formatLabel(row.provider) },
+    { key: "settlementDate", header: "Date", render: (row) => formatAdminDate(row.settlementDate) },
+    { key: "currency", header: "Currency", hideOnMobile: true, render: (row) => row.expectedNet?.currency || row.received?.currency || "—" },
+    { key: "expected", header: "Expected", money: true, render: (row) => money(row.expectedNet?.amount, row.expectedNet?.currency) },
+    { key: "received", header: "Received", money: true, render: (row) => money(row.received?.amount, row.received?.currency) },
+    { key: "allocated", header: "Allocated", money: true, hideOnMobile: true, render: (row) => money(row.allocated?.amount, row.allocated?.currency) },
+    { key: "status", header: "Status", render: (row) => <StatusBadge value={row.status} /> },
+    { key: "evidence", header: "Evidence", hideOnMobile: true, render: (row) => formatLabel(row.evidenceSource) }
+  ];
+
+  return (
+    <AdminPage>
+      <PageHeader
+        eyebrow="Business Accounting"
+        title="Settlements"
+        description="What OTAs and payment providers actually paid out to you, tracked separately from what guests paid."
+        actions={
+          <>
+            <Button variant="outline-secondary" onClick={load} disabled={state.loading}>
+              <BsArrowClockwise aria-hidden="true" /> Refresh
+            </Button>
+            <Link className="btn btn-outline-secondary" to="/admin/business-accounting/settlements/import">
+              <BsCloudArrowUp aria-hidden="true" /> Import statement
+            </Link>
+            <Button variant="primary" onClick={() => setShowForm(true)}>
+              <BsPlusLg aria-hidden="true" /> Record payout
+            </Button>
+          </>
+        }
+      />
+
+
+      <StatGrid columns={4}>
+        <StatCard label="Records" value={state.data?.total ?? 0} icon={BsInboxes} loading={state.loading} />
+        <StatCard label="With an expected amount" value={rows.filter((row) => row.expectedNet).length} icon={BsReceipt} loading={state.loading} />
+        <StatCard label="Received" value={rows.filter((row) => row.received).length} icon={BsCashCoin} loading={state.loading} />
+        <StatCard
+          label="Needs review"
+          value={rows.filter((row) => ["NEEDS_REVIEW", "MISMATCH"].includes(row.status)).length}
+          icon={BsExclamationTriangle}
+          loading={state.loading}
+        />
+      </StatGrid>
+
+      <SectionCard title="Settlement evidence">
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(row) => row._id}
+          loading={state.loading}
+          error={state.error}
+          onRetry={load}
+          pageSize={25}
+          caption="Settlements"
+          empty={
+            <EmptyState
+              icon={BsCashCoin}
+              title="No payouts recorded yet"
+              message="Record a payout when an OTA or provider pays you, or import their statement."
+              action={<Button size="sm" onClick={() => setShowForm(true)}><BsPlusLg aria-hidden="true" /> Record payout</Button>}
+            />
+          }
+        />
+      </SectionCard>
+
+      <Offcanvas show={showForm} onHide={() => setShowForm(false)} placement="end" className="adm-drawer">
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title>Record payout</Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
+          <Form onSubmit={submit} className="d-grid gap-3">
+            <p className="text-muted mb-0">Settlement evidence for money an OTA or provider paid out. It does not change what the guest paid.</p>
+            {formError ? <Alert variant="danger" className="mb-0">{formError}</Alert> : null}
+            <Form.Group controlId="settlement-reference">
+              <Form.Label>Settlement reference</Form.Label>
+              <Form.Control required value={form.settlementReference} onChange={set("settlementReference")} />
+            </Form.Group>
+            <Form.Group controlId="settlement-provider">
+              <Form.Label>Provider</Form.Label>
+              <Form.Select value={form.provider} onChange={set("provider")}>
+                {PROVIDERS.map((value) => <option key={value} value={value}>{formatLabel(value)}</option>)}
+              </Form.Select>
+            </Form.Group>
+            <div className="row g-2">
+              <Form.Group className="col-8" controlId="settlement-amount">
+                <Form.Label>Received amount</Form.Label>
+                <Form.Control type="number" min="0" step="0.01" value={form.receivedAmount} onChange={set("receivedAmount")} />
+              </Form.Group>
+              <Form.Group className="col-4" controlId="settlement-currency">
+                <Form.Label>Currency</Form.Label>
+                <Form.Control maxLength={3} required value={form.receivedCurrency} onChange={set("receivedCurrency")} />
+              </Form.Group>
+            </div>
+            <Form.Group controlId="settlement-evidence">
+              <Form.Label>Evidence reference</Form.Label>
+              <Form.Control required value={form.evidenceReference} onChange={set("evidenceReference")} placeholder="Bank reference, payout ID…" />
+            </Form.Group>
+            <div className="d-flex justify-content-end gap-2 pt-2">
+              <Button variant="outline-secondary" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Record payout"}</Button>
+            </div>
+          </Form>
+        </Offcanvas.Body>
+      </Offcanvas>
+    </AdminPage>
+  );
 }

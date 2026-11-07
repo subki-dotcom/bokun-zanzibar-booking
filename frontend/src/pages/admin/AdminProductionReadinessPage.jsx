@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PageHeader } from "../../components/admin/ui";
 import { Alert, Button, Card, Col, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsCheckCircle, BsExclamationTriangle, BsShieldCheck, BsXCircle } from "react-icons/bs";
 import { fetchProductionReadinessSummary } from "../../api/adminApi";
@@ -89,16 +90,18 @@ const AdminProductionReadinessPage = () => {
 
   return (
     <div className="admin-production-readiness-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Production Readiness</span>
-          <h2>Release Verification</h2>
-          <p>Read-only release gate for health, backups, reports, data quality, audit, RBAC, workers, and performance evidence.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Control & System"
+        title="Production Readiness"
+        description="Read-only release gate for health, backups, reports, data quality, audit, RBAC, workers, and performance evidence."
+        actions={
+          <>
+            <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+              <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
       <GatePanel summary={summary} />

@@ -1,3 +1,4 @@
+import { formatLabel } from "../../../utils/formatLabel.js";
 export const PERIOD_OPTIONS = [
   ['TODAY', 'Today'], ['YESTERDAY', 'Yesterday'], ['THIS_WEEK', 'This week'],
   ['LAST_WEEK', 'Last week'], ['THIS_MONTH', 'This month'], ['LAST_MONTH', 'Last month'],
@@ -24,7 +25,7 @@ export const dateLabel = (value, timeZone = 'Africa/Dar_es_Salaam', options = {}
 };
 export const periodLabel = (range) => range?.fromIso && range?.toIso
   ? `${dateLabel(range.fromIso, range.timeZone)} – ${dateLabel(new Date(new Date(range.toIso).getTime() - 1), range.timeZone)}` : 'Select a reporting period';
-export const humanize = (value = '') => String(value).replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+export const humanize = (value = "") => formatLabel(value);
 
 export const mergeTrend = (financial = [], operational = []) => {
   const points = new Map();

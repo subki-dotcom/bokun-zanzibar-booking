@@ -1,0 +1,1364 @@
+/* Admin theme: the one source of truth for admin tokens (type, colour, spacing, shape) and the app shell.
+   Loaded by the admin layout only and scoped to .admin-platform-shell, so the public website never changes.
+   Components in components/admin/ui use only these variables. */
+
+/* ============ STEP 1: tokens ============ */
+.admin-platform-shell {
+  /* Type */
+  --adm-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --adm-fs-title: 24px;
+  --adm-fs-section: 16px;
+  --adm-fs-body: 14px;
+  --adm-fs-table: 13.5px;
+  --adm-fs-small: 12px;
+  --adm-fs-kpi: 26px;
+  --adm-fs-eyebrow: 11px;
+  --adm-lh-body: 1.45;
+  --adm-lh-heading: 1.2;
+
+  /* Text */
+  --adm-ink: #0f172a;
+  --adm-text: #475569;
+  --adm-muted: #64748b;
+
+  /* Brand */
+  --adm-brand: #0e6b57;
+  --adm-brand-hover: #0a5242;
+  --adm-brand-soft: #e7f3ef;
+
+  /* Neutrals */
+  --adm-page-bg: #f6f7f9;
+  --adm-surface: #ffffff;
+  --adm-surface-alt: #f9fafb;
+  --adm-border: #e5e7eb;
+  --adm-border-subtle: #eef0f3;
+  --adm-border-strong: #d0d5dd;
+  --adm-row-hover: #f8fafc;
+
+  /* Status: background / text */
+  --adm-success-soft: #ecfdf3;
+  --adm-success: #067647;
+  --adm-warning-soft: #fffaeb;
+  --adm-warning: #b54708;
+  --adm-danger-soft: #fef3f2;
+  --adm-danger: #b42318;
+  --adm-info-soft: #eff8ff;
+  --adm-info: #175cd3;
+  --adm-neutral-soft: #f2f4f7;
+  --adm-neutral: #344054;
+
+  /* Charts, in this order everywhere */
+  --adm-chart-1: #0e6b57;
+  --adm-chart-2: #2e90fa;
+  --adm-chart-3: #f79009;
+  --adm-chart-4: #7a5af8;
+  --adm-chart-5: #ee46bc;
+  --adm-chart-6: #667085;
+
+  /* Spacing (4px grid) */
+  --adm-space-1: 4px;
+  --adm-space-2: 8px;
+  --adm-space-3: 12px;
+  --adm-space-4: 16px;
+  --adm-space-5: 20px;
+  --adm-space-6: 24px;
+  --adm-space-8: 32px;
+  --adm-space-10: 40px;
+
+  /* Shape and depth */
+  --adm-radius-control: 8px;
+  --adm-radius: 12px;
+  --adm-radius-pill: 999px;
+  --adm-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --adm-shadow-pop: 0 12px 24px -4px rgba(16, 24, 40, 0.12);
+  --adm-focus: 0 0 0 4px rgba(14, 107, 87, 0.15);
+
+  /* Shell (re-maps the existing sidebar variables) */
+  --admin-sidebar-expanded: 248px;
+  --admin-sidebar-collapsed: 72px;
+  --sidebar-bg: #0b1f1a;
+  --sidebar-bg-secondary: #10292300;
+  --sidebar-text: #e6efec;
+  --sidebar-muted: #8aa39b;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-accent: #0e6b57;
+  --sidebar-accent-light: #0e6b57;
+  --mobile-sidebar-bg: #0b1f1a;
+  --mobile-text: #e6efec;
+  --mobile-muted: #8aa39b;
+  --mobile-border: rgba(255, 255, 255, 0.08);
+
+  background: var(--adm-page-bg);
+  color: var(--adm-text);
+  font-family: var(--adm-font);
+  font-size: var(--adm-fs-body);
+  line-height: var(--adm-lh-body);
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
+
+/* One sans font in the admin: no serif display headings. */
+.admin-platform-shell :is(h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, button, input, select, textarea, table) {
+  font-family: var(--adm-font);
+  letter-spacing: normal;
+}
+
+.admin-platform-shell :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--adm-ink);
+  line-height: var(--adm-lh-heading);
+}
+
+/* Type scale applied to the design-system pieces. */
+.admin-platform-shell .adm-title {
+  font-size: var(--adm-fs-title);
+  font-weight: 600;
+}
+
+.admin-platform-shell .adm-card-title {
+  font-size: var(--adm-fs-section);
+  font-weight: 600;
+}
+
+.admin-platform-shell .adm-eyebrow {
+  font-size: var(--adm-fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.admin-platform-shell .adm-description {
+  max-width: 72ch;
+  color: var(--adm-text);
+  font-size: var(--adm-fs-body);
+}
+
+.admin-platform-shell .adm-stat-value {
+  font-size: var(--adm-fs-kpi);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-platform-shell .adm-stat-label,
+.admin-platform-shell .adm-stat-helper {
+  font-size: var(--adm-fs-small);
+  font-weight: 500;
+  color: var(--adm-muted);
+}
+
+.admin-platform-shell .adm-table {
+  font-size: var(--adm-fs-table);
+}
+
+.admin-platform-shell .adm-card,
+.admin-platform-shell .adm-stat {
+  border-color: var(--adm-border);
+  border-radius: var(--adm-radius);
+  box-shadow: var(--adm-shadow);
+}
+
+/* ============ STEP 2: app shell ============ */
+
+/* Sidebar: 248px, dark, 36px items, brand-green active pill. */
+.admin-platform-shell .admin-platform-sidebar {
+  box-shadow: none;
+}
+
+.admin-platform-shell .admin-platform-nav-link,
+.admin-platform-shell .admin-platform-nav-trigger {
+  min-height: 36px;
+  padding: 0 10px;
+  gap: 10px;
+  border-radius: 8px;
+  color: rgba(230, 239, 236, 0.86);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.admin-platform-shell .admin-platform-nav-link svg:first-child,
+.admin-platform-shell .admin-platform-nav-trigger svg:first-child {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-platform-shell .admin-platform-nav-link:hover,
+.admin-platform-shell .admin-platform-nav-link:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.admin-platform-shell .admin-platform-nav-link.active {
+  background: var(--adm-brand);
+  box-shadow: none;
+  color: #ffffff;
+}
+
+.admin-platform-shell .admin-platform-nav-row-arrow {
+  display: none;
+}
+
+.admin-platform-shell .admin-platform-nav-section {
+  padding: 0;
+}
+
+.admin-platform-shell .admin-platform-nav-section + .admin-platform-nav-section {
+  margin-top: 24px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.admin-platform-shell .admin-platform-nav-section + .admin-platform-nav-section.is-closed {
+  margin-top: 8px;
+}
+
+.admin-platform-shell .admin-platform-nav-section-label {
+  color: var(--sidebar-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.admin-platform-shell .admin-platform-nav-section-toggle {
+  min-height: 30px;
+  padding: 0 10px;
+}
+
+.admin-platform-shell .admin-platform-nav-section-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.admin-platform-shell .admin-platform-nav-section-items {
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.admin-platform-shell .admin-platform-brand-copy strong {
+  font-family: var(--adm-font);
+  font-weight: 700;
+}
+
+/* Top bar: 60px, white, bottom border; breadcrumb left, search centre, status / alerts / account right. */
+.admin-platform-shell .admin-platform-topbar {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 420px) auto;
+  gap: 16px;
+  min-height: 60px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  backdrop-filter: none;
+}
+
+.admin-platform-shell .admin-platform-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-platform-shell .admin-platform-icon-button {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid var(--adm-border);
+  border-radius: 8px;
+  background: var(--adm-surface);
+  color: var(--adm-ink);
+}
+
+.admin-platform-shell .admin-platform-page-title h1 {
+  display: none;
+}
+
+.admin-platform-shell .admin-platform-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--adm-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.admin-platform-shell .admin-platform-breadcrumbs a {
+  color: var(--adm-muted);
+  text-decoration: none;
+}
+
+.admin-platform-shell .admin-platform-breadcrumbs a:hover {
+  color: var(--adm-ink);
+}
+
+.admin-platform-shell .admin-platform-breadcrumb-item:not(:last-child)::after {
+  color: #98a2b3;
+}
+
+.admin-platform-shell .admin-platform-topbar-center {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.admin-platform-shell .admin-platform-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Page search (Ctrl+K). */
+.adm-search {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.adm-search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--adm-border-strong);
+  border-radius: 8px;
+  background: var(--adm-surface);
+  color: var(--adm-muted);
+}
+
+.adm-search-field:focus-within {
+  border-color: var(--adm-brand);
+  box-shadow: var(--adm-focus);
+}
+
+.adm-search-field input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--adm-ink);
+  font-size: 14px;
+  outline: none;
+}
+
+.adm-search-field kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--adm-border);
+  border-radius: 6px;
+  background: var(--adm-surface-alt);
+  color: var(--adm-muted);
+  font-family: var(--adm-font);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.adm-search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 1060;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--adm-border);
+  border-radius: 12px;
+  background: var(--adm-surface);
+  box-shadow: var(--adm-shadow-pop);
+}
+
+.adm-search-results button {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--adm-ink);
+  font-size: 14px;
+  text-align: left;
+}
+
+.adm-search-results button small {
+  color: var(--adm-muted);
+  font-size: 12px;
+}
+
+.adm-search-results button.is-active,
+.adm-search-results button:hover {
+  background: var(--adm-brand-soft);
+}
+
+/* Bókun status chip. */
+.admin-platform-shell .admin-platform-sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Alerts bell with a count badge, and the account (avatar) menu. */
+.adm-icon-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--adm-border);
+  border-radius: 8px;
+  background: var(--adm-surface);
+  color: var(--adm-ink);
+}
+
+.adm-icon-button:hover {
+  background: var(--adm-row-hover);
+  color: var(--adm-ink);
+}
+
+.adm-bell-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 2px solid var(--adm-surface);
+  border-radius: 999px;
+  background: var(--adm-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+
+.adm-avatar-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.adm-avatar-button::after {
+  display: none;
+}
+
+.adm-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--adm-brand);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.adm-avatar-button:focus-visible .adm-avatar {
+  box-shadow: var(--adm-focus);
+}
+
+.adm-user-dropdown {
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid var(--adm-border);
+  border-radius: 12px;
+  box-shadow: var(--adm-shadow-pop);
+  font-family: var(--adm-font);
+}
+
+.adm-user-dropdown-head {
+  display: grid;
+  padding: 6px 10px;
+}
+
+.adm-user-dropdown-head strong {
+  color: var(--adm-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.adm-user-dropdown-head small {
+  color: var(--adm-muted);
+  font-size: 12px;
+}
+
+.adm-user-dropdown .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--adm-ink);
+  font-size: 14px;
+}
+
+.adm-user-dropdown .dropdown-item:hover,
+.adm-user-dropdown .dropdown-item:focus {
+  background: var(--adm-row-hover);
+}
+
+/* Bookings filter row: wraps inside its card instead of running past it. */
+.admin-platform-shell .admin-bookings-filter-desktop {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+/* Content area: the same width and padding on every page. */
+.admin-platform-shell .admin-platform-content {
+  padding: 24px;
+  background: var(--adm-page-bg);
+}
+
+.admin-platform-shell .admin-platform-content > * {
+  width: 100%;
+  max-width: 1440px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Drawer below 992px: same dark sidebar, off-canvas, with an overlay. */
+@media (max-width: 991.98px) {
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-nav-link,
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-nav-trigger,
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-nav-section-label,
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-brand-copy strong,
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-user-info strong {
+    color: var(--sidebar-text);
+  }
+
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-nav-link.active {
+    background: var(--adm-brand);
+    color: #fff;
+  }
+
+  .admin-platform-shell .admin-platform-sidebar .admin-platform-user-mini {
+    border-color: var(--sidebar-border);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .admin-platform-shell .admin-platform-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-platform-shell .admin-platform-content {
+    padding: 16px;
+  }
+
+  /* Two KPI cards per row on phones: values stay on one line. */
+  .admin-platform-shell .adm-stat-value {
+    font-size: 20px;
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
+
+  .admin-platform-shell .admin-platform-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .admin-platform-shell .admin-platform-page-title {
+    display: none;
+  }
+
+  .adm-search-field kbd,
+  .adm-hide-sm {
+    display: none;
+  }
+
+  .admin-platform-shell .admin-platform-sync-pill {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+
+/* ============ STEP 3: components ============ */
+
+/* PageHeader: title row, one-line description, actions right; on phones the actions wrap below. */
+.admin-platform-shell .adm-page-header {
+  align-items: flex-start;
+  gap: 12px 24px;
+}
+
+.admin-platform-shell .adm-page > .adm-page-header {
+  margin-bottom: 0;
+}
+
+.admin-platform-shell .adm-page {
+  gap: 24px;
+}
+
+.admin-platform-shell .adm-title-status {
+  margin-left: 10px;
+  font-size: 0;
+  vertical-align: middle;
+}
+
+.admin-platform-shell .adm-title-status .adm-badge {
+  font-size: 12px;
+}
+
+/* Buttons: 36px (32px small), one radius, 16px icons with an 8px gap, one disabled look. */
+.admin-platform-shell .btn {
+  min-height: 36px;
+  padding: 0 14px;
+  gap: 8px;
+  border-radius: var(--adm-radius-control);
+  font-family: var(--adm-font);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.admin-platform-shell .btn-sm {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.admin-platform-shell .btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.admin-platform-shell .btn-outline-secondary,
+.admin-platform-shell .btn-light,
+.admin-platform-shell .btn-secondary {
+  --bs-btn-color: var(--adm-ink);
+  --bs-btn-bg: var(--adm-surface);
+  --bs-btn-border-color: var(--adm-border-strong);
+  --bs-btn-hover-color: var(--adm-ink);
+  --bs-btn-hover-bg: var(--adm-row-hover);
+  --bs-btn-hover-border-color: var(--adm-border-strong);
+  --bs-btn-active-color: var(--adm-ink);
+  --bs-btn-active-bg: var(--adm-neutral-soft);
+  --bs-btn-active-border-color: var(--adm-border-strong);
+  --bs-btn-disabled-color: #98a2b3;
+  --bs-btn-disabled-bg: var(--adm-surface);
+  --bs-btn-disabled-border-color: var(--adm-border);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+.admin-platform-shell .btn-danger,
+.admin-platform-shell .btn-outline-danger {
+  --bs-btn-color: var(--adm-danger);
+  --bs-btn-bg: var(--adm-surface);
+  --bs-btn-border-color: #fda29b;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--adm-danger);
+  --bs-btn-hover-border-color: var(--adm-danger);
+}
+
+.admin-platform-shell .btn-link {
+  min-height: auto;
+  padding: 0 4px;
+  text-decoration: none;
+}
+
+.admin-platform-shell .btn:disabled,
+.admin-platform-shell .btn.disabled {
+  opacity: 0.5;
+}
+
+/* Inputs and selects: 36px, 8px radius, #d0d5dd border, brand focus ring; labels 13px/500 above. */
+.admin-platform-shell :is(.form-control, .form-select):not(textarea) {
+  min-height: 36px;
+}
+
+.admin-platform-shell :is(.form-control, .form-select) {
+  border-color: var(--adm-border-strong);
+  border-radius: var(--adm-radius-control);
+  color: var(--adm-ink);
+  font-family: var(--adm-font);
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+.admin-platform-shell :is(.form-control-sm, .form-select-sm) {
+  min-height: 32px;
+  font-size: 13px;
+}
+
+.admin-platform-shell :is(.form-control, .form-select):focus {
+  border-color: var(--adm-brand);
+  box-shadow: var(--adm-focus);
+}
+
+.admin-platform-shell .form-label {
+  margin-bottom: 6px;
+  color: var(--adm-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* StatusBadge: pill, 12px/500, a small dot before the text. */
+.admin-platform-shell .adm-badge {
+  gap: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.adm-badge-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* StatCard: label top-left, 32px tinted icon tile top-right, 26px tabular value, 12px helper, equal heights. */
+.admin-platform-shell .adm-stat-grid {
+  align-items: stretch;
+  gap: 16px;
+}
+
+.admin-platform-shell .adm-stat {
+  min-height: 0;
+  height: 100%;
+  gap: 6px;
+  padding: 20px;
+}
+
+.admin-platform-shell .adm-stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--adm-brand-soft);
+  color: var(--adm-brand);
+}
+
+.admin-platform-shell .adm-stat-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-platform-shell .adm-stat-trend {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-platform-shell .adm-stat-trend.is-good { color: var(--adm-success); }
+.admin-platform-shell .adm-stat-trend.is-bad { color: var(--adm-danger); }
+
+/* Max 4 per row on desktop, 2 on tablets, 1-2 on phones. */
+@media (max-width: 1199.98px) {
+  .admin-platform-shell .adm-stat-grid,
+  .admin-platform-shell .adm-stat-grid.cols-3,
+  .admin-platform-shell .adm-stat-grid.cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* SectionCard: 12px radius, 56px header with a bottom border, 20px body. */
+.admin-platform-shell .adm-card-header {
+  align-items: center;
+  min-height: 56px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--adm-border-subtle);
+}
+
+.admin-platform-shell .adm-card-description {
+  margin-top: 2px;
+  color: var(--adm-muted);
+  font-size: 13px;
+}
+
+.admin-platform-shell .adm-card-body {
+  padding: 20px;
+}
+
+.admin-platform-shell .adm-card.is-flush .adm-card-body {
+  padding: 0;
+}
+
+/* DataTable: 40px header on #f9fafb, 52px rows, subtle separators, bold first column, tabular numbers. */
+.admin-platform-shell .adm-table-scroll {
+  border-color: var(--adm-border);
+  border-radius: 10px;
+}
+
+.admin-platform-shell .adm-table th {
+  height: 40px;
+  padding: 0 16px;
+  background: var(--adm-surface-alt);
+  border-bottom: 1px solid var(--adm-border);
+  color: var(--adm-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.admin-platform-shell .adm-table td {
+  height: 52px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--adm-border-subtle);
+  color: var(--adm-text);
+  font-size: var(--adm-fs-table);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-platform-shell .adm-table td:first-child {
+  color: var(--adm-ink);
+  font-weight: 600;
+}
+
+.admin-platform-shell .adm-table tbody tr:nth-child(even) td {
+  background: transparent;
+}
+
+.admin-platform-shell .adm-table tbody tr:hover td {
+  background: var(--adm-row-hover);
+}
+
+.admin-platform-shell .adm-table td.is-actions {
+  width: 56px;
+  padding-right: 12px;
+}
+
+/* Row actions: one "⋯" button. */
+.adm-row-actions-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--adm-muted);
+}
+
+.adm-row-actions-toggle::after {
+  display: none;
+}
+
+.adm-row-actions-toggle:hover,
+.adm-row-actions-toggle[aria-expanded="true"] {
+  border-color: var(--adm-border);
+  background: var(--adm-surface);
+  color: var(--adm-ink);
+}
+
+.adm-row-actions-menu {
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--adm-border);
+  border-radius: 10px;
+  box-shadow: var(--adm-shadow-pop);
+  font-family: var(--adm-font);
+}
+
+.adm-row-actions-menu .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 14px;
+}
+
+.adm-row-actions-menu .dropdown-item.is-danger {
+  color: var(--adm-danger);
+}
+
+/* Pagination bar: rows per page, range, prev / next. */
+.admin-platform-shell .adm-pagination {
+  justify-content: flex-end;
+  gap: 16px;
+  padding-top: 12px;
+  font-size: 13px;
+}
+
+.adm-pagination-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  color: var(--adm-muted);
+  font-size: 13px;
+}
+
+.adm-pagination-size .form-select {
+  width: auto;
+  min-width: 72px;
+}
+
+.adm-pagination-range {
+  color: var(--adm-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-pagination-nav {
+  display: inline-flex;
+  gap: 6px;
+}
+
+/* FilterBar: one row; Reset is a text button; extra filters fold behind "Filters" on phones. */
+.adm-filter-extra {
+  display: contents;
+}
+
+.adm-filter-toggle {
+  display: none !important;
+}
+
+.admin-platform-shell .adm-filter-search {
+  height: 36px;
+  border-color: var(--adm-border-strong);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+/* EmptyState: 40px icon in a soft circle, 15px/600 title, one line of text. */
+.admin-platform-shell .adm-state {
+  gap: 8px;
+  padding: 40px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+}
+
+.admin-platform-shell .adm-state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 4px;
+  border-radius: 999px;
+  background: var(--adm-brand-soft);
+  color: var(--adm-brand);
+  font-size: 18px;
+}
+
+.admin-platform-shell .adm-state.is-error .adm-state-icon {
+  background: var(--adm-danger-soft);
+  color: var(--adm-danger);
+}
+
+.admin-platform-shell .adm-state strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Popovers and modals. */
+.admin-platform-shell ~ .modal .modal-content,
+.modal-content,
+.offcanvas {
+  font-family: var(--adm-font, inherit);
+}
+
+@media (max-width: 767.98px) {
+  .admin-platform-shell .adm-page-actions {
+    width: 100%;
+  }
+
+  .admin-platform-shell .adm-page-actions > .btn,
+  .admin-platform-shell .adm-page-actions > a {
+    flex: 1 1 auto;
+  }
+
+  /* Filters sheet on phones. */
+  .adm-filter-toggle {
+    display: inline-flex !important;
+  }
+
+  .adm-filter-extra {
+    display: none;
+    flex: 1 1 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .adm-filter-extra.is-open {
+    display: flex;
+  }
+
+  /* Tables become stacked row cards (key fields only). */
+  .admin-platform-shell .adm-table-scroll {
+    border: 0;
+    overflow: visible;
+  }
+
+  .admin-platform-shell .adm-table,
+  .admin-platform-shell .adm-table tbody,
+  .admin-platform-shell .adm-table tr,
+  .admin-platform-shell .adm-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-platform-shell .adm-table thead {
+    display: none;
+  }
+
+  .admin-platform-shell .adm-table tr {
+    position: relative;
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--adm-border);
+    border-radius: 12px;
+    background: var(--adm-surface);
+  }
+
+  .admin-platform-shell .adm-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    height: auto;
+    padding: 4px 0;
+    border: 0;
+    text-align: right;
+  }
+
+  .admin-platform-shell .adm-table td::before {
+    content: attr(data-label);
+    flex: none;
+    color: var(--adm-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+  }
+
+  .admin-platform-shell .adm-table td:first-child {
+    display: block;
+    padding-right: 40px;
+    text-align: left;
+  }
+
+  .admin-platform-shell .adm-table td:first-child::before,
+  .admin-platform-shell .adm-table td[data-label=""]::before {
+    display: none;
+  }
+
+  .admin-platform-shell .adm-table td.is-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: auto;
+    padding: 0;
+  }
+
+  .admin-platform-shell .adm-table td.adm-hide-mobile {
+    display: none;
+  }
+
+  .admin-platform-shell .adm-table tbody tr:hover td {
+    background: transparent;
+  }
+
+  .admin-platform-shell .adm-pagination {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .adm-pagination-size {
+    display: none;
+  }
+}
+
+/* Right-side drawers for "Add …" forms (Record payout, Add lead, Record evidence). */
+.offcanvas.adm-drawer {
+  --bs-offcanvas-width: min(440px, 100vw);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  box-shadow: 0 12px 24px -4px rgba(16, 24, 40, 0.12);
+}
+
+.adm-drawer .offcanvas-header {
+  min-height: 60px;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.adm-drawer .offcanvas-title {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.adm-drawer .form-label {
+  margin-bottom: 6px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.adm-drawer :is(.form-control, .form-select) {
+  min-height: 36px;
+  border-color: #d0d5dd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.adm-drawer :is(.form-control, .form-select):focus {
+  border-color: #0e6b57;
+  box-shadow: 0 0 0 4px rgba(14, 107, 87, 0.15);
+}
+
+/* The drawer is narrow whatever the screen size, so viewport-based form columns stack. */
+.adm-drawer form .row > [class*="col-sm-"],
+.adm-drawer form .row > [class*="col-md-"],
+.adm-drawer form .row > [class*="col-lg-"],
+.adm-drawer form .row > [class*="col-xl-"] {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+.adm-drawer .btn-primary {
+  --bs-btn-bg: #0e6b57;
+  --bs-btn-border-color: #0e6b57;
+  --bs-btn-hover-bg: #0a5242;
+  --bs-btn-hover-border-color: #0a5242;
+}
+
+/* ── Step 4: older accounting pages follow the same template ─────────────────────────────────────────
+   Invoices, Journal Entries, Chart of Accounts, Trial Balance, General Ledger, AR/AP, Cash & Bank and
+   Period Close keep their own markup; these rules give them the shared look (brand icon tiles, the same
+   KPI value size, money that never splits across lines, regular-weight table text). Light mode only:
+   adminDark.css handles the dark theme. */
+:where(.admin-platform-shell:not([data-admin-theme="dark"])) :is(
+  .ap-kpi.blue > span, .cb-kpi.blue > span, .cb-kpi.purple > span,
+  .gl-kpi-card.transactions > span, .gl-kpi-card.accounts > span,
+  .tb-kpi-card.debit > span, .tb-kpi-card.activity > span
+) {
+  background: #e7f3ef;
+  color: #0e6b57;
+}
+
+.admin-platform-shell:not([data-admin-theme="dark"]) .admin-platform-content :is(
+  .journal-kpi-card:not(.posted):not(.draft):not(.problem) > span,
+  .coa-kpi-icon, .iv-kpi:not(.amber):not(.green):not(.purple) .iv-kpi-icon, .iv-kpi.purple .iv-kpi-icon,
+  .pc-health-card:not(.is-teal):not(.is-amber):not(.is-red) .pc-health-icon
+) {
+  background: #e7f3ef;
+  color: #0e6b57;
+}
+
+/* KPI values: one size, and "USD 1,313.33" stays on one line. */
+.admin-platform-content :is(
+  .ap-kpi, .cb-kpi, .gl-kpi-card, .tb-kpi-card, .journal-kpi-card, .iv-kpi, .ar-kpi, .coa-kpi-card, .fa-kpi, .br-kpi
+) strong {
+  font-size: clamp(18px, 1.5vw, 24px);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Money and other right-aligned figures never split ("USD" on one line, the amount on the next). */
+.admin-platform-content :is(td, th).text-end,
+.admin-platform-content :is(td, th)[class*="amount"],
+.admin-platform-content :is(td, th)[class*="money"] {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Table body text is regular weight; links and <strong> keep their emphasis. */
+.admin-platform-content :is(.journal-table, .tb-table, .gl-table, .coa-table, .ap-table-wrap table, .cb-table-wrap table) tbody td {
+  font-weight: 400;
+}
+
+/* Journal register: the entry number and posting date stay on one line; the description takes the rest. */
+.admin-platform-content .journal-table :is(td, th):is(:nth-child(2), :nth-child(3)) {
+  white-space: nowrap;
+}
+
+/* …and the description wraps to at most two lines (full text in its tooltip) so the register fits without scrolling. */
+.admin-platform-content .journal-table td span[title] {
+  display: -webkit-box;
+  max-width: none;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* ── Step 5: feedback, focus and numbers ─────────────────────────────────────────────────────────── */
+.adm-toasts {
+  z-index: 1090;
+  padding: 72px 16px 16px;
+}
+
+.adm-toast {
+  width: min(380px, calc(100vw - 32px));
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 24px -4px rgba(16, 24, 40, 0.12);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.adm-toast .toast-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.adm-toast .toast-body > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.adm-toast.is-success .toast-body > svg { color: #067647; }
+.adm-toast.is-danger { border-color: #fecdca; }
+.adm-toast.is-danger .toast-body > svg { color: #b42318; }
+.adm-toast .toast-body > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.adm-toast .btn-close { flex: 0 0 auto; width: 10px; height: 10px; margin-top: 4px; }
+
+html[data-admin-theme="dark"] .adm-toast { border-color: #263532; background: #131d1b; }
+html[data-admin-theme="dark"] .adm-toast .toast-body { color: #e8f0ed; }
+html[data-admin-theme="dark"] .adm-toast .btn-close { filter: invert(1) grayscale(1); }
+
+.adm-confirm .modal-content {
+  border: 0;
+  border-radius: 12px;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.adm-confirm .modal-title { font-size: 16px; font-weight: 600; }
+.adm-confirm .modal-body { color: #475569; font-size: 14px; }
+.adm-confirm .modal-header, .adm-confirm .modal-footer { border-color: #eef0f3; }
+
+/* Visible keyboard focus on every interactive element (mouse clicks keep the clean look). */
+.admin-platform-shell :is(a, button, [role="button"], input, select, textarea, summary, [tabindex]):focus-visible,
+:is(.adm-drawer, .adm-confirm, .adm-toasts) :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid #0e6b57;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+html[data-admin-theme="dark"] :is(.admin-platform-shell, .adm-drawer, .adm-confirm) :is(a, button, [role="button"], input, select, textarea, summary, [tabindex]):focus-visible {
+  outline-color: #3fb594;
+}
+
+/* Negative amounts in red; values that are not available are muted (their tooltip says why). */
+.admin-platform-shell .adm-negative { color: #b42318; }
+.admin-platform-shell .adm-na { color: #64748b; font-weight: 400; cursor: help; }
+html[data-admin-theme="dark"] .admin-platform-shell .adm-negative { color: #f97066; }
+html[data-admin-theme="dark"] .admin-platform-shell .adm-na { color: #93a39f; }
+.admin-platform-shell .adm-relative-time { white-space: nowrap; cursor: help; }
+
+/* Bookings register: names never run to four lines. Product 2 lines + option 1 line, customer 2 lines (full text
+   in the tooltip); reference and date stay on one line. */
+.admin-platform-content .admin-bookings-date-cell :is(strong, small) {
+  white-space: nowrap;
+}
+
+/* Words never split mid-word ("Custome r paid"); cells are a little tighter so Total and Actions fit at 1440px. */
+.admin-platform-content .admin-bookings-table :is(th, td) {
+  padding-right: 10px;
+  padding-left: 10px;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* Long website references (ZNZ-…) break at their hyphens rather than mid-number. */
+.admin-platform-content .admin-bookings-table .admin-bookings-reference {
+  display: inline-block;
+  max-width: 150px;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.admin-platform-content .admin-bookings-product-cell {
+  min-width: 180px;
+  max-width: 220px;
+}
+
+.admin-platform-content :is(.admin-bookings-product-cell, .admin-bookings-customer-cell) strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.admin-platform-content .admin-bookings-product-cell small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-platform-content .admin-bookings-customer-cell {
+  min-width: 140px;
+}
+
+/* ── Step 6: one page frame, card and table style on every route ─────────────────────────────────── */
+/* Older page wrappers add their own padding on top of the content area's 24px; the title then sits lower and
+   further right than on other pages. */
+.admin-platform-shell .admin-platform-content > :is(div, main, section):not(.adm-page) {
+  padding-top: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.admin-platform-shell .admin-platform-content > .bi-dashboard {
+  background: transparent;
+}
+
+/* Page titles: one size and weight. */
+.admin-platform-shell .admin-platform-content h1 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 767.98px) {
+  .admin-platform-shell .admin-platform-content h1 {
+    font-size: 20px;
+  }
+}
+
+/* Cards and panels: 12px corners and the shared border. */
+.admin-platform-shell .admin-platform-content :is(
+  .card, [class*="-card"]:not([class*="-card-"]), [class*="-panel"], [class*="-register"], [class*="-kpi"]:not([class*="-kpi-"])
+):not([class*="badge"]):not([class*="status"]):not([class*="pill"]):not([class*="chip"]):not(.adm-badge):not(.btn):not(.adm-stat) {
+  border-radius: 12px;
+}
+
+.admin-platform-shell:not([data-admin-theme="dark"]) .admin-platform-content :is(
+  .card, [class*="-card"]:not([class*="-card-"]), [class*="-panel"], [class*="-register"], [class*="-kpi"]:not([class*="-kpi-"])
+):not([class*="badge"]):not([class*="status"]):not([class*="pill"]):not([class*="chip"]):not(.adm-badge):not(.btn):not(.adm-stat) {
+  border-color: #e5e7eb;
+}
+
+/* Table headers: 12px uppercase muted labels everywhere. Body text 14px; the wide registers (many money columns)
+   use 13px so they still fit. */
+.admin-platform-shell .admin-platform-content thead th {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.admin-platform-shell:not([data-admin-theme="dark"]) .admin-platform-content thead th {
+  color: #64748b;
+}
+
+.admin-platform-shell .admin-platform-content tbody td {
+  font-size: 14px;
+}
+
+.admin-platform-shell .admin-platform-content :is(
+  .tb-table, .gl-table, .journal-table, .coa-table, .admin-bookings-table, .ap-table-wrap table, .br-table table,
+  .iv-table, .bi-dashboard table, .rc-page table, .pc-table-wrap table, .fa-table, .re-table
+) tbody td {
+  font-size: 13px;
+}

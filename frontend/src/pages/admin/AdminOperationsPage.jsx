@@ -1,38 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Card, Col, Row } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import {
-  BsActivity,
-  BsArrowClockwise,
-  BsCheckCircleFill,
-  BsDatabase,
-  BsEnvelope,
-  BsExclamationTriangleFill,
-  BsGearWideConnected,
-  BsXCircleFill
-} from "react-icons/bs";
+import { BsActivity, BsArrowClockwise, BsDatabase, BsEnvelope, BsGearWideConnected } from "react-icons/bs";
 import { fetchOperationsOverview } from "../../api/adminApi";
-import ErrorAlert from "../../components/common/ErrorAlert";
-import Loader from "../../components/common/Loader";
+import { AdminPage, ErrorState, LoadingSkeleton, PageHeader, SectionCard, StatCard, StatGrid, StatusBadge } from "../../components/admin/ui";
+import { formatAdminDateTime } from "../../utils/adminFormat";
+import { formatLabel } from "../../utils/formatLabel";
 
 const statusMeta = {
-  healthy: { label: "Healthy", bg: "success", icon: BsCheckCircleFill },
-  warning: { label: "Needs attention", bg: "warning", icon: BsExclamationTriangleFill },
-  critical: { label: "Critical", bg: "danger", icon: BsXCircleFill }
+  healthy: { label: "Healthy", tone: "success" },
+  warning: { label: "Needs attention", tone: "warning" },
+  critical: { label: "Critical", tone: "danger" }
 };
 
 const integrationMeta = (mode) => {
-  if (mode === "live") return { label: "Live", bg: "success" };
-  if (mode === "test") return { label: "Test mode", bg: "warning" };
-  return { label: "Not configured", bg: "secondary" };
+  if (mode === "live") return { label: "Live", tone: "success" };
+  if (mode === "test") return { label: "Test mode", tone: "warning" };
+  return { label: "Not set up", tone: "neutral" };
 };
 
-const formatTimestamp = (value) => {
-  if (!value) return "No sync recorded";
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "No sync recorded" : date.toLocaleString();
-};
+const formatTimestamp = (value) => (value ? formatAdminDateTime(value) : "No sync recorded");
 
 const formatUptime = (seconds = 0) => {
   const total = Math.max(0, Number(seconds || 0));
@@ -64,134 +51,104 @@ const AdminOperationsPage = () => {
     loadOverview();
   }, [loadOverview]);
 
-  if (loading) return <Loader />;
-
   const currentStatus = statusMeta[overview?.status] || statusMeta.warning;
-  const StatusIcon = currentStatus.icon;
   const queue = overview?.queue || {};
   const metrics = [
-    { label: "Paid, supplier pending", value: queue.paidPendingSupplier || 0, icon: BsGearWideConnected, to: "/admin/recovery" },
-    { label: "Retriable finalizations", value: queue.retriableFinalizations || 0, icon: BsArrowClockwise, to: "/admin/recovery" },
-    { label: "Failed emails", value: queue.failedEmails || 0, icon: BsEnvelope, to: "/admin/sync-logs" },
-    { label: "Open booking requests", value: queue.openBookingRequests || 0, icon: BsActivity, to: "/admin/booking-requests" }
+    { label: "Paid, waiting for supplier", value: queue.paidPendingSupplier || 0, icon: BsGearWideConnected, to: "/admin/operations/recovery" },
+    { label: "Confirmations to retry", value: queue.retriableFinalizations || 0, icon: BsArrowClockwise, to: "/admin/operations/recovery" },
+    { label: "Failed emails", value: queue.failedEmails || 0, icon: BsEnvelope, to: "/admin/operations/bokun-sync/sync-logs" },
+    { label: "Open booking requests", value: queue.openBookingRequests || 0, icon: BsActivity, to: "/admin/operations/booking-requests" }
   ];
 
   return (
-    <section className="admin-operations-page">
-      <div className="admin-operations-header">
-        <div>
-          <span className="admin-operations-eyebrow">System control</span>
-          <h1>Operations Center</h1>
-          <p>Monitor booking reliability, supplier connectivity, payment readiness, and operational queues.</p>
-        </div>
-        <div className="admin-operations-header-actions">
-          <Badge bg={currentStatus.bg} className="admin-operations-status">
-            <StatusIcon aria-hidden="true" /> {currentStatus.label}
-          </Badge>
-          <Button variant="outline-primary" onClick={() => loadOverview({ silent: true })} disabled={refreshing}>
-            <BsArrowClockwise aria-hidden="true" className={refreshing ? "is-spinning" : ""} />
-            {refreshing ? "Refreshing" : "Refresh"}
-          </Button>
-        </div>
-      </div>
+    <AdminPage className="admin-operations-page">
+      <PageHeader
+        eyebrow="Operations"
+        title="Tour Operations"
+        description="Is everything running? Supplier connection, payments, background jobs and the queues that need a person."
+        actions={
+          <>
+            {overview ? <StatusBadge value={overview.status} label={currentStatus.label} tone={currentStatus.tone} /> : null}
+            <Button variant="outline-secondary" onClick={() => loadOverview({ silent: true })} disabled={refreshing || loading}>
+              <BsArrowClockwise aria-hidden="true" className={refreshing ? "is-spinning" : ""} />
+              {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+          </>
+        }
+      />
 
-      <ErrorAlert error={error} />
+      {error && !overview ? <ErrorState message={error.message || "The operations overview could not be loaded."} onRetry={() => loadOverview()} /> : null}
 
-      {overview && (
+      <StatGrid columns={4}>
+        {metrics.map(({ label, value, icon, to }) => (
+          <Link key={label} to={to} className="text-decoration-none">
+            <StatCard label={label} value={value} icon={icon} loading={loading} status={value ? "warning" : ""} />
+          </Link>
+        ))}
+      </StatGrid>
+
+      {loading ? <SectionCard><LoadingSkeleton rows={6} /></SectionCard> : null}
+
+      {overview ? (
         <>
-          <Row className="g-3 mb-4">
-            {metrics.map(({ label, value, icon: Icon, to }) => (
-              <Col key={label} sm={6} xl={3}>
-                <Card as={Link} to={to} className="surface-card admin-operation-metric text-decoration-none h-100">
-                  <Card.Body>
-                    <span className="admin-operation-metric-icon"><Icon aria-hidden="true" /></span>
-                    <span>{label}</span>
-                    <strong>{value}</strong>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-
-          <Row className="g-4">
-            <Col lg={7}>
-              <Card className="surface-card admin-operations-card h-100">
-                <Card.Body>
-                  <div className="admin-operations-card-heading">
-                    <div>
-                      <h2>Service readiness</h2>
-                      <p>Configuration status only. Credentials are never shown here.</p>
-                    </div>
-                    <small>Updated {formatTimestamp(overview.generatedAt)}</small>
+          <div className="row g-3">
+            <div className="col-lg-7">
+              <SectionCard title="Service readiness" description="Configuration status only; credentials are never shown." actions={<small className="text-muted">Updated {formatTimestamp(overview.generatedAt)}</small>}>
+                <div className="admin-service-list">
+                  <div className="admin-service-row">
+                    <span className="admin-service-icon"><BsDatabase aria-hidden="true" /></span>
+                    <div><strong>Database</strong><small>{formatLabel(overview.runtime?.database?.status || "unknown")}</small></div>
+                    <StatusBadge value={overview.runtime?.database?.healthy ? "connected" : "failed"} label={overview.runtime?.database?.healthy ? "Connected" : "Unavailable"} />
                   </div>
-
-                  <div className="admin-service-list">
-                    <div className="admin-service-row">
-                      <span className="admin-service-icon"><BsDatabase aria-hidden="true" /></span>
-                      <div><strong>MongoDB</strong><small>{overview.runtime?.database?.status || "unknown"}</small></div>
-                      <Badge bg={overview.runtime?.database?.healthy ? "success" : "danger"}>
-                        {overview.runtime?.database?.healthy ? "Connected" : "Unavailable"}
-                      </Badge>
-                    </div>
-                    {(overview.integrations || []).map((integration) => {
-                      const mode = integrationMeta(integration.mode);
-                      return (
-                        <div className="admin-service-row" key={integration.id}>
-                          <span className="admin-service-icon"><BsGearWideConnected aria-hidden="true" /></span>
-                          <div><strong>{integration.label}</strong><small>{integration.note || (integration.mode === "live" ? "Ready for production traffic" : "Check configuration before enabling live sales")}</small></div>
-                          <Badge bg={mode.bg}>{mode.label}</Badge>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col lg={5}>
-              <Card className="surface-card admin-operations-card h-100">
-                <Card.Body>
-                  <div className="admin-operations-card-heading">
-                    <div><h2>Background jobs</h2><p>Retries keep paid bookings moving safely.</p></div>
-                  </div>
-                  <div className="admin-job-list">
-                    {(overview.jobs || []).map((job) => (
-                      <div className="admin-job-row" key={job.id}>
-                        <div>
-                          <strong>{job.label}</strong>
-                          <small>Every {job.intervalSeconds || "-"} seconds</small>
-                        </div>
-                        <Badge bg={job.enabled ? "success" : "secondary"}>{job.enabled ? "Enabled" : "Disabled"}</Badge>
+                  {(overview.integrations || []).map((integration) => {
+                    const mode = integrationMeta(integration.mode);
+                    return (
+                      <div className="admin-service-row" key={integration.id}>
+                        <span className="admin-service-icon"><BsGearWideConnected aria-hidden="true" /></span>
+                        <div><strong>{integration.label}</strong><small>{integration.note || (integration.mode === "live" ? "Ready for real bookings" : "Check the setup before taking live sales")}</small></div>
+                        <StatusBadge value={integration.mode} label={mode.label} tone={mode.tone} />
                       </div>
-                    ))}
-                  </div>
-                  <div className="admin-operations-runtime">
-                    <span>Environment <strong>{overview.runtime?.environment || "unknown"}</strong></span>
-                    <span>Uptime <strong>{formatUptime(overview.runtime?.uptimeSeconds)}</strong></span>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
+                    );
+                  })}
+                </div>
+              </SectionCard>
+            </div>
 
-            <Col xs={12}>
-              <Card className="surface-card admin-operations-card">
-                <Card.Body>
-                  <div className="admin-operations-card-heading">
-                    <div><h2>Supplier sync</h2><p>Most recent Bókun sync or webhook processing event.</p></div>
-                    <Link className="btn btn-outline-primary btn-sm" to="/admin/sync-logs">Open sync logs</Link>
-                  </div>
-                  <div className="admin-sync-summary">
-                    <span>Status <Badge bg={queue.latestBokunSync?.status === "success" ? "success" : "secondary"}>{queue.latestBokunSync?.status || "No activity"}</Badge></span>
-                    <span>Source <strong>{queue.latestBokunSync?.operation || "-"}</strong></span>
-                    <span>Completed <strong>{formatTimestamp(queue.latestBokunSync?.completedAt)}</strong></span>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+            <div className="col-lg-5">
+              <SectionCard title="Background jobs" description="Automatic retries keep paid bookings moving.">
+                <div className="admin-job-list">
+                  {(overview.jobs || []).map((job) => (
+                    <div className="admin-job-row" key={job.id}>
+                      <div>
+                        <strong>{job.label}</strong>
+                        <small>Every {job.intervalSeconds || "—"} seconds</small>
+                      </div>
+                      <StatusBadge value={job.enabled ? "on" : "off"} label={job.enabled ? "On" : "Off"} />
+                    </div>
+                  ))}
+                </div>
+                <div className="admin-operations-runtime">
+                  <span>Environment <strong>{formatLabel(overview.runtime?.environment || "unknown")}</strong></span>
+                  <span>Uptime <strong>{formatUptime(overview.runtime?.uptimeSeconds)}</strong></span>
+                </div>
+              </SectionCard>
+            </div>
+          </div>
+
+          <SectionCard
+            title="Supplier sync"
+            description="The latest Bókun import or webhook."
+            actions={<Link className="btn btn-outline-primary btn-sm" to="/admin/operations/bokun-sync/sync-logs">Open sync logs</Link>}
+          >
+            <div className="admin-sync-summary">
+              <span>Status <StatusBadge value={queue.latestBokunSync?.status || "none"} label={queue.latestBokunSync?.status ? formatLabel(queue.latestBokunSync.status) : "No activity"} /></span>
+              <span>Source <strong title={queue.latestBokunSync?.operation || ""}>{formatLabel(queue.latestBokunSync?.operation || "—")}</strong></span>
+              <span>Completed <strong>{formatTimestamp(queue.latestBokunSync?.completedAt)}</strong></span>
+            </div>
+          </SectionCard>
         </>
-      )}
-    </section>
+      ) : null}
+    </AdminPage>
   );
 };
 

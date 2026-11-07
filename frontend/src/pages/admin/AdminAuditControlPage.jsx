@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
+import { PageHeader, RelativeTime } from "../../components/admin/ui";
 import { Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsJournalCheck, BsShieldCheck } from "react-icons/bs";
 import {
@@ -56,16 +58,18 @@ const AdminAuditControlPage = () => {
 
   return (
     <div className="admin-audit-control-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Audit & Control</span>
-          <h2>Audit & Control</h2>
-          <p>Immutable audit logs, financial change evidence, and sanitized traceability for admin actions.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Control & System"
+        title="Audit Trail"
+        description="Who changed what, and when: a log that cannot be edited, for every admin and money change."
+        actions={
+          <>
+            <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+              <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
 
@@ -77,7 +81,7 @@ const AdminAuditControlPage = () => {
           <AdminMetricCard label="Financial Changes" value={summary?.totalFinancialChanges || 0} detail="Money-affecting audit evidence" icon={BsShieldCheck} />
         </Col>
         <Col md={4}>
-          <AdminMetricCard label="Latest Financial Change" value={summary?.latestFinancialChangeAt ? formatDateTime(summary.latestFinancialChangeAt) : "-"} detail="Sanitized payloads" icon={BsShieldCheck} />
+          <AdminMetricCard label="Latest Financial Change" value={<RelativeTime value={summary?.latestFinancialChangeAt} />} detail="Sensitive details hidden" icon={BsShieldCheck} />
         </Col>
       </Row>
 
@@ -119,12 +123,12 @@ const AdminAuditControlPage = () => {
                   {financialChanges.length ? financialChanges.map((item) => (
                     <tr key={item.id}>
                       <td>
-                        <strong className="d-block">{item.action}</strong>
+                        <strong className="d-block" title={item.action}>{formatLabel(item.action)}</strong>
                         <small className="text-muted">{actorLabel(item.actor)}</small>
                       </td>
                       <td>{item.reference || item.entity?.id || "-"}</td>
                       <td>{changedFields(item)}</td>
-                      <td>{formatDateTime(item.timestamp)}</td>
+                      <td><RelativeTime value={item.timestamp} /></td>
                     </tr>
                   )) : (
                     <tr><td colSpan={4} className="text-center text-muted py-4">No financial change records found.</td></tr>
@@ -150,13 +154,13 @@ const AdminAuditControlPage = () => {
                 <tbody>
                   {auditLogs.length ? auditLogs.map((item) => (
                     <tr key={item.id}>
-                      <td>{item.action}</td>
+                      <td title={item.action}>{formatLabel(item.action)}</td>
                       <td>
                         <strong className="d-block">{item.entity?.type}</strong>
                         <small className="text-muted">{item.reference || item.entity?.id}</small>
                       </td>
                       <td>{actorLabel(item.actor)}</td>
-                      <td>{formatDateTime(item.timestamp)}</td>
+                      <td><RelativeTime value={item.timestamp} /></td>
                     </tr>
                   )) : (
                     <tr><td colSpan={4} className="text-center text-muted py-4">No audit logs found.</td></tr>

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { formatLabel } from "../../utils/formatLabel";
+import { PageHeader, RelativeTime } from "../../components/admin/ui";
 import { Alert, Button, Card, Col, Form, Row, Table } from "react-bootstrap";
 import { BsArrowClockwise, BsBell, BsExclamationTriangle, BsPlayCircle } from "react-icons/bs";
 import {
@@ -77,16 +79,18 @@ const AdminOpsControlPage = () => {
 
   return (
     <div className="admin-ops-control-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">Operations Control</span>
-          <h2>Ops Control</h2>
-          <p>System alerts, failed jobs, safe retry actions, and persisted operational evidence.</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing || Boolean(busy)}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Control & System"
+        title="Ops Control"
+        description="System alerts, failed jobs, safe retry actions, and persisted operational evidence."
+        actions={
+          <>
+            <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing || Boolean(busy)}>
+              <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
+          </>
+        }
+      />
 
       <ErrorAlert error={error} />
       {notice ? <Alert variant="info">{notice}</Alert> : null}
@@ -115,7 +119,7 @@ const AdminOpsControlPage = () => {
             </div>
             <Form.Select value={category} onChange={(event) => changeCategory(event.target.value)} aria-label="Alert category">
               <option value="">All categories</option>
-              {(summary?.categories || []).map((item) => <option key={item} value={item}>{item.replaceAll("_", " ")}</option>)}
+              {(summary?.categories || []).map((item) => <option key={item} value={item}>{formatLabel(item)}</option>)}
             </Form.Select>
           </div>
         </Card.Body>
@@ -145,7 +149,7 @@ const AdminOpsControlPage = () => {
                       </td>
                       <td><StatusBadge value={alert.severity} /></td>
                       <td><StatusBadge value={alert.state} /></td>
-                      <td>{formatDateTime(alert.lastSeenAt)}</td>
+                      <td><RelativeTime value={alert.lastSeenAt} /></td>
                       <td>
                         <div className="d-flex flex-wrap gap-2">
                           <Button size="sm" variant="outline-secondary" disabled={Boolean(busy)} onClick={() => runAction(alert.alertKey, () => acknowledgeSystemAlert(alert.alertKey), "Alert acknowledged.")}>Ack</Button>

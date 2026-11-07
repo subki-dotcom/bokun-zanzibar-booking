@@ -1,6 +1,9 @@
 import Loader from "../../components/common/Loader";
+import { formatAdminMoney } from "../../utils/adminFormat";
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Form, Offcanvas } from 'react-bootstrap';
+import { PageHeader } from '../../components/admin/ui';
+import { formatLabel } from '../../utils/formatLabel';
 import {
   BsArrowClockwise,
   BsCalendar3,
@@ -28,15 +31,15 @@ const periods = [
   ['THIS_YEAR', 'This Year'],
   ['CUSTOM', 'Custom Range'],
 ];
-const label = (v) =>
-  String(v || 'Unknown')
-    .replaceAll('_', ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+const label = (value = "") => formatLabel(value);
+// The API sends the channel as { code: "GETYOURGUIDE", label: "GetYourGuide" } (older rows: a plain code).
+const channelName = (channel) =>
+  channel && typeof channel === 'object' ? channel.label || label(channel.code) : label(channel);
+const channelCode = (channel) => (channel && typeof channel === 'object' ? channel.code || '' : String(channel || ''));
 const cash = (v, c) =>
   v == null || !c
-    ? 'Unavailable'
-    : new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(Number(v));
+    ? 'Not available'
+    : formatAdminMoney(v, c);
 const Badge = ({ value }) => (
   <span className={`br-badge ${String(value || 'unknown').toLowerCase()}`}>{label(value)}</span>
 );
@@ -144,17 +147,11 @@ export default function AdminBookingReconciliationPage() {
     rows = d.items || [];
   return (
     <main className="br-page">
-      <header className="br-header">
-        <div>
-          <nav>
-            Booking Accounting / <b>Reconciliation</b>
-          </nav>
-          <h1>Booking Accounting Reconciliation</h1>
-          <p>
-            Reconcile bookings, customer payments, channel settlements, refunds and accounting
-            records.
-          </p>
-        </div>
+      <PageHeader
+        eyebrow="Booking Accounting"
+        title="Reconciliation"
+        description="Do bookings, guest payments, channel settlements, refunds and accounting records agree?"
+        actions={
         <div className="br-actions">
           <label>
             <BsCalendar3 />
@@ -197,17 +194,18 @@ export default function AdminBookingReconciliationPage() {
               'AGENT',
               'OTHER',
             ].map((x) => (
-              <option key={x}>{x}</option>
+              <option key={x} value={x}>{formatLabel(x)}</option>
             ))}
           </Form.Select>
           <Button variant="outline-secondary" onClick={load}>
             <BsArrowClockwise /> Refresh
           </Button>
-          <Button onClick={exp}>
-            <BsDownload /> Export
+          <Button variant="primary" onClick={exp}>
+            <BsDownload aria-hidden="true" /> Export
           </Button>
         </div>
-      </header>
+        }
+      />
       {state.error ? (
         <div className="br-error" role="alert">
           {state.error}
@@ -280,7 +278,7 @@ export default function AdminBookingReconciliationPage() {
               <Form.Select value={f.status} onChange={(e) => change('status', e.target.value)}>
                 <option value="">All Reconciliation Statuses</option>
                 {['RECONCILED', 'NEEDS_REVIEW', 'MISMATCH', 'UNRECONCILED'].map((x) => (
-                  <option key={x}>{x}</option>
+                  <option key={x} value={x}>{formatLabel(x)}</option>
                 ))}
               </Form.Select>
             </div>
@@ -312,7 +310,7 @@ export default function AdminBookingReconciliationPage() {
                             <b>{r.customer.name}</b>
                             <small>{r.product}</small>
                           </td>
-                          <td>{label(r.channel)}</td>
+                          <td title={channelCode(r.channel)}>{channelName(r.channel)}</td>
                           <td>{r.travelDate}</td>
                           <td>
                             <Badge value={r.customerPayment.status} />
@@ -353,7 +351,7 @@ export default function AdminBookingReconciliationPage() {
                       <dl>
                         <div>
                           <dt>Channel</dt>
-                          <dd>{label(r.channel)}</dd>
+                          <dd title={channelCode(r.channel)}>{channelName(r.channel)}</dd>
                         </div>
                         <div>
                           <dt>Customer payment</dt>
@@ -482,7 +480,7 @@ export default function AdminBookingReconciliationPage() {
                         </div>
                         <div>
                           <dt>Commission rate</dt>
-                          <dd>{bokunPreview.preview.evidence.commissionPercentage || 'Unavailable'}%</dd>
+                          <dd>{bokunPreview.preview.evidence.commissionPercentage ? `${bokunPreview.preview.evidence.commissionPercentage}%` : 'Not available'}</dd>
                         </div>
                         <div>
                           <dt>Expected seller invoice</dt>

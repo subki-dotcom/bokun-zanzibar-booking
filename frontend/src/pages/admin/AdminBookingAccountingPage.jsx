@@ -1,4 +1,6 @@
 import BookingPaymentOverview from '../../components/invoice/BookingPaymentOverview';
+import { confirmAction } from "../../components/admin/ui/feedback";
+import { formatLabel } from "../../utils/formatLabel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { newBookingExpenseForm, bookingExpensePayload } from "./bookingExpenseForm";
 import { Badge, Button, Card, Col, Form, Modal, Offcanvas, Row, Table } from "react-bootstrap";
@@ -23,7 +25,6 @@ import {
   BsReceipt
 } from "react-icons/bs";
 import {
-  fetchBookingAccountingCostTemplates,
   fetchBookingAccountingDashboard,
   fetchBookingFinancialFacts,
   fetchAuthoritativeFinancialSummary,
@@ -39,8 +40,9 @@ import {
 } from "../../api/adminApi";
 import { AdminMetricCard, StatusBadge, formatDateTime } from "../../components/admin/AdminDataWidgets";
 import ErrorAlert from "../../components/common/ErrorAlert";
+import { PageHeader } from "../../components/admin/ui";
 import Loader from "../../components/common/Loader";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatAdminDate } from "../../utils/adminFormat";
 import {
   BOOKING_ACCOUNTING_VIEW_CONFIG,
   bookingAccountingModeFromPath
@@ -55,7 +57,7 @@ const safeNumber = (value) => {
 const money = (value, currency = "USD") => formatCurrency(safeNumber(value), currency || "USD");
 const optionalMoney = (value, currency = "USD") => value === null || value === undefined || value === "" ? "-" : money(value, currency);
 const percent = (value) => `${safeNumber(value).toFixed(2)}%`;
-const label = (value = "") => String(value || "-").replaceAll("_", " ");
+const label = (value = "") => formatLabel(value);
 
 const EvidenceBadge = ({ value }) => {
   const normalized = String(value || "UNKNOWN").toUpperCase();
@@ -150,11 +152,7 @@ const resolveDateRange = (preset = "this_month") => {
 };
 
 const formatNumber = (value = 0) => new Intl.NumberFormat("en-US").format(Math.round(safeNumber(value)));
-const formatShortDate = (value = "") => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
-};
+const formatShortDate = (value = "") => formatAdminDate(value);
 
 const statusTone = (value = "") => {
   const normalized = String(value || "").toLowerCase();
@@ -164,12 +162,7 @@ const statusTone = (value = "") => {
   return "neutral";
 };
 
-const prettyLabel = (value = "") =>
-  String(value || "-")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+const prettyLabel = (value = "") => formatLabel(value);
 
 const formatKpiValue = (kpi = {}, currency = "USD") => {
   if (kpi.type === "count") return formatNumber(kpi.value);
@@ -430,7 +423,7 @@ const RecentFinancials = ({ rows = [], currency = "USD", onTrace }) => {
 const FactValue = ({ label: title, value, currency: code }) => (
   <div className="d-flex justify-content-between gap-3 border-bottom py-2">
     <span className="text-muted">{title}</span>
-    <strong className="text-end">{value === null || value === undefined ? "Awaiting evidence" : code ? money(value, code) : value}</strong>
+    <strong className="text-end">{value === null || value === undefined ? "Not received yet" : code ? money(value, code) : value}</strong>
   </div>
 );
 
@@ -584,7 +577,7 @@ const AuthoritativeSummary = ({ summary, loading }) => {
                 <td className="text-end">{item.bookings}</td>
                 <td className="text-end">{money(item.grossBookingRevenue, item.currency)}</td>
                 <td className="text-end">{money(item.guestPaymentsCollected, item.currency)}</td>
-                <td className="text-end">{item.otaReceivables === null ? "Awaiting evidence" : money(item.otaReceivables, item.currency)}</td>
+                <td className="text-end">{item.otaReceivables === null ? "Not received yet" : money(item.otaReceivables, item.currency)}</td>
                 <td className="text-end">{money(item.refunds, item.currency)}</td>
                 <td className="text-end">{money(item.directCosts, item.currency)}</td>
                 <td className="text-end">{money(item.grossProfit, item.currency)}</td>
@@ -610,7 +603,8 @@ export const BookingAccountingDashboard = ({
   loading,
   refreshing,
   error,
-  onRefresh
+  onRefresh,
+  paymentOverview = null
 }) => {
   const currency = dashboard?.currency || "USD";
   const channels = asArray(dashboard?.filters?.channels);
@@ -643,12 +637,11 @@ export const BookingAccountingDashboard = ({
 
   return (
     <div className="booking-accounting-dashboard">
-      <div className="booking-accounting-dashboard-head">
-        <div>
-          <span>Booking Accounting / Dashboard</span>
-          <h1>Booking Accounting Dashboard</h1>
-          <p>Real-time overview of your booking financial performance and reconciliation status.</p>
-        </div>
+      <PageHeader
+        eyebrow="Booking Accounting"
+        title="Accounting Dashboard"
+        description="Revenue, costs, profit and reconciliation for your bookings."
+        actions={
         <div className="booking-accounting-dashboard-actions" aria-label="Booking accounting dashboard controls">
           <label>
             <BsCalendar3 aria-hidden="true" />
@@ -692,10 +685,11 @@ export const BookingAccountingDashboard = ({
             <BsDownload aria-hidden="true" /> Export
           </button>
           <Link to="/admin/operations/bokun-sync/confirmed-import">
-            <BsArrowClockwise aria-hidden="true" /> Sync Bokun
+            <BsArrowClockwise aria-hidden="true" /> Sync Bókun
           </Link>
         </div>
-      </div>
+        }
+      />
 
       {error ? <DashboardError message={error} onRetry={onRefresh} /> : null}
       {dashboard?.currencyWarning ? (
@@ -728,6 +722,9 @@ export const BookingAccountingDashboard = ({
             ))
           : secondaryKpis.map(({ id, icon, kpi }) => <SecondaryKpiCard key={id} icon={icon} kpi={kpi} currency={currency} />)}
       </div>
+
+      {/* Customer Payment & Settlement: below the page header and KPIs, not above them. */}
+      {paymentOverview}
 
       <div className="booking-accounting-dashboard-chart-grid">
         <DashboardCard className="is-wide">
@@ -1156,6 +1153,8 @@ const AdminBookingAccountingPage = () => {
   const [error, setError] = useState("");
   const [summaryError, setSummaryError] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(true);
+  const [totalsLoading, setTotalsLoading] = useState(false);
+  const [totalsError, setTotalsError] = useState("");
   const dashboardRequest = useRef(0);
   const [financialFacts, setFinancialFacts] = useState(null);
   const [financialFactsLoading, setFinancialFactsLoading] = useState(false);
@@ -1223,46 +1222,31 @@ const AdminBookingAccountingPage = () => {
         return;
       }
 
-      if (mode === "expenses") {
-        const [dashboard, expenses] = await Promise.all([
-          fetchBookingAccountingDashboard({ limit: 25 }),
-          fetchBookingAccountingExpenses(expenseQuery)
-        ]);
-        setData((current) => ({
-          ...current,
-          dashboard,
-          expenses
-        }));
-        return;
+      // Each list page loads only its own records; the four summary cards come from the (slower) dashboard call,
+      // loaded separately so they never hold the table back. Before, every page waited for all seven calls.
+      const fetchers = {
+        invoices: () => fetchBookingAccountingInvoices({ limit: 100 }),
+        refunds: () => fetchBookingAccountingRefunds({ limit: 100 }),
+        expenses: () => fetchBookingAccountingExpenses(expenseQuery),
+        profitability: () => fetchBookingAccountingProfitability({ limit: 100 }),
+        reconciliation: () => fetchBookingAccountingReconciliation({ limit: 100 })
+      };
+      if (mode !== "profitability") {
+        setTotalsLoading(true);
+        setTotalsError("");
+        fetchBookingAccountingDashboard({ limit: 25 })
+          .then((dashboard) => {
+            if (request === dashboardRequest.current) setData((current) => ({ ...current, dashboard }));
+          })
+          .catch((err) => {
+            if (request === dashboardRequest.current) setTotalsError(err.message || "Summary figures could not be loaded.");
+          })
+          .finally(() => {
+            if (request === dashboardRequest.current) setTotalsLoading(false);
+          });
       }
-
-      const [
-        dashboard,
-        invoices,
-        refunds,
-        expenses,
-        costTemplates,
-        profitability,
-        reconciliation
-      ] = await Promise.all([
-        fetchBookingAccountingDashboard({ limit: 25 }),
-        fetchBookingAccountingInvoices({ limit: 100 }),
-        fetchBookingAccountingRefunds({ limit: 100 }),
-        fetchBookingAccountingExpenses(expenseQuery),
-        fetchBookingAccountingCostTemplates(),
-        fetchBookingAccountingProfitability({ limit: 100 }),
-        fetchBookingAccountingReconciliation({ limit: 100 })
-      ]);
-
-      setData({
-        dashboard,
-        invoices,
-        refunds,
-        expenses,
-        costTemplates,
-        profitability,
-        reconciliation
-      });
+      const records = await (fetchers[mode] || fetchers.invoices)();
+      if (request === dashboardRequest.current) setData((current) => ({ ...current, [fetchers[mode] ? mode : "invoices"]: records }));
     } catch (err) {
       setError(err.message || "Failed to load booking accounting");
     } finally {
@@ -1296,7 +1280,7 @@ const AdminBookingAccountingPage = () => {
   }, []);
 
   const voidExpense = useCallback(async (item) => {
-    if (!window.confirm(`Void booking expense ${item.expenseReference || ""}?`)) return;
+    if (!(await confirmAction({ title: `Void booking expense ${item.expenseReference || ""}?`, message: "The expense stays in the records as voided.", confirmLabel: "Void expense" }))) return;
     try {
       await voidBookingAccountingExpense(item.id, "Voided from Booking Accounting expenses");
       setSelectedExpense(null);
@@ -1334,8 +1318,6 @@ const AdminBookingAccountingPage = () => {
     reconciliation: data.reconciliation?.items || []
   }), [data]);
 
-  if (loading && mode !== "dashboard" && !mode.startsWith("cost-template")) return <Loader message="Loading booking accounting..." />;
-
   if (mode === "cost-templates") {
     return <CostTemplatesDashboard initialData={data.costTemplates} />;
   }
@@ -1347,8 +1329,8 @@ const AdminBookingAccountingPage = () => {
   if (mode === "dashboard") {
     return (
       <>
-        <BookingPaymentOverview query={{ period: "CUSTOM", from: dashboardFilters.fromDate, to: dashboardFilters.toDate, ...(dashboardFilters.channel ? { channel: dashboardFilters.channel } : {}) }} refreshKey={refreshing} />
         <BookingAccountingDashboard
+          paymentOverview={<BookingPaymentOverview query={{ period: "CUSTOM", from: dashboardFilters.fromDate, to: dashboardFilters.toDate, ...(dashboardFilters.channel ? { channel: dashboardFilters.channel } : {}) }} refreshKey={refreshing} />}
           dashboard={data.dashboard}
           authoritativeSummary={data.authoritativeSummary}
           summaryLoading={summaryLoading}
@@ -1387,55 +1369,69 @@ const AdminBookingAccountingPage = () => {
 
   return (
     <div className="admin-booking-accounting-page">
-      <div className="admin-platform-page-header">
-        <div>
-          <span className="admin-platform-eyebrow">{config.eyebrow}</span>
-          <h2>{config.title}</h2>
-          <p>{config.subtitle}</p>
-        </div>
-        <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
-          <BsArrowClockwise /> {refreshing ? "Refreshing" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Booking Accounting"
+        title={config.title}
+        description={config.subtitle}
+        actions={
+          <Button variant="outline-secondary" onClick={() => load({ silent: true })} disabled={refreshing}>
+            <BsArrowClockwise aria-hidden="true" /> {refreshing ? "Refreshing" : "Refresh"}
+          </Button>
+        }
+      />
 
-      <ErrorAlert error={error} />
+      {mode !== "profitability" ? (
+        <>
+          {totalsError ? <p className="text-muted small mb-2">Summary figures are unavailable right now ({totalsError}).</p> : null}
+          <Row className="g-3 mb-4">
+            <Col md={6} xl={3}>
+              <AdminMetricCard
+                label="Collected Revenue"
+                value={totalsLoading ? "…" : money(totals.collectedRevenue, currency)}
+                detail={totalsLoading ? "Loading" : `${totals.invoiceCount || 0} invoices`}
+                icon={BsCashCoin}
+              />
+            </Col>
+            <Col md={6} xl={3}>
+              <AdminMetricCard
+                label="Confirmed Refunded"
+                value={totalsLoading ? "…" : money(totals.confirmedRefundedAmount, currency)}
+                detail={totalsLoading ? "Loading" : `${totals.refundCount || 0} refund records`}
+                icon={BsCreditCard2Front}
+                status={totals.openRefundCount ? "processing" : ""}
+              />
+            </Col>
+            <Col md={6} xl={3}>
+              <AdminMetricCard
+                label="Gross Profit"
+                value={totalsLoading ? "…" : money(totals.grossProfit, currency)}
+                detail={totalsLoading ? "Loading" : `${percent(totals.profitMargin)} margin`}
+                icon={BsGraphUpArrow}
+              />
+            </Col>
+            <Col md={6} xl={3}>
+              <AdminMetricCard
+                label="Reconciliation Issues"
+                value={totalsLoading ? "…" : totals.reconciliationIssueCount || 0}
+                detail={totalsLoading ? "Loading" : `${totals.openRefundCount || 0} open refunds`}
+                icon={BsExclamationTriangle}
+                status={totalsLoading ? "" : totals.reconciliationIssueCount ? "WARNING" : "COMPLETED"}
+              />
+            </Col>
+          </Row>
+        </>
+      ) : null}
 
-      <Row className="g-3 mb-4">
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Collected Revenue"
-            value={money(totals.collectedRevenue, currency)}
-            detail={`${totals.invoiceCount || 0} invoices`}
-            icon={BsCashCoin}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Confirmed Refunded"
-            value={money(totals.confirmedRefundedAmount, currency)}
-            detail={`${totals.refundCount || 0} refund records`}
-            icon={BsCreditCard2Front}
-            status={totals.openRefundCount ? "processing" : ""}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Gross Profit"
-            value={money(totals.grossProfit, currency)}
-            detail={`${percent(totals.profitMargin)} margin`}
-            icon={BsGraphUpArrow}
-          />
-        </Col>
-        <Col md={6} xl={3}>
-          <AdminMetricCard
-            label="Reconciliation Issues"
-            value={totals.reconciliationIssueCount || 0}
-            detail={`${totals.openRefundCount || 0} open refunds`}
-            icon={BsExclamationTriangle}
-            status={totals.reconciliationIssueCount ? "WARNING" : "COMPLETED"}
-          />
-        </Col>
-      </Row>
+      {loading ? (
+        <SectionCard title={config.title} detail="Loading records…">
+          <DashboardSkeleton rows={6} className="is-table" />
+        </SectionCard>
+      ) : error ? (
+        <SectionCard title={config.title} detail="">
+          <DashboardError message={error} onRetry={() => load()} />
+        </SectionCard>
+      ) : (
+        <>
 
       {mode === "invoices" ? (
         <SectionCard title="Invoice Records" detail={`${data.invoices?.total || 0} matching records`}>
@@ -1521,6 +1517,8 @@ const AdminBookingAccountingPage = () => {
           <ReconciliationTable items={tableItems.reconciliation} />
         </SectionCard>
       ) : null}
+        </>
+      )}
     </div>
   );
 };
