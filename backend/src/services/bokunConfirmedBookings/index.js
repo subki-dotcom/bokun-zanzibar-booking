@@ -381,15 +381,53 @@ const buildCancellationPatch =({ mapped, existing, source, requestId, nowDate })
   };
 };
 
+// The invoice shows the booking's status, payment and amount, so it is rebuilt (same rules as the admin
+// "Sync invoice") whenever an import changes one of them. Required lazily: services/bookings loads Bókun services.
+const syncImportedBookingInvoice = ({ bookingReference, requestId, reason }) =>
+  require("../bookings").syncInvoiceForBookingReference({
+    bookingReference,
+    auth: { id: null, role: "bokun_import" },
+    requestId,
+    reason
+  });
+
+// What the invoice depends on; a change in any of these means the stored invoice is out of date.
+const invoiceFingerprint = (booking) => JSON.stringify([
+  String(booking?.bookingStatus || ""),
+  String(booking?.paymentStatus || ""),
+  String(booking?.bookingPaymentStatus || ""),
+  booking?.amount == null ? null : Number(booking.amount),
+  String(booking?.currency || ""),
+  String(booking?.transactionCurrency || "")
+]);
+
 const createBokunConfirmedBookingImportService = ({
   BookingModel = Booking,
   CustomerModel = Customer,
   SyncLogModel = SyncLog,
   AuditLogModel = AuditLog,
   bokun = bokunService,
+  syncInvoice = null,
   now = () => new Date()
 } = {}) => {
   const customerService = createCustomerService({ CustomerModel });
+
+  // Keeps the invoice in step with an existing booking the import just changed. A failure is logged and reported in
+  // the result but does not fail the import: the booking itself is already saved.
+  const refreshInvoiceIfChanged = async ({ booking, beforeFingerprint, requestId, reason }) => {
+    if (!syncInvoice || !booking?.bookingReference || beforeFingerprint === invoiceFingerprint(booking)) return "unchanged";
+    try {
+      await syncInvoice({ bookingReference: booking.bookingReference, requestId, reason });
+      return "synced";
+    } catch (error) {
+      logger.warn("BOKUN_IMPORT_INVOICE_SYNC_FAILED", {
+        bookingReference: booking.bookingReference,
+        requestId,
+        error: error.message
+      });
+      return "failed";
+    }
+  };
 
   const recordAudit = async ({ action, booking, requestId = "", reason = "", before = null, after = null, metadata = {} }) => {
     await AuditLogModel.create({
@@ -419,6 +457,7 @@ const createBokunConfirmedBookingImportService = ({
     }
 
     const existing = await BookingModel.findOne(buildBookingLookupQuery(snapshot));
+    const invoiceBefore = existing ? invoiceFingerprint(existing) : null;
     const existingBefore = existing ? {
       bookingStatus: existing.bookingStatus,
       travelDate: existing.travelDate,
@@ -481,6 +520,16 @@ const createBokunConfirmedBookingImportService = ({
 
     await require('../bookingPayment/sync').syncBokunPayment({ booking, payload: snapshot.rawBokunResponse, source, requestId, now: now(), AuditLogModel });
     await customerService.linkBookingToCustomer({ customer, booking });
+    // New bookings get their invoice from the invoice sync job; an existing one whose status, payment or amount
+    // changed (e.g. restored after an amended-booking cancellation) has its invoice rebuilt now.
+    const invoiceSync = existing
+      ? await refreshInvoiceIfChanged({
+        booking,
+        beforeFingerprint: invoiceBefore,
+        requestId,
+        reason: "Bokun import changed the booking's status, payment or amount"
+      })
+      : "unchanged";
 
     if (changeType !== "unchanged") {
       await recordAudit({
@@ -518,7 +567,8 @@ const createBokunConfirmedBookingImportService = ({
       bookingReference: booking.bookingReference,
       bokunBookingId: booking.bokunBookingId,
       bookingStatus: booking.bookingStatus,
-      salesChannel: booking.salesChannel
+      salesChannel: booking.salesChannel,
+      ...(invoiceSync === "unchanged" ? {} : { invoiceSync })
     };
   };
 
@@ -557,6 +607,7 @@ const createBokunConfirmedBookingImportService = ({
       };
     }
 
+    const invoiceBefore = invoiceFingerprint(existing);
     const before = {
       bookingStatus: existing.bookingStatus,
       cancellation: maybeToObject(existing.cancellation),
@@ -573,6 +624,12 @@ const createBokunConfirmedBookingImportService = ({
     const booking = typeof existing.save === "function" ? await existing.save() : existing;
 
     await require('../bookingPayment/sync').syncBokunPayment({ booking, payload: mapped.snapshot.rawBokunResponse, source, requestId, now: now(), AuditLogModel });
+    const invoiceSync = await refreshInvoiceIfChanged({
+      booking,
+      beforeFingerprint: invoiceBefore,
+      requestId,
+      reason: "Bokun import cancelled the booking"
+    });
 
     const after = {
       bookingStatus: booking.bookingStatus,
@@ -601,7 +658,8 @@ const createBokunConfirmedBookingImportService = ({
       action: "cancelled",
       bookingReference: booking.bookingReference,
       bokunBookingId: booking.bokunBookingId,
-      bookingStatus: booking.bookingStatus
+      bookingStatus: booking.bookingStatus,
+      ...(invoiceSync === "unchanged" ? {} : { invoiceSync })
     };
   };
 
@@ -838,7 +896,7 @@ const createBokunConfirmedBookingImportService = ({
   };
 };
 
-const service = createBokunConfirmedBookingImportService();
+const service = createBokunConfirmedBookingImportService({ syncInvoice: syncImportedBookingInvoice });
 
 module.exports = {
   ...service,
@@ -849,6 +907,7 @@ module.exports = {
     resolveChangeType,
     shouldPreserveExistingFinancials,
     inferExistingSalesChannel,
-    summarizeImportResults
+    summarizeImportResults,
+    invoiceFingerprint
   }
 };

@@ -158,7 +158,7 @@ const createFakeModels = ({ bookings = [] } = {}) => {
   return { state, BookingModel, CustomerModel, SyncLogModel, AuditLogModel };
 };
 
-const createHarness = ({ bookings = [], lookupBooking } = {}) => {
+const createHarness = ({ bookings = [], lookupBooking, syncInvoice = null } = {}) => {
   const models = createFakeModels({ bookings });
   const bokun = {
     searchBookings: async () => ({
@@ -178,10 +178,35 @@ const createHarness = ({ bookings = [], lookupBooking } = {}) => {
   const service = createBokunConfirmedBookingImportService({
     ...models,
     bokun,
+    syncInvoice,
     now: () => new Date("2026-08-08T08:00:00.000Z")
   });
   return { ...models, service };
 };
+
+// Records invoice refreshes requested by the import (the real one rebuilds the Invoice from the booking).
+const invoiceSpy = ({ fail = false } = {}) => {
+  const calls = [];
+  const syncInvoice = async (args) => {
+    calls.push(args);
+    if (fail) throw new Error("invoice store unavailable");
+  };
+  return { calls, syncInvoice };
+};
+
+const localBooking = (overrides = {}) => ({
+  _id: "booking-existing",
+  bookingReference: "VTR-1001",
+  bokunBookingId: "BOKUN-1001",
+  bokunConfirmationCode: "CONF-1001",
+  bookingStatus: "confirmed",
+  paymentStatus: "paid",
+  sourceChannel: "viator",
+  salesChannel: "VIATOR",
+  customer: {},
+  bokunImport: {},
+  ...overrides
+});
 
 test("builds Bokun booking-search payload with documented pagination, statuses, and date range", () => {
   const payload = bokunService.__testables.buildBookingSearchPayload({
@@ -451,6 +476,74 @@ test("a channel amendment: the cancelled old Bokun booking does not cancel the b
   assert.equal(harness.state.bookings[0].bookingStatus, "confirmed");
   assert.equal(harness.state.bookings[0].bokunBookingId, "BOKUN-2002");
   assert.equal(harness.state.audits.filter(row => row.action === "bokun_booking_cancelled_synchronized").length, 0);
+});
+
+test("a booking Bokun confirms again (e.g. after an amendment) gets its invoice rebuilt, once", async () => {
+  const spy = invoiceSpy();
+  const harness = createHarness({
+    bookings: [localBooking({
+      bookingStatus: "cancelled",
+      paymentStatus: "pending",
+      cancellation: { reason: "Bokun booking status synchronized as cancelled", cancelledBy: "bokun_import" }
+    })],
+    syncInvoice: spy.syncInvoice
+  });
+
+  const result = await harness.service.manualResync({ reference: "CONF-1001", requestId: "restore" });
+
+  assert.equal(harness.state.bookings[0].bookingStatus, "confirmed");
+  assert.equal(result.result.invoiceSync, "synced");
+  assert.deepEqual(spy.calls.map((call) => call.bookingReference), ["VTR-1001"]);
+  assert.equal(spy.calls[0].requestId, "restore");
+
+  // The next import run sees the same booking: nothing the invoice shows changed, so no second rebuild.
+  const again = await harness.service.manualResync({ reference: "CONF-1001", requestId: "restore-2" });
+  assert.equal(again.result.invoiceSync, undefined);
+  assert.equal(spy.calls.length, 1);
+});
+
+test("a Bokun cancellation rebuilds the booking's invoice; a repeated cancellation does not", async () => {
+  const spy = invoiceSpy();
+  const harness = createHarness({
+    bookings: [localBooking()],
+    lookupBooking: async () => ({
+      raw: confirmedBooking({ status: "CANCELLED", cancellationDate: "2026-08-07T10:00:00.000Z" })
+    }),
+    syncInvoice: spy.syncInvoice
+  });
+
+  const result = await harness.service.manualResync({ reference: "CONF-1001", requestId: "cancel" });
+  assert.equal(result.result.action, "cancelled");
+  assert.equal(result.result.invoiceSync, "synced");
+  assert.equal(spy.calls.length, 1);
+  assert.match(spy.calls[0].reason, /cancelled/);
+
+  await harness.service.manualResync({ reference: "CONF-1001", requestId: "cancel-2" });
+  assert.equal(spy.calls.length, 1);
+});
+
+test("an invoice rebuild failure is reported but does not fail the import", async () => {
+  const spy = invoiceSpy({ fail: true });
+  const harness = createHarness({
+    bookings: [localBooking({ bookingStatus: "cancelled", paymentStatus: "pending" })],
+    syncInvoice: spy.syncInvoice
+  });
+
+  const result = await harness.service.manualResync({ reference: "CONF-1001", requestId: "restore-fail" });
+
+  assert.equal(harness.state.bookings[0].bookingStatus, "confirmed");
+  assert.equal(result.result.invoiceSync, "failed");
+  assert.equal(spy.calls.length, 1);
+});
+
+test("a newly imported booking is left to the invoice sync job", async () => {
+  const spy = invoiceSpy();
+  const harness = createHarness({ syncInvoice: spy.syncInvoice });
+
+  const result = await harness.service.manualResync({ reference: "CONF-1001", requestId: "new" });
+
+  assert.equal(result.result.action, "imported");
+  assert.equal(spy.calls.length, 0);
 });
 
 test("existing paid direct website booking keeps local financial truth while linking to Bokun", async () => {
